@@ -185,7 +185,7 @@ export async function prepareInteractiveChannel(
     const needsNavigation = options?.channelName && !(await isOnChannelUrl(entry.win, channelName));
     const hasJsError = await entry.win.runInRenderer<boolean>(`return (${HAS_CLIENT_JS_ERROR_JS});`).catch(() => false);
 
-    if (needsNavigation || (recover && hasJsError && !(await isChannelViewLoaded(entry.win)))) {
+    if (needsNavigation || (recover && hasJsError)) {
         await loadChannelByName(entry.win, channelName);
         await activateServerView(app, entry.webContentsId);
         await dismissBlockingOverlays(entry.win);

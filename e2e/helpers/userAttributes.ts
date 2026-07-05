@@ -6,18 +6,16 @@ import type {ElectronApplication} from 'playwright';
 
 import {dismissBlockingOverlays} from './blockingOverlays';
 import {
-    isChannelPostListLoaded,
     recoverInteractiveChannel,
-    waitForChannelPostListLoaded,
+    waitForInteractiveChannel,
     waitForMattermostShellReady,
 } from './channelReadiness';
 import {
     pressPostTextboxKey,
     typeIntoPostTextbox,
 } from './mattermostShell';
-import {channelItemSelector} from './rendererUtils';
-import {activateServerView, loadServerViewUrl} from './serverContext';
-import {loginToMattermost} from './login';
+import {HAS_CLIENT_JS_ERROR_JS} from './rendererUtils';
+import {activateServerView, loadServerViewUrl, reloadServerView} from './serverContext';
 import type {ServerEntry} from './serverMap';
 import {ApiRequestError, apiLogin, apiRequest} from './server_api/client';
 import {resolveChannelByName} from './server_api/channel';
@@ -489,27 +487,21 @@ export async function postAndOpenProfilePopover(
 ): Promise<void> {
     const channel = await resolveChannelByName(channelName);
 
-    await loadServerViewUrl(electronApp, entry.webContentsId, channel.url);
     await activateServerView(electronApp, entry.webContentsId);
-    await loginToMattermost(entry.win);
-    await waitForMattermostShellReady(entry.win, {channelName});
-    await waitForChannelPostListLoaded(entry.win);
+    await dismissBlockingOverlays(entry.win);
 
-    if (channelName !== 'town-square') {
-        await entry.win.click(channelItemSelector(channelName)).catch(() => undefined);
-        await waitForChannelPostListLoaded(entry.win);
-    }
+    const hasJsError = await entry.win.runInRenderer<boolean>(`return (${HAS_CLIENT_JS_ERROR_JS});`).catch(() => false);
+    const onChannel = await entry.win.runInRenderer<boolean>(`
+        return window.location.pathname.includes('/channels/${channelName}');
+    `).catch(() => false);
 
-    try {
-        await postChannelMessage(entry.win, message, channelName);
-    } catch {
-        await apiCreatePost(channel.id, message);
-        await loadServerViewUrl(electronApp, entry.webContentsId, channel.url);
-        await activateServerView(electronApp, entry.webContentsId);
+    if (hasJsError || !onChannel) {
+        await reloadServerView(electronApp, entry.webContentsId);
         await waitForMattermostShellReady(entry.win, {channelName});
-        await waitForChannelPostListLoaded(entry.win);
-        await waitForChannelMessage(entry.win, message);
     }
+
+    await apiCreatePost(channel.id, message);
+    await waitForChannelMessage(entry.win, message, 60_000);
 
     await openProfilePopoverFromLastPost(entry.win, message);
 }
@@ -547,5 +539,10 @@ export async function popoverLinkHasHref(win: ServerView, text: string, hrefPatt
 }
 
 export async function isAppResponsive(win: ServerView): Promise<boolean> {
-    return isChannelPostListLoaded(win);
+    return win.runInRenderer<boolean>(`
+        return Boolean(
+            document.querySelector('#channelHeaderTitle, [data-testid="channelHeaderTitle"]')
+            && document.querySelector('#post_textbox, [data-testid="post_textbox"], [data-slate-editor="true"]'),
+        );
+    `).catch(() => false);
 }

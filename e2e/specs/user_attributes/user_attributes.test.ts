@@ -4,11 +4,11 @@
 import type {ElectronApplication} from 'playwright';
 
 import {test, expect} from '../../fixtures/index';
-import {waitForChannelPostListLoaded} from '../../helpers/channelReadiness';
+import {waitForMattermostShellReady} from '../../helpers/mattermostShell';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
 import {
-    activateServerView,
+    activateServerEntry,
     expectServerViewUrl,
     getServerEntry,
 } from '../../helpers/serverContext';
@@ -64,9 +64,9 @@ async function prepareServer(
     await expectServerViewUrl(electronApp, entry.webContentsId, /mattermost|8065/i, {
         message: 'Example server view must load the Mattermost URL',
     });
+    await activateServerEntry(electronApp, entry);
     await loginToMattermost(entry.win);
-    await activateServerView(electronApp, entry.webContentsId);
-    await waitForChannelPostListLoaded(entry.win);
+    await waitForMattermostShellReady(entry.win);
     await dismissBlockingOverlays(entry.win);
     return {entry, win: entry.win};
 }

@@ -417,12 +417,11 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Upload test results
+      - name: Upload JUnit report
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: test-results-${{ env.RUNNER_OS }}
-          path: |
-            e2e/test-results
+          path: e2e/test-results/e2e-junit.xml
           if-no-files-found: ignore
           retention-days: 7

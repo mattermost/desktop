@@ -2,11 +2,11 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../../fixtures/index';
-import {waitForChannelPostListLoaded} from '../../helpers/channelReadiness';
+import {isComposerInteractive} from '../../helpers/channelReadiness';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
 import {clickApplicationMenuItem} from '../../helpers/menu';
-import {activateServerEntry, getServerEntry} from '../../helpers/serverContext';
+import {activateServerEntry, activateServerView, getServerEntry} from '../../helpers/serverContext';
 import {getActiveServerWebContentsId} from '../../helpers/testRefs';
 
 test.describe('menu_bar/devtools_current_server', () => {
@@ -25,7 +25,6 @@ test.describe('menu_bar/devtools_current_server', () => {
             await activateServerEntry(electronApp, entry);
             await loginToMattermost(entry.win);
             await entry.win.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
-            await waitForChannelPostListLoaded(entry.win);
 
             const webContentsId = entry.webContentsId ?? await getActiveServerWebContentsId(electronApp);
 
@@ -65,16 +64,14 @@ test.describe('menu_bar/devtools_current_server', () => {
                 {timeout: 15_000, message: 'DevTools must close after toggle'},
             ).toBe(true);
 
-            await expect.poll(async () => {
-                try {
-                    return await entry.win.evaluate(() => document.querySelector('#post_textbox') !== null);
-                } catch {
-                    return false;
-                }
-            }, {
-                timeout: 15_000,
-                message: 'Server view should still be functional after DevTools toggle',
-            }).toBe(true);
+            await activateServerView(electronApp, webContentsId);
+            await expect.poll(
+                () => isComposerInteractive(entry.win),
+                {
+                    timeout: 30_000,
+                    message: 'Server view should still be functional after DevTools toggle',
+                },
+            ).toBe(true);
         },
     );
 });

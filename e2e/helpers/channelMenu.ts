@@ -136,16 +136,25 @@ export async function enableBookmarksBar(win: ServerView): Promise<void> {
     while (Date.now() < deadline) {
         const remaining = Math.max(deadline - Date.now(), 1_000);
         await openChannelHeaderMenu(win, remaining);
+
         const toggleResult = await win.runInRenderer(`
+            const submenuTrigger = document.querySelector('[id^="channel-menu-"][id$="-bookmarks"]');
+            if (submenuTrigger instanceof HTMLElement) {
+                submenuTrigger.dispatchEvent(new MouseEvent('mouseenter', {bubbles: true}));
+                submenuTrigger.dispatchEvent(new MouseEvent('mouseover', {bubbles: true}));
+            }
+
             const items = Array.from(document.querySelectorAll(
                 '[role="menuitem"], .MenuItem, [id^="channel-menu-"]',
             ));
             const barItem = items.find((item) => {
                 const text = (item.textContent || '').trim();
-                return /bookmarks bar/i.test(text) && !/add a link|add bookmark/i.test(text);
+                return /bookmarks bar/i.test(text) && !/add a link|add bookmark|attach file/i.test(text);
             });
             if (!barItem) {
-                return 'missing';
+                // Modern webapp: bookmarks live under the Bookmarks submenu and the bar
+                // autoshows once a bookmark exists — no separate Show/Hide toggle.
+                return submenuTrigger ? 'submenu-only' : 'missing';
             }
             const label = (barItem.textContent || '').trim().toLowerCase();
             const checked = barItem.getAttribute('aria-checked');
@@ -156,7 +165,7 @@ export async function enableBookmarksBar(win: ServerView): Promise<void> {
             return 'clicked';
         `, true);
         await win.keyboard.press('Escape').catch(() => undefined);
-        if (toggleResult === 'enabled' || toggleResult === 'clicked') {
+        if (toggleResult === 'enabled' || toggleResult === 'clicked' || toggleResult === 'submenu-only') {
             return;
         }
         await new Promise((resolve) => setTimeout(resolve, 300));

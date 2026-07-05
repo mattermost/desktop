@@ -2,11 +2,12 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../../fixtures/index';
-import {waitForChannelPostListLoaded} from '../../helpers/channelReadiness';
 import {demoMattermostConfig} from '../../helpers/config';
+import {closeDownloadsDropdownIfOpen} from '../../helpers/downloadsDropdown';
 import {loginToMattermost} from '../../helpers/login';
+import {waitForMattermostShell} from '../../helpers/mattermostShell';
 import {
-    activateServerView,
+    activateServerEntry,
     expectServerViewUrl,
     getServerEntry,
     openServerSearch,
@@ -24,25 +25,28 @@ test.describe('search_box/search_box', () => {
             test.skip(!process.env.MM_TEST_SERVER_URL, 'MM_TEST_SERVER_URL required');
 
             const entry = getServerEntry(serverMap, demoMattermostConfig.servers[0].name);
+            await activateServerEntry(electronApp, entry);
             await expectServerViewUrl(electronApp, entry.webContentsId, /mattermost|8065/i);
-            await loginToMattermost(entry.win);
-            await activateServerView(electronApp, entry.webContentsId);
-            await waitForChannelPostListLoaded(entry.win);
+            const serverWin = entry.win;
+            await loginToMattermost(serverWin);
+            await waitForMattermostShell(serverWin);
+            await closeDownloadsDropdownIfOpen(electronApp);
+            await activateServerEntry(electronApp, entry);
 
             if (process.platform === 'darwin') {
-                await entry.win.keyboard.press('Meta+f');
+                await serverWin.keyboard.press('Meta+f');
             } else {
                 await openServerSearch(electronApp, entry.webContentsId);
             }
 
-            await waitForSearchBarFocused(entry.win);
-            await entry.win.fill(SEARCH_INPUT, 'hello');
-            await entry.win.click(SEARCH_INPUT);
-            await entry.win.keyboard.press('ArrowLeft');
-            await entry.win.keyboard.press('ArrowLeft');
-            await entry.win.keyboard.press('Backspace');
+            await waitForSearchBarFocused(serverWin);
+            await serverWin.fill(SEARCH_INPUT, 'hello');
+            await serverWin.click(SEARCH_INPUT);
+            await serverWin.keyboard.press('ArrowLeft');
+            await serverWin.keyboard.press('ArrowLeft');
+            await serverWin.keyboard.press('Backspace');
 
-            expect(await entry.win.inputValue(SEARCH_INPUT)).toBe('helo');
+            expect(await serverWin.inputValue(SEARCH_INPUT)).toBe('helo');
         },
     );
 });

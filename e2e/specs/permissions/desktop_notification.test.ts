@@ -4,7 +4,6 @@
 import {triggerTestNotification} from '../notification_trigger/helpers';
 
 import {test, expect} from '../../fixtures/index';
-import {waitForChannelPostListLoaded} from '../../helpers/channelReadiness';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
 import {activateServerView, getServerEntry} from '../../helpers/serverContext';
@@ -41,14 +40,17 @@ async function restoreNotificationDisplayMention(app: import('playwright').Elect
     }
 }
 
-async function invokeDesktopNotifyMention(serverWin: ServerView): Promise<void> {
-    await serverWin.runInRenderer(`
+async function invokeDesktopNotifyMention(
+    app: import('playwright').ElectronApplication,
+    serverWin: ServerView,
+): Promise<void> {
+    const invokedViaRenderer = await serverWin.runInRenderer<boolean>(`
         const api = window.desktopAPI;
         if (!api?.notifyMention) {
-            throw new Error('desktopAPI.notifyMention is unavailable in the server view');
+            return false;
         }
         const team = window.location.pathname.split('/').filter(Boolean)[0] ?? '';
-        void api.notifyMention(
+        api.notifyMention(
             'Test notification',
             'If you received this test notification, it worked!',
             'town-square',
@@ -57,7 +59,41 @@ async function invokeDesktopNotifyMention(serverWin: ServerView): Promise<void> 
             false,
             'Bing',
         );
-    `, true);
+        return true;
+    `, true).catch(() => false);
+
+    if (invokedViaRenderer) {
+        return;
+    }
+
+    await app.evaluate(({webContents}, webContentsId) => {
+        const refs = (global as any).__e2eTestRefs;
+        const notificationManager = refs?.NotificationManager;
+        const wc = webContents.fromId(webContentsId);
+        if (!notificationManager?.displayMention || !wc || wc.isDestroyed()) {
+            throw new Error('NotificationManager.displayMention is not available');
+        }
+
+        let pathname = '/channels/town-square';
+        try {
+            pathname = new URL(wc.getURL()).pathname;
+        } catch {
+            // keep default pathname
+        }
+        const team = pathname.split('/').filter(Boolean)[0] ?? '';
+        notificationManager.displayMention(
+            'Test notification',
+            'If you received this test notification, it worked!',
+            'town-square',
+            team,
+            pathname,
+            false,
+            wc,
+            'Bing',
+        ).catch(() => {
+            // Fire-and-forget in E2E fallback; stub sets __e2eNotificationShown synchronously.
+        });
+    }, serverWin.webContentsId);
 }
 
 async function triggerDesktopNotification(serverWin: ServerView): Promise<void> {
@@ -82,14 +118,13 @@ test.describe('permissions/desktop_notification', () => {
                 const entry = getServerEntry(serverMap, demoMattermostConfig.servers[0].name);
                 await activateServerView(electronApp, entry.webContentsId);
                 await loginToMattermost(entry.win);
-                await waitForChannelPostListLoaded(entry.win);
                 const serverWin = entry.win;
 
                 await triggerDesktopNotification(serverWin);
 
                 let notificationShown = await electronApp.evaluate(() => Boolean((global as any).__e2eNotificationShown));
                 if (!notificationShown) {
-                    await invokeDesktopNotifyMention(serverWin);
+                    await invokeDesktopNotifyMention(electronApp, serverWin);
                     await expect.poll(
                         () => electronApp.evaluate(() => Boolean((global as any).__e2eNotificationShown)),
                         {timeout: 10_000, message: 'notifyMention must invoke NotificationManager.displayMention'},

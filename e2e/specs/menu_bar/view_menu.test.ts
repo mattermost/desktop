@@ -7,7 +7,6 @@ import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
-import {waitForChannelPostListLoaded} from '../../helpers/channelReadiness';
 import {appDir, demoMattermostConfig, electronBinaryPath, writeConfigFile} from '../../helpers/config';
 import {waitForWindow, closeElectronApp} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
@@ -20,6 +19,7 @@ import {
     waitForSearchBarFocused,
 } from '../../helpers/serverContext';
 import {buildServerMap} from '../../helpers/serverMap';
+import {evaluateInMainProcessWithArg} from '../../helpers/testRefs';
 
 type ElectronApplication = Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>;
 type ElectronPage = import('playwright').Page;
@@ -70,83 +70,57 @@ async function waitForServerReload(
 
     const serverMap = await buildServerMap(electronApp);
     const serverWin = serverMap[demoMattermostConfig.servers[0].name][0].win;
-    await serverWin.runInRenderer('window.__mmE2eReloadMarker = Math.random(); return true;', true);
-    const reloadMarkerBefore = await serverWin.runInRenderer<number | undefined>(
-        'return window.__mmE2eReloadMarker;',
-    ).catch(() => undefined);
 
-    const reloadPromise = electronApp.evaluate(({webContents}, id) => {
-        return new Promise<boolean>((resolve) => {
+    await evaluateInMainProcessWithArg(
+        electronApp,
+        ({webContents}, id) => {
+            const refs = (global as any).__e2eTestRefs;
+            const mmView = refs?.WebContentsManager.getViewByWebContentsId(id);
             const wc = webContents.fromId(id);
-            if (!wc || wc.isDestroyed()) {
-                resolve(false);
-                return;
+            if (!mmView || !wc || wc.isDestroyed()) {
+                throw new Error(`No server view registered for webContentsId ${id}`);
             }
-            const timeout = setTimeout(() => {
-                wc.removeListener('did-start-loading', onStartLoading);
-                resolve(false);
-            }, 30_000);
-            const finish = () => {
-                clearTimeout(timeout);
-                wc.removeListener('did-start-loading', onStartLoading);
-                resolve(true);
-            };
-            const onStartLoading = () => {
-                wc.once('did-finish-load', finish);
-            };
-            wc.on('did-start-loading', onStartLoading);
-            if (wc.isLoading()) {
-                wc.once('did-finish-load', finish);
-            }
-        });
-    }, webContentsId);
 
+            const previous = (global as any).__e2eReloadWatchers?.[id];
+            if (previous) {
+                mmView.off('reload_view', previous.onReload);
+                wc.removeListener('did-finish-load', previous.onFinishLoad);
+            }
+
+            (global as any).__e2eReloadWatchers ??= {};
+            (global as any).__e2eReloadWatchers[id] = {
+                detected: false,
+                onReload: () => {
+                    (global as any).__e2eReloadWatchers[id].detected = true;
+                },
+                onFinishLoad: () => {
+                    (global as any).__e2eReloadWatchers[id].detected = true;
+                },
+            };
+
+            const watcher = (global as any).__e2eReloadWatchers[id];
+            mmView.on('reload_view', watcher.onReload);
+            wc.on('did-finish-load', watcher.onFinishLoad);
+            return true;
+        },
+        webContentsId,
+    );
+
+    await activateServerView(electronApp, webContentsId);
     await trigger();
 
-    const finishReload = async () => {
-        await activateServerView(electronApp, webContentsId);
-        await closeDownloadsDropdownIfOpen(electronApp);
-        await serverWin.keyboard.press('Escape').catch(() => {});
-    };
+    const reloaded = await expect.poll(async () => electronApp.evaluate((_, id) => {
+        return Boolean((global as any).__e2eReloadWatchers?.[id]?.detected);
+    }, webContentsId), {
+        timeout: 30_000,
+        message: 'Server view reload must be detected after menu reload',
+    }).toBe(true).then(() => true).catch(() => false);
 
     await activateServerView(electronApp, webContentsId);
     await closeDownloadsDropdownIfOpen(electronApp);
     await serverWin.keyboard.press('Escape').catch(() => {});
 
-    const sawReloadEvent = await reloadPromise;
-    if (sawReloadEvent) {
-        await finishReload();
-        return true;
-    }
-
-    const markerChanged = await expect.poll(async () => {
-        const marker = await serverWin.runInRenderer<number | undefined>(
-            'return window.__mmE2eReloadMarker;',
-        ).catch(() => undefined);
-        return marker !== reloadMarkerBefore;
-    }, {timeout: 15_000, message: 'Server view reload marker must change after menu reload'}).toBe(true).then(() => true).catch(() => false);
-
-    if (markerChanged) {
-        await finishReload();
-        return true;
-    }
-
-    const sawLoadingCycle = await expect.poll(async () => electronApp.evaluate(({webContents}, id) => {
-        const wc = webContents.fromId(id);
-        return Boolean(wc && !wc.isDestroyed() && wc.isLoading());
-    }, webContentsId), {timeout: 5_000, intervals: [100, 250, 500]}).toBe(true).then(() => true).catch(() => false);
-
-    if (sawLoadingCycle) {
-        await expect.poll(async () => electronApp.evaluate(({webContents}, id) => {
-            const wc = webContents.fromId(id);
-            return Boolean(wc && !wc.isDestroyed() && !wc.isLoading());
-        }, webContentsId), {timeout: 30_000, message: 'Server view must finish loading after reload'}).toBe(true);
-        await finishReload();
-        return true;
-    }
-
-    await finishReload();
-    return false;
+    return reloaded;
 }
 
 async function getServerContext() {
@@ -157,9 +131,9 @@ async function getServerContext() {
     const firstServerId = serverEntry.webContentsId;
 
     await firstServer.waitForURL((url) => url.pathname.includes('/channels/'), {timeout: 30_000});
+    await firstServer.waitForSelector('#post_textbox', {timeout: 30_000});
     await mainWindow.bringToFront().catch(() => {});
     await activateServerView(electronApp, serverEntry.webContentsId);
-    await waitForChannelPostListLoaded(firstServer);
 
     return {browserWindow, firstServer, firstServerId};
 }
@@ -211,11 +185,8 @@ test.describe('menu/view', () => {
     });
 
     test.beforeEach(async () => {
-        const {browserWindow, firstServer, firstServerId} = await getServerContext();
+        const {browserWindow, firstServerId} = await getServerContext();
         await setZoomFactorOfServer(browserWindow, firstServerId, 1);
-        await activateServerView(electronApp, firstServerId);
-        await waitForChannelPostListLoaded(firstServer);
-        await firstServer.keyboard.press('Escape').catch(() => {});
     });
 
     test.afterAll(async () => {
