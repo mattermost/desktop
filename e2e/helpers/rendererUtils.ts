@@ -86,13 +86,56 @@ export const IS_COMPOSER_INTERACTIVE_JS = `
     return document.activeElement === root || root.contains(document.activeElement);
 `;
 
+/** True when loading spinners are not visible (style-only, no rect check). */
+export const IS_ELEMENT_SHOWN_JS = `
+    const __mmIsShown = (element) => {
+        if (!(element instanceof HTMLElement) || !element.isConnected) {
+            return false;
+        }
+        const style = window.getComputedStyle(element);
+        return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+    };
+`;
+
+const POST_LIST_COMPOSER_SELECTORS = [
+    '[data-slate-editor="true"]',
+    '#post_textbox',
+    '[data-testid="post_textbox"]',
+    '[role="textbox"][contenteditable="true"]',
+].join(', ');
+
+/** Lenient channel-ready check used by legacy waitForChannelPostListLoaded callers. */
+export const IS_CHANNEL_POST_LIST_LOADED_JS = `
+    ${IS_ELEMENT_SHOWN_JS}
+
+    const postList = document.querySelector(
+        '#post-list, .post-list, [data-testid="postList"], .post-list-holder',
+    );
+    if ([...(postList?.querySelectorAll('.post-list__loading, .post-list__dynamic-loading') ?? [])].some(__mmIsShown)) {
+        return false;
+    }
+
+    const channelLoading = document.querySelector(
+        '#channelView .loading-screen, .channel-view .loading-screen, .ChannelLoader, .channel-loader',
+    );
+    if (__mmIsShown(channelLoading)) {
+        return false;
+    }
+
+    return Boolean(
+        document.querySelector(${CHANNEL_HEADER_SELECTORS_JSON})
+        && document.querySelector('${POST_LIST_COMPOSER_SELECTORS}'),
+    );
+`;
+
 /** True when the channel header and interactive composer are both present. */
 export const IS_CHANNEL_VIEW_LOADED_JS = `
     ${IS_VISIBLE_JS}
     ${POST_TEXTBOX_RESOLVER_JS}
 
     const hasHeader = document.querySelector(${CHANNEL_HEADER_SELECTORS_JSON});
-    const composer = __mmResolvePostTextboxRoot();
+    const composer = __mmResolvePostTextboxRoot()
+        || document.querySelector('${POST_LIST_COMPOSER_SELECTORS}');
     if (hasHeader && composer) {
         return true;
     }

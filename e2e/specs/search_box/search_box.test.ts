@@ -2,10 +2,11 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../../fixtures/index';
-import {prepareInteractiveChannel} from '../../helpers/channelReadiness';
+import {waitForChannelPostListLoaded} from '../../helpers/channelReadiness';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
 import {
+    activateServerView,
     expectServerViewUrl,
     getServerEntry,
     openServerSearch,
@@ -25,7 +26,8 @@ test.describe('search_box/search_box', () => {
             const entry = getServerEntry(serverMap, demoMattermostConfig.servers[0].name);
             await expectServerViewUrl(electronApp, entry.webContentsId, /mattermost|8065/i);
             await loginToMattermost(entry.win);
-            await prepareInteractiveChannel(electronApp, entry, {channelName: 'town-square'});
+            await activateServerView(electronApp, entry.webContentsId);
+            await waitForChannelPostListLoaded(entry.win);
 
             if (process.platform === 'darwin') {
                 await entry.win.keyboard.press('Meta+f');

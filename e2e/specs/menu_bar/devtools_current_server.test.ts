@@ -2,11 +2,11 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../../fixtures/index';
-import {isComposerInteractive, prepareInteractiveChannel} from '../../helpers/channelReadiness';
+import {waitForChannelPostListLoaded} from '../../helpers/channelReadiness';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
 import {clickApplicationMenuItem} from '../../helpers/menu';
-import {getServerEntry} from '../../helpers/serverContext';
+import {activateServerEntry, getServerEntry} from '../../helpers/serverContext';
 import {getActiveServerWebContentsId} from '../../helpers/testRefs';
 
 test.describe('menu_bar/devtools_current_server', () => {
@@ -22,8 +22,10 @@ test.describe('menu_bar/devtools_current_server', () => {
             }
 
             const entry = getServerEntry(serverMap, demoMattermostConfig.servers[0].name);
+            await activateServerEntry(electronApp, entry);
             await loginToMattermost(entry.win);
-            await prepareInteractiveChannel(electronApp, entry, {channelName: 'town-square'});
+            await entry.win.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
+            await waitForChannelPostListLoaded(entry.win);
 
             const webContentsId = entry.webContentsId ?? await getActiveServerWebContentsId(electronApp);
 
@@ -65,12 +67,12 @@ test.describe('menu_bar/devtools_current_server', () => {
 
             await expect.poll(async () => {
                 try {
-                    return await isComposerInteractive(entry.win);
+                    return await entry.win.evaluate(() => document.querySelector('#post_textbox') !== null);
                 } catch {
                     return false;
                 }
             }, {
-                timeout: 30_000,
+                timeout: 15_000,
                 message: 'Server view should still be functional after DevTools toggle',
             }).toBe(true);
         },

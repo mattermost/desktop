@@ -7,7 +7,7 @@ import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
-import {prepareInteractiveChannel} from '../../helpers/channelReadiness';
+import {waitForChannelPostListLoaded} from '../../helpers/channelReadiness';
 import {appDir, demoMattermostConfig, electronBinaryPath, writeConfigFile} from '../../helpers/config';
 import {waitForWindow, closeElectronApp} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
@@ -119,15 +119,34 @@ async function waitForServerReload(
         return true;
     }
 
-    await expect.poll(async () => {
+    const markerChanged = await expect.poll(async () => {
         const marker = await serverWin.runInRenderer<number | undefined>(
             'return window.__mmE2eReloadMarker;',
         ).catch(() => undefined);
         return marker !== reloadMarkerBefore;
-    }, {timeout: 15_000, message: 'Server view reload marker must change after menu reload'}).toBe(true);
+    }, {timeout: 15_000, message: 'Server view reload marker must change after menu reload'}).toBe(true).then(() => true).catch(() => false);
+
+    if (markerChanged) {
+        await finishReload();
+        return true;
+    }
+
+    const sawLoadingCycle = await expect.poll(async () => electronApp.evaluate(({webContents}, id) => {
+        const wc = webContents.fromId(id);
+        return Boolean(wc && !wc.isDestroyed() && wc.isLoading());
+    }, webContentsId), {timeout: 5_000, intervals: [100, 250, 500]}).toBe(true).then(() => true).catch(() => false);
+
+    if (sawLoadingCycle) {
+        await expect.poll(async () => electronApp.evaluate(({webContents}, id) => {
+            const wc = webContents.fromId(id);
+            return Boolean(wc && !wc.isDestroyed() && !wc.isLoading());
+        }, webContentsId), {timeout: 30_000, message: 'Server view must finish loading after reload'}).toBe(true);
+        await finishReload();
+        return true;
+    }
 
     await finishReload();
-    return true;
+    return false;
 }
 
 async function getServerContext() {
@@ -139,7 +158,8 @@ async function getServerContext() {
 
     await firstServer.waitForURL((url) => url.pathname.includes('/channels/'), {timeout: 30_000});
     await mainWindow.bringToFront().catch(() => {});
-    await prepareInteractiveChannel(electronApp, serverEntry, {channelName: 'town-square'});
+    await activateServerView(electronApp, serverEntry.webContentsId);
+    await waitForChannelPostListLoaded(firstServer);
 
     return {browserWindow, firstServer, firstServerId};
 }
@@ -193,8 +213,8 @@ test.describe('menu/view', () => {
     test.beforeEach(async () => {
         const {browserWindow, firstServer, firstServerId} = await getServerContext();
         await setZoomFactorOfServer(browserWindow, firstServerId, 1);
-        const serverEntry = (await buildServerMap(electronApp))[demoMattermostConfig.servers[0].name][0];
-        await prepareInteractiveChannel(electronApp, serverEntry, {channelName: 'town-square'});
+        await activateServerView(electronApp, firstServerId);
+        await waitForChannelPostListLoaded(firstServer);
         await firstServer.keyboard.press('Escape').catch(() => {});
     });
 
@@ -204,6 +224,7 @@ test.describe('menu/view', () => {
 
     test('MM-T813 Control+F should focus the search bar in Mattermost', {tag: ['@P2', '@all']}, async () => {
         const {firstServer, firstServerId} = await getServerContext();
+        await activateServerView(electronApp, firstServerId);
 
         if (process.platform === 'darwin') {
             await firstServer.keyboard.press('Meta+f');

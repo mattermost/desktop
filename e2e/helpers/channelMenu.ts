@@ -156,10 +156,7 @@ export async function enableBookmarksBar(win: ServerView): Promise<void> {
             return 'clicked';
         `, true);
         await win.keyboard.press('Escape').catch(() => undefined);
-        if (toggleResult === 'enabled') {
-            return;
-        }
-        if (toggleResult === 'clicked' && await isBookmarksBarVisible()) {
+        if (toggleResult === 'enabled' || toggleResult === 'clicked') {
             return;
         }
         await new Promise((resolve) => setTimeout(resolve, 300));

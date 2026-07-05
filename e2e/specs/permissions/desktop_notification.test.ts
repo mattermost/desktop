@@ -4,10 +4,10 @@
 import {triggerTestNotification} from '../notification_trigger/helpers';
 
 import {test, expect} from '../../fixtures/index';
-import {prepareInteractiveChannel} from '../../helpers/channelReadiness';
+import {waitForChannelPostListLoaded} from '../../helpers/channelReadiness';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
-import {getServerEntry} from '../../helpers/serverContext';
+import {activateServerView, getServerEntry} from '../../helpers/serverContext';
 import type {ServerView} from '../../helpers/serverView';
 
 async function stubNotificationDisplayMention(app: import('playwright').ElectronApplication): Promise<void> {
@@ -48,7 +48,7 @@ async function invokeDesktopNotifyMention(serverWin: ServerView): Promise<void> 
             throw new Error('desktopAPI.notifyMention is unavailable in the server view');
         }
         const team = window.location.pathname.split('/').filter(Boolean)[0] ?? '';
-        return api.notifyMention(
+        void api.notifyMention(
             'Test notification',
             'If you received this test notification, it worked!',
             'town-square',
@@ -80,8 +80,9 @@ test.describe('permissions/desktop_notification', () => {
 
             try {
                 const entry = getServerEntry(serverMap, demoMattermostConfig.servers[0].name);
+                await activateServerView(electronApp, entry.webContentsId);
                 await loginToMattermost(entry.win);
-                await prepareInteractiveChannel(electronApp, entry, {channelName: 'town-square'});
+                await waitForChannelPostListLoaded(entry.win);
                 const serverWin = entry.win;
 
                 await triggerDesktopNotification(serverWin);
@@ -89,7 +90,11 @@ test.describe('permissions/desktop_notification', () => {
                 let notificationShown = await electronApp.evaluate(() => Boolean((global as any).__e2eNotificationShown));
                 if (!notificationShown) {
                     await invokeDesktopNotifyMention(serverWin);
-                    notificationShown = await electronApp.evaluate(() => Boolean((global as any).__e2eNotificationShown));
+                    await expect.poll(
+                        () => electronApp.evaluate(() => Boolean((global as any).__e2eNotificationShown)),
+                        {timeout: 10_000, message: 'notifyMention must invoke NotificationManager.displayMention'},
+                    ).toBe(true);
+                    notificationShown = true;
                 }
 
                 expect(notificationShown, 'Desktop notification path must invoke NotificationManager.displayMention').toBe(true);

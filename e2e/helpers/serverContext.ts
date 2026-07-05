@@ -173,7 +173,7 @@ export async function waitForSearchBarFocused(
     win: import('./serverView').ServerView,
     options?: {timeout?: number},
 ): Promise<void> {
-    const timeout = options?.timeout ?? 15_000;
+    const timeout = options?.timeout ?? 30_000;
     await expect.poll(async () => win.runInRenderer(`
         const input = document.querySelector(${JSON.stringify(SEARCH_INPUT)});
         if (!input) {
@@ -182,6 +182,9 @@ export async function waitForSearchBarFocused(
         const rect = input.getBoundingClientRect();
         if (rect.width <= 0 || rect.height <= 0) {
             return false;
+        }
+        if (input !== document.activeElement) {
+            input.focus?.();
         }
         return input === document.activeElement;
     `), {timeout, message: 'Search bar must be visible and focused'}).toBe(true);

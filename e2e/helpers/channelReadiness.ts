@@ -8,6 +8,7 @@ import {dismissBlockingOverlays} from './blockingOverlays';
 import {
     channelItemSelector,
     HAS_CLIENT_JS_ERROR_JS,
+    IS_CHANNEL_POST_LIST_LOADED_JS,
     IS_CHANNEL_VIEW_LOADED_JS,
     IS_COMPOSER_INTERACTIVE_JS,
 } from './rendererUtils';
@@ -54,7 +55,7 @@ export async function isChannelViewLoaded(win: ServerView): Promise<boolean> {
 
 /** @deprecated Use isChannelViewLoaded — kept for existing imports. */
 export async function isChannelPostListLoaded(win: ServerView): Promise<boolean> {
-    return isChannelViewLoaded(win);
+    return win.runInRenderer<boolean>(`return (${IS_CHANNEL_POST_LIST_LOADED_JS});`).catch(() => false);
 }
 
 export async function isOnChannelUrl(win: ServerView, channelName: string): Promise<boolean> {
@@ -120,11 +121,29 @@ export async function recoverInteractiveChannel(
     await waitForMattermostShell(win, {channelItem, channelName, timeout: shellTimeout});
 }
 
-/** @deprecated Use recoverInteractiveChannel. */
-export const recoverChannelViewIfNeeded = recoverInteractiveChannel;
+/** Reload when the channel shell failed to mount (blank hex background). */
+export async function recoverServerViewIfNeeded(
+    win: ServerView,
+    options?: {channelItem?: string; channelName?: string},
+): Promise<void> {
+    const channelItem = resolveChannelItem(options);
+    const healthy = await win.runInRenderer(`
+        return Boolean(
+            document.querySelector('#channelHeaderTitle')
+            && document.querySelector(${JSON.stringify(channelItem)}),
+        );
+    `).catch(() => false);
 
-/** @deprecated Use recoverInteractiveChannel. */
-export const recoverServerViewIfNeeded = recoverInteractiveChannel;
+    if (healthy) {
+        return;
+    }
+
+    await win.runInRenderer('window.location.reload(); return true;', true);
+    await waitForMattermostShell(win, {channelItem});
+}
+
+/** @deprecated Use recoverServerViewIfNeeded or recoverInteractiveChannel. */
+export const recoverChannelViewIfNeeded = recoverServerViewIfNeeded;
 
 export async function waitForInteractiveChannel(
     win: ServerView,
@@ -187,19 +206,23 @@ export async function ensureChannelReady(
     await prepareInteractiveChannel(win.app, {win, webContentsId: win.webContentsId}, options);
 }
 
-/** Wait for sidebar shell, recover if needed, then wait for an interactive channel. */
+/** Wait for sidebar shell, then recover with a reload if the channel content failed to render. */
 export async function waitForMattermostShellReady(
     win: ServerView,
     options?: {channelItem?: string; channelName?: string; timeout?: number},
 ): Promise<void> {
-    const timeout = options?.timeout ?? 60_000;
-    await waitForMattermostShell(win, {...options, timeout});
-    if (!(await isChannelViewLoaded(win))) {
-        const remaining = Math.max(timeout - 2_000, 2_000);
-        await recoverInteractiveChannel(win, {...options, timeout: remaining});
-        await waitForInteractiveChannel(win, {...options, timeout: remaining, recover: false});
-    }
+    await waitForMattermostShell(win, options);
+    await recoverServerViewIfNeeded(win, options);
 }
 
-/** @deprecated Use waitForInteractiveChannel. */
-export const waitForChannelPostListLoaded = waitForInteractiveChannel;
+/** Wait until the channel post list finishes its initial load. */
+export async function waitForChannelPostListLoaded(
+    win: ServerView,
+    options?: {timeout?: number},
+): Promise<void> {
+    const timeout = options?.timeout ?? 15_000;
+    await expect.poll(
+        async () => isChannelPostListLoaded(win),
+        {timeout, message: 'Channel post list must finish loading'},
+    ).toBe(true);
+}

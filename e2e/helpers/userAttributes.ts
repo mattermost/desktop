@@ -6,10 +6,9 @@ import type {ElectronApplication} from 'playwright';
 
 import {dismissBlockingOverlays} from './blockingOverlays';
 import {
-    isChannelViewLoaded,
-    prepareInteractiveChannel,
+    isChannelPostListLoaded,
     recoverInteractiveChannel,
-    waitForInteractiveChannel,
+    waitForChannelPostListLoaded,
     waitForMattermostShellReady,
 } from './channelReadiness';
 import {
@@ -17,7 +16,7 @@ import {
     typeIntoPostTextbox,
 } from './mattermostShell';
 import {channelItemSelector} from './rendererUtils';
-import {loadServerViewUrl} from './serverContext';
+import {activateServerView, loadServerViewUrl} from './serverContext';
 import {loginToMattermost} from './login';
 import type {ServerEntry} from './serverMap';
 import {ApiRequestError, apiLogin, apiRequest} from './server_api/client';
@@ -143,7 +142,8 @@ export {dismissBlockingOverlays} from './blockingOverlays';
 
 export async function navigateToTownSquare(win: ServerView): Promise<void> {
     await dismissBlockingOverlays(win);
-    await prepareInteractiveChannel(win.app, {win, webContentsId: win.webContentsId}, {channelName: 'town-square'});
+    await activateServerView(win.app, win.webContentsId);
+    await waitForChannelPostListLoaded(win);
 }
 
 const PROFILE_SETTINGS_MODAL_SELECTOR = [
@@ -229,7 +229,8 @@ export async function recoverFromProfileSettings(win: ServerView): Promise<void>
 
     const channel = await resolveChannelByName('town-square');
     await loadServerViewUrl(win.app, win.webContentsId, channel.url);
-    await prepareInteractiveChannel(win.app, {win, webContentsId: win.webContentsId}, {channelName: 'town-square'});
+    await activateServerView(win.app, win.webContentsId);
+    await waitForChannelPostListLoaded(win);
 }
 
 export async function getCustomAttributeLabelsInSettings(win: ServerView): Promise<string[]> {
@@ -488,21 +489,25 @@ export async function postAndOpenProfilePopover(
 ): Promise<void> {
     const channel = await resolveChannelByName(channelName);
 
-    // Profile attribute API calls mutate server state; reload so the webapp fetches fresh field definitions.
     await loadServerViewUrl(electronApp, entry.webContentsId, channel.url);
+    await activateServerView(electronApp, entry.webContentsId);
     await loginToMattermost(entry.win);
-    await prepareInteractiveChannel(electronApp, entry, {channelName});
+    await waitForMattermostShellReady(entry.win, {channelName});
+    await waitForChannelPostListLoaded(entry.win);
 
-    if (await isChannelViewLoaded(entry.win)) {
-        if (channelName !== 'town-square') {
-            await entry.win.click(channelItemSelector(channelName)).catch(() => undefined);
-            await waitForMattermostShellReady(entry.win, {channelName});
-        }
+    if (channelName !== 'town-square') {
+        await entry.win.click(channelItemSelector(channelName)).catch(() => undefined);
+        await waitForChannelPostListLoaded(entry.win);
+    }
+
+    try {
         await postChannelMessage(entry.win, message, channelName);
-    } else {
+    } catch {
         await apiCreatePost(channel.id, message);
         await loadServerViewUrl(electronApp, entry.webContentsId, channel.url);
-        await prepareInteractiveChannel(electronApp, entry, {channelName});
+        await activateServerView(electronApp, entry.webContentsId);
+        await waitForMattermostShellReady(entry.win, {channelName});
+        await waitForChannelPostListLoaded(entry.win);
         await waitForChannelMessage(entry.win, message);
     }
 
@@ -542,5 +547,5 @@ export async function popoverLinkHasHref(win: ServerView, text: string, hrefPatt
 }
 
 export async function isAppResponsive(win: ServerView): Promise<boolean> {
-    return isChannelViewLoaded(win);
+    return isChannelPostListLoaded(win);
 }
