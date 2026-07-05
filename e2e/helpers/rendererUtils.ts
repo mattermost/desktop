@@ -97,12 +97,7 @@ export const IS_ELEMENT_SHOWN_JS = `
     };
 `;
 
-const POST_LIST_COMPOSER_SELECTORS = [
-    '[data-slate-editor="true"]',
-    '#post_textbox',
-    '[data-testid="post_textbox"]',
-    '[role="textbox"][contenteditable="true"]',
-].join(', ');
+const POST_LIST_COMPOSER_SELECTORS = POST_TEXTBOX_CANDIDATES.join(', ');
 
 /** Lenient channel-ready check used by legacy waitForChannelPostListLoaded callers. */
 export const IS_CHANNEL_POST_LIST_LOADED_JS = `

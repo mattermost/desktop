@@ -46,16 +46,16 @@ function resolveChannelName(channelItem: string, explicitName?: string): string 
 }
 
 export async function isComposerInteractive(win: ServerView): Promise<boolean> {
-    return win.runInRenderer<boolean>(`return (${IS_COMPOSER_INTERACTIVE_JS});`).catch(() => false);
+    return win.runInRenderer<boolean>(IS_COMPOSER_INTERACTIVE_JS).catch(() => false);
 }
 
 export async function isChannelViewLoaded(win: ServerView): Promise<boolean> {
-    return win.runInRenderer<boolean>(`return (${IS_CHANNEL_VIEW_LOADED_JS});`).catch(() => false);
+    return win.runInRenderer<boolean>(IS_CHANNEL_VIEW_LOADED_JS).catch(() => false);
 }
 
 /** @deprecated Use isChannelViewLoaded — kept for existing imports. */
 export async function isChannelPostListLoaded(win: ServerView): Promise<boolean> {
-    return win.runInRenderer<boolean>(`return (${IS_CHANNEL_POST_LIST_LOADED_JS});`).catch(() => false);
+    return win.runInRenderer<boolean>(IS_CHANNEL_POST_LIST_LOADED_JS).catch(() => false);
 }
 
 export async function isOnChannelUrl(win: ServerView, channelName: string): Promise<boolean> {
