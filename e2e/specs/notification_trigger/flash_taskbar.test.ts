@@ -76,4 +76,54 @@ test.describe('notification_trigger/flash_taskbar', () => {
             }
         },
     );
+
+    test('MM-T1294 Do not flash taskbar icon when flashWindow is disabled',
+        {tag: ['@P2', '@win32', '@linux']},
+        async ({electronApp}) => {
+            await waitForAppReady(electronApp);
+
+            const releaseLock = await acquireExclusiveLock('flash-taskbar-state');
+            try {
+                await electronApp.evaluate(() => {
+                    const refs = (global as any).__e2eTestRefs;
+                    if (!refs?.Config) {
+                        throw new Error('Config not available for flash-taskbar test setup');
+                    }
+                    refs.Config.set('notifications', {...refs.Config.notifications, flashWindow: 0});
+                });
+
+                await electronApp.evaluate(() => {
+                    (global as any).__e2eFlashFrameCalls = [];
+                    const refs = (global as any).__e2eTestRefs;
+                    const mainWin = refs?.MainWindow?.get?.();
+                    if (!mainWin) {
+                        throw new Error('Main window not available for flashFrame spy');
+                    }
+                    const originalFlashFrame = mainWin.flashFrame.bind(mainWin);
+                    mainWin.flashFrame = (flash: boolean) => {
+                        (global as any).__e2eFlashFrameCalls.push(flash);
+                        originalFlashFrame(flash);
+                    };
+                    (mainWin as any).__e2eOriginalFlashFrame = originalFlashFrame;
+                });
+
+                try {
+                    await triggerNotificationEffects(electronApp, true);
+                    const calls = await electronApp.evaluate(() => (global as any).__e2eFlashFrameCalls ?? []);
+                    expect(calls.filter((value: boolean) => value === true)).toHaveLength(0);
+                } finally {
+                    await electronApp.evaluate(() => {
+                        const refs = (global as any).__e2eTestRefs;
+                        const mainWin = refs?.MainWindow?.get?.();
+                        if (mainWin && (mainWin as any).__e2eOriginalFlashFrame) {
+                            mainWin.flashFrame = (mainWin as any).__e2eOriginalFlashFrame;
+                        }
+                        delete (global as any).__e2eFlashFrameCalls;
+                    });
+                }
+            } finally {
+                await releaseLock();
+            }
+        },
+    );
 });

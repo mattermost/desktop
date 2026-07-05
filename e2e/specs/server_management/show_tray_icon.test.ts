@@ -1,0 +1,34 @@
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+import * as fs from 'fs';
+import * as path from 'path';
+
+import {test, expect} from '../../fixtures/index';
+import {demoConfig} from '../../helpers/config';
+
+const trayIconConfig = {
+    ...demoConfig,
+    showTrayIcon: true,
+};
+
+test.describe('server_management/show_tray_icon', () => {
+    test.use({appConfig: trayIconConfig});
+
+    test(
+        'MM-T1298 Show Mattermost icon in the menu bar (macOS and Linux)',
+        {tag: ['@P2', '@darwin', '@linux']},
+        async ({electronApp}, testInfo) => {
+            const configPath = path.join(testInfo.outputDir, 'userdata', 'config.json');
+            const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+            expect(config.showTrayIcon).toBe(true);
+
+            const trayExists = await electronApp.evaluate(() => {
+                const refs = (global as any).__e2eTestRefs;
+                const tray = refs?.TrayIcon?.tray;
+                return Boolean(tray && !tray.isDestroyed?.());
+            });
+            expect(trayExists).toBe(true);
+        },
+    );
+});

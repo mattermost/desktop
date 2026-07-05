@@ -15,7 +15,7 @@ test.describe('startup/window_reposition', () => {
     test.setTimeout(120_000);
 
     // ── MM-T2636: Reposition Desktop app ───────────────────────────────
-    test('MM-T2636 Reposition Desktop app',
+    test('MM-T2636 MM-T1428 MM-T1660 Reposition Desktop app',
         {tag: ['@P2', '@all']},
         async ({}, testInfo) => {
             const {mkdirSync} = await import('fs');

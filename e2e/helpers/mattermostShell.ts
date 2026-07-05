@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {expect} from '@playwright/test';
+import type {ElectronApplication} from 'playwright';
 
 import type {ServerView} from './serverView';
 
@@ -141,7 +142,7 @@ export async function getPostTextboxValue(win: ServerView): Promise<string> {
         return root.innerText || root.textContent || '';
     `, true);
 
-    return value ?? '';
+    return (value as string | undefined) ?? '';
 }
 
 /** Press a keyboard shortcut on the post textbox. */
@@ -334,4 +335,67 @@ export async function getPostTextboxWordPoint(
             y: Math.round(match.rect.top + (match.rect.height / 2)),
         };
     `, true);
+}
+
+export async function rightClickAtPoint(
+    app: ElectronApplication,
+    webContentsId: number,
+    point: {x: number; y: number},
+): Promise<void> {
+    await app.evaluate(({webContents}, payload) => {
+        const wc = webContents.fromId(payload.id);
+        if (!wc || wc.isDestroyed()) {
+            throw new Error(`webContents ${payload.id} is not available`);
+        }
+        wc.focus();
+        wc.sendInputEvent({type: 'mouseMove', x: payload.x, y: payload.y});
+        wc.sendInputEvent({type: 'mouseDown', x: payload.x, y: payload.y, button: 'right', clickCount: 1});
+        wc.sendInputEvent({type: 'mouseUp', x: payload.x, y: payload.y, button: 'right', clickCount: 1});
+    }, {id: webContentsId, ...point});
+}
+
+export async function listenForNativeContextMenu(app: ElectronApplication, webContentsId: number): Promise<void> {
+    await app.evaluate(({webContents}, id) => {
+        const wc = webContents.fromId(id);
+        if (!wc || wc.isDestroyed()) {
+            return;
+        }
+        delete (global as any).__e2eNativeContextMenu;
+
+        const previousListener = (global as any).__e2eNativeContextMenuListener as
+            | ((event: unknown, params: unknown) => void)
+            | undefined;
+        if (previousListener) {
+            wc.off('context-menu', previousListener);
+        }
+
+        const listener = (_event: unknown, params: unknown) => {
+            (global as any).__e2eNativeContextMenu = params;
+        };
+        (global as any).__e2eNativeContextMenuListener = listener;
+        wc.on('context-menu', listener);
+    }, webContentsId);
+}
+
+export async function waitForNativeContextMenu(app: ElectronApplication): Promise<Record<string, unknown>> {
+    await expect.poll(async () => app.evaluate(() => {
+        const params = (global as any).__e2eNativeContextMenu;
+        return Boolean(params);
+    }), {timeout: 10_000, message: 'Native context menu must open'}).toBe(true);
+
+    return app.evaluate(() => (global as any).__e2eNativeContextMenu as Record<string, unknown>);
+}
+
+export async function applySpellcheckSuggestion(
+    app: ElectronApplication,
+    webContentsId: number,
+    suggestion: string,
+): Promise<void> {
+    await app.evaluate(({webContents}, payload) => {
+        const wc = webContents.fromId(payload.id);
+        if (!wc || wc.isDestroyed()) {
+            throw new Error(`webContents ${payload.id} is not available`);
+        }
+        wc.replaceMisspelling(payload.suggestion);
+    }, {id: webContentsId, suggestion});
 }

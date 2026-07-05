@@ -45,7 +45,7 @@ test.describe('startup/welcome_screen_modal', () => {
     test.describe.configure({mode: 'serial'});
 
     test(
-        'MM-T4976 should show the slides in the expected order',
+        'MM-T4976 MM-T4980 should show the slides in the expected order',
         {tag: ['@P2', '@all']},
         async ({}, testInfo) => {
             const releaseLock = await acquireExclusiveLock('startup-empty-app');

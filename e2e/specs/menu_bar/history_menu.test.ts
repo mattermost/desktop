@@ -3,6 +3,7 @@
 
 import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
+import {clickHistoryMenuItem} from '../../helpers/historyMenu';
 import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 
@@ -90,6 +91,31 @@ test.describe('history_menu', () => {
                 async () => firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim()),
                 {timeout: 10_000, message: 'Should navigate back to Off-Topic after History → Back'},
             ).toBe(offTopicTitle);
+        },
+    );
+
+    test(
+        'MM-T823 History → Forward in the Menu Bar navigates to next page',
+        {tag: ['@P2', '@all']},
+        async ({electronApp}) => {
+            const serverMap = await buildServerMap(electronApp);
+            const firstServer = serverMap[demoMattermostConfig.servers[0].name][0].win;
+            await loginToMattermost(firstServer);
+            await firstServer.waitForSelector('#sidebarItem_off-topic');
+
+            await firstServer.click('#sidebarItem_off-topic');
+            await firstServer.click('#sidebarItem_town-square');
+            await clickHistoryMenuItem(electronApp, 'Back');
+            await expect.poll(
+                async () => firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim()),
+                {timeout: 10_000},
+            ).toBe('Off-Topic');
+
+            await clickHistoryMenuItem(electronApp, 'Forward');
+            await expect.poll(
+                async () => firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim()),
+                {timeout: 10_000},
+            ).toBe('Town Square');
         },
     );
 });

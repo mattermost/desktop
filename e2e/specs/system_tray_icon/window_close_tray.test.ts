@@ -13,7 +13,7 @@ const closeDialogConfig: AppConfig = {
     alwaysClose: false,
 };
 
-test.describe('system/window_close_tray', () => {
+test.describe('system_tray_icon/window_close_tray', () => {
     test.use({appConfig: closeDialogConfig});
 
     test(

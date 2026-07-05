@@ -5,6 +5,7 @@ import {test, expect} from '../../fixtures/index';
 import {demoConfig} from '../../helpers/config';
 import {buildServerMap} from '../../helpers/serverMap';
 import {clickTrayMenuItem, emitTrayIconClick, hideMainWindow, isMainWindowVisible} from '../../helpers/tray';
+import {openSettingsFromTray, clickTrayQuit} from '../../helpers/trayMenu';
 
 const trayConfig = {
     ...demoConfig,
@@ -12,7 +13,7 @@ const trayConfig = {
     minimizeToTray: true,
 };
 
-test.describe('system/tray_menu', () => {
+test.describe('system_tray_icon/tray_menu', () => {
     test.describe.configure({mode: 'serial'});
     test.use({appConfig: trayConfig});
 
@@ -75,6 +76,38 @@ test.describe('system/tray_menu', () => {
                 const view = serverMap[targetServer]?.[0]?.win;
                 return view?.url() ?? '';
             }, {timeout: 20_000}).toContain('github.com');
+        },
+    );
+
+    test(
+        'MM-T1300 System tray can open Settings page',
+        {tag: ['@P2', '@linux', '@win32', '@darwin']},
+        async ({electronApp}) => {
+            const settingsWindow = await openSettingsFromTray(electronApp);
+            await expect(settingsWindow.locator('.SettingsModal')).toBeVisible();
+        },
+    );
+
+    test(
+        'MM-T1301 System tray exit quits the app',
+        {tag: ['@P2', '@linux', '@win32', '@darwin']},
+        async ({electronApp}) => {
+            const closePromise = electronApp.waitForEvent('close', {timeout: 15_000});
+            await clickTrayQuit(electronApp);
+            await closePromise;
+        },
+    );
+
+    test(
+        'MM-T1302 System tray can choose a server',
+        {tag: ['@P2', '@linux', '@win32']},
+        async ({electronApp, mainWindow}) => {
+            const targetServer = demoConfig.servers[1].name;
+            await clickTrayMenuItem(electronApp, targetServer);
+            await expect.poll(
+                () => mainWindow.innerText('.ServerDropdownButton'),
+                {timeout: 15_000},
+            ).toBe(targetServer);
         },
     );
 });

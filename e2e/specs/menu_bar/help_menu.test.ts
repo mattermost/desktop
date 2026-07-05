@@ -116,4 +116,98 @@ test.describe('menu_bar/help_menu', () => {
             }
         },
     );
+
+    test(
+        'MM-T3360 Configure Help and Report a Problem links open in browser',
+        {tag: ['@P2', '@all']},
+        async ({electronApp}) => {
+            await electronApp.evaluate(({ipcMain}) => {
+                const refs = (global as any).__e2eTestRefs;
+                const serverId = refs.ServerManager.getCurrentServerId();
+                refs.ServerManager.updateRemoteInfo(serverId, {
+                    helpLink: 'https://github.com/mattermost',
+                    reportProblemLink: 'https://forum.mattermost.org',
+                });
+                ipcMain.emit('emit-configuration');
+            });
+
+            await electronApp.evaluate(({shell}) => {
+                (global as any).__e2eOpenExternalCalls = [] as string[];
+                (global as any).__e2eOriginalOpenExternal = shell.openExternal.bind(shell);
+                shell.openExternal = async (url: string) => {
+                    (global as any).__e2eOpenExternalCalls.push(url);
+                };
+            });
+
+            try {
+                await clickApplicationMenuItem(electronApp, 'help', {labelIncludes: 'User guide'});
+                await expect.poll(
+                    () => electronApp.evaluate(() => {
+                        const calls: string[] = (global as any).__e2eOpenExternalCalls ?? [];
+                        return calls.some((url) => url.includes('github.com/mattermost'));
+                    }),
+                    {timeout: 10_000},
+                ).toBe(true);
+
+                await electronApp.evaluate(() => {
+                    (global as any).__e2eOpenExternalCalls = [];
+                });
+
+                await clickApplicationMenuItem(electronApp, 'help', {labelIncludes: 'Report a problem'});
+                await expect.poll(
+                    () => electronApp.evaluate(() => {
+                        const calls: string[] = (global as any).__e2eOpenExternalCalls ?? [];
+                        return calls.some((url) => url.includes('forum.mattermost.org'));
+                    }),
+                    {timeout: 10_000},
+                ).toBe(true);
+            } finally {
+                await electronApp.evaluate(({shell}) => {
+                    const original = (global as any).__e2eOriginalOpenExternal;
+                    if (original) {
+                        shell.openExternal = original;
+                    }
+                });
+            }
+        },
+    );
+
+    test(
+        'MM-T4804 Copy version string into clipboard',
+        {tag: ['@P2', '@all']},
+        async ({electronApp}) => {
+            const expectedVersion = await electronApp.evaluate(({app}) => `Desktop App Version ${app.getVersion()}`);
+
+            await electronApp.evaluate(({clipboard}) => {
+                (global as any).__e2eClipboardWrites = [] as string[];
+                (global as any).__e2eOriginalWriteText = clipboard.writeText.bind(clipboard);
+                clipboard.writeText = (text: string) => {
+                    (global as any).__e2eClipboardWrites.push(text);
+                    return (global as any).__e2eOriginalWriteText(text);
+                };
+            });
+
+            try {
+                await clickApplicationMenuItem(electronApp, 'help', {labelIncludes: 'Desktop App Version'});
+
+                await expect.poll(async () => {
+                    return electronApp.evaluate(() => ((global as any).__e2eClipboardWrites as string[] | undefined)?.length ?? 0);
+                }, {timeout: 10_000}).toBeGreaterThan(0);
+
+                const copied = await electronApp.evaluate(() => {
+                    const writes = (global as any).__e2eClipboardWrites as string[];
+                    return writes[writes.length - 1] ?? '';
+                });
+                expect(copied).toContain('Desktop App Version');
+                expect(copied).toContain(expectedVersion.replace('Desktop App Version ', '').split(' ')[0]);
+            } finally {
+                await electronApp.evaluate(({clipboard}) => {
+                    const original = (global as any).__e2eOriginalWriteText;
+                    if (original) {
+                        clipboard.writeText = original;
+                    }
+                });
+            }
+        },
+    );
 });
