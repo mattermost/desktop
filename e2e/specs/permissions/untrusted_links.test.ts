@@ -4,7 +4,6 @@
 import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
-import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {
     pressPostTextboxKey,
     typeIntoPostTextbox,
@@ -12,6 +11,11 @@ import {
     waitForMattermostShellReady,
 } from '../../helpers/mattermostShell';
 import {getShellOpenExternalCalls, restoreShellOpenExternal, stubShellOpenExternal} from '../../helpers/shell';
+import {
+    activateServerEntry,
+    expectServerViewUrl,
+    getServerEntry,
+} from '../../helpers/serverContext';
 import type {ServerView} from '../../helpers/serverView';
 
 const UNTRUSTED_LINK_MARKDOWN = '[evil-link](hello,world:,/../../..//api/v4/image?url=https://google.com)';
@@ -65,9 +69,10 @@ test.describe('permissions/untrusted_links', () => {
         async ({electronApp, serverMap}) => {
             test.skip(!process.env.MM_TEST_SERVER_URL, 'MM_TEST_SERVER_URL required');
 
-            const serverEntry = serverMap[demoMattermostConfig.servers[0].name][0];
-            await prepareMattermostServerView(electronApp, serverEntry.webContentsId);
-            const serverWin = serverEntry.win;
+            const entry = getServerEntry(serverMap, demoMattermostConfig.servers[0].name);
+            await activateServerEntry(electronApp, entry);
+            await expectServerViewUrl(electronApp, entry.webContentsId, /mattermost|8065/i);
+            const serverWin = entry.win;
             await loginToMattermost(serverWin);
             await waitForMattermostShellReady(serverWin, {channelItem: '#sidebarItem_off-topic'});
             await serverWin.click('#sidebarItem_off-topic');

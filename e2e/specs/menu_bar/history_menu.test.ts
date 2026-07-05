@@ -5,7 +5,16 @@ import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
 import {clickHistoryMenuItem} from '../../helpers/historyMenu';
 import {loginToMattermost} from '../../helpers/login';
+import {activateServerEntry, getServerEntry} from '../../helpers/serverContext';
 import {buildServerMap} from '../../helpers/serverMap';
+import type {ServerView} from '../../helpers/serverView';
+
+async function expectChannelTitle(serverWin: ServerView, title: string): Promise<void> {
+    await expect.poll(
+        async () => serverWin.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim()),
+        {timeout: 10_000},
+    ).toBe(title);
+}
 
 test.describe('history_menu', () => {
     test.use({appConfig: demoMattermostConfig});
@@ -13,38 +22,28 @@ test.describe('history_menu', () => {
 
     test('Click back and forward from history', {tag: ['@P2', '@all']}, async ({electronApp}) => {
         const serverMap = await buildServerMap(electronApp);
-        const firstServer = serverMap[demoMattermostConfig.servers[0].name][0].win;
-        await loginToMattermost(firstServer);
-        await firstServer.waitForSelector('#sidebarItem_off-topic');
+        const entry = getServerEntry(serverMap, demoMattermostConfig.servers[0].name);
+        await activateServerEntry(electronApp, entry);
+        await loginToMattermost(entry.win);
+        await entry.win.waitForSelector('#sidebarItem_off-topic');
 
-        // Click on Off-Topic channel
-        await firstServer.click('#sidebarItem_off-topic');
-        await expect.poll(
-            async () => firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim()),
-            {timeout: 10_000},
-        ).toBe('Off-Topic');
+        await entry.win.click('#sidebarItem_off-topic');
+        await expectChannelTitle(entry.win, 'Off-Topic');
 
-        // Click on Town Square channel
-        await firstServer.click('#sidebarItem_town-square');
-        await expect.poll(
-            async () => firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim()),
-            {timeout: 10_000},
-        ).toBe('Town Square');
-        await firstServer.locator('[aria-label="Back"]').click();
+        await entry.win.click('#sidebarItem_town-square');
+        await expectChannelTitle(entry.win, 'Town Square');
+        await entry.win.locator('[aria-label="Back"]').click();
 
-        // Wait for navigation
-        await firstServer.waitForSelector('#channelHeaderTitle');
+        await entry.win.waitForSelector('#channelHeaderTitle');
 
-        // Get channel header text
-        let channelHeaderText = await firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim());
+        let channelHeaderText = await entry.win.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim());
         expect(channelHeaderText).toBe('Off-Topic');
 
-        await firstServer.locator('[aria-label="Forward"]').click();
+        await entry.win.locator('[aria-label="Forward"]').click();
 
-        // Wait for navigation
-        await firstServer.waitForSelector('#channelHeaderTitle');
+        await entry.win.waitForSelector('#channelHeaderTitle');
 
-        channelHeaderText = await firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim());
+        channelHeaderText = await entry.win.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim());
         expect(channelHeaderText).toBe('Town Square');
     });
 
@@ -53,28 +52,22 @@ test.describe('history_menu', () => {
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
             const serverMap = await buildServerMap(electronApp);
-            const firstServer = serverMap[demoMattermostConfig.servers[0].name][0].win;
-            await loginToMattermost(firstServer);
-            await firstServer.waitForSelector('#sidebarItem_off-topic');
+            const entry = getServerEntry(serverMap, demoMattermostConfig.servers[0].name);
+            await activateServerEntry(electronApp, entry);
+            await loginToMattermost(entry.win);
+            await entry.win.waitForSelector('#sidebarItem_off-topic');
 
-            await firstServer.click('#sidebarItem_off-topic');
-            await expect.poll(
-                async () => firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim()),
-                {timeout: 10_000},
-            ).toBe('Off-Topic');
-            const offTopicTitle = await firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim());
+            await entry.win.click('#sidebarItem_off-topic');
+            await expectChannelTitle(entry.win, 'Off-Topic');
+            const offTopicTitle = await entry.win.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim());
 
-            await firstServer.click('#sidebarItem_town-square');
-            await expect.poll(
-                async () => firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim()),
-                {timeout: 10_000},
-            ).toBe('Town Square');
+            await entry.win.click('#sidebarItem_town-square');
+            await expectChannelTitle(entry.win, 'Town Square');
 
-            const clicked = await clickHistoryMenuItem(electronApp, 'Back').then(() => true).catch(() => false);
-            expect(clicked, 'History → Back menu item must exist and be clickable').toBe(true);
+            await clickHistoryMenuItem(electronApp, 'Back', entry.webContentsId);
 
             await expect.poll(
-                async () => firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim()),
+                async () => entry.win.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim()),
                 {timeout: 10_000, message: 'Should navigate back to Off-Topic after History → Back'},
             ).toBe(offTopicTitle);
         },
@@ -85,31 +78,21 @@ test.describe('history_menu', () => {
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
             const serverMap = await buildServerMap(electronApp);
-            const firstServer = serverMap[demoMattermostConfig.servers[0].name][0].win;
-            await loginToMattermost(firstServer);
-            await firstServer.waitForSelector('#sidebarItem_off-topic');
+            const entry = getServerEntry(serverMap, demoMattermostConfig.servers[0].name);
+            await activateServerEntry(electronApp, entry);
+            await loginToMattermost(entry.win);
+            await entry.win.waitForSelector('#sidebarItem_off-topic');
 
-            await firstServer.click('#sidebarItem_off-topic');
-            await expect.poll(
-                async () => firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim()),
-                {timeout: 10_000},
-            ).toBe('Off-Topic');
-            await firstServer.click('#sidebarItem_town-square');
-            await expect.poll(
-                async () => firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim()),
-                {timeout: 10_000},
-            ).toBe('Town Square');
-            await clickHistoryMenuItem(electronApp, 'Back');
-            await expect.poll(
-                async () => firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim()),
-                {timeout: 10_000},
-            ).toBe('Off-Topic');
+            await entry.win.click('#sidebarItem_off-topic');
+            await expectChannelTitle(entry.win, 'Off-Topic');
+            await entry.win.click('#sidebarItem_town-square');
+            await expectChannelTitle(entry.win, 'Town Square');
 
-            await clickHistoryMenuItem(electronApp, 'Forward');
-            await expect.poll(
-                async () => firstServer.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim()),
-                {timeout: 10_000},
-            ).toBe('Town Square');
+            await clickHistoryMenuItem(electronApp, 'Back', entry.webContentsId);
+            await expectChannelTitle(entry.win, 'Off-Topic');
+
+            await clickHistoryMenuItem(electronApp, 'Forward', entry.webContentsId);
+            await expectChannelTitle(entry.win, 'Town Square');
         },
     );
 });

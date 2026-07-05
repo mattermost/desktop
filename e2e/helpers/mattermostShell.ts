@@ -144,8 +144,8 @@ export async function waitForChannelPostListLoaded(
             }
 
             return Boolean(
-                document.querySelector('#channelHeaderTitle, [data-testid="channelHeaderTitle"], .channel-header__title, [aria-label="channel header region"] strong')
-                && document.querySelector('[data-slate-editor="true"], #post_textbox, [data-testid="post_textbox"], [role="textbox"][contenteditable="true"]'),
+                document.querySelector('#channelHeaderTitle, [data-testid="channelHeaderTitle"], .channel-header__title, [aria-label="channel header region"] strong') &&
+                document.querySelector('[data-slate-editor="true"], #post_textbox, [data-testid="post_textbox"], [role="textbox"][contenteditable="true"]'),
             );
         }),
         {timeout, message: 'Channel post list must finish loading'},

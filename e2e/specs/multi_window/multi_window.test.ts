@@ -14,7 +14,7 @@ import {launchDirectTestApp} from '../../helpers/directLaunch';
 import {closeElectronAppFast, waitForWindow} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
 import {waitForMainWindowFocused} from '../../helpers/mainWindowFocus';
-import {POST_TEXTBOX_SELECTOR, waitForChannelPostListLoaded, waitForMattermostShell, waitForMattermostShellReady} from '../../helpers/mattermostShell';
+import {POST_TEXTBOX_SELECTOR, waitForChannelPostListLoaded, waitForMattermostShellReady} from '../../helpers/mattermostShell';
 import {
     closeAllPopouts,
     closePopoutWindow,
@@ -73,7 +73,7 @@ test.describe('multi_window/multi_window', () => {
     });
 
     test.beforeEach(async () => {
-        mainWindow = await resetTabsAndPopouts(electronApp, mainWindow);
+        mainWindow = await resetTabsAndPopouts(electronApp);
         await closeDownloadsDropdownIfOpen(electronApp);
         const mmServer = await getMattermostServer();
         await prepareMattermostServerView(electronApp, mmServer.webContentsId);
@@ -448,7 +448,7 @@ test.describe('multi_window/multi_window', () => {
         }, tabViewId!), {timeout: 15_000}).toBe(true);
 
         await closeAllPopouts(electronApp);
-        mainWindow = await resetTabsAndPopouts(electronApp, mainWindow);
+        mainWindow = await resetTabsAndPopouts(electronApp);
 
         await mainWindow.click('#newTabButton');
         await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 15_000});

@@ -6,11 +6,12 @@ import type {ElectronApplication} from 'playwright';
 import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
+import {waitForMattermostShellReady} from '../../helpers/mattermostShell';
 import {
-    waitForChannelPostListLoaded,
-    waitForMattermostShellReady,
-} from '../../helpers/mattermostShell';
-import {prepareMattermostServerView} from '../../helpers/prepareServerView';
+    activateServerEntry,
+    expectServerViewUrl,
+    getServerEntry,
+} from '../../helpers/serverContext';
 import {buildServerMap, type ServerEntry, type ServerMap} from '../../helpers/serverMap';
 import type {ServerView} from '../../helpers/serverView';
 import {
@@ -28,7 +29,6 @@ import {
     deleteCustomProfileAttributeField,
     dismissBlockingOverlays,
     editTextCustomAttribute,
-    getCustomAttributeInputValue,
     getCustomAttributeLabelsInSettings,
     getCustomProfileAttributeFields,
     isAppResponsive,
@@ -37,7 +37,6 @@ import {
     openProfileSettings,
     patchCustomProfileAttributeField,
     popoverContainsText,
-    navigateToTownSquare,
     popoverLinkHasHref,
     recoverFromProfileSettings,
     postChannelMessage,
@@ -62,13 +61,15 @@ async function prepareServer(
     serverMap?: ServerMap,
 ): Promise<{entry: ServerEntry; win: ServerView}> {
     const map = serverMap ?? await buildServerMap(electronApp);
-    const entry = map[demoMattermostConfig.servers[0].name]?.[0];
-    expect(entry, 'Mattermost server view should exist').toBeTruthy();
-    await prepareMattermostServerView(electronApp, entry!.webContentsId);
-    await loginToMattermost(entry!.win);
-    await waitForMattermostShellReady(entry!.win);
-    await dismissBlockingOverlays(entry!.win);
-    return {entry: entry!, win: entry!.win};
+    const entry = getServerEntry(map, demoMattermostConfig.servers[0].name);
+    await activateServerEntry(electronApp, entry);
+    await expectServerViewUrl(electronApp, entry.webContentsId, /mattermost|8065/i, {
+        message: 'Example server view must load the Mattermost URL',
+    });
+    await loginToMattermost(entry.win);
+    await waitForMattermostShellReady(entry.win);
+    await dismissBlockingOverlays(entry.win);
+    return {entry, win: entry.win};
 }
 
 test.describe('user_attributes/user_attributes', () => {

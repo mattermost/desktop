@@ -3,7 +3,15 @@
 
 import type {ElectronApplication} from 'playwright';
 
-export async function clickHistoryMenuItem(app: ElectronApplication, label: 'Back' | 'Forward'): Promise<void> {
+import {activateServerView} from './serverContext';
+
+export async function clickHistoryMenuItem(
+    app: ElectronApplication,
+    label: 'Back' | 'Forward',
+    webContentsId: number,
+): Promise<void> {
+    await activateServerView(app, webContentsId);
+
     const clicked = await app.evaluate(({Menu}, itemLabel) => {
         const root = Menu.getApplicationMenu();
         if (!root) {

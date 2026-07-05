@@ -9,6 +9,7 @@ import {
     waitForChannelPostListLoaded,
     waitForMattermostShellReady,
 } from './mattermostShell';
+import {activateServerView} from './serverContext';
 import {ApiRequestError, apiLogin, apiRequest} from './server_api/client';
 import {resolveChannelByName} from './server_api/channel';
 import {getTestServerCredentials} from './server_api/credentials';
@@ -349,6 +350,7 @@ const PROFILE_POPOVER_SELECTOR = [
 const POST_PROFILE_TRIGGER_SELECTORS = [
     '[data-testid="postHeaderProfile"]',
     '[data-testid="profilePicture"]',
+    '.post__header button.user-popover',
     '.user-popover',
     'a.user-popover',
     '.user-popover-profile-link',
@@ -357,14 +359,11 @@ const POST_PROFILE_TRIGGER_SELECTORS = [
     '.post__header .cursor--pointer',
     '.post__header a',
     '.profile-icon',
+    'button[aria-label*="profile" i]',
 ];
 
 export async function dismissBlockingOverlays(win: ServerView): Promise<void> {
-    await win.keyboard.press('Escape').catch(() => undefined);
-    await win.runInRenderer<void>(`
-        document.querySelector('.download-dropdown, .DownloadsDropdown, [data-testid="downloadDropdown"] button.close')
-            ?.dispatchEvent(new MouseEvent('click', {bubbles: true}));
-    `).catch(() => undefined);
+    await activateServerView(win.app, win.webContentsId);
 }
 
 export async function postChannelMessage(
@@ -412,34 +411,39 @@ export async function postChannelMessage(
     ).toBe(true);
 }
 
-export async function openProfilePopoverFromLastPost(win: ServerView, messageHint?: string): Promise<void> {
+export async function openProfilePopoverFromLastPost(
+    win: ServerView,
+    messageHint?: string,
+): Promise<void> {
+    await activateServerView(win.app, win.webContentsId);
+
     const clicked = await win.runInRenderer<boolean>(`
         const messageHint = ${JSON.stringify(messageHint ?? '')};
         const triggerSelectors = ${JSON.stringify(POST_PROFILE_TRIGGER_SELECTORS)};
         const posts = Array.from(document.querySelectorAll('.post-list .post, .post-list__dynamic .post, [id^="post_"]'));
-        let targetPosts = posts;
-        if (messageHint) {
-            const matching = posts.filter((post) => (post.textContent || '').includes(messageHint));
-            if (matching.length > 0) {
-                targetPosts = matching;
+        const resolveTrigger = (post) => {
+            for (const selector of triggerSelectors) {
+                const trigger = post.querySelector(selector);
+                if (trigger instanceof HTMLElement) {
+                    return trigger;
+                }
             }
-        }
-        const lastPost = targetPosts[targetPosts.length - 1];
-        if (!lastPost) {
-            return false;
-        }
-        for (const selector of triggerSelectors) {
-            const trigger = lastPost.querySelector(selector);
-            if (trigger instanceof HTMLElement) {
+            const header = post.querySelector('.post__header');
+            const fallback = header?.querySelector('button, a, [role="button"]');
+            return fallback instanceof HTMLElement ? fallback : null;
+        };
+        const candidates = messageHint
+            ? posts.filter((post) => (post.textContent || '').includes(messageHint))
+            : posts;
+        const searchPosts = candidates.length > 0 ? candidates : posts;
+
+        for (let index = searchPosts.length - 1; index >= 0; index--) {
+            const trigger = resolveTrigger(searchPosts[index]);
+            if (trigger) {
+                trigger.scrollIntoView({block: 'center'});
                 trigger.click();
                 return true;
             }
-        }
-        const header = lastPost.querySelector('.post__header');
-        const fallback = header?.querySelector('button, a, [role="button"]');
-        if (fallback instanceof HTMLElement) {
-            fallback.click();
-            return true;
         }
         return false;
     `);

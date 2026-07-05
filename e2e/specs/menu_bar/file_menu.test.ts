@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../../fixtures/index';
-import {clickApplicationMenuItem} from '../../helpers/menu';
+import {openSignInToAnotherServerModal} from '../../helpers/menu';
 
 async function openPreferencesFromAppMenu(electronApp: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>) {
     await electronApp.evaluate(async ({app}) => {
@@ -105,15 +105,7 @@ test.describe('file_menu/dropdown', () => {
         'MM-T1319 Sign in to Another Server — server name input should be focused',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
-            const menuId = process.platform === 'darwin' ? 'app' : 'file';
-            const newServerWindowPromise = electronApp.waitForEvent('window', {
-                predicate: (window) => window.url().includes('newServer'),
-                timeout: 15_000,
-            });
-
-            await clickApplicationMenuItem(electronApp, menuId, {labelIncludes: 'Sign in'});
-
-            const newServerWindow = await newServerWindowPromise;
+            const newServerWindow = await openSignInToAnotherServerModal(electronApp);
             await newServerWindow.waitForLoadState();
 
             await expect.poll(async () => {

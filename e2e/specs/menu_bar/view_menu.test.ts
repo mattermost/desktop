@@ -11,6 +11,7 @@ import {appDir, demoMattermostConfig, electronBinaryPath, writeConfigFile} from 
 import {waitForWindow, closeElectronApp} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
 import {clickApplicationMenuItem} from '../../helpers/menu';
+import {activateServerView} from '../../helpers/serverContext';
 import {buildServerMap} from '../../helpers/serverMap';
 
 type ElectronApplication = Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>;
@@ -52,25 +53,7 @@ async function clickViewMenuItemByAccelerator(
     );
 }
 
-/**
- * Focus the server WebContentsView so that Electron's built-in zoom roles
- * target it (on macOS, zoom roles use the focused webContents).
- */
-async function focusServerView(
-    electronApp: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>,
-    webContentsId: number,
-) {
-    await electronApp.evaluate(({webContents}, id) => {
-        const refs = (global as any).__e2eTestRefs;
-        const view = refs?.WebContentsManager?.getViewByWebContentsId?.(id);
-        const wc = webContents.fromId(id);
-        if (!view || !wc) {
-            return;
-        }
-        wc.focus();
-        refs.WebContentsManager.focusedWebContentsView = view.id;
-    }, webContentsId);
-}
+import {activateServerView} from '../../helpers/serverContext';
 
 async function waitForServerReload(
     electronApp: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>,
@@ -244,7 +227,7 @@ test.describe('menu/view', () => {
     test.describe('Reload', () => {
         test('MM-T814 should reload page when pressing Ctrl+R', {tag: ['@P2', '@all']}, async () => {
             const {firstServerId: webContentsId} = await getServerContext();
-            await focusServerView(electronApp, webContentsId);
+            await activateServerView(electronApp, webContentsId);
 
             const result = await waitForServerReload(electronApp, webContentsId, async () => {
                 await clickViewMenuItemByAccelerator(electronApp, webContentsId, 'CmdOrCtrl+R');
@@ -254,7 +237,7 @@ test.describe('menu/view', () => {
 
         test('MM-T815 should reload page when pressing Ctrl+Shift+R', {tag: ['@P2', '@all']}, async () => {
             const {firstServerId: webContentsId} = await getServerContext();
-            await focusServerView(electronApp, webContentsId);
+            await activateServerView(electronApp, webContentsId);
 
             const result = await waitForServerReload(electronApp, webContentsId, async () => {
                 await clickViewMenuItemByAccelerator(electronApp, webContentsId, 'Shift+CmdOrCtrl+R');

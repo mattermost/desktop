@@ -222,7 +222,7 @@ export async function openThreadPopoutViaDesktopApi(
     await windowPromise;
 }
 
-export async function resetTabsAndPopouts(app: ElectronApplication, mainWindow: Page): Promise<Page> {
+export async function resetTabsAndPopouts(app: ElectronApplication): Promise<Page> {
     await closeAllPopouts(app);
     await app.evaluate(() => {
         const refs = (global as any).__e2eTestRefs;
