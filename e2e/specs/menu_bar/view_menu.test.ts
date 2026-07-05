@@ -53,8 +53,6 @@ async function clickViewMenuItemByAccelerator(
     );
 }
 
-import {activateServerView} from '../../helpers/serverContext';
-
 async function waitForServerReload(
     electronApp: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>,
     webContentsId: number,
