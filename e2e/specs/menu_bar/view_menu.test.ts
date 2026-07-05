@@ -7,11 +7,18 @@ import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
+import {prepareInteractiveChannel} from '../../helpers/channelReadiness';
 import {appDir, demoMattermostConfig, electronBinaryPath, writeConfigFile} from '../../helpers/config';
 import {waitForWindow, closeElectronApp} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
+import {closeDownloadsDropdownIfOpen} from '../../helpers/downloadsDropdown';
 import {clickApplicationMenuItem} from '../../helpers/menu';
-import {activateServerView} from '../../helpers/serverContext';
+import {
+    activateServerView,
+    openServerSearch,
+    SEARCH_INPUT,
+    waitForSearchBarFocused,
+} from '../../helpers/serverContext';
 import {buildServerMap} from '../../helpers/serverMap';
 
 type ElectronApplication = Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>;
@@ -58,23 +65,69 @@ async function waitForServerReload(
     webContentsId: number,
     trigger: () => Promise<void>,
 ) {
+    await activateServerView(electronApp, webContentsId);
+    await closeDownloadsDropdownIfOpen(electronApp);
+
+    const serverMap = await buildServerMap(electronApp);
+    const serverWin = serverMap[demoMattermostConfig.servers[0].name][0].win;
+    await serverWin.runInRenderer('window.__mmE2eReloadMarker = Math.random(); return true;', true);
+    const reloadMarkerBefore = await serverWin.runInRenderer<number | undefined>(
+        'return window.__mmE2eReloadMarker;',
+    ).catch(() => undefined);
+
     const reloadPromise = electronApp.evaluate(({webContents}, id) => {
         return new Promise<boolean>((resolve) => {
             const wc = webContents.fromId(id);
-            if (!wc) {
+            if (!wc || wc.isDestroyed()) {
                 resolve(false);
                 return;
             }
-            const timeout = setTimeout(() => resolve(false), 30_000);
-            wc.once('did-finish-load', () => {
+            const timeout = setTimeout(() => {
+                wc.removeListener('did-start-loading', onStartLoading);
+                resolve(false);
+            }, 30_000);
+            const finish = () => {
                 clearTimeout(timeout);
+                wc.removeListener('did-start-loading', onStartLoading);
                 resolve(true);
-            });
+            };
+            const onStartLoading = () => {
+                wc.once('did-finish-load', finish);
+            };
+            wc.on('did-start-loading', onStartLoading);
+            if (wc.isLoading()) {
+                wc.once('did-finish-load', finish);
+            }
         });
     }, webContentsId);
 
     await trigger();
-    return reloadPromise;
+
+    const finishReload = async () => {
+        await activateServerView(electronApp, webContentsId);
+        await closeDownloadsDropdownIfOpen(electronApp);
+        await serverWin.keyboard.press('Escape').catch(() => {});
+    };
+
+    await activateServerView(electronApp, webContentsId);
+    await closeDownloadsDropdownIfOpen(electronApp);
+    await serverWin.keyboard.press('Escape').catch(() => {});
+
+    const sawReloadEvent = await reloadPromise;
+    if (sawReloadEvent) {
+        await finishReload();
+        return true;
+    }
+
+    await expect.poll(async () => {
+        const marker = await serverWin.runInRenderer<number | undefined>(
+            'return window.__mmE2eReloadMarker;',
+        ).catch(() => undefined);
+        return marker !== reloadMarkerBefore;
+    }, {timeout: 15_000, message: 'Server view reload marker must change after menu reload'}).toBe(true);
+
+    await finishReload();
+    return true;
 }
 
 async function getServerContext() {
@@ -85,9 +138,8 @@ async function getServerContext() {
     const firstServerId = serverEntry.webContentsId;
 
     await firstServer.waitForURL((url) => url.pathname.includes('/channels/'), {timeout: 30_000});
-    await firstServer.waitForSelector('#post_textbox', {timeout: 30_000});
     await mainWindow.bringToFront().catch(() => {});
-    await activateServerView(electronApp, firstServerId);
+    await prepareInteractiveChannel(electronApp, serverEntry, {channelName: 'town-square'});
 
     return {browserWindow, firstServer, firstServerId};
 }
@@ -139,8 +191,11 @@ test.describe('menu/view', () => {
     });
 
     test.beforeEach(async () => {
-        const {browserWindow, firstServerId} = await getServerContext();
+        const {browserWindow, firstServer, firstServerId} = await getServerContext();
         await setZoomFactorOfServer(browserWindow, firstServerId, 1);
+        const serverEntry = (await buildServerMap(electronApp))[demoMattermostConfig.servers[0].name][0];
+        await prepareInteractiveChannel(electronApp, serverEntry, {channelName: 'town-square'});
+        await firstServer.keyboard.press('Escape').catch(() => {});
     });
 
     test.afterAll(async () => {
@@ -150,22 +205,16 @@ test.describe('menu/view', () => {
     test('MM-T813 Control+F should focus the search bar in Mattermost', {tag: ['@P2', '@all']}, async () => {
         const {firstServer, firstServerId} = await getServerContext();
 
-        // On macOS, Cmd+F sent directly to the web content focuses the search bar.
-        // On other platforms, trigger via menu item which calls openFind() → Ctrl+Shift+F.
         if (process.platform === 'darwin') {
             await firstServer.keyboard.press('Meta+f');
         } else {
-            await clickApplicationMenuItem(electronApp, 'view', {accelerator: 'CmdOrCtrl+F'}, {webContentsId: firstServerId});
+            await openServerSearch(electronApp, firstServerId);
         }
 
-        // The search bar opens asynchronously — wait for it to become the active element.
-        await firstServer.waitForFunction(
-            () => document.querySelector('input.search-bar.form-control') === document.activeElement,
-            {timeout: 15_000},
-        );
-        const isFocused = await firstServer.$eval('input.search-bar.form-control', (el) => el === document.activeElement);
+        await waitForSearchBarFocused(firstServer);
+        const isFocused = await firstServer.$eval(SEARCH_INPUT, (el) => el === document.activeElement);
         expect(isFocused).toBe(true);
-        const text = await firstServer.inputValue('input.search-bar.form-control');
+        const text = await firstServer.inputValue(SEARCH_INPUT);
         expect(text).toContain('in:');
     });
 

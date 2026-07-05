@@ -108,3 +108,83 @@ export async function expectServerViewUrl(
         },
     ).toMatch(pattern);
 }
+
+const SEARCH_INPUT = 'input.search-bar.form-control';
+
+/** Reload the server view through MattermostWebContentsView.reload(), bypassing menu focus routing. */
+export async function reloadServerView(app: ElectronApplication, webContentsId: number): Promise<void> {
+    await activateServerView(app, webContentsId);
+    await evaluateInMainProcessWithArg(app, (_electron, id) => {
+        const refs = (global as any).__e2eTestRefs;
+        const mmView = refs?.WebContentsManager.getViewByWebContentsId(id);
+        if (!mmView) {
+            throw new Error(`No server view registered for webContentsId ${id}`);
+        }
+        mmView.reload(mmView.currentURL);
+    }, webContentsId);
+}
+
+/** Navigate the server view to an absolute URL and wait for the load to finish. */
+export async function loadServerViewUrl(
+    app: ElectronApplication,
+    webContentsId: number,
+    url: string,
+): Promise<void> {
+    await activateServerView(app, webContentsId);
+    await evaluateInMainProcessWithArg(app, ({webContents}, payload) => {
+        return new Promise<void>((resolve, reject) => {
+            const refs = (global as any).__e2eTestRefs;
+            const mmView = refs?.WebContentsManager.getViewByWebContentsId(payload.id);
+            const wc = webContents.fromId(payload.id);
+            if (!mmView || !wc || wc.isDestroyed()) {
+                reject(new Error(`No server view registered for webContentsId ${payload.id}`));
+                return;
+            }
+
+            const timeout = setTimeout(() => {
+                reject(new Error(`Timed out loading server view URL ${payload.url}`));
+            }, 45_000);
+            const finish = () => {
+                clearTimeout(timeout);
+                resolve();
+            };
+
+            wc.once('did-finish-load', finish);
+            mmView.load(payload.url);
+        });
+    }, {id: webContentsId, url});
+}
+
+/** Open the Mattermost search bar via the server view (Ctrl+Shift+F), bypassing menu focus routing. */
+export async function openServerSearch(app: ElectronApplication, webContentsId: number): Promise<void> {
+    await activateServerView(app, webContentsId);
+    await evaluateInMainProcessWithArg(app, (_electron, id) => {
+        const refs = (global as any).__e2eTestRefs;
+        const mmView = refs?.WebContentsManager.getViewByWebContentsId(id);
+        if (!mmView) {
+            throw new Error(`No server view registered for webContentsId ${id}`);
+        }
+        mmView.openFind();
+    }, webContentsId);
+}
+
+/** Poll until the search input exists, is visible, and has keyboard focus. */
+export async function waitForSearchBarFocused(
+    win: import('./serverView').ServerView,
+    options?: {timeout?: number},
+): Promise<void> {
+    const timeout = options?.timeout ?? 15_000;
+    await expect.poll(async () => win.runInRenderer(`
+        const input = document.querySelector(${JSON.stringify(SEARCH_INPUT)});
+        if (!input) {
+            return false;
+        }
+        const rect = input.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) {
+            return false;
+        }
+        return input === document.activeElement;
+    `), {timeout, message: 'Search bar must be visible and focused'}).toBe(true);
+}
+
+export {SEARCH_INPUT};

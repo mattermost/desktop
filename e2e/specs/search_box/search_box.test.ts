@@ -2,18 +2,16 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../../fixtures/index';
+import {prepareInteractiveChannel} from '../../helpers/channelReadiness';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
-import {clickApplicationMenuItem} from '../../helpers/menu';
-import {waitForMattermostShell} from '../../helpers/mattermostShell';
-import {closeDownloadsDropdownIfOpen} from '../../helpers/downloadsDropdown';
 import {
-    activateServerEntry,
     expectServerViewUrl,
     getServerEntry,
+    openServerSearch,
+    SEARCH_INPUT,
+    waitForSearchBarFocused,
 } from '../../helpers/serverContext';
-
-const SEARCH_INPUT = 'input.search-bar.form-control';
 
 test.describe('search_box/search_box', () => {
     test.use({appConfig: demoMattermostConfig});
@@ -25,36 +23,24 @@ test.describe('search_box/search_box', () => {
             test.skip(!process.env.MM_TEST_SERVER_URL, 'MM_TEST_SERVER_URL required');
 
             const entry = getServerEntry(serverMap, demoMattermostConfig.servers[0].name);
-            await activateServerEntry(electronApp, entry);
             await expectServerViewUrl(electronApp, entry.webContentsId, /mattermost|8065/i);
-            const serverWin = entry.win;
-            await loginToMattermost(serverWin);
-            await waitForMattermostShell(serverWin);
-            await closeDownloadsDropdownIfOpen(electronApp);
-            await activateServerEntry(electronApp, entry);
+            await loginToMattermost(entry.win);
+            await prepareInteractiveChannel(electronApp, entry, {channelName: 'town-square'});
 
             if (process.platform === 'darwin') {
-                await serverWin.keyboard.press('Meta+f');
+                await entry.win.keyboard.press('Meta+f');
             } else {
-                await clickApplicationMenuItem(
-                    electronApp,
-                    'view',
-                    {accelerator: 'CmdOrCtrl+F'},
-                    {webContentsId: entry.webContentsId},
-                );
+                await openServerSearch(electronApp, entry.webContentsId);
             }
 
-            await serverWin.waitForFunction(
-                () => document.querySelector('input.search-bar.form-control') === document.activeElement,
-                {timeout: 15_000},
-            );
-            await serverWin.fill(SEARCH_INPUT, 'hello');
-            await serverWin.click(SEARCH_INPUT);
-            await serverWin.keyboard.press('ArrowLeft');
-            await serverWin.keyboard.press('ArrowLeft');
-            await serverWin.keyboard.press('Backspace');
+            await waitForSearchBarFocused(entry.win);
+            await entry.win.fill(SEARCH_INPUT, 'hello');
+            await entry.win.click(SEARCH_INPUT);
+            await entry.win.keyboard.press('ArrowLeft');
+            await entry.win.keyboard.press('ArrowLeft');
+            await entry.win.keyboard.press('Backspace');
 
-            expect(await serverWin.inputValue(SEARCH_INPUT)).toBe('helo');
+            expect(await entry.win.inputValue(SEARCH_INPUT)).toBe('helo');
         },
     );
 });

@@ -4,15 +4,21 @@
 import {expect} from '@playwright/test';
 import type {ElectronApplication} from 'playwright';
 
+import {dismissBlockingOverlays} from './blockingOverlays';
+import {
+    isChannelViewLoaded,
+    prepareInteractiveChannel,
+    recoverInteractiveChannel,
+    waitForInteractiveChannel,
+    waitForMattermostShellReady,
+} from './channelReadiness';
 import {
     pressPostTextboxKey,
     typeIntoPostTextbox,
-    waitForChannelPostListLoaded,
-    waitForMattermostShellReady,
 } from './mattermostShell';
-import {activateServerEntry, activateServerView} from './serverContext';
-import {closeDownloadsDropdownIfOpen} from './downloadsDropdown';
-import {closeOverlayWindowsIfOpen} from './overlayWindows';
+import {channelItemSelector} from './rendererUtils';
+import {loadServerViewUrl} from './serverContext';
+import {loginToMattermost} from './login';
 import type {ServerEntry} from './serverMap';
 import {ApiRequestError, apiLogin, apiRequest} from './server_api/client';
 import {resolveChannelByName} from './server_api/channel';
@@ -133,16 +139,11 @@ export async function updateCustomProfileAttributeValues(
     });
 }
 
+export {dismissBlockingOverlays} from './blockingOverlays';
+
 export async function navigateToTownSquare(win: ServerView): Promise<void> {
-    const onTownSquare = await win.runInRenderer<boolean>(`
-        const item = document.querySelector('#sidebarItem_town-square');
-        return Boolean(item?.classList.contains('active') || item?.classList.contains('active-link') || item?.getAttribute('aria-current') === 'page');
-    `);
-    if (!onTownSquare) {
-        await win.click('#sidebarItem_town-square');
-    }
-    await waitForMattermostShellReady(win, {channelItem: '#sidebarItem_town-square'});
-    await waitForChannelPostListLoaded(win);
+    await dismissBlockingOverlays(win);
+    await prepareInteractiveChannel(win.app, {win, webContentsId: win.webContentsId}, {channelName: 'town-square'});
 }
 
 const PROFILE_SETTINGS_MODAL_SELECTOR = [
@@ -227,11 +228,8 @@ export async function recoverFromProfileSettings(win: ServerView): Promise<void>
     }
 
     const channel = await resolveChannelByName('town-square');
-    await win.runInRenderer<void>(`
-        window.location.assign(${JSON.stringify(channel.url)});
-    `);
-    await waitForMattermostShellReady(win, {channelItem: '#sidebarItem_town-square'});
-    await waitForChannelPostListLoaded(win);
+    await loadServerViewUrl(win.app, win.webContentsId, channel.url);
+    await prepareInteractiveChannel(win.app, {win, webContentsId: win.webContentsId}, {channelName: 'town-square'});
 }
 
 export async function getCustomAttributeLabelsInSettings(win: ServerView): Promise<string[]> {
@@ -363,13 +361,6 @@ const POST_PROFILE_TRIGGER_SELECTORS = [
     'button[aria-label*="profile" i]',
 ];
 
-export async function dismissBlockingOverlays(win: ServerView): Promise<void> {
-    await closeDownloadsDropdownIfOpen(win.app);
-    await closeOverlayWindowsIfOpen(win.app);
-    await activateServerView(win.app, win.webContentsId);
-    await win.keyboard.press('Escape').catch(() => undefined);
-}
-
 export async function postChannelMessage(
     win: ServerView,
     message: string,
@@ -415,13 +406,29 @@ export async function postChannelMessage(
     ).toBe(true);
 }
 
+async function waitForChannelMessage(win: ServerView, message: string, timeout = 60_000): Promise<void> {
+    await expect.poll(async () => win.runInRenderer<boolean>(`
+        const hint = ${JSON.stringify(message)};
+        return Array.from(document.querySelectorAll('.post-message__text, .post__body, .post, [data-testid="postText"]'))
+            .some((element) => (element.textContent || '').includes(hint));
+    `).catch(() => false), {timeout, message: `Message must appear in channel: ${message}`}).toBe(true);
+}
+
 export async function openProfilePopoverFromLastPost(
     win: ServerView,
     messageHint?: string,
 ): Promise<void> {
     const clickProfileTrigger = async (): Promise<boolean> => {
         await dismissBlockingOverlays(win);
-        await waitForChannelPostListLoaded(win);
+        if (messageHint) {
+            try {
+                await waitForChannelMessage(win, messageHint, 10_000);
+            } catch {
+                await recoverInteractiveChannel(win, {channelName: 'town-square'});
+            }
+        } else {
+            await waitForInteractiveChannel(win, {timeout: 10_000});
+        }
 
         return win.runInRenderer<boolean>(`
         const messageHint = ${JSON.stringify(messageHint ?? '')};
@@ -479,18 +486,26 @@ export async function postAndOpenProfilePopover(
     message: string,
     channelName = 'town-square',
 ): Promise<void> {
-    await activateServerEntry(electronApp, entry);
-    await dismissBlockingOverlays(entry.win);
+    const channel = await resolveChannelByName(channelName);
 
-    if (channelName === 'town-square') {
-        await navigateToTownSquare(entry.win);
+    // Profile attribute API calls mutate server state; reload so the webapp fetches fresh field definitions.
+    await loadServerViewUrl(electronApp, entry.webContentsId, channel.url);
+    await loginToMattermost(entry.win);
+    await prepareInteractiveChannel(electronApp, entry, {channelName});
+
+    if (await isChannelViewLoaded(entry.win)) {
+        if (channelName !== 'town-square') {
+            await entry.win.click(channelItemSelector(channelName)).catch(() => undefined);
+            await waitForMattermostShellReady(entry.win, {channelName});
+        }
+        await postChannelMessage(entry.win, message, channelName);
     } else {
-        await entry.win.click(`#sidebarItem_${channelName}`);
-        await waitForMattermostShellReady(entry.win, {channelItem: `#sidebarItem_${channelName}`});
-        await waitForChannelPostListLoaded(entry.win);
+        await apiCreatePost(channel.id, message);
+        await loadServerViewUrl(electronApp, entry.webContentsId, channel.url);
+        await prepareInteractiveChannel(electronApp, entry, {channelName});
+        await waitForChannelMessage(entry.win, message);
     }
 
-    await postChannelMessage(entry.win, message, channelName);
     await openProfilePopoverFromLastPost(entry.win, message);
 }
 
@@ -527,10 +542,5 @@ export async function popoverLinkHasHref(win: ServerView, text: string, hrefPatt
 }
 
 export async function isAppResponsive(win: ServerView): Promise<boolean> {
-    return win.runInRenderer<boolean>(`
-        return Boolean(
-            document.querySelector('#sidebarItem_town-square')
-            && document.querySelector('#channelHeaderTitle'),
-        );
-    `);
+    return isChannelViewLoaded(win);
 }

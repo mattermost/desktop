@@ -4,153 +4,43 @@
 import {expect} from '@playwright/test';
 import type {ElectronApplication} from 'playwright';
 
+import {
+    ensureChannelReady,
+    isChannelPostListLoaded,
+    isChannelViewLoaded,
+    isComposerInteractive,
+    prepareInteractiveChannel,
+    recoverChannelViewIfNeeded,
+    recoverInteractiveChannel,
+    recoverServerViewIfNeeded,
+    waitForChannelPostListLoaded,
+    waitForInteractiveChannel,
+    waitForMattermostShell,
+    waitForMattermostShellReady,
+} from './channelReadiness';
+import {
+    POST_TEXTBOX_CANDIDATES,
+    POST_TEXTBOX_RESOLVER_JS,
+    POST_TEXTBOX_SELECTOR,
+} from './rendererUtils';
 import type {ServerView} from './serverView';
 
-export const POST_TEXTBOX_CANDIDATES = [
-    '[data-slate-editor="true"]',
-    '#post_textbox[contenteditable="true"]',
-    '[data-testid="post_textbox"][contenteditable="true"]',
-    '#post_textbox',
-    '[data-testid="post_textbox"]',
-    '.post-create__input [contenteditable="true"]',
-    '.post-create__input [role="textbox"]',
-    '.AdvancedTextEditor [contenteditable="true"]',
-    '[role="textbox"][contenteditable="true"]',
-    'textarea#post_textbox',
-] as const;
+export {
+    ensureChannelReady,
+    isChannelPostListLoaded,
+    isChannelViewLoaded,
+    isComposerInteractive,
+    prepareInteractiveChannel,
+    recoverChannelViewIfNeeded,
+    recoverInteractiveChannel,
+    recoverServerViewIfNeeded,
+    waitForChannelPostListLoaded,
+    waitForInteractiveChannel,
+    waitForMattermostShell,
+    waitForMattermostShellReady,
+};
 
-export const POST_TEXTBOX_SELECTOR = POST_TEXTBOX_CANDIDATES.join(', ');
-
-const POST_TEXTBOX_CANDIDATES_JSON = JSON.stringify(POST_TEXTBOX_CANDIDATES);
-
-/**
- * Shared renderer-side JS, inlined into each `runInRenderer` string below.
- * Defines `__mmIsVisible` and `__mmResolvePostTextboxRoot` once so the four
- * functions in this file don't each carry their own copy of the candidate
- * resolution logic — `runInRenderer` evaluates a raw string in the renderer
- * process, so this has to be textually interpolated rather than imported.
- */
-const POST_TEXTBOX_RESOLVER_JS = `
-    const __mmIsVisible = (element) => {
-        if (!element || !element.isConnected) {
-            return false;
-        }
-        const style = window.getComputedStyle(element);
-        if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
-            return false;
-        }
-        const rect = element.getBoundingClientRect();
-        return rect.width > 0 && rect.height > 0;
-    };
-
-    const __mmResolvePostTextboxRoot = () => {
-        const candidates = ${POST_TEXTBOX_CANDIDATES_JSON}.map((selector) => document.querySelector(selector)).filter(Boolean);
-        for (const candidate of candidates) {
-            if (!__mmIsVisible(candidate)) {
-                continue;
-            }
-            if (candidate.matches('[contenteditable="true"], textarea, input')) {
-                return candidate;
-            }
-            const nested = candidate.querySelector('[contenteditable="true"], textarea, input');
-            if (nested && __mmIsVisible(nested)) {
-                return nested;
-            }
-        }
-        return null;
-    };
-`;
-
-/**
- * Wait until the Mattermost webapp shell is interactive in a server view.
- */
-export async function waitForMattermostShell(
-    win: ServerView,
-    options?: {channelItem?: string; timeout?: number},
-) {
-    const channelItem = options?.channelItem ?? '#sidebarItem_town-square';
-    const timeout = options?.timeout ?? 60_000;
-
-    await expect.poll(async () => {
-        try {
-            await win.waitForSelector(channelItem, {timeout: 2_000});
-            return true;
-        } catch {
-            return false;
-        }
-    }, {timeout, message: `Mattermost shell must expose ${channelItem}`}).toBe(true);
-}
-
-/**
- * Reload the server view when the channel shell failed to mount (blank hex background).
- */
-export async function recoverServerViewIfNeeded(
-    win: ServerView,
-    options?: {channelItem?: string},
-) {
-    const channelItem = options?.channelItem ?? '#sidebarItem_town-square';
-    const healthy = await win.runInRenderer(`
-        return Boolean(
-            document.querySelector('#channelHeaderTitle')
-            && document.querySelector(${JSON.stringify(channelItem)}),
-        );
-    `).catch(() => false);
-
-    if (healthy) {
-        return;
-    }
-
-    await win.runInRenderer('window.location.reload(); return true;', true);
-    await waitForMattermostShell(win, {channelItem});
-}
-
-/** Wait for the shell to mount, then recover it if the channel content failed to render. */
-export async function waitForMattermostShellReady(
-    win: ServerView,
-    options?: {channelItem?: string; timeout?: number},
-): Promise<void> {
-    await waitForMattermostShell(win, options);
-    await recoverServerViewIfNeeded(win, options);
-}
-
-/** Wait until the channel post list finishes its initial load. */
-export async function waitForChannelPostListLoaded(
-    win: ServerView,
-    options?: {timeout?: number},
-): Promise<void> {
-    const timeout = options?.timeout ?? 15_000;
-    await expect.poll(
-        async () => win.evaluate(() => {
-            const isVisible = (element: Element | null | undefined) => {
-                if (!(element instanceof HTMLElement)) {
-                    return false;
-                }
-                const style = window.getComputedStyle(element);
-                return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
-            };
-
-            const postList = document.querySelector(
-                '#post-list, .post-list, [data-testid="postList"], .post-list-holder',
-            );
-            if ([...(postList?.querySelectorAll('.post-list__loading, .post-list__dynamic-loading') ?? [])].some(isVisible)) {
-                return false;
-            }
-
-            const channelLoading = document.querySelector(
-                '#channelView .loading-screen, .channel-view .loading-screen, .ChannelLoader, .channel-loader',
-            );
-            if (isVisible(channelLoading)) {
-                return false;
-            }
-
-            return Boolean(
-                document.querySelector('#channelHeaderTitle, [data-testid="channelHeaderTitle"], .channel-header__title, [aria-label="channel header region"] strong') &&
-                document.querySelector('[data-slate-editor="true"], #post_textbox, [data-testid="post_textbox"], [role="textbox"][contenteditable="true"]'),
-            );
-        }),
-        {timeout, message: 'Channel post list must finish loading'},
-    ).toBe(true);
-}
+export {POST_TEXTBOX_CANDIDATES, POST_TEXTBOX_SELECTOR};
 
 /** Read the current post textbox contents (textarea value or contenteditable text). */
 export async function getPostTextboxValue(win: ServerView): Promise<string> {
@@ -289,9 +179,6 @@ export async function getPostTextboxWordPoint(
             const textareaRect = textarea.getBoundingClientRect();
             document.body.removeChild(mirror);
 
-            // markerRect is relative to the mirror (anchored at 0,0 in body coords),
-            // so (markerRect - mirrorRect) gives the offset inside the mirror. Add that
-            // to the textarea's viewport position and subtract scroll for the final point.
             return {
                 x: Math.round(
                     textareaRect.left + (markerRect.left - mirrorRect.left) - textarea.scrollLeft + (markerRect.width / 2),

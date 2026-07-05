@@ -4,9 +4,10 @@
 import {triggerTestNotification} from '../notification_trigger/helpers';
 
 import {test, expect} from '../../fixtures/index';
+import {prepareInteractiveChannel} from '../../helpers/channelReadiness';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
-import {prepareMattermostServerView} from '../../helpers/prepareServerView';
+import {getServerEntry} from '../../helpers/serverContext';
 import type {ServerView} from '../../helpers/serverView';
 
 async function stubNotificationDisplayMention(app: import('playwright').ElectronApplication): Promise<void> {
@@ -41,14 +42,13 @@ async function restoreNotificationDisplayMention(app: import('playwright').Elect
 }
 
 async function invokeDesktopNotifyMention(serverWin: ServerView): Promise<void> {
-    await serverWin.evaluate(async () => {
-        const api = (window as any).desktopAPI;
+    await serverWin.runInRenderer(`
+        const api = window.desktopAPI;
         if (!api?.notifyMention) {
             throw new Error('desktopAPI.notifyMention is unavailable in the server view');
         }
-
         const team = window.location.pathname.split('/').filter(Boolean)[0] ?? '';
-        await api.notifyMention(
+        return api.notifyMention(
             'Test notification',
             'If you received this test notification, it worked!',
             'town-square',
@@ -57,7 +57,7 @@ async function invokeDesktopNotifyMention(serverWin: ServerView): Promise<void> 
             false,
             'Bing',
         );
-    });
+    `, true);
 }
 
 async function triggerDesktopNotification(serverWin: ServerView): Promise<void> {
@@ -79,10 +79,10 @@ test.describe('permissions/desktop_notification', () => {
             await stubNotificationDisplayMention(electronApp);
 
             try {
-                const serverEntry = serverMap[demoMattermostConfig.servers[0].name][0];
-                await prepareMattermostServerView(electronApp, serverEntry.webContentsId);
-                const serverWin = serverEntry.win;
-                await loginToMattermost(serverWin);
+                const entry = getServerEntry(serverMap, demoMattermostConfig.servers[0].name);
+                await loginToMattermost(entry.win);
+                await prepareInteractiveChannel(electronApp, entry, {channelName: 'town-square'});
+                const serverWin = entry.win;
 
                 await triggerDesktopNotification(serverWin);
 

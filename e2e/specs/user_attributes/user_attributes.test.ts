@@ -4,11 +4,10 @@
 import type {ElectronApplication} from 'playwright';
 
 import {test, expect} from '../../fixtures/index';
+import {prepareInteractiveChannel} from '../../helpers/channelReadiness';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
-import {waitForMattermostShellReady} from '../../helpers/mattermostShell';
 import {
-    activateServerEntry,
     expectServerViewUrl,
     getServerEntry,
 } from '../../helpers/serverContext';
@@ -61,12 +60,11 @@ async function prepareServer(
 ): Promise<{entry: ServerEntry; win: ServerView}> {
     const map = serverMap ?? await buildServerMap(electronApp);
     const entry = getServerEntry(map, demoMattermostConfig.servers[0].name);
-    await activateServerEntry(electronApp, entry);
     await expectServerViewUrl(electronApp, entry.webContentsId, /mattermost|8065/i, {
         message: 'Example server view must load the Mattermost URL',
     });
     await loginToMattermost(entry.win);
-    await waitForMattermostShellReady(entry.win);
+    await prepareInteractiveChannel(electronApp, entry, {channelName: 'town-square'});
     await dismissBlockingOverlays(entry.win);
     return {entry, win: entry.win};
 }
@@ -264,13 +262,24 @@ test.describe('user_attributes/user_attributes', () => {
 
             try {
                 for (let index = 0; index < names.length; index++) {
-                    const field = await createCustomProfileAttributeField({name: names[index]}, index);
+                    const field = await createCustomProfileAttributeField({
+                        name: names[index],
+                        attrs: {visibility: 'always'},
+                    }, index);
                     created.push(field);
                     await updateCustomProfileAttributeValues({[field.id]: `Value-${index + 1}`});
                 }
 
                 const message = 'User attributes popover order test';
                 await postAndOpenProfilePopover(electronApp, entry, message);
+
+                await expect.poll(async () => {
+                    const popoverText = await win.runInRenderer<string>(`
+                        const popover = document.querySelector('#user-profile-popover, .user-profile-popover, .profile-popover');
+                        return popover?.textContent || '';
+                    `);
+                    return names.every((name) => popoverText.includes(name));
+                }, {timeout: 30_000, message: 'Custom profile attribute names must appear in the popover'}).toBe(true);
 
                 const popoverText = await win.runInRenderer<string>(`
                     const popover = document.querySelector('#user-profile-popover, .user-profile-popover, .profile-popover');

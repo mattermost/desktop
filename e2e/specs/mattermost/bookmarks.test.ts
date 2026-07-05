@@ -5,9 +5,9 @@ import type {ElectronApplication} from 'playwright';
 
 import {test, expect, type ServerMap} from '../../fixtures/index';
 import {openChannelHeaderMenu, enableBookmarksBar, submitBookmarkModal, waitForBookmarkInBar, clickBookmarkInBar, deleteAllBookmarksInBar} from '../../helpers/channelMenu';
+import {prepareInteractiveChannel} from '../../helpers/channelReadiness';
 import {demoMattermostConfig, type AppConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
-import {waitForMattermostShell, recoverServerViewIfNeeded} from '../../helpers/mattermostShell';
 import {closeOverlayWindowsIfOpen} from '../../helpers/overlayWindows';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 
@@ -38,10 +38,7 @@ async function loginToOffTopicChannel(serverMap: ServerMap, electronApp: Electro
     expect(firstServer, 'Mattermost server view should exist').toBeTruthy();
     await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
     await loginToMattermost(firstServer!);
-    await waitForMattermostShell(firstServer!, {channelItem: '#sidebarItem_off-topic'});
-    await firstServer!.click('#sidebarItem_off-topic');
-    await firstServer!.waitForSelector('#channelHeaderTitle', {timeout: 15_000});
-    await recoverServerViewIfNeeded(firstServer!, {channelItem: '#sidebarItem_off-topic'});
+    await prepareInteractiveChannel(electronApp, serverEntry!, {channelName: 'off-topic'});
     return firstServer!;
 }
 

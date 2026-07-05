@@ -28,10 +28,12 @@ export const COPY_LINK_SELECTORS = [
  * The webapp migrated from #channelHeaderDropdownButton to Menu.Button
  * with an aria-label like "off-topic channel menu".
  */
-export async function openChannelHeaderMenu(win: ServerView): Promise<void> {
-    await win.waitForSelector(CHANNEL_HEADER_MENU_TRIGGER, {state: 'visible', timeout: 15_000});
+export async function openChannelHeaderMenu(win: ServerView, timeout = 20_000): Promise<void> {
+    const menuTimeout = Math.min(Math.max(Math.floor(timeout * 0.25), 500), 5_000);
+    const triggerTimeout = Math.max(timeout - menuTimeout, 500);
+    await win.waitForSelector(CHANNEL_HEADER_MENU_TRIGGER, {state: 'visible', timeout: triggerTimeout});
     await win.click(CHANNEL_HEADER_MENU_TRIGGER);
-    await win.waitForSelector('#channelHeaderDropdownMenu, .a11y__popup', {timeout: 5_000});
+    await win.waitForSelector('#channelHeaderDropdownMenu, .a11y__popup', {timeout: menuTimeout});
 }
 
 const SIDEBAR_CHANNEL_MENU_BUTTON = (channelItemSelector: string) => [
@@ -117,7 +119,7 @@ export async function clickCopyLinkInMenu(win: ServerView): Promise<void> {
  * helper only toggles the preference — callers wait for bookmark items later.
  */
 export async function enableBookmarksBar(win: ServerView): Promise<void> {
-    const alreadyVisible = await win.runInRenderer(`
+    const isBookmarksBarVisible = async (): Promise<boolean> => win.runInRenderer(`
         const container = document.querySelector('[data-testid="channel-bookmarks-container"]');
         if (!container) {
             return false;
@@ -125,34 +127,45 @@ export async function enableBookmarksBar(win: ServerView): Promise<void> {
         const rect = container.getBoundingClientRect();
         return rect.width > 0 && rect.height > 0;
     `);
-    if (alreadyVisible) {
+
+    if (await isBookmarksBarVisible()) {
         return;
     }
 
-    await openChannelHeaderMenu(win);
-    const toggled = await win.runInRenderer(`
-        const items = Array.from(document.querySelectorAll(
-            '[role="menuitem"], .MenuItem, [id^="channel-menu-"]',
-        ));
-        const barItem = items.find((item) => /bookmarks bar/i.test((item.textContent || '').trim()));
-        if (!barItem) {
-            return false;
+    const deadline = Date.now() + 15_000;
+    while (Date.now() < deadline) {
+        const remaining = Math.max(deadline - Date.now(), 1_000);
+        await openChannelHeaderMenu(win, remaining);
+        const toggleResult = await win.runInRenderer(`
+            const items = Array.from(document.querySelectorAll(
+                '[role="menuitem"], .MenuItem, [id^="channel-menu-"]',
+            ));
+            const barItem = items.find((item) => {
+                const text = (item.textContent || '').trim();
+                return /bookmarks bar/i.test(text) && !/add a link|add bookmark/i.test(text);
+            });
+            if (!barItem) {
+                return 'missing';
+            }
+            const label = (barItem.textContent || '').trim().toLowerCase();
+            const checked = barItem.getAttribute('aria-checked');
+            if (label.includes('hide') || checked === 'true') {
+                return 'enabled';
+            }
+            barItem.click();
+            return 'clicked';
+        `, true);
+        await win.keyboard.press('Escape').catch(() => undefined);
+        if (toggleResult === 'enabled') {
+            return;
         }
-        const label = (barItem.textContent || '').trim().toLowerCase();
-        const checked = barItem.getAttribute('aria-checked');
-        if (label.includes('hide') || checked === 'true') {
-            return true;
+        if (toggleResult === 'clicked' && await isBookmarksBarVisible()) {
+            return;
         }
-        if (!label.includes('show') && checked !== 'false') {
-            return false;
-        }
-        barItem.click();
-        return true;
-    `, true);
-    if (!toggled) {
-        throw new Error('Bookmarks Bar menu item not found in channel header menu');
+        await new Promise((resolve) => setTimeout(resolve, 300));
     }
-    await win.keyboard.press('Escape');
+
+    throw new Error('Bookmarks Bar menu item not found in channel header menu');
 }
 
 export const TEAM_SIDEBAR_BUTTON = [
