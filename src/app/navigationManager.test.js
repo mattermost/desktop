@@ -215,6 +215,21 @@ describe('app/navigationManager', () => {
             expect(handleWelcomeScreenModal).toHaveBeenCalledWith('server-2.com/deep/link?thing=yes');
         });
 
+        it('should not handle welcome screen modal when server management is disabled by policy', () => {
+            ModalManager.removeModal.mockClear();
+            handleWelcomeScreenModal.mockClear();
+            ServerManager.hasServers.mockReturnValue(false);
+            ServerManager.lookupServerByURL.mockReturnValue(null);
+            Config.enableServerManagement = false;
+
+            navigationManager.openLinkInPrimaryTab('mattermost://server-2.com/deep/link?thing=yes');
+
+            expect(ModalManager.removeModal).not.toHaveBeenCalled();
+            expect(handleWelcomeScreenModal).not.toHaveBeenCalled();
+
+            Config.enableServerManagement = true;
+        });
+
         it('should handle null URL gracefully', () => {
             navigationManager.openLinkInPrimaryTab(null);
 

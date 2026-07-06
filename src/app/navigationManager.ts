@@ -96,6 +96,10 @@ export class NavigationManager {
             }
             ServerHub.showNewServerModal(`${parsedURL.host}${parsedURL.pathname}${parsedURL.search}`);
         } else {
+            if (!Config.enableServerManagement) {
+                log.warn('Ignoring deep link to add a new server because server management is disabled by policy');
+                return;
+            }
             ModalManager.removeModal('welcomeScreen');
             const prefillURL = `${parsedURL.host}${parsedURL.pathname}${parsedURL.search}`;
             handleWelcomeScreenModal(prefillURL);
