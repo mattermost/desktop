@@ -115,9 +115,13 @@ export default defineConfig({
     reporter: reporters,
 
     use: {
-        trace: 'retain-on-failure',
+
+        // Video/trace land in test-results/ and bloat CI artifacts (Electron
+        // userdata + webm/zip per test). Failures are debugged via the merged
+        // HTML report on S3, which includes screenshots and traces from blob.
+        trace: process.env.CI ? 'on-first-retry' : 'retain-on-failure',
         screenshot: 'only-on-failure',
-        video: 'retain-on-failure',
+        video: process.env.CI ? 'off' : 'retain-on-failure',
     },
 
     projects: buildPlatformProjects(),

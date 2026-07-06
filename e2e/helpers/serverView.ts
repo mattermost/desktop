@@ -3,6 +3,8 @@
 
 import type {ElectronApplication} from 'playwright';
 
+import {isTransientEvaluateError} from './testRefs';
+
 type WaitForSelectorOptions = {
     timeout?: number;
     state?: 'attached' | 'detached' | 'visible' | 'hidden';
@@ -145,10 +147,12 @@ function keyCodeFor(key: string): string {
     return key;
 }
 
-function parseKeyPress(shortcut: string) {
+type KeyboardModifier = 'meta' | 'control' | 'alt' | 'shift';
+
+function parseKeyPress(shortcut: string): {key: string; keyCode: string; modifiers: KeyboardModifier[]} {
     const parts = shortcut.split('+');
     const key = parts.pop() ?? shortcut;
-    const modifiers = parts.map((part) => {
+    const modifiers = parts.map((part): KeyboardModifier => {
         if (part === 'Meta' || part === 'Command' || part === 'Cmd') {
             return 'meta';
         }
@@ -161,7 +165,7 @@ function parseKeyPress(shortcut: string) {
         if (part === 'Shift') {
             return 'shift';
         }
-        return part.toLowerCase();
+        throw new Error(`Unsupported keyboard modifier: ${part}`);
     });
 
     return {
@@ -249,8 +253,8 @@ export class ServerLocator {
         );
     }
 
-    async count() {
-        return this.view.runInRenderer(
+    async count(): Promise<number> {
+        return this.view.runInRenderer<number>(
             `
             ${DOM_UTILS}
             const descriptor = ${JSON.stringify(this.descriptor)};
@@ -502,35 +506,48 @@ export class ServerView {
         await this.keyboard.press(shortcut);
     }
 
-    runInRenderer<T>(body: string, userGesture = false) {
-        return this.app.evaluate(async ({webContents}, payload) => {
-            const wc = webContents.fromId(payload.id);
-            if (!wc || wc.isDestroyed()) {
-                throw new Error(`webContents ${payload.id} is not available`);
-            }
-            const result = await wc.executeJavaScript(`
-                (() => {
-                    try {
-                        return {__e2eResult: (() => {${payload.body}})()};
-                    } catch (error) {
-                        return {
-                            __e2eError: error instanceof Error ? error.message : String(error),
-                            __e2eStack: error instanceof Error ? error.stack : '',
-                        };
+    async runInRenderer<T>(body: string, userGesture = false): Promise<T> {
+        const maxAttempts = 15;
+
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            try {
+                return await this.app.evaluate(async ({webContents}, payload) => {
+                    const wc = webContents.fromId(payload.id);
+                    if (!wc || wc.isDestroyed()) {
+                        throw new Error(`webContents ${payload.id} is not available`);
                     }
-                })()
-            `, payload.userGesture);
+                    const result = await wc.executeJavaScript(`
+                        (() => {
+                            try {
+                                return {__e2eResult: (() => {${payload.body}})()};
+                            } catch (error) {
+                                return {
+                                    __e2eError: error instanceof Error ? error.message : String(error),
+                                    __e2eStack: error instanceof Error ? error.stack : '',
+                                };
+                            }
+                        })()
+                    `, payload.userGesture);
 
-            if (result && typeof result === 'object' && '__e2eError' in result) {
-                throw new Error(`${result.__e2eError}${result.__e2eStack ? `\n${result.__e2eStack}` : ''}`);
-            }
+                    if (result && typeof result === 'object' && '__e2eError' in result) {
+                        throw new Error(`${result.__e2eError}${result.__e2eStack ? `\n${result.__e2eStack}` : ''}`);
+                    }
 
-            let value = result?.__e2eResult;
-            if (value && typeof (value as Promise<unknown>).then === 'function') {
-                value = await value;
+                    let value = result?.__e2eResult;
+                    if (value && typeof (value as Promise<unknown>).then === 'function') {
+                        value = await value;
+                    }
+                    return value;
+                }, {id: this.webContentsId, body, userGesture}) as Promise<T>;
+            } catch (error) {
+                if (!isTransientEvaluateError(error) || attempt === maxAttempts - 1) {
+                    throw error;
+                }
+                await sleep(100);
             }
-            return value;
-        }, {id: this.webContentsId, body, userGesture}) as Promise<T>;
+        }
+
+        throw new Error('Timed out waiting for server renderer evaluate');
     }
 
     async type(selector: string, text: string) {

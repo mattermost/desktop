@@ -209,21 +209,60 @@ function getOutcomeCounts(report) {
     return {passed, failed, skipped, total: passed + failed + skipped};
 }
 
+function buildAnalysisResult({failureCount, passCount, skipCount, totalCount}) {
+    const collectedCount = passCount + failureCount + skipCount;
+
+    // Playwright can exit 0 when test collection finds nothing (e.g. a broken
+    // import aborts discovery). Treat that as an infrastructure failure so the
+    // PR status check does not go green with "No tests ran".
+    if (collectedCount === 0) {
+        return {
+            failureCount: 1,
+            passCount: 0,
+            skipCount,
+            totalCount,
+            newFailedTests: ['no-tests-collected'],
+            os: process.platform,
+            testStatus: 'failure',
+            collectionFailed: true,
+        };
+    }
+
+    return {
+        failureCount,
+        passCount,
+        skipCount,
+        totalCount,
+        newFailedTests: new Array(failureCount).fill('failed'),
+        os: process.platform,
+        testStatus: failureCount > 0 ? 'failure' : 'success',
+        collectionFailed: false,
+    };
+}
+
 function analyzeFlakyTests() {
-    const exitCode = toNumber(process.env.PLAYWRIGHT_EXIT_CODE || '0');
     const hasJunit = fs.existsSync(JUNIT_REPORT_PATH);
 
     if (!hasJunit) {
-        const failureCount = exitCode === 0 ? 0 : 1;
-        return {
-            failureCount,
+        if (process.env.JOB_STATUS === 'cancelled') {
+            return {
+                failureCount: 0,
+                passCount: 0,
+                skipCount: 0,
+                totalCount: 0,
+                newFailedTests: [],
+                os: process.platform,
+                testStatus: 'error',
+                collectionFailed: false,
+            };
+        }
+
+        return buildAnalysisResult({
+            failureCount: 0,
             passCount: 0,
             skipCount: 0,
-            totalCount: failureCount,
-            newFailedTests: new Array(failureCount).fill('unknown'),
-            os: process.platform,
-            testStatus: failureCount > 0 ? 'failure' : 'success',
-        };
+            totalCount: 0,
+        });
     }
 
     const XMLParser = getXMLParserClass();
@@ -242,19 +281,16 @@ function analyzeFlakyTests() {
     // `failureCount` and reconcile the rest.
     const reconciledFailed = failureCount;
     const reconciledPassed = Math.max(0, outcomes.total - reconciledFailed - outcomes.skipped);
-    const testStatus = reconciledFailed > 0 ? 'failure' : 'success';
 
-    return {
-        failureCount,
+    return buildAnalysisResult({
+        failureCount: reconciledFailed,
         passCount: reconciledPassed,
         skipCount: outcomes.skipped,
         totalCount: reconciledFailed + reconciledPassed + outcomes.skipped,
-        newFailedTests: new Array(failureCount).fill('failed'),
-        os: process.platform,
-        testStatus,
-    };
+    });
 }
 
 module.exports = {
     analyzeFlakyTests,
+    buildAnalysisResult,
 };
