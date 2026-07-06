@@ -6,6 +6,8 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
+import {ensureElectronBinary} from './helpers/config';
+
 const E2E_PROCESS_REGISTRY = path.join(os.tmpdir(), 'mattermost-desktop-e2e-main-pids.txt');
 
 /**
@@ -21,6 +23,8 @@ const E2E_PROCESS_REGISTRY = path.join(os.tmpdir(), 'mattermost-desktop-e2e-main
  * ApplePersistenceIgnoreState = YES — skip saved-state restoration on every launch
  */
 export default async function globalSetup() {
+    ensureElectronBinary();
+
     try {
         fs.rmSync(E2E_PROCESS_REGISTRY, {force: true});
     } catch {
