@@ -11,6 +11,7 @@ import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
 import PopoutManager from 'app/windows/popoutManager';
 import {BROWSER_HISTORY_PUSH} from 'common/communication';
+import Config from 'common/config';
 import ServerManager from 'common/servers/serverManager';
 import Utils from 'common/utils/util';
 import {ViewType} from 'common/views/MattermostView';
@@ -71,6 +72,10 @@ jest.mock('common/servers/serverManager', () => ({
     hasServers: jest.fn(),
     getRemoteInfo: jest.fn(),
     getServer: jest.fn(),
+}));
+
+jest.mock('common/config', () => ({
+    enableServerManagement: true,
 }));
 
 jest.mock('app/mainWindow/mainWindow', () => ({
@@ -187,6 +192,19 @@ describe('app/navigationManager', () => {
             expect(ServerHub.showNewServerModal).toHaveBeenCalledWith('server-2.com/deep/link?thing=yes');
         });
 
+        it('should not open new server modal when server management is disabled by policy', () => {
+            ServerHub.showNewServerModal.mockClear();
+            ServerManager.hasServers.mockReturnValue(true);
+            ServerManager.lookupServerByURL.mockReturnValue(null);
+            Config.enableServerManagement = false;
+
+            navigationManager.openLinkInPrimaryTab('mattermost://server-2.com/deep/link?thing=yes');
+
+            expect(ServerHub.showNewServerModal).not.toHaveBeenCalled();
+
+            Config.enableServerManagement = true;
+        });
+
         it('should handle welcome screen modal when no servers exist', () => {
             ServerManager.hasServers.mockReturnValue(false);
             ServerManager.lookupServerByURL.mockReturnValue(null);
@@ -271,6 +289,18 @@ describe('app/navigationManager', () => {
             navigationManager.openLinkInNewTab('mattermost://server-2.com/deep/link?thing=yes');
 
             expect(ServerHub.showNewServerModal).toHaveBeenCalledWith('server-2.com/deep/link?thing=yes');
+        });
+
+        it('should not open new server modal when server management is disabled by policy', () => {
+            ServerManager.hasServers.mockReturnValue(true);
+            ServerManager.lookupServerByURL.mockReturnValue(null);
+            Config.enableServerManagement = false;
+
+            navigationManager.openLinkInNewTab('mattermost://server-2.com/deep/link?thing=yes');
+
+            expect(ServerHub.showNewServerModal).not.toHaveBeenCalled();
+
+            Config.enableServerManagement = true;
         });
 
         it('should handle welcome screen modal when no servers exist', () => {

@@ -11,6 +11,7 @@ import ServerHub from 'app/serverHub';
 import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
 import {BROWSER_HISTORY_PUSH, HISTORY, LOAD_FAILED, LOAD_SUCCESS, REQUEST_BROWSER_HISTORY_STATUS} from 'common/communication';
+import Config from 'common/config';
 import {Logger} from 'common/log';
 import type {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
@@ -89,6 +90,10 @@ export class NavigationManager {
                 webContentsView.load(urlWithSchema);
             }
         } else if (ServerManager.hasServers()) {
+            if (!Config.enableServerManagement) {
+                log.warn('Ignoring deep link to add a new server because server management is disabled by policy');
+                return;
+            }
             ServerHub.showNewServerModal(`${parsedURL.host}${parsedURL.pathname}${parsedURL.search}`);
         } else {
             ModalManager.removeModal('welcomeScreen');
