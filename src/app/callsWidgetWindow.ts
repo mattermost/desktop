@@ -210,6 +210,8 @@ export class CallsWidgetWindow {
         // Calls widget window is not supposed to navigate anywhere else.
         this.win.webContents.on('will-navigate', this.onNavigate);
         this.win.webContents.on('did-start-navigation', this.onNavigate);
+        this.win.webContents.on('devtools-focused', () => ipcMain.emit(UPDATE_SHORTCUT_MENU));
+        this.win.webContents.on('devtools-closed', () => ipcMain.emit(UPDATE_SHORTCUT_MENU));
 
         const widgetURL = this.getWidgetURL();
         if (!widgetURL) {
@@ -372,6 +374,8 @@ export class CallsWidgetWindow {
 
         // Update menu to show the developer tools option for this window.
         ipcMain.emit(UPDATE_SHORTCUT_MENU);
+        this.popOut.webContents.on('devtools-focused', () => ipcMain.emit(UPDATE_SHORTCUT_MENU));
+        this.popOut.webContents.on('devtools-closed', () => ipcMain.emit(UPDATE_SHORTCUT_MENU));
 
         this.popOut.on('closed', () => {
             ipcMain.emit(UPDATE_SHORTCUT_MENU);

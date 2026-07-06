@@ -32,6 +32,7 @@ import {
     VIEW_LIMIT_UPDATED,
     GET_IS_VIEW_LIMIT_REACHED,
     TOGGLE_SECURE_INPUT,
+    UPDATE_SHORTCUT_MENU,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -111,6 +112,8 @@ export class MainWindow extends EventEmitter {
         this.win.browserWindow.on('blur', this.onBlur);
         this.win.browserWindow.contentView.on('bounds-changed', this.handleBoundsChanged);
         this.win.browserWindow.webContents.on('before-input-event', this.onBeforeInputEvent);
+        this.win.browserWindow.webContents.on('devtools-focused', () => ipcMain.emit(UPDATE_SHORTCUT_MENU));
+        this.win.browserWindow.webContents.on('devtools-closed', () => ipcMain.emit(UPDATE_SHORTCUT_MENU));
 
         const localURL = 'mattermost-desktop://renderer/index.html';
         performanceMonitor.registerView('MainWindow', this.win.browserWindow.webContents);

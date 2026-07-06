@@ -1,13 +1,12 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {type MenuItemConstructorOptions, ipcMain} from 'electron';
+import {type MenuItemConstructorOptions} from 'electron';
 
 import CallsWidgetWindow from 'app/callsWidgetWindow';
 import MainWindow from 'app/mainWindow/mainWindow';
 import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
-import {UPDATE_SHORTCUT_MENU} from 'common/communication';
 import Config from 'common/config';
 import ServerManager from 'common/servers/serverManager';
 import {clearAllData, clearDataForServer} from 'main/app/utils';
@@ -28,20 +27,7 @@ export default function createViewMenu() {
                 return 'Ctrl+Shift+I';
             })(),
             click() {
-                const wc = MainWindow.get()?.webContents;
-                if (!wc) {
-                    return;
-                }
-                if (!wc.isDevToolsOpened()) {
-                    const onDevToolsFocused = () => ipcMain.emit(UPDATE_SHORTCUT_MENU);
-                    const onDevToolsClosed = () => {
-                        wc.off('devtools-focused', onDevToolsFocused);
-                        ipcMain.emit(UPDATE_SHORTCUT_MENU);
-                    };
-                    wc.once('devtools-closed', onDevToolsClosed);
-                    wc.on('devtools-focused', onDevToolsFocused);
-                }
-                wc.openDevTools({mode: 'detach'});
+                MainWindow.get()?.webContents.openDevTools({mode: 'detach'});
             },
         },
         {

@@ -626,6 +626,44 @@ describe('main/views/MattermostWebContentsView', () => {
         });
     });
 
+    describe('constructor', () => {
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should register devtools-focused listener permanently', () => {
+            const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+            const mattermostView = new MattermostWebContentsView(view, {}, window);
+            const onCalls = mattermostView.webContentsView.webContents.on.mock.calls;
+            expect(onCalls.some(([e]) => e === 'devtools-focused')).toBe(true);
+        });
+
+        it('should register devtools-closed listener permanently', () => {
+            const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+            const mattermostView = new MattermostWebContentsView(view, {}, window);
+            const onCalls = mattermostView.webContentsView.webContents.on.mock.calls;
+            expect(onCalls.some(([e]) => e === 'devtools-closed')).toBe(true);
+        });
+
+        it('should emit UPDATE_SHORTCUT_MENU when devtools-focused fires', () => {
+            const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+            const mattermostView = new MattermostWebContentsView(view, {}, window);
+            const onCall = mattermostView.webContentsView.webContents.on.mock.calls.find(([e]) => e === 'devtools-focused');
+            expect(onCall).toBeDefined();
+            onCall[1]();
+            expect(ipcMain.emit).toHaveBeenCalledWith(UPDATE_SHORTCUT_MENU);
+        });
+
+        it('should emit UPDATE_SHORTCUT_MENU when devtools-closed fires', () => {
+            const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+            const mattermostView = new MattermostWebContentsView(view, {}, window);
+            const onCall = mattermostView.webContentsView.webContents.on.mock.calls.find(([e]) => e === 'devtools-closed');
+            expect(onCall).toBeDefined();
+            onCall[1]();
+            expect(ipcMain.emit).toHaveBeenCalledWith(UPDATE_SHORTCUT_MENU);
+        });
+    });
+
     describe('openDevTools', () => {
         const window = {on: jest.fn(), webContents: {send: jest.fn()}};
         let mattermostView;
@@ -639,57 +677,13 @@ describe('main/views/MattermostWebContentsView', () => {
             jest.useRealTimers();
         });
 
-        it('should register devtools-focused and devtools-closed listeners when DevTools is not open', () => {
-            mattermostView.openDevTools();
-
-            const onCalls = mattermostView.webContentsView.webContents.on.mock.calls;
-            expect(onCalls.some(([e]) => e === 'devtools-focused')).toBe(true);
-            const onceCalls = mattermostView.webContentsView.webContents.once.mock.calls;
-            expect(onceCalls.some(([e]) => e === 'devtools-closed')).toBe(true);
-        });
-
-        it('should not register devtools listeners when DevTools is already open', () => {
-            mattermostView.webContentsView.webContents.isDevToolsOpened.mockReturnValue(true);
-
-            mattermostView.openDevTools();
-
-            const onCalls = mattermostView.webContentsView.webContents.on.mock.calls;
-            expect(onCalls.some(([e]) => e === 'devtools-focused')).toBe(false);
-            const onceCalls = mattermostView.webContentsView.webContents.once.mock.calls;
-            expect(onceCalls.some(([e]) => e === 'devtools-closed')).toBe(false);
-            expect(mattermostView.webContentsView.webContents.openDevTools).toHaveBeenCalledWith({mode: 'detach'});
-        });
-
         it('should call openDevTools in detach mode', () => {
             mattermostView.openDevTools();
 
             expect(mattermostView.webContentsView.webContents.openDevTools).toHaveBeenCalledWith({mode: 'detach'});
         });
 
-        it('should emit UPDATE_SHORTCUT_MENU when devtools-focused fires', () => {
-            mattermostView.openDevTools();
-
-            const onCall = mattermostView.webContentsView.webContents.on.mock.calls.find(([e]) => e === 'devtools-focused');
-            expect(onCall).toBeDefined();
-            onCall[1]();
-
-            expect(ipcMain.emit).toHaveBeenCalledWith(UPDATE_SHORTCUT_MENU);
-        });
-
-        it('should remove devtools-focused listener and emit UPDATE_SHORTCUT_MENU when devtools-closed fires', () => {
-            mattermostView.openDevTools();
-
-            const onCall = mattermostView.webContentsView.webContents.on.mock.calls.find(([e]) => e === 'devtools-focused');
-            const onDevToolsFocused = onCall[1];
-            const onceCall = mattermostView.webContentsView.webContents.once.mock.calls.find(([e]) => e === 'devtools-closed');
-            expect(onceCall).toBeDefined();
-            onceCall[1]();
-
-            expect(mattermostView.webContentsView.webContents.off).toHaveBeenCalledWith('devtools-focused', onDevToolsFocused);
-            expect(ipcMain.emit).toHaveBeenCalledWith(UPDATE_SHORTCUT_MENU);
-        });
-
-        it('should reset DevTools and re-register listeners via mac workaround when DevTools does not open cleanly', () => {
+        it('should reset DevTools via mac workaround when DevTools does not open cleanly', () => {
             jest.useFakeTimers();
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {value: 'darwin', configurable: true});
@@ -704,10 +698,6 @@ describe('main/views/MattermostWebContentsView', () => {
 
                 expect(mattermostView.webContentsView.webContents.closeDevTools).toHaveBeenCalled();
                 expect(mattermostView.webContentsView.webContents.openDevTools).toHaveBeenCalledTimes(2);
-
-                // registerDevToolsMenuRefresh called in both normal path and mac workaround
-                const onceCalls = mattermostView.webContentsView.webContents.once.mock.calls.filter(([e]) => e === 'devtools-closed');
-                expect(onceCalls.length).toBe(2);
             } finally {
                 Object.defineProperty(process, 'platform', {value: originalPlatform, configurable: true});
             }

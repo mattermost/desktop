@@ -1,13 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {ipcMain} from 'electron';
-
 import CallsWidgetWindow from 'app/callsWidgetWindow';
 import MainWindow from 'app/mainWindow/mainWindow';
 import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
-import {UPDATE_SHORTCUT_MENU} from 'common/communication';
 import Config from 'common/config';
 import ServerManager from 'common/servers/serverManager';
 import {clearAllData, clearDataForServer} from 'main/app/utils';
@@ -16,12 +13,6 @@ import downloadsManager from 'main/downloadsManager';
 import {localizeMessage} from 'main/i18nManager';
 
 import createViewMenu from './view';
-
-jest.mock('electron', () => ({
-    ipcMain: {
-        emit: jest.fn(),
-    },
-}));
 
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
@@ -185,13 +176,7 @@ describe('app/menus/appMenu/view', () => {
         });
 
         it('should call MainWindow.get().webContents.openDevTools when main window dev tools is clicked', () => {
-            const mockWebContents = {
-                openDevTools: jest.fn(),
-                isDevToolsOpened: jest.fn().mockReturnValue(false),
-                on: jest.fn(),
-                once: jest.fn(),
-                off: jest.fn(),
-            };
+            const mockWebContents = {openDevTools: jest.fn()};
             MainWindow.get.mockReturnValue({webContents: mockWebContents});
 
             localizeMessage.mockImplementation((id) => {
@@ -222,94 +207,6 @@ describe('app/menus/appMenu/view', () => {
             const devToolsSubMenu = menu.submenu.find((item) => item.label === 'main.menus.app.view.devToolsSubMenu');
             const mainWindowDevTools = devToolsSubMenu.submenu.find((item) => item.label === 'Developer Tools for Main Window');
             expect(() => mainWindowDevTools.click()).not.toThrow();
-        });
-
-        it('should not register devtools listeners when DevTools is already open', () => {
-            const mockWebContents = {
-                openDevTools: jest.fn(),
-                isDevToolsOpened: jest.fn().mockReturnValue(true),
-                on: jest.fn(),
-                once: jest.fn(),
-                off: jest.fn(),
-            };
-            MainWindow.get.mockReturnValue({webContents: mockWebContents});
-
-            localizeMessage.mockImplementation((id) => {
-                if (id === 'main.menus.app.view.devToolsMainWindow') {
-                    return 'Developer Tools for Main Window';
-                }
-                return id;
-            });
-
-            const menu = createViewMenu();
-            const devToolsSubMenu = menu.submenu.find((item) => item.label === 'main.menus.app.view.devToolsSubMenu');
-            const mainWindowDevTools = devToolsSubMenu.submenu.find((item) => item.label === 'Developer Tools for Main Window');
-            mainWindowDevTools.click();
-            expect(mockWebContents.on).not.toHaveBeenCalled();
-            expect(mockWebContents.once).not.toHaveBeenCalled();
-            expect(mockWebContents.openDevTools).toHaveBeenCalledWith({mode: 'detach'});
-        });
-
-        it('should emit UPDATE_SHORTCUT_MENU when devtools-focused fires', () => {
-            const mockWebContents = {
-                openDevTools: jest.fn(),
-                isDevToolsOpened: jest.fn().mockReturnValue(false),
-                on: jest.fn(),
-                once: jest.fn(),
-                off: jest.fn(),
-            };
-            MainWindow.get.mockReturnValue({webContents: mockWebContents});
-
-            localizeMessage.mockImplementation((id) => {
-                if (id === 'main.menus.app.view.devToolsMainWindow') {
-                    return 'Developer Tools for Main Window';
-                }
-                return id;
-            });
-
-            const menu = createViewMenu();
-            const devToolsSubMenu = menu.submenu.find((item) => item.label === 'main.menus.app.view.devToolsSubMenu');
-            const mainWindowDevTools = devToolsSubMenu.submenu.find((item) => item.label === 'Developer Tools for Main Window');
-            mainWindowDevTools.click();
-
-            const onCall = mockWebContents.on.mock.calls.find(([event]) => event === 'devtools-focused');
-            expect(onCall).toBeDefined();
-            const onDevToolsFocused = onCall[1];
-            onDevToolsFocused();
-            expect(ipcMain.emit).toHaveBeenCalledWith(UPDATE_SHORTCUT_MENU);
-        });
-
-        it('should emit UPDATE_SHORTCUT_MENU and remove devtools-focused listener when devtools-closed fires', () => {
-            const mockWebContents = {
-                openDevTools: jest.fn(),
-                isDevToolsOpened: jest.fn().mockReturnValue(false),
-                on: jest.fn(),
-                once: jest.fn(),
-                off: jest.fn(),
-            };
-            MainWindow.get.mockReturnValue({webContents: mockWebContents});
-
-            localizeMessage.mockImplementation((id) => {
-                if (id === 'main.menus.app.view.devToolsMainWindow') {
-                    return 'Developer Tools for Main Window';
-                }
-                return id;
-            });
-
-            const menu = createViewMenu();
-            const devToolsSubMenu = menu.submenu.find((item) => item.label === 'main.menus.app.view.devToolsSubMenu');
-            const mainWindowDevTools = devToolsSubMenu.submenu.find((item) => item.label === 'Developer Tools for Main Window');
-            mainWindowDevTools.click();
-
-            const onCall = mockWebContents.on.mock.calls.find(([event]) => event === 'devtools-focused');
-            const onDevToolsFocused = onCall[1];
-            const onceCall = mockWebContents.once.mock.calls.find(([event]) => event === 'devtools-closed');
-            expect(onceCall).toBeDefined();
-            const onDevToolsClosed = onceCall[1];
-
-            onDevToolsClosed();
-            expect(mockWebContents.off).toHaveBeenCalledWith('devtools-focused', onDevToolsFocused);
-            expect(ipcMain.emit).toHaveBeenCalledWith(UPDATE_SHORTCUT_MENU);
         });
 
         it('should call TabManager.getCurrentActiveTabView().openDevTools when current tab dev tools is clicked', () => {
