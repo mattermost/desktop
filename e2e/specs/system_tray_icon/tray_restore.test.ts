@@ -11,7 +11,7 @@ import {electronBinaryPath, appDir, demoConfig, writeConfigFile} from '../../hel
 import {closeElectronAppFast} from '../../helpers/electronApp';
 
 test(
-    'main window can be hidden to tray and restored',
+    'MM-T6194 main window can be hidden to tray and restored',
     {tag: ['@P0', '@all']},
     async ({}, testInfo) => {
         const {mkdirSync} = await import('fs');

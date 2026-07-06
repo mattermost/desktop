@@ -17,7 +17,7 @@ test.describe('system_tray_icon/window_close_tray', () => {
     test.use({appConfig: closeDialogConfig});
 
     test(
-        'WIN-02 close button shows quit dialog and keeps app running when user chooses No',
+        'MM-T6195 close button shows quit dialog and keeps app running when user chooses No',
         {tag: ['@P1', '@win32', '@linux']},
         async ({electronApp}) => {
             await expect.poll(

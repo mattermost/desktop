@@ -6,7 +6,7 @@ import {clickApplicationMenuItem} from '../../helpers/menu';
 
 test.describe('menu_bar/help_menu', () => {
     test(
-        'HELP-01 Check for Updates menu item invokes the update manager',
+        'MM-T6150 Check for Updates menu item invokes the update manager',
         {tag: ['@P1', '@all']},
         async ({electronApp}) => {
             const canUpgrade = await electronApp.evaluate(() => {
@@ -54,7 +54,7 @@ test.describe('menu_bar/help_menu', () => {
     );
 
     test(
-        'HELP-02 Show logs menu item opens the log file location',
+        'MM-T6151 Show logs menu item opens the log file location',
         {tag: ['@P1', '@all']},
         async ({electronApp}) => {
             await electronApp.evaluate(({shell}) => {

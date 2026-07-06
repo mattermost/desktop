@@ -32,7 +32,7 @@ test.describe('notification_trigger/notification_badge', () => {
     // That keeps these tests exercising the real AppState -> showBadge() dispatch
     // on every run, with a real OS read only when a Unity session happens to exist.
 
-    test('MM-T_BADGE_LNX mention count via AppState',
+    test('MM-T6153 mention count via AppState',
         {tag: ['@P2', '@linux']},
         async ({electronApp}) => {
             const releaseLock = await acquireExclusiveLock('notification-badge-state');
@@ -50,7 +50,7 @@ test.describe('notification_trigger/notification_badge', () => {
         },
     );
 
-    test('MM-T_BADGE_LNX session expired via AppState',
+    test('MM-T6154 session expired via AppState',
         {tag: ['@P2', '@linux']},
         async ({electronApp}) => {
             const releaseLock = await acquireExclusiveLock('notification-badge-state');
@@ -68,7 +68,7 @@ test.describe('notification_trigger/notification_badge', () => {
         },
     );
 
-    test('MM-T_BADGE_LNX mentions beat session expired',
+    test('MM-T6155 mentions beat session expired',
         {tag: ['@P2', '@linux']},
         async ({electronApp}) => {
             const releaseLock = await acquireExclusiveLock('notification-badge-state');
@@ -91,7 +91,7 @@ test.describe('notification_trigger/notification_badge', () => {
         },
     );
 
-    test('MM-T_BADGE_OSX dock badge via AppState',
+    test('MM-T6156 dock badge via AppState',
         {tag: ['@P2', '@darwin']},
         async ({electronApp}) => {
             const releaseLock = await acquireExclusiveLock('notification-badge-state');
@@ -109,7 +109,7 @@ test.describe('notification_trigger/notification_badge', () => {
         },
     );
 
-    test('MM-T_BADGE_OSX unread dot via AppState',
+    test('MM-T6157 unread dot via AppState',
         {tag: ['@P2', '@darwin']},
         async ({electronApp}) => {
             const releaseLock = await acquireExclusiveLock('notification-badge-state');
@@ -128,7 +128,7 @@ test.describe('notification_trigger/notification_badge', () => {
         },
     );
 
-    test('MM-T_BADGE_OSX clear badge via AppState',
+    test('MM-T6158 clear badge via AppState',
         {tag: ['@P2', '@darwin']},
         async ({electronApp}) => {
             const releaseLock = await acquireExclusiveLock('notification-badge-state');
@@ -146,7 +146,7 @@ test.describe('notification_trigger/notification_badge', () => {
         },
     );
 
-    test('MM-T_BADGE_WIN overlay via AppState',
+    test('MM-T6159 overlay via AppState',
         {tag: ['@P2', '@win32']},
         async ({electronApp}) => {
             const releaseLock = await acquireExclusiveLock('notification-badge-state');
@@ -164,7 +164,7 @@ test.describe('notification_trigger/notification_badge', () => {
         },
     );
 
-    test('MM-T_BADGE_WIN unread overlay via AppState',
+    test('MM-T6160 unread overlay via AppState',
         {tag: ['@P2', '@win32']},
         async ({electronApp}) => {
             const releaseLock = await acquireExclusiveLock('notification-badge-state');
@@ -183,7 +183,7 @@ test.describe('notification_trigger/notification_badge', () => {
         },
     );
 
-    test('MM-T_BADGE_WIN clear overlay via AppState',
+    test('MM-T6161 clear overlay via AppState',
         {tag: ['@P2', '@win32']},
         async ({electronApp}) => {
             const releaseLock = await acquireExclusiveLock('notification-badge-state');
