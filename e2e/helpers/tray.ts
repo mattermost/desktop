@@ -53,3 +53,14 @@ export async function isMainWindowVisible(app: ElectronApplication): Promise<boo
         return Boolean(mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible());
     });
 }
+
+/** Restore visibility after a test hides the main window — safe to call even if it's already visible. */
+export async function showMainWindowIfHidden(app: ElectronApplication): Promise<void> {
+    await evaluateInMainProcess(app, () => {
+        const refs = (global as any).__e2eTestRefs;
+        const mainWindow = refs?.MainWindow?.get?.();
+        if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
+            refs?.MainWindow?.show?.();
+        }
+    }).catch(() => {});
+}

@@ -270,10 +270,3 @@ export class UpdateNotifier {
 
 const updateNotifier = new UpdateNotifier();
 export default updateNotifier;
-
-if (process.env.NODE_ENV === 'test') {
-    // Side-effect: augments __e2eTestRefs for Playwright E2E (see main/e2e/register.ts).
-    import('main/e2e/register').catch((err) => {
-        log.error('Failed to load extended e2e hooks', {err});
-    });
-}

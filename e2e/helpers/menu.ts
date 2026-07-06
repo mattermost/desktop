@@ -4,6 +4,7 @@
 import type {ElectronApplication} from 'playwright';
 
 import {waitForAppReady} from './appReadiness';
+import {isTransientEvaluateError} from './testRefs';
 
 type MenuItemMatcher = {
     id?: string;
@@ -122,8 +123,7 @@ export async function clickApplicationMenuItem(
             });
             return;
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            if (!message.includes('Execution context was destroyed')) {
+            if (!isTransientEvaluateError(error)) {
                 throw error;
             }
             await new Promise((resolve) => setTimeout(resolve, 100));

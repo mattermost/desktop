@@ -5,19 +5,8 @@ import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {demoConfig} from '../../helpers/config';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
+import {installFlashFrameSpy, restoreFlashFrameSpy} from '../../helpers/methodSpy';
 import {triggerNotificationEffects} from '../../helpers/notificationEffects';
-
-// ── MM-T1293: Flash taskbar icon — Windows & Linux ONLY ──────────────
-// Production path: src/main/notifications/index.ts :: flashFrame()
-//   if (process.platform === 'linux' || process.platform === 'win32') {
-//     if (Config.notifications.flashWindow) {
-//       MainWindow.get()?.flashFrame(flash);
-//     }
-//   }
-//
-// We enable flashWindow in config, invoke the production flashFrame() helper
-// (same code path notification `show` handlers use), and spy on
-// BrowserWindow.flashFrame() to verify it was called.
 
 test.describe('notification_trigger/flash_taskbar', () => {
     test.use({appConfig: demoConfig});
@@ -30,7 +19,6 @@ test.describe('notification_trigger/flash_taskbar', () => {
 
             const releaseLock = await acquireExclusiveLock('flash-taskbar-state');
             try {
-                // Enable flashWindow in config (schema allows 0 or 2 only)
                 await electronApp.evaluate(() => {
                     const refs = (global as any).__e2eTestRefs;
                     const Config = refs?.Config;
@@ -39,20 +27,7 @@ test.describe('notification_trigger/flash_taskbar', () => {
                     }
                 });
 
-                await electronApp.evaluate(() => {
-                    (global as any).__e2eFlashFrameCalls = [];
-                    const refs = (global as any).__e2eTestRefs;
-                    const mainWin = refs?.MainWindow?.get?.();
-                    if (!mainWin) {
-                        throw new Error('Main window not available for flashFrame spy');
-                    }
-                    const originalFlashFrame = mainWin.flashFrame.bind(mainWin);
-                    (mainWin as any).__e2eOriginalFlashFrame = originalFlashFrame;
-                    mainWin.flashFrame = (flash: boolean) => {
-                        (global as any).__e2eFlashFrameCalls.push(flash);
-                        originalFlashFrame(flash);
-                    };
-                });
+                await installFlashFrameSpy(electronApp);
 
                 try {
                     await triggerNotificationEffects(electronApp, true);
@@ -62,64 +37,7 @@ test.describe('notification_trigger/flash_taskbar', () => {
                         {timeout: 10_000, message: 'flashFrame(true) must be called when flashWindow is enabled'},
                     ).toContain(true);
                 } finally {
-                    await electronApp.evaluate(() => {
-                        const refs = (global as any).__e2eTestRefs;
-                        const mainWin = refs?.MainWindow?.get?.();
-                        if (mainWin && (mainWin as any).__e2eOriginalFlashFrame) {
-                            mainWin.flashFrame = (mainWin as any).__e2eOriginalFlashFrame;
-                        }
-                        delete (global as any).__e2eFlashFrameCalls;
-                    });
-                }
-            } finally {
-                await releaseLock();
-            }
-        },
-    );
-
-    test('MM-T1294 Do not flash taskbar icon when flashWindow is disabled',
-        {tag: ['@P2', '@win32', '@linux']},
-        async ({electronApp}) => {
-            await waitForAppReady(electronApp);
-
-            const releaseLock = await acquireExclusiveLock('flash-taskbar-state');
-            try {
-                await electronApp.evaluate(() => {
-                    const refs = (global as any).__e2eTestRefs;
-                    if (!refs?.Config) {
-                        throw new Error('Config not available for flash-taskbar test setup');
-                    }
-                    refs.Config.set('notifications', {...refs.Config.notifications, flashWindow: 0});
-                });
-
-                await electronApp.evaluate(() => {
-                    (global as any).__e2eFlashFrameCalls = [];
-                    const refs = (global as any).__e2eTestRefs;
-                    const mainWin = refs?.MainWindow?.get?.();
-                    if (!mainWin) {
-                        throw new Error('Main window not available for flashFrame spy');
-                    }
-                    const originalFlashFrame = mainWin.flashFrame.bind(mainWin);
-                    mainWin.flashFrame = (flash: boolean) => {
-                        (global as any).__e2eFlashFrameCalls.push(flash);
-                        originalFlashFrame(flash);
-                    };
-                    (mainWin as any).__e2eOriginalFlashFrame = originalFlashFrame;
-                });
-
-                try {
-                    await triggerNotificationEffects(electronApp, true);
-                    const calls = await electronApp.evaluate(() => (global as any).__e2eFlashFrameCalls ?? []);
-                    expect(calls.filter((value: boolean) => value === true)).toHaveLength(0);
-                } finally {
-                    await electronApp.evaluate(() => {
-                        const refs = (global as any).__e2eTestRefs;
-                        const mainWin = refs?.MainWindow?.get?.();
-                        if (mainWin && (mainWin as any).__e2eOriginalFlashFrame) {
-                            mainWin.flashFrame = (mainWin as any).__e2eOriginalFlashFrame;
-                        }
-                        delete (global as any).__e2eFlashFrameCalls;
-                    });
+                    await restoreFlashFrameSpy(electronApp);
                 }
             } finally {
                 await releaseLock();

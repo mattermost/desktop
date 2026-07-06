@@ -7,6 +7,7 @@ import type {ElectronApplication} from 'playwright';
 import {dismissBlockingOverlays} from './blockingOverlays';
 import {
     recoverInteractiveChannel,
+    waitForChannelPostListLoaded,
     waitForInteractiveChannel,
     waitForMattermostShellReady,
 } from './channelReadiness';

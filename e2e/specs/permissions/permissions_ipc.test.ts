@@ -2,8 +2,8 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../../fixtures/index';
+import {SHOW_SETTINGS_WINDOW} from '../../helpers/ipcChannels';
 
-const SHOW_SETTINGS_WINDOW = 'show-settings-window';
 type ElectronApplication = Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>;
 
 async function openSettingsWindow(electronApp: ElectronApplication) {

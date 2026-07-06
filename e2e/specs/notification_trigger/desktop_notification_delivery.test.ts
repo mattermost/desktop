@@ -1,31 +1,13 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {triggerTestNotification, verifyNotificationReceivedInDM} from './helpers';
-
 import {test, expect} from '../../fixtures/index';
+import {readBadgeCount} from '../../helpers/badge';
 import {demoMattermostConfig} from '../../helpers/config';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
 import {loginToMattermost} from '../../helpers/login';
 
-async function readBadgeCount(electronApp: import('playwright').ElectronApplication): Promise<number> {
-    return electronApp.evaluate(({app}) => {
-        if (process.platform === 'darwin') {
-            const badge = app.dock?.getBadge() ?? '';
-            return badge === '' || Number.isNaN(Number(badge)) ? 0 : parseInt(badge, 10);
-        }
-        try {
-            return app.getBadgeCount();
-        } catch {
-            return 0;
-        }
-    });
-}
-
-// ── MM-T1661: Desktop notifications ────────────────────────────────────
-// Drives the real notification path via triggerTestNotification (same helper
-// used by notification_badge_in_dock.test.ts). Asserts the observable side
-// effect: badge count increments after a test notification is sent.
+import {triggerTestNotification, verifyNotificationReceivedInDM} from './helpers';
 
 test.describe('notification_trigger/desktop_notification_delivery', () => {
     test.use({appConfig: demoMattermostConfig});
@@ -46,9 +28,9 @@ test.describe('notification_trigger/desktop_notification_delivery', () => {
 
                 await loginToMattermost(firstServer!);
 
-                // The notification trigger depends on the Customize Your Experience tour button.
-                const tourButton = await firstServer!.$('div#CustomizeYourExperienceTour > button');
-                if (!tourButton) {
+                try {
+                    await firstServer!.waitForSelector('div#CustomizeYourExperienceTour > button', {timeout: 15_000});
+                } catch {
                     test.skip(true, 'CustomizeYourExperienceTour not available in this server version');
                     return;
                 }
@@ -61,15 +43,13 @@ test.describe('notification_trigger/desktop_notification_delivery', () => {
 
                 await triggerTestNotification(firstServer!);
 
-                // Badge overlay is flaky on Windows CI; DM receipt is the authoritative signal.
-                if ((unityRunning || process.platform !== 'linux') && process.platform !== 'win32') {
+                if (unityRunning && process.platform !== 'win32') {
                     await expect.poll(
                         () => readBadgeCount(electronApp),
                         {timeout: 10_000, message: 'Badge count must increment after notification'},
                     ).toBeGreaterThan(beforeBadge);
                 }
 
-                // Verify the notification was received in the DM from system-bot
                 await verifyNotificationReceivedInDM(firstServer!);
             } finally {
                 await releaseLock();

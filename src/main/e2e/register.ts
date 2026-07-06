@@ -1,63 +1,74 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {app} from 'electron';
+import {ipcMain} from 'electron';
 
-import {Logger} from 'common/log';
-import {setTestField} from 'common/utils/util';
+import MainWindow from 'app/mainWindow/mainWindow';
+import createTrayMenu from 'app/menus/tray';
+import {setBadgeTestRecorder, setUnreadBadgeSetting} from 'app/system/badge';
+import Tray from 'app/system/tray/tray';
+import TabManager from 'app/tabs/tabManager';
+import WebContentsManager from 'app/views/webContentsManager';
+import PopoutManager from 'app/windows/popoutManager';
+import AppState from 'common/appState';
+import {SHOW_SETTINGS_WINDOW} from 'common/communication';
+import Config from 'common/config';
+import ServerManager from 'common/servers/serverManager';
+import ViewManager from 'common/views/viewManager';
+import {certificateErrorCallbacks} from 'main/app/app';
+import {handleShowSettingsModal} from 'main/app/intercom';
+import {openDeepLink} from 'main/app/utils';
+import Diagnostics from 'main/diagnostics';
+import notificationManager from 'main/notifications';
+import {installMessageBoxStub, restoreMessageBoxStub} from 'main/testMessageBoxStub';
+import updateNotifier from 'main/updateNotifier';
 
-import {createClickTrayMenuItemHandler} from './trayMenu';
-
-const log = new Logger('E2E.Register');
-
-type E2ETestRefs = {
-    updateNotifier?: unknown;
-    NotificationManager?: unknown;
-};
-
-type E2ETestGlobal = typeof globalThis & {
-    __e2eTestRefs?: E2ETestRefs;
-};
+import {recordBadgeTestState} from './badgeState';
+import {registerE2eHooks} from './hooks';
+import {simulateNotificationClick} from './notificationClick';
+import {triggerNotificationFrameEffects} from './notificationFrameEffects';
+import {createClickTrayMenuItem} from './trayMenu';
 
 /**
- * Extends __e2eTestRefs and tray-menu automation hooks used by Playwright E2E tests.
- * Loaded via side-effect import from updateNotifier (test builds only).
+ * Register Playwright globals and test-only IPC handlers.
+ * No-op outside NODE_ENV=test.
  */
-export async function registerExtendedE2eHooks(): Promise<void> {
-    const refs = (global as E2ETestGlobal).__e2eTestRefs;
-    if (!refs) {
+export function maybeRegisterE2eHooks(): void {
+    if (process.env.NODE_ENV !== 'test') {
         return;
     }
 
-    const [{default: updateNotifierModule}, {default: notificationManagerModule}] = await Promise.all([
-        import('main/updateNotifier'),
-        import('main/notifications'),
-    ]);
-    refs.updateNotifier = updateNotifierModule;
-    refs.NotificationManager = notificationManagerModule;
+    setBadgeTestRecorder(recordBadgeTestState);
+    ipcMain.on(SHOW_SETTINGS_WINDOW, handleShowSettingsModal);
 
-    setTestField('__e2eClickTrayMenuItem', createClickTrayMenuItemHandler());
-}
-
-async function waitForE2eTestRefs(timeoutMs = 30_000): Promise<boolean> {
-    const deadline = Date.now() + timeoutMs;
-    while (Date.now() < deadline) {
-        if ((global as E2ETestGlobal).__e2eTestRefs) {
-            return true;
-        }
-        // eslint-disable-next-line no-await-in-loop
-        await new Promise((resolve) => setTimeout(resolve, 50));
-    }
-    return false;
-}
-
-if (process.env.NODE_ENV === 'test') {
-    app.whenReady().then(async () => {
-        const refsReady = await waitForE2eTestRefs();
-        if (refsReady) {
-            await registerExtendedE2eHooks();
-        }
-    }).catch((err) => {
-        log.error('Failed to register extended e2e hooks', {err});
+    registerE2eHooks({
+        e2eTestRefs: {
+            AppState,
+            MainWindow,
+            NotificationManager: notificationManager,
+            ServerManager,
+            TabManager,
+            ViewManager,
+            WebContentsManager,
+            Config,
+            TrayIcon: Tray,
+            Diagnostics,
+            PopoutManager,
+            updateNotifier,
+            setUnreadBadgeSetting,
+        },
+        openDeepLink,
+        clickTrayMenuItem: createClickTrayMenuItem(createTrayMenu),
+        triggerNotificationFrameEffects,
+        simulateNotificationClick,
+        installMessageBoxStub,
+        restoreMessageBoxStub,
+        clearCertificateErrorCallbacks: () => certificateErrorCallbacks.clear(),
     });
+
+    if (process.env.MM_E2E_STUB_MESSAGE_BOX === 'cancel') {
+        installMessageBoxStub([{response: 1}]);
+    } else if (process.env.MM_E2E_STUB_MESSAGE_BOX === 'trust') {
+        installMessageBoxStub([{response: 0}, {response: 0}]);
+    }
 }
