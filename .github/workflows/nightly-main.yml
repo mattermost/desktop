@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: ci/checkout-repo
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ env.REFERENCE }}
       - name: ci/setup-node
@@ -65,7 +65,7 @@ jobs:
     runs-on: windows-2022
     steps:
       - name: nightly/checkout-repo
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ env.REFERENCE }}
       - name: nightly/setup-node
@@ -118,7 +118,7 @@ jobs:
       CSC_LINK: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_CSC_LINK }}
     steps:
       - name: nightly/checkout-repo
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ env.REFERENCE }}
       - name: nightly/setup-node
@@ -149,7 +149,7 @@ jobs:
       - mac-app-store-preflight
     steps:
       - name: nightly/checkout-repo
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ env.REFERENCE }}
       - name: nightly/setup-node
@@ -202,11 +202,11 @@ jobs:
       contents: read
     steps:
       - name: nightly/checkout-repo
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ env.REFERENCE }}
       - name: nightly/setup-aws-credentials
-        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
+        uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
         with:
           aws-region: us-east-1
           role-to-assume: ${{ secrets.MM_DESKTOP_RELEASE_AWS_ROLE_TO_ASSUME }}
