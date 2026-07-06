@@ -112,8 +112,8 @@ export class MainWindow extends EventEmitter {
         this.win.browserWindow.on('blur', this.onBlur);
         this.win.browserWindow.contentView.on('bounds-changed', this.handleBoundsChanged);
         this.win.browserWindow.webContents.on('before-input-event', this.onBeforeInputEvent);
-        this.win.browserWindow.webContents.on('devtools-focused', () => ipcMain.emit(UPDATE_SHORTCUT_MENU));
-        this.win.browserWindow.webContents.on('devtools-closed', () => ipcMain.emit(UPDATE_SHORTCUT_MENU));
+        this.win.browserWindow.webContents.on('devtools-focused', this.emitShortcutMenuUpdate);
+        this.win.browserWindow.webContents.on('devtools-closed', this.emitShortcutMenuUpdate);
 
         const localURL = 'mattermost-desktop://renderer/index.html';
         performanceMonitor.registerView('MainWindow', this.win.browserWindow.webContents);
@@ -230,6 +230,8 @@ export class MainWindow extends EventEmitter {
             log.error('failed to save window state', {e});
         }
     };
+
+    private emitShortcutMenuUpdate = () => ipcMain.emit(UPDATE_SHORTCUT_MENU);
 
     private onBeforeInputEvent = (event: Event, input: Input) => {
         // Register keyboard shortcuts
