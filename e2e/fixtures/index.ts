@@ -136,6 +136,7 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
         await use(app);
 
         await closeElectronApp(app, userDataDir, FAST_TEARDOWN);
+        await fs.rm(userDataDir, {recursive: true, force: true}).catch(() => {});
     },
 
     appReady: async ({electronApp}, use) => {

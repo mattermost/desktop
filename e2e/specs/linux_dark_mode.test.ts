@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../fixtures/index';
+import {EMIT_CONFIGURATION} from '../helpers/ipcChannels';
 
 async function toggleDarkModeLinux(electronApp: import('playwright').ElectronApplication) {
     await electronApp.evaluate(({Menu}) => {
@@ -17,15 +18,15 @@ async function toggleDarkModeLinux(electronApp: import('playwright').ElectronApp
 }
 
 async function setDarkModeConfig(electronApp: import('playwright').ElectronApplication, enabled: boolean) {
-    await electronApp.evaluate(({ipcMain}, darkMode: boolean) => {
+    await electronApp.evaluate(({ipcMain}, {darkMode, channel}) => {
         const refs = (global as any).__e2eTestRefs;
         const Config = refs?.Config;
         if (!Config) {
             throw new Error('__e2eTestRefs.Config is unavailable');
         }
         Config.set('darkMode', darkMode);
-        ipcMain.emit('emit-configuration', null, Config.data);
-    }, enabled);
+        ipcMain.emit(channel, null, Config.data);
+    }, {darkMode: enabled, channel: EMIT_CONFIGURATION});
 }
 
 test.describe('dark_mode', () => {

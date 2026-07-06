@@ -3,7 +3,8 @@
 
 import type {ElectronApplication, Page} from 'playwright';
 
-import {SHOW_SETTINGS_WINDOW} from '../../src/common/communication';
+import {SHOW_SETTINGS_WINDOW} from './ipcChannels';
+import {evaluateInMainProcessWithArg} from './testRefs';
 
 export async function openSettingsWindow(electronApp: ElectronApplication): Promise<Page> {
     for (let attempt = 0; attempt < 5; attempt++) {
@@ -21,16 +22,12 @@ export async function openSettingsWindow(electronApp: ElectronApplication): Prom
             }
         }
 
-        try {
-            await electronApp.evaluate(({ipcMain}, showWindow) => {
-                ipcMain.emit(showWindow);
-            }, SHOW_SETTINGS_WINDOW);
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            if (!message.includes('Execution context was destroyed') || attempt === 4) {
-                throw error;
-            }
-        }
+        // Route through evaluateInMainProcessWithArg to reuse its transient
+        // "Execution context was destroyed" retry behavior instead of
+        // duplicating the try/catch loop here.
+        await evaluateInMainProcessWithArg(electronApp, ({ipcMain}, showWindow) => {
+            ipcMain.emit(showWindow);
+        }, SHOW_SETTINGS_WINDOW);
 
         try {
             const settingsWindow = electronApp.windows().find((window) => window.url().includes('settings')) ??

@@ -2,14 +2,18 @@
 // See LICENSE.txt for license information.
 
 import {expect} from '@playwright/test';
-import type {ElectronApplication} from 'playwright';
+import type {ElectronApplication, Page} from 'playwright';
 
+import {waitForRendererReady} from './badServer';
 import {clearCertificateErrorCallbacks} from './dialog';
-import {evaluateInMainProcessWithArg, isTransientEvaluateError} from './testRefs';
+import {evaluateInMainProcessWithArg, findMainIndexWindow, resolveMainIndexWindow} from './testRefs';
 
 type WaitForErrorViewOptions = {
     serverName?: string;
     timeout?: number;
+
+    /** Set after add-server modal confirm; skip for pre-configured startup configs. */
+    waitForActiveServer?: boolean;
 };
 
 type ServerReloadAction = 'checkRegistered' | 'reload' | 'checkLoading';
@@ -72,22 +76,49 @@ async function evaluateServerReloadState(
     }, {action, targetServerName});
 }
 
-/**
- * Wait for the renderer to mount, then reload server views so load failures
- * that fired before IPC listeners were registered are surfaced in ErrorView.
- */
-export async function waitForRendererThenReload(
+async function reloadTargetServerViews(
     app: ElectronApplication,
     serverName?: string,
 ): Promise<void> {
-    const mainWindow = app.windows().find((window) => window.url().includes('index'));
-    if (!mainWindow) {
-        return;
-    }
+    // On platforms where the initial load fails very fast, the view may never be
+    // added to WebContentsManager before this poll's deadline. If no view exists,
+    // reload is a no-op and the existing load failure may already be in ErrorView.
+    await expect.poll(
+        () => evaluateServerReloadState(app, 'checkRegistered', serverName),
+        {timeout: 15_000, message: 'Target server should be registered before reload'},
+    ).toBe(true);
 
-    await mainWindow.waitForSelector('.ServerDropdownButton', {timeout: 15_000}).catch(() => {});
+    await clearCertificateErrorCallbacks(app).catch(() => {});
+    await evaluateServerReloadState(app, 'reload', serverName);
 
-    if (serverName) {
+    await expect.poll(
+        () => evaluateServerReloadState(app, 'checkLoading', serverName),
+        {timeout: 15_000, message: 'Server views should finish reloading after renderer is ready'},
+    ).toBe(true);
+}
+
+function resolveErrorViewHost(app: ElectronApplication, fallback: Page): Page {
+    return findMainIndexWindow(app) ?? fallback;
+}
+
+/**
+ * Wait for MainPage to surface a load failure in `.ErrorView` on index.html.
+ *
+ * ErrorView is rendered in the main BrowserWindow (MainPage → BasePage), not in
+ * server WebContentsViews. If LOAD_FAILED fired before MainPage registered IPC
+ * listeners, reload the server view so the failure is captured in React state.
+ */
+export async function waitForErrorView(
+    app: ElectronApplication,
+    options: WaitForErrorViewOptions = {},
+): Promise<Page> {
+    const timeout = options.timeout ?? (process.env.CI ? 60_000 : 45_000);
+    const {serverName, waitForActiveServer = false} = options;
+
+    const mainWindow = await resolveMainIndexWindow(app, Math.min(timeout, 30_000));
+    await waitForRendererReady(mainWindow);
+
+    if (waitForActiveServer && serverName) {
         await expect.poll(() => {
             return !app.windows().some((window) => {
                 try {
@@ -99,77 +130,30 @@ export async function waitForRendererThenReload(
         }, {timeout: 10_000, message: 'Add server modal should close after confirm'}).toBe(true);
 
         await expect.poll(async () => {
-            return mainWindow.innerText('.ServerDropdownButton');
-        }, {timeout: 10_000, message: `Active server should switch to ${serverName}`}).toContain(serverName);
+            const window = resolveErrorViewHost(app, mainWindow);
+            return window.innerText('.ServerDropdownButton').catch(() => '');
+        }, {
+            timeout: 15_000,
+            message: `Active server should switch to ${serverName}`,
+        }).toContain(serverName);
     }
 
-    // Wait until ServerManager knows about the target server. We intentionally do NOT
-    // require a WebContentsManager entry to exist here: on platforms where the initial
-    // load fails very fast (e.g. expired cert at startup), the view may never be added
-    // to WebContentsManager before this poll's deadline. If no view exists, the reload
-    // step below becomes a no-op and the existing load failure already surfaces in
-    // `.ErrorView`, which is what the caller is polling for.
-    await expect.poll(
-        () => evaluateServerReloadState(app, 'checkRegistered', serverName),
-        {timeout: 15_000, message: 'Target server should be registered before reload'},
-    ).toBe(true);
-
-    await clearCertificateErrorCallbacks(app).catch(() => {});
-
-    await evaluateServerReloadState(app, 'reload', serverName);
-
-    await expect.poll(
-        () => evaluateServerReloadState(app, 'checkLoading', serverName),
-        {timeout: 15_000, message: 'Server views should finish reloading after renderer is ready'},
-    ).toBe(true);
-}
-
-/**
- * Only DOM-not-ready-yet failures (missing window, missing selector, transient
- * evaluate errors) should be retried here. A real programming error — a bad ref,
- * a renamed method, a typo — should fail immediately instead of being retried
- * away for up to a minute and reported as a generic "ErrorView did not appear".
- */
-function isRetryableErrorViewFailure(error: unknown): boolean {
-    if (isTransientEvaluateError(error)) {
-        return true;
+    const host = resolveErrorViewHost(app, mainWindow);
+    if (!(await host.isVisible('.ErrorView').catch(() => false))) {
+        await reloadTargetServerViews(app, serverName);
     }
-    if (error instanceof TypeError || error instanceof ReferenceError) {
-        return false;
-    }
-    if (error instanceof Error && error.message.startsWith('__e2eTestRefs.')) {
-        return false;
-    }
-    return true;
-}
 
-export async function waitForErrorView(
-    app: ElectronApplication,
-    options: WaitForErrorViewOptions = {},
-): Promise<void> {
-    const timeout = options.timeout ?? (process.env.CI ? 60_000 : 45_000);
-    const deadline = Date.now() + timeout;
-    let lastError: unknown;
-    while (Date.now() < deadline) {
+    await expect.poll(async () => {
+        const window = resolveErrorViewHost(app, mainWindow);
         try {
-            const mainWindow = app.windows().find((window) => window.url().includes('index'));
-            if (!mainWindow) {
-                throw new Error('Main index window is not available yet');
-            }
-            await waitForRendererThenReload(app, options.serverName);
-            await mainWindow.waitForSelector('.ErrorView', {
-                timeout: Math.min(10_000, deadline - Date.now()),
-            });
-            return;
-        } catch (error) {
-            if (!isRetryableErrorViewFailure(error)) {
-                throw error;
-            }
-            lastError = error;
-            await clearCertificateErrorCallbacks(app).catch(() => {});
-            await new Promise((resolve) => setTimeout(resolve, 250));
+            return await window.isVisible('.ErrorView');
+        } catch {
+            return false;
         }
-    }
+    }, {
+        timeout,
+        message: 'ErrorView did not appear before timeout',
+    }).toBe(true);
 
-    throw lastError instanceof Error ? lastError : new Error('ErrorView did not appear before timeout');
+    return resolveErrorViewHost(app, mainWindow);
 }

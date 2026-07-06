@@ -46,8 +46,13 @@ jobs:
       platforms: ${{ steps.generate.outputs.platforms }}
     steps:
       - id: generate
+        env:
+          INSTANCE_DETAILS: ${{ inputs.instance_details }}
         run: |
-          echo "platforms=$(echo '${{ inputs.instance_details }}' | jq -c)" >> $GITHUB_OUTPUT
+          # Matterwick still dispatches macos-latest; pin explicitly so the job
+          # does not drift when GitHub retargets that label to macOS 26.
+          platforms=$(echo "${INSTANCE_DETAILS}" | jq -c 'map(if .runner == "macos-latest" then .runner = "macos-26" else . end)')
+          echo "platforms=${platforms}" >> "$GITHUB_OUTPUT"
 
   update-initial-status:
     name: Update initial status
@@ -179,12 +184,19 @@ jobs:
             }
 
             if (prNumber) {
-              await github.rest.issues.removeLabel({
-                issue_number: prNumber,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                name: 'E2E/Run',
-              });
+              try {
+                await github.rest.issues.removeLabel({
+                  issue_number: prNumber,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: 'E2E/Run',
+                });
+              } catch (error) {
+                if (error.status !== 404) {
+                  throw error;
+                }
+                console.log('E2E/Run label already removed');
+              }
             } else {
               console.log('Label removal skipped - could not find associated PR');
             }
@@ -357,7 +369,7 @@ jobs:
             process.chdir('./e2e');
             const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
             const { formatStatusDescription } = require('./utils/github-actions.js');
-            const { newFailedTests, failureCount, passCount, skipCount, totalCount } = analyzeFlakyTests();
+            const { newFailedTests, failureCount, passCount, skipCount, totalCount, collectionFailed } = analyzeFlakyTests();
 
             const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
             const platform = process.platform === 'darwin' ? 'macos' : 'windows';
@@ -365,8 +377,7 @@ jobs:
             const description = formatStatusDescription({
               passed: passCount,
               failed: failureCount,
-              skipped: skipCount,
-              total: totalCount,
+              collectionFailed,
             });
 
             try {

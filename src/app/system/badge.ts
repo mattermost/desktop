@@ -7,7 +7,6 @@ import {app, nativeImage} from 'electron';
 import AppState from 'common/appState';
 import {UPDATE_APPSTATE_TOTALS} from 'common/communication';
 import {Logger} from 'common/log';
-import {setTestField} from 'common/utils/util';
 import {localizeMessage} from 'main/i18nManager';
 
 import MainWindow from '../mainWindow/mainWindow';
@@ -16,6 +15,14 @@ const log = new Logger('Badge');
 const MAX_WIN_COUNT = 99;
 
 let showUnreadBadgeSetting: boolean;
+
+type BadgeTestRecorder = (sessionExpired: boolean, mentionCount: number, showUnreadBadge: boolean, showUnreadBadgeSetting: boolean) => void;
+let badgeTestRecorder: BadgeTestRecorder | undefined;
+
+/** Lets E2E wire up test-state recording without badge.ts depending on main/e2e. */
+export function setBadgeTestRecorder(recorder: BadgeTestRecorder | undefined) {
+    badgeTestRecorder = recorder;
+}
 
 /**
      * Badge generation for Windows
@@ -125,27 +132,7 @@ function showBadge(sessionExpired: boolean, mentionCount: number, showUnreadBadg
         break;
     }
 
-    if (process.env.NODE_ENV === 'test') {
-        let resolvedType: 'mention' | 'unread' | 'expired' | 'none';
-        if (process.platform === 'linux') {
-            if (mentionCount > 0) {
-                resolvedType = 'mention';
-            } else if (sessionExpired) {
-                resolvedType = 'expired';
-            } else {
-                resolvedType = 'none';
-            }
-        } else if (mentionCount > 0) {
-            resolvedType = 'mention';
-        } else if (showUnreadBadge && showUnreadBadgeSetting) {
-            resolvedType = 'unread';
-        } else if (sessionExpired) {
-            resolvedType = 'expired';
-        } else {
-            resolvedType = 'none';
-        }
-        setTestField('__testBadgeState', {sessionExpired, mentionCount, showUnreadBadge, resolvedType});
-    }
+    badgeTestRecorder?.(sessionExpired, mentionCount, showUnreadBadge, showUnreadBadgeSetting);
 }
 
 export function setUnreadBadgeSetting(showUnreadBadge: boolean) {
@@ -155,6 +142,4 @@ export function setUnreadBadgeSetting(showUnreadBadge: boolean) {
 
 export function setupBadge() {
     AppState.on(UPDATE_APPSTATE_TOTALS, showBadge);
-    setTestField('__testTriggerBadge', showBadge);
-    setTestField('__testTriggerSetUnreadBadgeSetting', setUnreadBadgeSetting);
 }

@@ -89,6 +89,15 @@ on:
       SKIPPED_WINDOWS:
         description: "Number of skipped tests on Windows"
         value: ${{ jobs.e2e.outputs.SKIPPED_WINDOWS }}
+      COLLECTION_FAILED_LINUX:
+        description: "Whether Playwright collected zero tests on Linux"
+        value: ${{ jobs.e2e.outputs.COLLECTION_FAILED_LINUX }}
+      COLLECTION_FAILED_MACOS:
+        description: "Whether Playwright collected zero tests on macOS"
+        value: ${{ jobs.e2e.outputs.COLLECTION_FAILED_MACOS }}
+      COLLECTION_FAILED_WINDOWS:
+        description: "Whether Playwright collected zero tests on Windows"
+        value: ${{ jobs.e2e.outputs.COLLECTION_FAILED_WINDOWS }}
       STATUS_WINDOWS:
         description: "The status of the windows test"
         value: ${{ jobs.e2e.outputs.STATUS_WINDOWS }}
@@ -172,6 +181,9 @@ jobs:
       SKIPPED_LINUX: ${{ steps.analyze-flaky-tests.outputs.SKIPPED_LINUX }}
       SKIPPED_MACOS: ${{ steps.analyze-flaky-tests.outputs.SKIPPED_MACOS }}
       SKIPPED_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.SKIPPED_WINDOWS }}
+      COLLECTION_FAILED_LINUX: ${{ steps.analyze-flaky-tests.outputs.COLLECTION_FAILED_LINUX }}
+      COLLECTION_FAILED_MACOS: ${{ steps.analyze-flaky-tests.outputs.COLLECTION_FAILED_MACOS }}
+      COLLECTION_FAILED_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.COLLECTION_FAILED_WINDOWS }}
     steps:
       - name: e2e/set-required-variables
         id: variables
@@ -378,7 +390,7 @@ jobs:
           script: |
             process.chdir('./e2e');
             const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
-            const { failureCount, passCount, skipCount, totalCount, os, testStatus } = analyzeFlakyTests();
+            const { failureCount, passCount, skipCount, totalCount, os, testStatus, collectionFailed } = analyzeFlakyTests();
             const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
             const reportUrl = process.env.PER_OS_REPORT_URL || runUrl;
             const setOSOutputs = (suffix) => {
@@ -388,6 +400,7 @@ jobs:
               core.setOutput(`PASSED_${suffix}`, String(passCount));
               core.setOutput(`SKIPPED_${suffix}`, String(skipCount));
               core.setOutput(`TOTAL_${suffix}`, String(totalCount));
+              core.setOutput(`COLLECTION_FAILED_${suffix}`, String(collectionFailed));
             };
             switch (os) {
               case 'linux':
@@ -402,23 +415,3 @@ jobs:
               default:
                 throw new Error(`Unsupported OS: ${os}`);
             }
-
-      - name: Upload Playwright blob report
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: blob-report-${{ env.RUNNER_OS }}
-          path: |
-            e2e/blob-report
-          if-no-files-found: ignore
-          retention-days: 7
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: test-results-${{ env.RUNNER_OS }}
-          path: |
-            e2e/test-results
-          if-no-files-found: ignore
-          retention-days: 7

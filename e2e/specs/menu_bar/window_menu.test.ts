@@ -7,12 +7,13 @@ import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
-import {buildServerMap} from '../../helpers/serverMap';
 import {appDir, demoMattermostConfig, electronBinaryPath, writeConfigFile} from '../../helpers/config';
+import {closeDownloadsDropdownIfOpen} from '../../helpers/downloadsDropdown';
+import {closeElectronAppFast, registerElectronMainProcess, waitForWindow} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
 import {waitForMattermostShellReady} from '../../helpers/mattermostShell';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
+import {buildServerMap} from '../../helpers/serverMap';
 import type {ServerView} from '../../helpers/serverView';
 
 const windowMenuConfig = {
@@ -38,56 +39,6 @@ let mainWindow: ElectronPage;
 let serverMap: Awaited<ReturnType<typeof buildServerMap>>;
 let userDataDir: string;
 
-async function waitForWindow(app: ElectronApplication, pattern: string, timeout = 30_000) {
-    const timeoutAt = Date.now() + timeout;
-    while (Date.now() < timeoutAt) {
-        const win = app.windows().find((window) => {
-            try {
-                return window.url().includes(pattern);
-            } catch {
-                return false;
-            }
-        });
-
-        if (win) {
-            await win.waitForLoadState().catch(() => {});
-            return win;
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, 200));
-    }
-
-    throw new Error(`Timed out waiting for window matching "${pattern}"`);
-}
-
-async function closeElectronApp(app: ElectronApplication, dataDir: string) {
-    let pid: number | undefined;
-    try {
-        pid = app.process()?.pid;
-    } catch {
-        pid = undefined;
-    }
-
-    let cleanClosed = false;
-    await Promise.race([
-        app.close().catch(() => {}).then(() => {
-            cleanClosed = true;
-        }),
-        new Promise<void>((resolve) => setTimeout(resolve, 10_000)),
-    ]);
-
-    if (!cleanClosed && pid) {
-        try {
-            process.kill(pid, 'SIGTERM');
-        } catch {
-            // already exited
-        }
-        return;
-    }
-
-    await waitForLockFileRelease(dataDir).catch(() => {});
-}
-
 async function clickWindowMenuItem(
     app: ElectronApplication,
     matcher: {label?: string; labelIncludes?: string; accelerator?: string; role?: string},
@@ -106,7 +57,7 @@ async function clickWindowMenuItem(
                         replace(/\s+/g, '');
                 };
 
-                const windowMenu = app.applicationMenu.getMenuItemById('window');
+                const windowMenu = app.applicationMenu?.getMenuItemById('window');
                 const items = windowMenu?.submenu?.items ?? [];
                 const item = items.find((candidate: any) => {
                     if (expected.role && candidate.role !== expected.role) {
@@ -245,6 +196,7 @@ async function focusMainWindow() {
 }
 
 async function resetWindowMenuState() {
+    await closeDownloadsDropdownIfOpen(electronApp);
     await focusMainWindow();
     const resetResult = await evaluateWithRetry(electronApp, () => {
         const refs = (global as any).__e2eTestRefs;
@@ -280,14 +232,14 @@ async function createExtraTabs() {
     await mainWindow.click('#newTabButton');
     await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 15_000});
 
-    // Wait until WebContentsManager has registered all 3 views
     const serverName = windowMenuConfig.servers[0].name;
     let map = await buildServerMap(electronApp);
-    const deadline = Date.now() + 15_000;
+    const deadline = Date.now() + 30_000;
     while ((map[serverName]?.length ?? 0) < 3 && Date.now() < deadline) {
         await new Promise((resolve) => setTimeout(resolve, 200));
         map = await buildServerMap(electronApp);
     }
+    expect(map[serverName]?.length, 'Three Mattermost tabs should be registered').toBeGreaterThanOrEqual(3);
     return map;
 }
 
@@ -296,27 +248,43 @@ async function prepareTabView(app: ElectronApplication, view: ServerView) {
     await loginToMattermost(view);
 }
 
-async function navigateToSecondAndThirdTabs(serverName: string) {
-    let localServerMap = await buildServerMap(electronApp);
+async function switchToTabAndOpenChannel(
+    serverName: string,
+    tabIndex: number,
+    channelItem: string,
+    initialServerMap?: Awaited<ReturnType<typeof buildServerMap>>,
+) {
+    let localServerMap = initialServerMap ?? await buildServerMap(electronApp);
     await expect.poll(async () => {
         localServerMap = await buildServerMap(electronApp);
         return localServerMap[serverName]?.length ?? 0;
-    }, {timeout: 30_000}).toBeGreaterThanOrEqual(3);
+    }, {timeout: 30_000}).toBeGreaterThanOrEqual(tabIndex);
 
-    const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 15_000});
-    await secondTab.click();
-    const secondView = localServerMap[serverName][1].win;
-    await prepareTabView(electronApp, secondView);
-    await waitForMattermostShellReady(secondView, {channelItem: '#sidebarItem_off-topic'});
-    await secondView.click('#sidebarItem_off-topic');
+    const tab = await mainWindow.waitForSelector(
+        `.TabBar li.serverTabItem:nth-child(${tabIndex})`,
+        {timeout: 15_000},
+    );
+    await tab.click();
+    const view = localServerMap[serverName][tabIndex - 1].win;
+    await prepareTabView(electronApp, view);
+    await waitForMattermostShellReady(view, {channelItem});
+    await view.click(channelItem);
 
-    const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 15_000});
-    await thirdTab.click();
-    const thirdView = localServerMap[serverName][2].win;
-    await prepareTabView(electronApp, thirdView);
-    await waitForMattermostShellReady(thirdView, {channelItem: '#sidebarItem_town-square'});
-    await thirdView.click('#sidebarItem_town-square');
+    return localServerMap;
+}
 
+async function navigateToSecondAndThirdTabs(serverName: string) {
+    let localServerMap = await switchToTabAndOpenChannel(
+        serverName,
+        2,
+        '#sidebarItem_off-topic',
+    );
+    localServerMap = await switchToTabAndOpenChannel(
+        serverName,
+        3,
+        '#sidebarItem_town-square',
+        localServerMap,
+    );
     return localServerMap;
 }
 
@@ -360,6 +328,8 @@ test.describe('Menu/window_menu', () => {
             timeout: 90_000,
         });
 
+        registerElectronMainProcess(electronApp.process()?.pid);
+
         await waitForAppReady(electronApp);
         mainWindow = await waitForWindow(electronApp, 'index');
         serverMap = await buildServerMap(electronApp);
@@ -373,7 +343,10 @@ test.describe('Menu/window_menu', () => {
     });
 
     test.afterAll(async () => {
-        await closeElectronApp(electronApp, userDataDir);
+        if (!electronApp) {
+            return;
+        }
+        await closeElectronAppFast(electronApp, userDataDir);
     });
 
     test.describe('MM-T826 should switch to servers when keyboard shortcuts are pressed', () => {
@@ -434,18 +407,7 @@ test.describe('Menu/window_menu', () => {
         await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 15_000});
 
         const serverName = windowMenuConfig.servers[0].name;
-        let localServerMap = await buildServerMap(electronApp);
-        await expect.poll(async () => {
-            localServerMap = await buildServerMap(electronApp);
-            return localServerMap[serverName]?.length ?? 0;
-        }, {timeout: 30_000}).toBeGreaterThanOrEqual(2);
-
-        const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)');
-        await secondTab.click();
-        const secondView = localServerMap[serverName][1].win;
-        await prepareTabView(electronApp, secondView);
-        await waitForMattermostShellReady(secondView, {channelItem: '#sidebarItem_off-topic'});
-        await secondView.click('#sidebarItem_off-topic');
+        await switchToTabAndOpenChannel(serverName, 2, '#sidebarItem_off-topic');
 
         await expect.poll(() => getActiveTabTitle(electronApp), {timeout: 15_000}).toContain('Off-Topic');
 
@@ -457,10 +419,6 @@ test.describe('Menu/window_menu', () => {
     });
 
     test('MM-T824 should be minimized when keyboard shortcuts are pressed', {tag: ['@P2', '@darwin', '@win32']}, async () => {
-        if (process.platform === 'linux') {
-            test.skip(true, 'Linux not supported');
-            return;
-        }
         const browserWindow = await electronApp.browserWindow(mainWindow);
 
         // Both macOS and Windows: invoke minimize() directly on the BrowserWindow.
@@ -481,10 +439,6 @@ test.describe('Menu/window_menu', () => {
         // Ctrl+Shift+W closes the window, and closing the main window with
         // minimizeToTray=false shows a quit confirmation dialog rather than hiding it.
         // So this behavior is only meaningful (and only passes) on macOS.
-        if (process.platform !== 'darwin') {
-            test.skip(true, 'App hide is macOS-only');
-            return;
-        }
         const browserWindow = await electronApp.browserWindow(mainWindow);
 
         // macOS: app.hide() hides all windows without closing (Cmd+H behavior)

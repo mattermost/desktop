@@ -174,7 +174,7 @@ test.describe('Bad Server Configurations', () => {
 
             const mainWindow = app.windows().find((w) => w.url().includes('index'));
             expect(mainWindow).toBeDefined();
-            await waitForErrorView(app, {serverName: 'Unreachable Server'});
+            await waitForErrorView(app, {serverName: 'Unreachable Server', waitForActiveServer: true});
             const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
             expect(errorInfo).toContain('ERR_NAME_NOT_RESOLVED');
         });
@@ -195,7 +195,7 @@ test.describe('Bad Server Configurations', () => {
 
             const mainWindow = app.windows().find((w) => w.url().includes('index'));
             expect(mainWindow).toBeDefined();
-            await waitForErrorView(app, {serverName: 'Expired Cert Server'});
+            await waitForErrorView(app, {serverName: 'Expired Cert Server', waitForActiveServer: true});
             const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
             expect(errorInfo).toContain('ERR_CERT_DATE_INVALID');
         });
@@ -216,7 +216,7 @@ test.describe('Bad Server Configurations', () => {
 
             const mainWindow = app.windows().find((w) => w.url().includes('index'));
             expect(mainWindow).toBeDefined();
-            await waitForErrorView(app, {serverName: 'TLS 1.0 Server'});
+            await waitForErrorView(app, {serverName: 'TLS 1.0 Server', waitForActiveServer: true});
 
             await expect.poll(async () => {
                 const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
@@ -240,7 +240,7 @@ test.describe('Bad Server Configurations', () => {
 
             const mainWindow = app.windows().find((w) => w.url().includes('index'));
             expect(mainWindow).toBeDefined();
-            await waitForErrorView(app, {serverName: 'RC4 Cipher Server'});
+            await waitForErrorView(app, {serverName: 'RC4 Cipher Server', waitForActiveServer: true});
 
             await expect.poll(async () => {
                 const errorInfo = await mainWindow!.innerText('.ErrorView-techInfo');
@@ -267,7 +267,7 @@ test.describe('Bad Server Configurations', () => {
             try {
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
-                await waitForErrorView(app, {serverName: 'Pre-configured Unreachable'});
+                await waitForErrorView(app, {serverName: 'Pre-configured Unreachable', waitForActiveServer: false});
 
                 const start = Date.now();
                 const dropdownView = await openServerDropdown(app);
@@ -307,7 +307,7 @@ test.describe('Bad Server Configurations', () => {
             try {
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
-                await waitForErrorView(app, {serverName: 'Pre-configured Unreachable'});
+                await waitForErrorView(app, {serverName: 'Pre-configured Unreachable', waitForActiveServer: false});
                 const errorView = await mainWindow!.$('.ErrorView');
                 expect(errorView).toBeDefined();
 
@@ -341,7 +341,7 @@ test.describe('Bad Server Configurations', () => {
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
 
-                await waitForErrorView(app, {serverName: 'Pre-configured Unreachable'});
+                await waitForErrorView(app, {serverName: 'Pre-configured Unreachable', waitForActiveServer: false});
                 const errorView = await mainWindow!.$('.ErrorView');
                 expect(errorView).toBeDefined();
 
@@ -369,7 +369,7 @@ test.describe('Bad Server Configurations', () => {
                     {timeout: 45_000, message: 'Working cloud server should load after switching away from unreachable server'},
                 ).toContain(cloudHost);
 
-                await prepareMattermostServerView(app, mmEntry.webContentsId);
+                await prepareMattermostServerView(app, mmEntry!.webContentsId);
                 await loginToMattermost(mmServer);
 
                 const postTextbox = await mmServer.$('#post_textbox');
@@ -396,7 +396,7 @@ test.describe('Bad Server Configurations', () => {
             try {
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
-                await waitForErrorView(app, {serverName: 'Pre-configured Expired Cert'});
+                await waitForErrorView(app, {serverName: 'Pre-configured Expired Cert', waitForActiveServer: false});
                 const errorView = await mainWindow!.$('.ErrorView');
                 expect(errorView).toBeDefined();
 
@@ -481,7 +481,7 @@ test.describe('Bad Server Configurations', () => {
             try {
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
-                await waitForErrorView(app, {serverName: 'Pre-configured TLS 1.1'});
+                await waitForErrorView(app, {serverName: 'Pre-configured TLS 1.1', waitForActiveServer: false});
                 const errorView = await mainWindow!.$('.ErrorView');
                 expect(errorView).toBeDefined();
 
@@ -511,7 +511,7 @@ test.describe('Bad Server Configurations', () => {
             try {
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
-                await waitForErrorView(app, {serverName: 'Pre-configured RC4'});
+                await waitForErrorView(app, {serverName: 'Pre-configured RC4', waitForActiveServer: false});
                 const errorView = await mainWindow!.$('.ErrorView');
                 expect(errorView).toBeDefined();
 

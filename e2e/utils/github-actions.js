@@ -46,7 +46,11 @@ async function updateInitialStatus({github, context, platforms}) {
  *   - all pass:   "All 161 ran, 161 passed"
  *   - any failure: "161 ran, 157 passed, 4 failed"
  */
-function formatStatusDescription({passed, failed}) {
+function formatStatusDescription({passed, failed, collectionFailed}) {
+    if (collectionFailed) {
+        return 'No tests ran (collection failed)';
+    }
+
     const ran = passed + failed;
     if (ran === 0) {
         return failed > 0 ? `0 ran, ${failed} failed` : 'No tests ran';
@@ -58,6 +62,13 @@ function formatStatusDescription({passed, failed}) {
 }
 
 async function resolveStatusSha({github, context, prNumber}) {
+    // Commit statuses must target the SHA this workflow run was dispatched for.
+    // PR HEAD moves when a new push cancels an in-flight run; using it would mark
+    // the new commit cancelled instead of the superseded one.
+    if (context.sha) {
+        return context.sha;
+    }
+
     if (prNumber) {
         const {data: pr} = await github.rest.pulls.get({
             owner: context.repo.owner,
@@ -67,7 +78,7 @@ async function resolveStatusSha({github, context, prNumber}) {
         return pr.head.sha;
     }
 
-    return context.payload.pull_request?.head?.sha || context.sha;
+    return context.payload.pull_request?.head?.sha;
 }
 
 /**
@@ -97,6 +108,7 @@ async function updateFinalStatus({github, context, platforms, outputs, e2eTestsR
 
         const failed = Number(outputs[`NEW_FAILURES_${osKey}`] || 0);
         const passed = Number(outputs[`PASSED_${osKey}`] || 0);
+        const collectionFailed = outputs[`COLLECTION_FAILED_${osKey}`] === 'true';
         const platformStatus = outputs[`STATUS_${osKey}`] || '';
         const reportLink = outputs[`REPORT_LINK_${osKey}`] || workflowUrl;
         const ran = passed + failed;
@@ -112,10 +124,10 @@ async function updateFinalStatus({github, context, platforms, outputs, e2eTestsR
             description = workflowCancelled ? CANCELLED_STATUS_DESCRIPTION : 'E2E incomplete — no tests ran';
         } else if (failed > 0 || platformStatus === 'failure') {
             state = 'failure';
-            description = formatStatusDescription({passed, failed});
+            description = formatStatusDescription({passed, failed, collectionFailed});
         } else {
             state = 'success';
-            description = formatStatusDescription({passed, failed});
+            description = formatStatusDescription({passed, failed, collectionFailed});
         }
 
         return github.rest.repos.createCommitStatus({
@@ -136,6 +148,7 @@ async function updateFinalStatus({github, context, platforms, outputs, e2eTestsR
  */
 async function markE2EStatusesCancelled({github, context, sha, reason = CANCELLED_STATUS_DESCRIPTION}) {
     const description = String(reason).substring(0, 140);
+    const targetUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
     await Promise.all(E2E_STATUS_CONTEXTS.map((statusContext) =>
         github.rest.repos.createCommitStatus({
@@ -145,6 +158,7 @@ async function markE2EStatusesCancelled({github, context, sha, reason = CANCELLE
             state: 'error',
             context: statusContext,
             description,
+            target_url: targetUrl,
         }).catch((error) => {
             console.log(`Could not update ${statusContext} on ${sha}: ${error.message}`);
         }),
