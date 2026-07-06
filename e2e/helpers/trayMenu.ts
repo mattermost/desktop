@@ -41,9 +41,12 @@ export async function openSettingsFromTray(app: ElectronApplication): Promise<Pa
     try {
         await clickTrayMenuItem(app, 'tray:settings');
     } catch {
-        const labels = process.platform === 'darwin' ?
-            ['Preferences...', 'Preferences', 'tray:settings'] :
-            ['Settings...', 'Settings', '&Settings', 'tray:settings'];
+        let labels: string[];
+        if (process.platform === 'darwin') {
+            labels = ['Preferences...', 'Preferences', 'tray:settings'];
+        } else {
+            labels = ['Settings...', 'Settings', '&Settings', 'tray:settings'];
+        }
         let clicked = false;
         for (const label of labels) {
             try {
