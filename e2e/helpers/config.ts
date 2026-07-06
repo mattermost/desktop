@@ -1,8 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {createRequire} from 'module';
 import * as fs from 'fs';
+import {createRequire} from 'module';
 import * as path from 'path';
 
 const require = createRequire(__filename);
