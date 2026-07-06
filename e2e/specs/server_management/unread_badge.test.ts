@@ -2,22 +2,31 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../../fixtures/index';
-import {getBadgeState, setUnreadBadgeSetting, triggerBadge, waitForBadgeHooks} from '../../helpers/badgeTrigger';
+import {
+    clearAllBadgesViaAppState,
+    readOsBadge,
+    setUnreadBadgeSetting,
+    updateServerBadgeViaAppState,
+    waitForBadgeInfrastructure,
+} from '../../helpers/badge';
+import {demoConfig} from '../../helpers/config';
+import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
+
+const FIRST_SERVER = demoConfig.servers[0].name;
 
 test.describe('server_management/unread_badge', () => {
     test.beforeEach(async ({electronApp}) => {
         if (process.platform === 'linux') {
             return;
         }
-        await waitForBadgeHooks(electronApp);
-        await setUnreadBadgeSetting(electronApp, false);
+        await waitForBadgeInfrastructure(electronApp);
     });
 
     test.afterEach(async ({electronApp}) => {
         if (process.platform === 'linux') {
             return;
         }
-        await setUnreadBadgeSetting(electronApp, false);
+        await clearAllBadgesViaAppState(electronApp);
     });
 
     test(
@@ -26,14 +35,26 @@ test.describe('server_management/unread_badge', () => {
         async ({electronApp}) => {
             test.skip(process.platform === 'linux', 'Unread dot badge is not supported on Linux Unity path');
 
-            await setUnreadBadgeSetting(electronApp, true);
-            await triggerBadge(electronApp, false, 0, true);
-            expect((await getBadgeState(electronApp))?.resolvedType).toBe('unread');
+            const releaseLock = await acquireExclusiveLock('notification-badge-state');
+            try {
+                await clearAllBadgesViaAppState(electronApp);
+                await setUnreadBadgeSetting(electronApp, true);
+                await updateServerBadgeViaAppState(electronApp, FIRST_SERVER, 0, true);
 
-            await triggerBadge(electronApp, false, 3, false);
-            const state = await getBadgeState(electronApp);
-            expect(state?.resolvedType).toBe('mention');
-            expect(state?.mentionCount).toBe(3);
+                await expect.poll(
+                    () => readOsBadge(electronApp),
+                    {timeout: 10_000, message: 'Badge must show unread state when setting enabled'},
+                ).toMatchObject({symbol: 'unread'});
+
+                await updateServerBadgeViaAppState(electronApp, FIRST_SERVER, 3, false);
+
+                await expect.poll(
+                    () => readOsBadge(electronApp),
+                    {timeout: 10_000, message: 'Badge must show mention count'},
+                ).toMatchObject({symbol: 'mention', count: 3});
+            } finally {
+                await releaseLock();
+            }
         },
     );
 
@@ -43,14 +64,26 @@ test.describe('server_management/unread_badge', () => {
         async ({electronApp}) => {
             test.skip(process.platform === 'linux', 'Unread dot badge is not supported on Linux Unity path');
 
-            await setUnreadBadgeSetting(electronApp, false);
-            await triggerBadge(electronApp, false, 0, true);
-            expect((await getBadgeState(electronApp))?.resolvedType).toBe('none');
+            const releaseLock = await acquireExclusiveLock('notification-badge-state');
+            try {
+                await clearAllBadgesViaAppState(electronApp);
+                await setUnreadBadgeSetting(electronApp, false);
+                await updateServerBadgeViaAppState(electronApp, FIRST_SERVER, 0, true);
 
-            await triggerBadge(electronApp, false, 2, false);
-            const state = await getBadgeState(electronApp);
-            expect(state?.resolvedType).toBe('mention');
-            expect(state?.mentionCount).toBe(2);
+                await expect.poll(
+                    () => readOsBadge(electronApp),
+                    {timeout: 10_000, message: 'Unread badge must stay hidden when setting disabled'},
+                ).toMatchObject({symbol: 'none'});
+
+                await updateServerBadgeViaAppState(electronApp, FIRST_SERVER, 2, false);
+
+                await expect.poll(
+                    () => readOsBadge(electronApp),
+                    {timeout: 10_000, message: 'Mention badge must still appear when setting disabled'},
+                ).toMatchObject({symbol: 'mention', count: 2});
+            } finally {
+                await releaseLock();
+            }
         },
     );
 });

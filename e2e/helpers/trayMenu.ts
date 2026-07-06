@@ -1,46 +1,65 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {ElectronApplication} from 'playwright';
+import {expect} from '@playwright/test';
+import type {ElectronApplication, Page} from 'playwright';
 
 import {clickTrayMenuItem} from './tray';
+
+async function findSettingsPage(app: ElectronApplication): Promise<Page | null> {
+    return app.windows().find((window) => {
+        try {
+            return window.url().includes('settings');
+        } catch {
+            return false;
+        }
+    }) ?? null;
+}
+
+async function waitForSettingsPage(app: ElectronApplication): Promise<Page> {
+    let settingsWindow: Page | null = null;
+    await expect.poll(async () => {
+        settingsWindow = await findSettingsPage(app);
+        return settingsWindow;
+    }, {timeout: 15_000, message: 'Settings page must open after tray menu click'}).not.toBeNull();
+    await settingsWindow!.waitForLoadState();
+    return settingsWindow!;
+}
 
 export function traySettingsMenuLabel(): string {
     return process.platform === 'darwin' ? 'Preferences...' : 'Settings';
 }
 
-export async function openSettingsFromTray(app: ElectronApplication) {
-    const existingSettings = app.windows().find((window) => window.url().includes('settings'));
+export async function openSettingsFromTray(app: ElectronApplication): Promise<Page> {
+    const existingSettings = await findSettingsPage(app);
     if (existingSettings) {
         await existingSettings.waitForLoadState();
         return existingSettings;
     }
 
-    const windowPromise = app.waitForEvent('window', {
-        predicate: (window) => window.url().includes('settings'),
-        timeout: 15_000,
-    });
-
-    const labels = process.platform === 'darwin' ?
-        ['Preferences...', 'Preferences'] :
-        ['Settings', '&Settings'];
-    let clicked = false;
-    for (const label of labels) {
-        try {
-            await clickTrayMenuItem(app, label);
-            clicked = true;
-            break;
-        } catch {
-            // try next label variant
+    // Semantic click avoids i18n / mnemonic label mismatches ("Settings" vs "Settings...").
+    try {
+        await clickTrayMenuItem(app, 'tray:settings');
+    } catch {
+        const labels = process.platform === 'darwin' ?
+            ['Preferences...', 'Preferences', 'tray:settings'] :
+            ['Settings...', 'Settings', '&Settings', 'tray:settings'];
+        let clicked = false;
+        for (const label of labels) {
+            try {
+                await clickTrayMenuItem(app, label);
+                clicked = true;
+                break;
+            } catch {
+                // try next label variant
+            }
+        }
+        if (!clicked) {
+            await clickTrayMenuItem(app, traySettingsMenuLabel());
         }
     }
-    if (!clicked) {
-        await clickTrayMenuItem(app, traySettingsMenuLabel());
-    }
 
-    const settingsWindow = await windowPromise;
-    await settingsWindow.waitForLoadState();
-    return settingsWindow;
+    return waitForSettingsPage(app);
 }
 
 export async function clickTrayQuit(app: ElectronApplication): Promise<void> {
