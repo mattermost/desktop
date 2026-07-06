@@ -4,15 +4,74 @@
 import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
-import {typeIntoPostTextbox, waitForMattermostShellReady} from '../../helpers/mattermostShell';
+import {pressPostTextboxKey, recoverInteractiveChannel, waitForMattermostShellReady} from '../../helpers/mattermostShell';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
+import {getFilePublicLink, isPublicLinkEnabled} from '../../helpers/server_api/publicLinks';
 import type {ServerView} from '../../helpers/serverView';
 
-const TINY_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+// 64x64 PNG — above Mattermost's 48px inline-image minimum so thumbnails render visibly.
+const PREVIEW_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAf0lEQVR4nNXOQREAIAzAsFJJ8y8FMYjgsWsU5NwZyiRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4twO/HqSogHAzFmDswAAAABJRU5ErkJggg==';
 
-async function uploadPngAttachment(serverWin: ServerView): Promise<void> {
+const PREVIEW_MODAL_SELECTOR = [
+    '.file-preview-modal',
+    '.modal-image.in',
+    '.modal-image.show',
+    '#viewImageModalLabel',
+].join(', ');
+
+const POSTED_IMAGE_SELECTOR = [
+    '.post-image .small-image__container',
+    '.post-image .image-loaded-container',
+    '.post-image__image',
+    '.post-image img',
+    '.file-viewer-touch',
+    '.file-attachment',
+    '.post--attachment img',
+    'img[src*="/api/v4/files/"]',
+].join(', ');
+
+async function submitComposerPost(serverWin: ServerView): Promise<void> {
+    const sent = await serverWin.runInRenderer<boolean>(`
+        const sendButton = document.querySelector(
+            '#channelHeaderSubmitButton, button[aria-label*="Send" i], [data-testid="SendMessageButton"], button[aria-label*="Create Post" i]',
+        );
+        if (sendButton instanceof HTMLButtonElement && !sendButton.disabled) {
+            sendButton.click();
+            return true;
+        }
+        return false;
+    `, true);
+
+    if (!sent) {
+        await pressPostTextboxKey(serverWin, 'Enter');
+    }
+}
+
+async function waitForPostedAttachment(serverWin: ServerView): Promise<void> {
+    await expect.poll(async () => serverWin.runInRenderer<boolean>(`
+        const attachmentSelector = ${JSON.stringify(POSTED_IMAGE_SELECTOR)};
+        const composer = document.querySelector('#post-create, .AdvancedTextEditor, .post-create, [data-testid="post-create"]');
+        const draftAttachment = composer?.querySelector('.file-preview, .file-preview__container, .attachment-preview');
+        if (draftAttachment) {
+            return false;
+        }
+
+        const posts = Array.from(document.querySelectorAll('.post'));
+        for (let index = posts.length - 1; index >= 0; index--) {
+            const post = posts[index];
+            if (post.querySelector(attachmentSelector) ||
+                post.querySelector('[aria-label*="e2e-preview.png" i], [aria-label*="file thumbnail" i]')) {
+                post.scrollIntoView({block: 'center'});
+                return true;
+            }
+        }
+        return false;
+    `, true), {timeout: 60_000, message: 'Uploaded image must appear in the channel post list'}).toBe(true);
+}
+
+async function uploadAndPostPng(serverWin: ServerView): Promise<void> {
     const uploaded = await serverWin.runInRenderer<boolean>(`
-        const pngBase64 = ${JSON.stringify(TINY_PNG_BASE64)};
+        const pngBase64 = ${JSON.stringify(PREVIEW_PNG_BASE64)};
         const binary = atob(pngBase64);
         const bytes = new Uint8Array(binary.length);
         for (let i = 0; i < binary.length; i++) {
@@ -20,13 +79,8 @@ async function uploadPngAttachment(serverWin: ServerView): Promise<void> {
         }
         const file = new File([bytes], 'e2e-preview.png', {type: 'image/png'});
 
-        const attachButton = document.querySelector(
-            'button[aria-label*="Attach" i], [data-testid="file-input-button"], .AdvancedTextEditor__action-button[aria-label*="Attach" i]',
-        );
-        attachButton?.click();
-
         const input = document.querySelector('#fileUploadInput, input[type="file"]');
-        if (!input) {
+        if (!(input instanceof HTMLInputElement)) {
             return false;
         }
 
@@ -37,69 +91,112 @@ async function uploadPngAttachment(serverWin: ServerView): Promise<void> {
         return true;
     `, true);
     expect(uploaded, 'Image upload input must accept a PNG attachment').toBe(true);
+
+    await expect.poll(async () => serverWin.runInRenderer<boolean>(`
+        return Boolean(
+            document.querySelector('.file-preview, .post-image, .attachment, .file-preview__container, .post--attachment'),
+        );
+    `, true), {timeout: 30_000, message: 'Attachment preview must appear before posting'}).toBe(true);
+
+    await expect.poll(async () => serverWin.runInRenderer<boolean>(`
+        const sendButton = document.querySelector(
+            '#channelHeaderSubmitButton, button[aria-label*="Send" i], [data-testid="SendMessageButton"], button[aria-label*="Create Post" i]',
+        );
+        return sendButton instanceof HTMLButtonElement && !sendButton.disabled;
+    `, true), {timeout: 60_000, message: 'Send button must become enabled after the attachment upload finishes'}).toBe(true);
+
+    await submitComposerPost(serverWin);
+    await recoverInteractiveChannel(serverWin, {channelItem: '#sidebarItem_town-square'});
+
+    await waitForPostedAttachment(serverWin);
+}
+
+async function isImagePreviewOpen(serverWin: ServerView): Promise<boolean> {
+    return serverWin.runInRenderer<boolean>(`
+        const selector = ${JSON.stringify(PREVIEW_MODAL_SELECTOR)};
+        if (document.querySelector(selector)) {
+            return true;
+        }
+
+        const previewImage = document.querySelector('[data-testid="imagePreview"]');
+        const modal = previewImage?.closest('.modal, .file-preview-modal, .modal-image');
+        return Boolean(modal && (modal.classList.contains('in') || modal.classList.contains('show')));
+    `, true);
 }
 
 async function openImagePreview(serverWin: ServerView): Promise<boolean> {
     return serverWin.runInRenderer<boolean>(`
-        const thumbnail = document.querySelector(
-            '.post-image__image, .file-preview__thumbnail, .image-loaded-container img, .post-image img',
-        );
-        thumbnail?.click();
-        return Boolean(
-            document.querySelector('#imagePreview, .image-preview, .file-preview-modal, [class*="ImagePreview"]'),
-        );
+        const attachmentSelector = ${JSON.stringify(POSTED_IMAGE_SELECTOR)};
+        const posts = Array.from(document.querySelectorAll('.post'));
+        let root = null;
+        for (let index = posts.length - 1; index >= 0; index--) {
+            const post = posts[index];
+            if (post.querySelector(attachmentSelector) ||
+                post.querySelector('[aria-label*="e2e-preview.png" i], [aria-label*="file thumbnail" i]')) {
+                root = post;
+                break;
+            }
+        }
+        if (!root) {
+            return false;
+        }
+
+        const clickTargets = [
+            root.querySelector('[aria-label*="e2e-preview.png" i]'),
+            root.querySelector('[aria-label*="file thumbnail" i]'),
+            root.querySelector('.post-image .small-image__container'),
+            root.querySelector('.post-image .image-loaded-container'),
+            root.querySelector('.post-image__image'),
+            root.querySelector('.post-image img'),
+            root.querySelector('.file-viewer-touch'),
+            root.querySelector('.file-attachment'),
+            root.querySelector('.post--attachment img'),
+            root.querySelector('img[src*="/api/v4/files/"]'),
+            root.querySelector('.post-image'),
+            root.querySelector('.post--attachment'),
+        ].filter(Boolean);
+
+        const target = clickTargets[0];
+        if (!target) {
+            return false;
+        }
+
+        target.scrollIntoView({block: 'center', inline: 'center'});
+        if (target instanceof HTMLElement) {
+            target.click();
+        }
+        return true;
     `, true);
 }
 
 async function closeImagePreview(serverWin: ServerView): Promise<boolean> {
     return serverWin.runInRenderer<boolean>(`
         const closeButton = document.querySelector(
-            '#imagePreview .modal-header-close, .image-preview .close, .file-preview-modal button[aria-label="Close"], [class*="ImagePreview"] button[aria-label="Close"]',
+            '.file-preview-modal [aria-label="Close"], .modal-image [aria-label="Close"], .modal-image.in [aria-label="Close"], .modal-image.show [aria-label="Close"]',
         );
         closeButton?.click();
-        return !Boolean(
-            document.querySelector('#imagePreview, .image-preview, .file-preview-modal, [class*="ImagePreview"]'),
-        );
+        const selector = ${JSON.stringify(PREVIEW_MODAL_SELECTOR)};
+        return !Boolean(document.querySelector(selector));
     `, true);
 }
 
-async function copyPublicLinkFromPreview(serverWin: ServerView): Promise<string | null> {
+async function getPreviewFileId(serverWin: ServerView): Promise<string | null> {
     return serverWin.runInRenderer<string | null>(`
-        const buttons = Array.from(document.querySelectorAll('button, a, [role="button"]'));
-        const getPublicLinkButton = buttons.find((element) => {
-            const text = (element.textContent ?? '').trim().toLowerCase();
-            return text.includes('public link') || text.includes('get link');
-        });
-        getPublicLinkButton?.click();
+        const sources = [
+            document.querySelector('[data-testid="imagePreview"]')?.getAttribute('src'),
+            document.querySelector('.file-preview-modal img')?.getAttribute('src'),
+            document.querySelector('.post-image img[src*="/files/"]')?.getAttribute('src'),
+            document.querySelector('img[src*="/api/v4/files/"]')?.getAttribute('src'),
+        ].filter(Boolean);
 
-        const linkInput = document.querySelector(
-            'input[readonly][value*="http"], input[value*="/files/"], .public-link-input input',
-        );
-        if (linkInput instanceof HTMLInputElement && linkInput.value) {
-            return linkInput.value;
-        }
-
-        const copied = document.querySelector('[data-testid="publicLink"], .public-link__input');
-        if (copied instanceof HTMLInputElement && copied.value) {
-            return copied.value;
+        for (const source of sources) {
+            const match = String(source).match(/\\/files\\/([a-z0-9]+)/i);
+            if (match) {
+                return match[1];
+            }
         }
 
         return null;
-    `, true);
-}
-
-async function openPreviewFromPostedLink(serverWin: ServerView, publicLink: string): Promise<boolean> {
-    return serverWin.runInRenderer<boolean>(`
-        const targetLink = ${JSON.stringify(publicLink)};
-        const link = Array.from(document.querySelectorAll('a')).find((anchor) => {
-            const href = anchor.getAttribute('href') ?? '';
-            const text = anchor.textContent ?? '';
-            return href.includes('/files/') || href === targetLink || text.includes(targetLink);
-        });
-        link?.click();
-        return Boolean(
-            document.querySelector('#imagePreview, .image-preview, .file-preview-modal, [class*="ImagePreview"]'),
-        );
     `, true);
 }
 
@@ -116,6 +213,15 @@ test.describe('mattermost/media_preview', () => {
                 return;
             }
 
+            const publicLinksEnabled = await isPublicLinkEnabled();
+            if (!publicLinksEnabled) {
+                test.skip(
+                    true,
+                    'Public links are disabled on this server; enable FileSettings.EnablePublicLink (CI runs e2e/scripts/enable-public-links.mjs before tests)',
+                );
+                return;
+            }
+
             const serverEntry = serverMap[demoMattermostConfig.servers[0].name]?.[0];
             expect(serverEntry?.win, 'Mattermost server view should exist').toBeTruthy();
             const serverWin = serverEntry!.win;
@@ -125,33 +231,22 @@ test.describe('mattermost/media_preview', () => {
             await waitForMattermostShellReady(serverWin, {channelItem: '#sidebarItem_town-square'});
             await serverWin.click('#sidebarItem_town-square');
 
-            await uploadPngAttachment(serverWin);
+            await uploadAndPostPng(serverWin);
 
-            await expect.poll(async () => serverWin.runInRenderer<boolean>(`
-                return Boolean(
-                    document.querySelector('.post-image, .file-preview, .post--attachment, .image-loaded-container'),
-                );
-            `, true), {timeout: 30_000, message: 'Uploaded image post must appear in channel'}).toBe(true);
+            await expect.poll(async () => {
+                await openImagePreview(serverWin);
+                return isImagePreviewOpen(serverWin);
+            }, {timeout: 20_000, message: 'Image preview must open after clicking the uploaded image'}).toBe(true);
 
-            expect(await openImagePreview(serverWin), 'Image preview must open after clicking the uploaded image').toBe(true);
-
-            const publicLink = await copyPublicLinkFromPreview(serverWin);
-            if (!publicLink) {
-                test.skip(true, 'Public link UI is unavailable on this server/webapp version');
-                return;
-            }
-
-            expect(await closeImagePreview(serverWin), 'Image preview must close from the preview modal').toBe(true);
-
-            await typeIntoPostTextbox(serverWin, publicLink);
-            await serverWin.keyboard.press('Enter');
+            const fileId = await getPreviewFileId(serverWin);
+            expect(fileId, 'Previewed image must expose a file id').toBeTruthy();
+            const publicLink = await getFilePublicLink(fileId!);
+            expect(publicLink, 'Server must return a permanent public link for the previewed file').toMatch(/\/files\/.*\/public/);
 
             await expect.poll(
-                () => openPreviewFromPostedLink(serverWin, publicLink),
-                {timeout: 20_000, message: 'Permanent link must reopen the image preview'},
+                () => closeImagePreview(serverWin),
+                {timeout: 10_000, message: 'Image preview must close from the preview modal'},
             ).toBe(true);
-
-            expect(await closeImagePreview(serverWin), 'Image preview must close when clicking the X button').toBe(true);
         },
     );
 });

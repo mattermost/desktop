@@ -33,7 +33,12 @@ export async function patchHelpMenuRemoteInfo(
         }
         refs.ServerManager.updateRemoteInfo(serverId, nextRemoteInfo);
 
-        ipcMain.emit('emit-configuration', null);
+        const configData = refs.Config?.data ?? refs.Config?.combinedData;
+        if (!configData) {
+            throw new Error('Config.data is not available for menu refresh');
+        }
+
+        ipcMain.emit('emit-configuration', null, configData);
     }, patch);
 }
 

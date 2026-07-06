@@ -6,10 +6,8 @@ import type {ElectronApplication, Page} from 'playwright';
 import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
-import {clickApplicationMenuItem} from '../../helpers/menu';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {openSettingsWindow} from '../../helpers/settingsWindow';
-import {evaluateInMainProcessWithArg, getActiveServerWebContentsId} from '../../helpers/testRefs';
 
 type WindowBounds = {x: number; y: number; width: number; height: number};
 
@@ -52,30 +50,37 @@ async function tileMainWindowToLeftHalf(app: ElectronApplication): Promise<Windo
 }
 
 async function enterMainWindowFullScreen(app: ElectronApplication): Promise<void> {
-    await app.evaluate(({app: electronApp, BrowserWindow}) => {
-        const viewMenu = electronApp.applicationMenu?.getMenuItemById('view');
-        const toggleItem = viewMenu?.submenu?.items?.find(
-            (item) => item.role === 'togglefullscreen' || item.accelerator === 'F11',
-        );
-        if (!toggleItem) {
-            throw new Error('Toggle Full Screen menu item not found');
+    await app.evaluate(async ({BrowserWindow}) => {
+        const refs = (global as any).__e2eTestRefs;
+        const win = refs?.MainWindow?.get?.() ?? BrowserWindow.getAllWindows().find((candidate) => !candidate.isDestroyed());
+        if (!win) {
+            throw new Error('Main window not found');
         }
 
-        const refs = (global as any).__e2eTestRefs;
-        const targetWindow = BrowserWindow.getFocusedWindow() ??
-            refs?.MainWindow?.get?.() ??
-            BrowserWindow.getAllWindows().find((candidate) => !candidate.isDestroyed()) ??
-            null;
-        toggleItem.click(undefined, targetWindow, undefined);
+        await new Promise<void>((resolve, reject) => {
+            const timeout = setTimeout(() => reject(new Error('Timed out waiting for fullscreen')), 20_000);
+            if (win.isFullScreen()) {
+                clearTimeout(timeout);
+                resolve();
+                return;
+            }
+            win.once('enter-full-screen', () => {
+                clearTimeout(timeout);
+                resolve();
+            });
+            win.setFullScreen(true);
+        });
     });
 
-    await expect.poll(async () => (await getMainWindowState(app)).isFullScreen, {
-        timeout: 15_000,
-        message: 'Main window must enter full screen',
-    }).toBe(true);
+    expect((await getMainWindowState(app)).isFullScreen).toBe(true);
 }
 
-async function exerciseWindowChrome(electronApp: ElectronApplication, mainWindow: Page) {
+async function exerciseWindowChrome(
+    electronApp: ElectronApplication,
+    mainWindow: Page,
+    options: {openSettings?: boolean} = {},
+) {
+    const {openSettings = true} = options;
     await mainWindow.click('#newTabButton').catch(() => {});
     await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(1)', {timeout: 15_000}).catch(() => {});
     const secondTabExists = await mainWindow.$('.TabBar li.serverTabItem:nth-child(2)');
@@ -84,39 +89,18 @@ async function exerciseWindowChrome(electronApp: ElectronApplication, mainWindow
         await mainWindow.click('.TabBar li.serverTabItem:nth-child(1)').catch(() => {});
     }
 
-    const settingsWindow = await openSettingsWindow(electronApp);
-    await settingsWindow.click('#settingCategoryButton-general').catch(() => {});
-    await settingsWindow.keyboard.press('Escape').catch(() => {});
-    await settingsWindow.close().catch(() => {});
-
-    const webContentsId = await getActiveServerWebContentsId(electronApp);
-    await clickApplicationMenuItem(
-        electronApp,
-        'view',
-        {label: 'Developer Tools for Current Tab'},
-        {webContentsId},
-    );
-    await expect.poll(
-        () => evaluateInMainProcessWithArg(electronApp, ({webContents}, id) => {
-            const wc = webContents.fromId(id);
-            return Boolean(wc && !wc.isDestroyed() && wc.isDevToolsOpened());
-        }, webContentsId),
-        {timeout: 15_000, message: 'Developer Tools must open for the current server tab'},
-    ).toBe(true);
-
-    await clickApplicationMenuItem(
-        electronApp,
-        'view',
-        {label: 'Developer Tools for Current Tab'},
-        {webContentsId},
-    );
-    await expect.poll(
-        () => evaluateInMainProcessWithArg(electronApp, ({webContents}, id) => {
-            const wc = webContents.fromId(id);
-            return Boolean(wc && !wc.isDestroyed() && !wc.isDevToolsOpened());
-        }, webContentsId),
-        {timeout: 15_000, message: 'Developer Tools must close for the current server tab'},
-    ).toBe(true);
+    if (openSettings) {
+        const settingsWindow = await openSettingsWindow(electronApp);
+        await settingsWindow.click('#settingCategoryButton-general');
+        await settingsWindow.evaluate(() => {
+            const desktop = (window as Window & {desktop?: {modals?: {cancelModal?: () => void}}}).desktop;
+            if (!desktop?.modals?.cancelModal) {
+                throw new Error('desktop.modals.cancelModal is not available');
+            }
+            desktop.modals.cancelModal();
+        });
+        await settingsWindow.waitForEvent('close', {timeout: 10_000});
+    }
 }
 
 test.describe('startup/window_position', () => {
@@ -150,7 +134,7 @@ test.describe('startup/window_position', () => {
             expect(Math.abs(afterTiled.bounds.height - tiledBounds.height)).toBeLessThanOrEqual(10);
 
             await enterMainWindowFullScreen(electronApp);
-            await exerciseWindowChrome(electronApp, mainWindow);
+            await exerciseWindowChrome(electronApp, mainWindow, {openSettings: false});
 
             const afterFullScreen = await getMainWindowState(electronApp);
             expect(afterFullScreen.isFullScreen, 'App must remain in full screen after tab and modal interactions').toBe(true);

@@ -287,6 +287,10 @@ jobs:
           npm ci
           cd e2e && npm ci
 
+      - name: e2e/enable-public-links
+        if: env.MM_TEST_SERVER_URL != ''
+        run: node e2e/scripts/enable-public-links.mjs
+
       - name: e2e/suppress-macos-dialogs
         if: runner.os == 'macOS'
         run: |
