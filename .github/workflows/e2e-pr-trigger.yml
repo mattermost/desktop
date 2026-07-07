@@ -15,7 +15,15 @@ name: E2E PR Trigger
 #
 # The concurrency group ensures rapid pushes to the same PR don't queue multiple
 # label operations: only the most recent push proceeds.
-
+#
+# Group key is bucketed by event, not just PR number (PR #3891 regression: a
+# same-second, unrelated `labeled` event from a release-notes bot cancelled the
+# `opened` event's in-progress run via cancel-in-progress before it could add
+# E2E/Run, and the winning run's own job conditions didn't match that label —
+# so E2E/Run never got added at all). opened/reopened/ready_for_review/synchronize
+# still share one group (preserves "only the most recent push proceeds" for
+# rapid pushes); every other event (any other label add/remove) gets its own
+# action+label-keyed group so it can't cancel a real trigger run.
 on:
   pull_request:
     types:
@@ -29,7 +37,10 @@ on:
       - master
 
 concurrency:
-  group: e2e-pr-trigger-${{ github.event.pull_request.number }}
+  group: >-
+    e2e-pr-trigger-${{ github.event.pull_request.number }}-${{
+    contains(fromJSON('["opened", "reopened", "ready_for_review", "synchronize"]'), github.event.action)
+    && 'trigger' || format('other-{0}-{1}', github.event.action, github.event.label.name) }}
   cancel-in-progress: true
 
 jobs:
