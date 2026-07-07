@@ -89,17 +89,14 @@ export class NavigationManager {
                 webContentsView.once(LOAD_FAILED, this.deeplinkFailed);
                 webContentsView.load(urlWithSchema);
             }
+        } else if (!Config.enableServerManagement) {
+            dialog.showErrorBox(
+                localizeMessage('app.navigationManager.serverManagementDisabledTitle', 'Unable to add server'),
+                localizeMessage('app.navigationManager.serverManagementDisabledDescription', 'Your organization\'s settings don\'t allow adding new servers, so this link couldn\'t be opened. Contact your system administrator for more information.'),
+            );
         } else if (ServerManager.hasServers()) {
-            if (!Config.enableServerManagement) {
-                log.warn('Ignoring deep link to add a new server because server management is disabled by policy');
-                return;
-            }
             ServerHub.showNewServerModal(`${parsedURL.host}${parsedURL.pathname}${parsedURL.search}`);
         } else {
-            if (!Config.enableServerManagement) {
-                log.warn('Ignoring deep link to add a new server because server management is disabled by policy');
-                return;
-            }
             ModalManager.removeModal('welcomeScreen');
             const prefillURL = `${parsedURL.host}${parsedURL.pathname}${parsedURL.search}`;
             handleWelcomeScreenModal(prefillURL);

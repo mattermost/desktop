@@ -192,8 +192,9 @@ describe('app/navigationManager', () => {
             expect(ServerHub.showNewServerModal).toHaveBeenCalledWith('server-2.com/deep/link?thing=yes');
         });
 
-        it('should not open new server modal when server management is disabled by policy', () => {
+        it('should not open new server modal but show a dialog when server management is disabled by policy', () => {
             ServerHub.showNewServerModal.mockClear();
+            dialog.showErrorBox.mockClear();
             ServerManager.hasServers.mockReturnValue(true);
             ServerManager.lookupServerByURL.mockReturnValue(null);
             Config.enableServerManagement = false;
@@ -201,6 +202,7 @@ describe('app/navigationManager', () => {
             navigationManager.openLinkInPrimaryTab('mattermost://server-2.com/deep/link?thing=yes');
 
             expect(ServerHub.showNewServerModal).not.toHaveBeenCalled();
+            expect(dialog.showErrorBox).toHaveBeenCalled();
 
             Config.enableServerManagement = true;
         });
@@ -215,9 +217,10 @@ describe('app/navigationManager', () => {
             expect(handleWelcomeScreenModal).toHaveBeenCalledWith('server-2.com/deep/link?thing=yes');
         });
 
-        it('should not handle welcome screen modal when server management is disabled by policy', () => {
+        it('should not handle welcome screen modal but show a dialog when server management is disabled by policy', () => {
             ModalManager.removeModal.mockClear();
             handleWelcomeScreenModal.mockClear();
+            dialog.showErrorBox.mockClear();
             ServerManager.hasServers.mockReturnValue(false);
             ServerManager.lookupServerByURL.mockReturnValue(null);
             Config.enableServerManagement = false;
@@ -226,6 +229,7 @@ describe('app/navigationManager', () => {
 
             expect(ModalManager.removeModal).not.toHaveBeenCalled();
             expect(handleWelcomeScreenModal).not.toHaveBeenCalled();
+            expect(dialog.showErrorBox).toHaveBeenCalled();
 
             Config.enableServerManagement = true;
         });
@@ -306,7 +310,7 @@ describe('app/navigationManager', () => {
             expect(ServerHub.showNewServerModal).toHaveBeenCalledWith('server-2.com/deep/link?thing=yes');
         });
 
-        it('should not open new server modal when server management is disabled by policy', () => {
+        it('should not open new server modal but show a dialog when server management is disabled by policy', () => {
             ServerManager.hasServers.mockReturnValue(true);
             ServerManager.lookupServerByURL.mockReturnValue(null);
             Config.enableServerManagement = false;
@@ -314,6 +318,7 @@ describe('app/navigationManager', () => {
             navigationManager.openLinkInNewTab('mattermost://server-2.com/deep/link?thing=yes');
 
             expect(ServerHub.showNewServerModal).not.toHaveBeenCalled();
+            expect(dialog.showErrorBox).toHaveBeenCalled();
 
             Config.enableServerManagement = true;
         });
