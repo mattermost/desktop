@@ -280,6 +280,7 @@ describe('app/menus/appMenu/view', () => {
 
         it('should handle reload when no focused view is available', () => {
             WebContentsManager.getFocusedView.mockReturnValue(null);
+            TabManager.getCurrentActiveTabView.mockReturnValue(null);
 
             localizeMessage.mockImplementation((id) => {
                 if (id === 'main.menus.app.view.reload') {
@@ -294,6 +295,23 @@ describe('app/menus/appMenu/view', () => {
 
             // Should not throw an error when no view is available
             expect(() => reloadMenuItem.click()).not.toThrow();
+        });
+
+        it('should reload active tab when menu open clears focused view', () => {
+            WebContentsManager.getFocusedView.mockReturnValue(null);
+            TabManager.getCurrentActiveTabView.mockReturnValue(mockView);
+
+            localizeMessage.mockImplementation((id) => {
+                if (id === 'main.menus.app.view.reload') {
+                    return 'Reload';
+                }
+                return id;
+            });
+
+            const menu = createViewMenu();
+            const reloadMenuItem = menu.submenu.find((item) => item.label === 'Reload');
+            reloadMenuItem.click();
+            expect(mockView.reload).toHaveBeenCalledWith('https://example.com/current-page');
         });
 
         it('should show developer mode options when developer mode is enabled', () => {
