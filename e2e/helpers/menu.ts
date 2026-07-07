@@ -3,6 +3,7 @@
 
 import type {ElectronApplication} from 'playwright';
 
+import {waitForAppReady} from './appReadiness';
 import {isTransientEvaluateError} from './testRefs';
 
 type MenuItemMatcher = {
@@ -130,4 +131,41 @@ export async function clickApplicationMenuItem(
     }
 
     throw new Error(`Timed out clicking menu item ${menuId}: ${JSON.stringify(matcher)}`);
+}
+
+/**
+ * Open the "Sign in to Another Server" modal via the application menu.
+ * Uses direct menu-item invocation (reliable on headless Windows CI).
+ */
+export async function openSignInToAnotherServerModal(app: ElectronApplication) {
+    await waitForAppReady(app);
+
+    const menuId = process.platform === 'darwin' ? 'app' : 'file';
+    const newServerWindowPromise = app.waitForEvent('window', {
+        predicate: (window) => window.url().includes('newServer'),
+        timeout: 30_000,
+    });
+
+    const opened = await app.evaluate(({app: electronAppInstance}, targetMenuId) => {
+        const root = electronAppInstance.applicationMenu?.getMenuItemById(targetMenuId);
+        const stack = [...(root?.submenu?.items ?? [])];
+        while (stack.length) {
+            const item = stack.shift()!;
+            const label = typeof item.label === 'string' ? item.label : '';
+            if (label.includes('Sign in') && label.includes('Server')) {
+                item.click();
+                return true;
+            }
+            if (item.submenu?.items) {
+                stack.push(...item.submenu.items);
+            }
+        }
+        return false;
+    }, menuId);
+
+    if (!opened) {
+        await clickApplicationMenuItem(app, menuId, {labelIncludes: 'Sign in'});
+    }
+
+    return newServerWindowPromise;
 }
