@@ -58,13 +58,13 @@ async function main() {
     }
 
     const siteURL = config.ServiceSettings?.SiteURL ?? baseUrl;
-    await apiRequest(token, '/api/v4/config', {
+    const patch = {
+        FileSettings: {EnablePublicLink: true},
+        ...(siteURL ? {ServiceSettings: {SiteURL: siteURL}} : {}),
+    };
+    await apiRequest(token, '/api/v4/config/patch', {
         method: 'PUT',
-        body: JSON.stringify({
-            ...config,
-            ServiceSettings: {...config.ServiceSettings, SiteURL: siteURL},
-            FileSettings: {...config.FileSettings, EnablePublicLink: true},
-        }),
+        body: JSON.stringify(patch),
     });
 
     const updated = await apiRequest(token, '/api/v4/config');
