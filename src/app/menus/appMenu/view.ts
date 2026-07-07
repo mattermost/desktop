@@ -111,7 +111,7 @@ export default function createViewMenu() {
         label: localizeMessage('main.menus.app.view.reload', 'Reload'),
         accelerator: 'CmdOrCtrl+R',
         click() {
-            const view = WebContentsManager.getFocusedView();
+            const view = WebContentsManager.getFocusedView() ?? TabManager.getCurrentActiveTabView();
             if (view) {
                 view.reload(view.currentURL);
             }
@@ -120,7 +120,7 @@ export default function createViewMenu() {
         label: localizeMessage('main.menus.app.view.clearCacheAndReload', 'Clear Cache and Reload'),
         accelerator: 'Shift+CmdOrCtrl+R',
         click() {
-            const view = WebContentsManager.getFocusedView();
+            const view = WebContentsManager.getFocusedView() ?? TabManager.getCurrentActiveTabView();
             if (view) {
                 WebContentsManager.clearCacheAndReloadView(view.id);
             }
