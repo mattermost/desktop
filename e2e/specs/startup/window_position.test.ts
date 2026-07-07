@@ -52,58 +52,67 @@ async function tileMainWindowToLeftHalf(app: ElectronApplication): Promise<Windo
     });
 }
 
+async function getPrimaryWorkArea(app: ElectronApplication): Promise<WindowBounds> {
+    return app.evaluate(({screen}) => {
+        const {x, y, width, height} = screen.getPrimaryDisplay().workArea;
+        return {x, y, width, height};
+    });
+}
+
+async function boundsMatchWorkArea(bounds: WindowBounds, workArea: WindowBounds): Promise<boolean> {
+    return (
+        Math.abs(bounds.x - workArea.x) <= 5 &&
+        Math.abs(bounds.y - workArea.y) <= 5 &&
+        Math.abs(bounds.width - workArea.width) <= 10 &&
+        Math.abs(bounds.height - workArea.height) <= 10
+    );
+}
+
 async function enterMainWindowExpanded(app: ElectronApplication): Promise<void> {
-    await app.evaluate(async ({BrowserWindow}) => {
+    await app.evaluate(({BrowserWindow, screen}) => {
         const refs = (global as any).__e2eTestRefs;
         const win = refs?.MainWindow?.get?.() ?? BrowserWindow.getAllWindows().find((candidate) => !candidate.isDestroyed());
         if (!win) {
             throw new Error('Main window not found');
         }
 
-        // Linux windows set fullscreenable: false in baseWindow.ts — setFullScreen() is a no-op.
+        // Linux windows set fullscreenable: false in baseWindow.ts. WM maximize/fullscreen
+        // events are unreliable under xvfb, so resize to the display work area directly.
         if (process.platform === 'linux') {
-            await new Promise<void>((resolve, reject) => {
-                const timeout = setTimeout(() => reject(new Error('Timed out waiting for maximize')), 20_000);
-                if (win.isMaximized()) {
-                    clearTimeout(timeout);
-                    resolve();
-                    return;
-                }
-                win.once('maximize', () => {
-                    clearTimeout(timeout);
-                    resolve();
-                });
-                win.maximize();
-            });
+            if (win.isMaximized()) {
+                win.unmaximize();
+            }
+            win.setBounds(screen.getPrimaryDisplay().workArea);
             return;
         }
 
-        await new Promise<void>((resolve, reject) => {
-            const timeout = setTimeout(() => reject(new Error('Timed out waiting for fullscreen')), 20_000);
-            if (win.isFullScreen()) {
-                clearTimeout(timeout);
-                resolve();
-                return;
-            }
-            win.once('enter-full-screen', () => {
-                clearTimeout(timeout);
-                resolve();
-            });
-            win.setFullScreen(true);
-        });
+        win.setFullScreen(true);
     });
 
-    expect(await isMainWindowExpanded(app)).toBe(true);
+    await expect.poll(
+        () => isMainWindowExpanded(app),
+        {
+            timeout: 20_000,
+            message: process.platform === 'linux' ?
+                'Main window must expand to the display work area on Linux' :
+                'Main window must enter full screen',
+        },
+    ).toBe(true);
 }
 
 async function isMainWindowExpanded(app: ElectronApplication): Promise<boolean> {
+    if (process.platform === 'linux') {
+        const [state, workArea] = await Promise.all([
+            getMainWindowState(app),
+            getPrimaryWorkArea(app),
+        ]);
+        return boundsMatchWorkArea(state.bounds, workArea);
+    }
+
     return app.evaluate(({BrowserWindow}) => {
         const refs = (global as any).__e2eTestRefs;
         const win = refs?.MainWindow?.get?.() ?? BrowserWindow.getAllWindows().find((candidate) => !candidate.isDestroyed());
-        if (!win) {
-            return false;
-        }
-        return process.platform === 'linux' ? win.isMaximized() : win.isFullScreen();
+        return Boolean(win && win.isFullScreen());
     });
 }
 
@@ -171,9 +180,9 @@ test.describe('startup/window_position', () => {
 
             expect(
                 await isMainWindowExpanded(electronApp),
-                process.platform === 'linux'
-                    ? 'App must remain maximized after tab interactions on Linux'
-                    : 'App must remain in full screen after tab and modal interactions',
+                process.platform === 'linux' ?
+                    'App must remain expanded to the display work area after tab interactions on Linux' :
+                    'App must remain in full screen after tab and modal interactions',
             ).toBe(true);
         },
     );
