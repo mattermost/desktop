@@ -144,6 +144,11 @@ jobs:
   # per-platform status/label flow below (update-final-status / remove-e2e-label).
   # Does not replace or affect that flow — required checks and the E2E label
   # contract are untouched.
+  #
+  # Uses e2e/utils/tsio-report-status.js, not test-system-io-summary — summary
+  # only reads /api/v1/orchestration/status, which report-upload never
+  # populates (see that file's header comment). failOnTestFailures stays
+  # false: this job is additive reporting, not the required-check gate.
   tsio-summary:
     name: TSIO summary
     runs-on: ubuntu-24.04
@@ -156,17 +161,31 @@ jobs:
       id-token: write
       statuses: write
     steps:
-      - name: Render TSIO summary + flip commit status
-        uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-summary@a2ea7f005484c28fedf51e16645f6d3bd683fd63 # 0.10.0 / 2026-05-16
+      # tsio-report-status.js is repo code, not fetched by github-script itself.
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
-          framework: playwright
-          commit-status-context: e2e-test/desktop-playwright
-          report-type: ${{ inputs.run_type || 'PR' }}
-          pr-number: ${{ inputs.pr_number }}
-          ref-branch: ${{ inputs.version_name }}
-          fail-on-test-failures: "false"
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ inputs.version_name }}
+          sparse-checkout: |
+            e2e/utils/tsio-report-status.js
+          sparse-checkout-cone-mode: false
+
+      - name: Render TSIO summary + flip commit status
+        id: summary
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          TSIO_COMPOSITE_IDENTITY: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
+          TSIO_TOTAL_REPORTS_EXPECTED: ${{ needs.prepare-matrix.outputs.tsio-total-reports-expected }}
+          COMMIT_STATUS_CONTEXT: e2e-test/desktop-playwright
+        with:
+          script: |
+            const {reportUrl, status, stats} = await require('./e2e/utils/tsio-report-status.js')({
+              core, context, github,
+              compositeIdentity: JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY),
+              totalReportsExpected: parseInt(process.env.TSIO_TOTAL_REPORTS_EXPECTED, 10),
+              commitStatusContext: process.env.COMMIT_STATUS_CONTEXT,
+              failOnTestFailures: false,
+            });
+            core.info(`TSIO report ${reportUrl}: ${status} (${JSON.stringify(stats)})`);
 
   update-final-status:
     name: Update final status

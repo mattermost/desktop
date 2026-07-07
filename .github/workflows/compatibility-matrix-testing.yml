@@ -150,6 +150,10 @@ jobs:
   # the hand-rolled artifact-based rollup. One TSIO report group covers every
   # OS x server-version leg of the CMT run; commit status target_url deep-links
   # that dashboard page. Context name unchanged (e2e/compatibility-matrix-testing).
+  #
+  # Uses e2e/utils/tsio-report-status.js, not test-system-io-summary — summary
+  # only reads /api/v1/orchestration/status, which report-upload never
+  # populates (see that file's header comment).
   # https://mattermost.atlassian.net/browse/CLD-5815
   update-final-status:
     runs-on: ubuntu-22.04
@@ -162,16 +166,31 @@ jobs:
       - calculate-commit-hash
       - e2e
     steps:
+      # tsio-report-status.js is repo code, not fetched by github-script itself.
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ inputs.DESKTOP_VERSION }}
+          sparse-checkout: |
+            e2e/utils/tsio-report-status.js
+          sparse-checkout-cone-mode: false
+
       - name: Render TSIO summary + flip commit status
         id: summary
-        uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-summary@a2ea7f005484c28fedf51e16645f6d3bd683fd63 # 0.10.0 / 2026-05-16
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          TSIO_COMPOSITE_IDENTITY: ${{ needs.calculate-commit-hash.outputs.TSIO_COMPOSITE_IDENTITY }}
+          TSIO_TOTAL_REPORTS_EXPECTED: ${{ needs.calculate-commit-hash.outputs.TSIO_TOTAL_REPORTS_EXPECTED }}
+          COMMIT_STATUS_CONTEXT: e2e/compatibility-matrix-testing
         with:
-          composite-identity: ${{ needs.calculate-commit-hash.outputs.TSIO_COMPOSITE_IDENTITY }}
-          framework: playwright
-          commit-status-context: e2e/compatibility-matrix-testing
-          report-type: RELEASE
-          ref-branch: ${{ inputs.DESKTOP_VERSION }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const {reportUrl, status, stats} = await require('./e2e/utils/tsio-report-status.js')({
+              core, context, github,
+              compositeIdentity: JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY),
+              totalReportsExpected: parseInt(process.env.TSIO_TOTAL_REPORTS_EXPECTED, 10),
+              commitStatusContext: process.env.COMMIT_STATUS_CONTEXT,
+              failOnTestFailures: true,
+            });
+            core.info(`TSIO report ${reportUrl}: ${status} (${JSON.stringify(stats)})`);
 
 
   # Instance cleanup is handled by Matterwick: when this workflow completes, GitHub sends a
