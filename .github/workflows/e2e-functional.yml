@@ -129,8 +129,9 @@ jobs:
       # below). The previous `startsWith(version_name, 'release-') && 'RELEASE'` fallback was
       # for matterwick's release-branch push, which is no longer wired — removed.
       TYPE: ${{ inputs.run_type || 'PR' }}
-      tsio-composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
-      tsio-total-reports-expected: ${{ needs.prepare-matrix.outputs.tsio-total-reports-expected }}
+      # Packed as one JSON input (see e2e-functional-template.yml's tsio-config) —
+      # workflow_call caps reusable workflows at 10 inputs total.
+      tsio-config: ${{ format('{{"composite_identity":{0},"total_reports_expected":"{1}"}}', needs.prepare-matrix.outputs.tsio-composite-identity, needs.prepare-matrix.outputs.tsio-total-reports-expected) }}
     secrets: inherit
 
   # Additive TSIO reporting, separate commit-status context from the existing

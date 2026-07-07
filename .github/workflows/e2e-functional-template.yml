@@ -37,13 +37,11 @@ on:
       MM_SERVER_VERSION:
         type: string
         required: true
-      tsio-composite-identity:
-        description: "Composite identity JSON for Test System IO (repository, commit_sha, gh_run_id, name, gh_run_attempt, branch, gh_pr_number). Empty disables TSIO reporting for this leg."
-        required: false
-        type: string
-        default: ""
-      tsio-total-reports-expected:
-        description: "Total leg count across the whole caller run (== the full OS or OS x server-version matrix size). Must match every leg's call. Required when tsio-composite-identity is set."
+      # Packed as one JSON input, not two, because workflow_call caps reusable
+      # workflows at 10 inputs total — this file was already at 8.
+      # Shape: {"composite_identity": {...}, "total_reports_expected": "N"}
+      tsio-config:
+        description: "TSIO reporting config: {composite_identity, total_reports_expected}. Empty disables TSIO reporting for this leg."
         required: false
         type: string
         default: ""
@@ -149,13 +147,8 @@ on:
       MM_SERVER_VERSION:
         type: string
         required: true
-      tsio-composite-identity:
-        description: "Composite identity JSON for Test System IO. Empty disables TSIO reporting for this leg."
-        required: false
-        type: string
-        default: ""
-      tsio-total-reports-expected:
-        description: "Total leg count across the whole caller run. Required when tsio-composite-identity is set."
+      tsio-config:
+        description: "TSIO reporting config: {composite_identity, total_reports_expected}. Empty disables TSIO reporting for this leg."
         required: false
         type: string
         default: ""
@@ -445,17 +438,18 @@ jobs:
             }
 
       # TSIO reporting: upload this leg's native Playwright JSON + screenshots.
-      # Gated on tsio-composite-identity so callers that don't opt in (ad-hoc
-      # workflow_dispatch without identity) are untouched. Used by both plain
-      # PR/master runs and CMT — the caller decides grouping via `name` in the
-      # composite identity and computes tsio-total-reports-expected once for
-      # the whole run's matrix.
+      # Gated on tsio-config so callers that don't opt in (ad-hoc
+      # workflow_dispatch without config) are untouched. Used by both plain
+      # PR/master runs and CMT — the caller decides grouping via `name` inside
+      # composite_identity and computes total_reports_expected once for the
+      # whole run's matrix. Packed into one JSON input (see tsio-config above)
+      # to stay under workflow_call's 10-input cap.
       - name: e2e/upload-report-to-tsio
-        if: ${{ always() && inputs.tsio-composite-identity != '' }}
+        if: ${{ always() && inputs.tsio-config != '' }}
         uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@a2ea7f005484c28fedf51e16645f6d3bd683fd63 # 0.10.0 / 2026-05-16
         with:
-          composite-identity: ${{ inputs.tsio-composite-identity }}
-          total-reports-expected: ${{ inputs.tsio-total-reports-expected }}
+          composite-identity: ${{ toJSON(fromJSON(inputs.tsio-config).composite_identity) }}
+          total-reports-expected: ${{ fromJSON(inputs.tsio-config).total_reports_expected }}
           framework: playwright
           github-token: ${{ secrets.GITHUB_TOKEN }}
           # MUST match this job's `name:` field above (e2e-on-<runner>).

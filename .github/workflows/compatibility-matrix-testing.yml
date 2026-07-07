@@ -132,8 +132,9 @@ jobs:
       DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
       MM_SERVER_VERSION: ${{ matrix.server.version }}
       TYPE: "CMT"
-      tsio-composite-identity: ${{ needs.calculate-commit-hash.outputs.TSIO_COMPOSITE_IDENTITY }}
-      tsio-total-reports-expected: ${{ needs.calculate-commit-hash.outputs.TSIO_TOTAL_REPORTS_EXPECTED }}
+      # Packed as one JSON input (see e2e-functional-template.yml's tsio-config) —
+      # workflow_call caps reusable workflows at 10 inputs total.
+      tsio-config: ${{ format('{{"composite_identity":{0},"total_reports_expected":"{1}"}}', needs.calculate-commit-hash.outputs.TSIO_COMPOSITE_IDENTITY, needs.calculate-commit-hash.outputs.TSIO_TOTAL_REPORTS_EXPECTED) }}
 
   # Consolidated final status + rollup summary, via Test System IO instead of
   # the hand-rolled artifact-based rollup. One TSIO report group covers every
