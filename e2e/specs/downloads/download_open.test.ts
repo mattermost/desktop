@@ -14,7 +14,7 @@ import {
 } from '../../helpers/downloads';
 
 test(
-    'DL-05 completed download can be opened from the downloads dropdown',
+    'MM-T6133 completed download can be opened from the downloads dropdown',
     {tag: ['@P1', '@all']},
     async ({}, testInfo) => {
         const filename = 'open-me.txt';

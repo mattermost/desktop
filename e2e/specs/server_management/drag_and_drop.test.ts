@@ -12,7 +12,8 @@ import {launchDirectTestApp} from '../../helpers/directLaunch';
 import {closeElectronAppFast, waitForWindow} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
 import {waitForMattermostShell, waitForMattermostShellReady, recoverServerViewIfNeeded} from '../../helpers/mattermostShell';
-import {prepareMattermostServerView} from '../../helpers/prepareServerView';
+import {closeOverlayWindowsIfOpen} from '../../helpers/overlayWindows';
+import {activateServerView} from '../../helpers/serverContext';
 import {buildServerMap} from '../../helpers/serverMap';
 
 if (!process.env.MM_TEST_SERVER_URL) {
@@ -47,6 +48,8 @@ async function getMattermostServer() {
 }
 
 async function resetState() {
+    await closeOverlayWindowsIfOpen(electronApp);
+
     await electronApp.evaluate(() => {
         const refs = (global as any).__e2eTestRefs;
         const servers = refs?.ServerManager?.getAllServers?.() ?? [];
@@ -84,7 +87,7 @@ async function resetState() {
     await mainWindow.keyboard.press('Escape').catch(() => {});
 
     const mmServer = await getMattermostServer();
-    await prepareMattermostServerView(electronApp, mmServer.webContentsId);
+    await activateServerView(electronApp, mmServer.webContentsId);
     await waitForMattermostShell(mmServer, {timeout: 45_000});
     await recoverServerViewIfNeeded(mmServer);
     await mmServer.click('#sidebarItem_town-square').catch(() => {});
@@ -150,12 +153,14 @@ async function navigateToSecondAndThirdTabs(serverName: string) {
     const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 10_000});
     await secondTab.click();
     const secondView = localServerMap[serverName][1].win;
+    await activateServerView(electronApp, localServerMap[serverName][1].webContentsId);
     await waitForMattermostShellReady(secondView, {channelItem: '#sidebarItem_off-topic'});
     await secondView.click('#sidebarItem_off-topic');
 
     const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 10_000});
     await thirdTab.click();
     const thirdView = localServerMap[serverName][2].win;
+    await activateServerView(electronApp, localServerMap[serverName][2].webContentsId);
     await waitForMattermostShellReady(thirdView, {channelItem: '#sidebarItem_town-square'});
     await thirdView.click('#sidebarItem_town-square');
 
