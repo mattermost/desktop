@@ -53,10 +53,12 @@ export async function waitForMainWindowChrome(
     options?: {requireServerDropdown?: boolean; timeout?: number},
 ): Promise<Page> {
     const timeout = options?.timeout ?? 30_000;
+    const deadline = Date.now() + timeout;
     const mainWindow = await waitForMainWindow(app, {timeout});
 
     if (options?.requireServerDropdown) {
-        await mainWindow.waitForSelector('.ServerDropdownButton', {timeout});
+        const remaining = Math.max(0, deadline - Date.now());
+        await mainWindow.waitForSelector('.ServerDropdownButton', {timeout: remaining});
     }
 
     return mainWindow;

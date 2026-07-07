@@ -59,8 +59,9 @@ export async function isChannelPostListLoaded(win: ServerView): Promise<boolean>
 }
 
 export async function isOnChannelUrl(win: ServerView, channelName: string): Promise<boolean> {
+    const channelPath = `/channels/${channelName}`;
     return win.runInRenderer<boolean>(`
-        return window.location.pathname.includes('/channels/${channelName}');
+        return window.location.pathname.includes(${JSON.stringify(channelPath)});
     `).catch(() => false);
 }
 

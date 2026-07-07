@@ -5,23 +5,26 @@ import type {ElectronApplication} from 'playwright';
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-const hasOverlayOpen = async (app: ElectronApplication): Promise<boolean> => {
-    return app.evaluate(({BrowserWindow}) => {
-        for (const win of BrowserWindow.getAllWindows()) {
-            if (win.isDestroyed()) {
-                continue;
-            }
-            try {
-                const url = win.webContents.getURL();
-                if (url.includes('dropdown') || url.includes('downloadsDropdown.html')) {
-                    return true;
+const hasOverlayOpen = async (app: ElectronApplication, timeoutMs = 3_000): Promise<boolean> => {
+    return Promise.race([
+        app.evaluate(({BrowserWindow}) => {
+            for (const win of BrowserWindow.getAllWindows()) {
+                if (win.isDestroyed()) {
+                    continue;
                 }
-            } catch {
-                // Ignore windows that disappear while iterating.
+                try {
+                    const url = win.webContents.getURL();
+                    if (url.includes('dropdown') || url.includes('downloadsDropdown.html')) {
+                        return true;
+                    }
+                } catch {
+                    // Ignore windows that disappear while iterating.
+                }
             }
-        }
-        return false;
-    }).catch(() => false);
+            return false;
+        }),
+        sleep(timeoutMs).then(() => false),
+    ]).catch(() => false);
 };
 
 export async function closeOverlayWindowsIfOpen(app: ElectronApplication, timeoutMs = 3_000): Promise<void> {
@@ -49,7 +52,8 @@ export async function closeOverlayWindowsIfOpen(app: ElectronApplication, timeou
 
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
-        if (!(await hasOverlayOpen(app))) {
+        const remaining = Math.max(0, deadline - Date.now());
+        if (!(await hasOverlayOpen(app, remaining))) {
             return;
         }
         await sleep(100);

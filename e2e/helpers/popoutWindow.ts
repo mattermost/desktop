@@ -39,20 +39,30 @@ export async function waitForPopoutWindowEvent(app: ElectronApplication): Promis
 
 export async function waitForPopoutWindow(app: ElectronApplication, extraCount = 1): Promise<Page> {
     const baseline = popoutWindowCount(app);
+    let popout: Page | undefined;
 
-    await expect.poll(() => popoutWindowCount(app), {
+    await expect.poll(() => {
+        const popouts = app.windows().filter((window) => {
+            try {
+                return window.url().includes(POPOUT_URL_FRAGMENT);
+            } catch {
+                return false;
+            }
+        });
+        if (popouts.length >= baseline + extraCount) {
+            popout = popouts[popouts.length - 1];
+        }
+        return popouts.length;
+    }, {
         timeout: popoutTimeoutMs(),
         message: 'Popout BrowserWindow must appear',
     }).toBe(baseline + extraCount);
 
-    const popouts = app.windows().filter((window) => {
-        try {
-            return window.url().includes(POPOUT_URL_FRAGMENT);
-        } catch {
-            return false;
-        }
-    });
-    return popouts[popouts.length - 1]!;
+    if (!popout) {
+        throw new Error('Popout window was not available after wait');
+    }
+
+    return popout;
 }
 
 export async function openPopoutViaFileMenu(app: ElectronApplication, mainWindow: Page): Promise<Page> {

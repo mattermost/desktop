@@ -1,9 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {activateServerView} from './serverContext';
 import {closeDownloadsDropdownIfOpen} from './downloadsDropdown';
 import {closeOverlayWindowsIfOpen} from './overlayWindows';
+import {activateServerView} from './serverContext';
 import type {ServerView} from './serverView';
 
 /** Close desktop overlays that steal focus from server views (dropdowns, modals). */

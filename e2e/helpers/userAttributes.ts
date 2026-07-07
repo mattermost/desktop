@@ -16,12 +16,12 @@ import {
     typeIntoPostTextbox,
 } from './mattermostShell';
 import {HAS_CLIENT_JS_ERROR_JS} from './rendererUtils';
-import {activateServerView, loadServerViewUrl, reloadServerView} from './serverContext';
-import type {ServerEntry} from './serverMap';
-import {ApiRequestError, apiLogin, apiRequest} from './server_api/client';
 import {resolveChannelByName} from './server_api/channel';
+import {ApiRequestError, apiLogin, apiRequest} from './server_api/client';
 import {getTestServerCredentials} from './server_api/credentials';
 import {apiCreatePost} from './server_api/post';
+import {activateServerView, loadServerViewUrl, reloadServerView} from './serverContext';
+import type {ServerEntry} from './serverMap';
 import type {ServerView} from './serverView';
 
 export type UserPropertyField = {
@@ -175,7 +175,15 @@ export async function openProfileSettings(win: ServerView): Promise<void> {
         throw new Error('Could not open user account menu');
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await expect.poll(async () => win.runInRenderer<boolean>(`
+        const profileEntry = Array.from(document.querySelectorAll('[role="menuitem"], .MenuItem'))
+            .find((element) => /^profile$/i.test((element.textContent || '').trim()));
+        if (!(profileEntry instanceof HTMLElement)) {
+            return false;
+        }
+        const rect = profileEntry.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+    `), {timeout: 5_000, message: 'Profile menu item must be visible'}).toBe(true);
 
     await win.runInRenderer<void>(`
         const profileEntry = Array.from(document.querySelectorAll('[role="menuitem"], .MenuItem'))
@@ -294,7 +302,17 @@ export async function editTextCustomAttribute(
         await win.fill(`#customAttribute_${fieldId}`, newValue);
     }
     if (save) {
-        await win.click('button:has-text("Save")');
+        await win.runInRenderer<void>(`
+            const fieldId = ${JSON.stringify(fieldId)};
+            const input = document.querySelector('#customAttribute_' + fieldId);
+            const row = input?.closest('.setting-list-item, .SettingsBlock, section, li, div') || document;
+            const saveBtn = Array.from(row.querySelectorAll('button'))
+                .find((button) => (button.textContent || '').trim() === 'Save');
+            if (!(saveBtn instanceof HTMLButtonElement)) {
+                throw new Error('Save button not found for custom attribute row');
+            }
+            saveBtn.click();
+        `);
         await win.waitForSelector(`#customAttribute_${fieldId}Edit`, {timeout: 10_000});
     }
 }

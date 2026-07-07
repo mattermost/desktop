@@ -5,10 +5,16 @@ import type {ElectronApplication} from 'playwright';
 
 export async function stubShellOpenExternal(app: ElectronApplication): Promise<void> {
     await app.evaluate(({shell}) => {
-        (shell as any).__e2eOpenExternalCalls = [];
-        (shell as any).__e2eOriginalOpenExternal = shell.openExternal.bind(shell);
+        const shellState = shell as typeof shell & {
+            __e2eOpenExternalCalls?: string[];
+            __e2eOriginalOpenExternal?: typeof shell.openExternal;
+        };
+        if (!shellState.__e2eOriginalOpenExternal) {
+            shellState.__e2eOriginalOpenExternal = shell.openExternal.bind(shell);
+        }
+        shellState.__e2eOpenExternalCalls = [];
         shell.openExternal = async (url: string) => {
-            (shell as any).__e2eOpenExternalCalls.push(url);
+            shellState.__e2eOpenExternalCalls!.push(url);
         };
     });
 }

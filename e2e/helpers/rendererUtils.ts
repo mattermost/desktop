@@ -97,7 +97,7 @@ export const IS_ELEMENT_SHOWN_JS = `
     };
 `;
 
-const POST_LIST_COMPOSER_SELECTORS = POST_TEXTBOX_CANDIDATES.join(', ');
+const POST_LIST_COMPOSER_SELECTORS = POST_TEXTBOX_SELECTOR;
 
 /** Lenient channel-ready check used by legacy waitForChannelPostListLoaded callers. */
 export const IS_CHANNEL_POST_LIST_LOADED_JS = `
@@ -125,7 +125,6 @@ export const IS_CHANNEL_POST_LIST_LOADED_JS = `
 
 /** True when the channel header and interactive composer are both present. */
 export const IS_CHANNEL_VIEW_LOADED_JS = `
-    ${IS_VISIBLE_JS}
     ${POST_TEXTBOX_RESOLVER_JS}
 
     const hasHeader = document.querySelector(${CHANNEL_HEADER_SELECTORS_JSON});
