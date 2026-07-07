@@ -314,6 +314,23 @@ describe('app/menus/appMenu/view', () => {
             expect(mockView.reload).toHaveBeenCalledWith('https://example.com/current-page');
         });
 
+        it('should clear cache and reload active tab when menu open clears focused view', () => {
+            WebContentsManager.getFocusedView.mockReturnValue(null);
+            TabManager.getCurrentActiveTabView.mockReturnValue(mockView);
+
+            localizeMessage.mockImplementation((id) => {
+                if (id === 'main.menus.app.view.clearCacheAndReload') {
+                    return 'Clear Cache and Reload';
+                }
+                return id;
+            });
+
+            const menu = createViewMenu();
+            const clearCacheMenuItem = menu.submenu.find((item) => item.label === 'Clear Cache and Reload');
+            clearCacheMenuItem.click();
+            expect(WebContentsManager.clearCacheAndReloadView).toHaveBeenCalledWith(mockView.id);
+        });
+
         it('should show developer mode options when developer mode is enabled', () => {
             DeveloperMode.enabled.mockReturnValue(true);
             DeveloperMode.get.mockImplementation((key) => {
