@@ -1,0 +1,172 @@
+# Spike: validate the test-system-io-report-upload + test-system-io-summary chain
+# on a throwaway Playwright run BEFORE wiring it into compatibility-matrix-testing.yml.
+#
+# Why standalone: production CMT needs Matterwick-provisioned servers + a built
+# Electron bundle. This spike runs two trivial Playwright specs across 2 shards
+# to exercise the only unproven part of the TSIO path — test-system-io-report-upload
+# has zero production callers (only TSIO's own self-test). If group finalization +
+# the consolidated summary render here, the desktop CMT wiring is safe to ship.
+#
+# Run: workflow_dispatch on a branch. No secrets required — auth is OIDC
+# (permissions: id-token: write). Defaults to TSIO staging so we don't pollute prod.
+# Safe to delete this file once the spike passes and the real CMT is wired to TSIO.
+name: TSIO Spike
+
+on:
+  workflow_dispatch:
+    inputs:
+      use-staging:
+        description: "Target TSIO staging (true) instead of production"
+        required: false
+        default: "true"
+        type: boolean
+      fail-on-test-failures:
+        description: "Fail the workflow if any shard failed (leave false to see the summary on a red run)"
+        required: false
+        default: "false"
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Workflow-level default; jobs below narrow to least-privilege.
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-22.04
+    outputs:
+      composite-identity-json: ${{ steps.identity.outputs.composite-identity-json }}
+      total-reports-expected: "2"
+    steps:
+      - name: Build composite identity
+        id: identity
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          MM_SHA: ${{ github.sha }}
+          MM_BRANCH: ${{ github.ref_name }}
+        run: |
+          # `name` groups the report on the TSIO dashboard. Distinct from any real
+          # CMT/PR context so the spike never collides with production report groups.
+          COMPOSITE_IDENTITY=$(jq -nc \
+            --arg repo "${GITHUB_REPOSITORY}" \
+            --arg sha "${MM_SHA}" \
+            --arg run_id "${GITHUB_RUN_ID}" \
+            --arg attempt "${GITHUB_RUN_ATTEMPT}" \
+            --arg name "tsio-spike-desktop" \
+            --arg branch "${MM_BRANCH}" \
+            '{repository:$repo, commit_sha:$sha, gh_run_id:$run_id, name:$name, gh_run_attempt:$attempt, branch:$branch}')
+          echo "composite-identity-json=${COMPOSITE_IDENTITY}" >> "$GITHUB_OUTPUT"
+          echo "$COMPOSITE_IDENTITY" | jq .
+
+  shards:
+    name: shard-${{ matrix.shard }}
+    needs: prepare
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      id-token: write   # TSIO auth via OIDC
+      actions: read     # report-upload resolves gh_job_id via the GitHub API
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    steps:
+      - name: Set up Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '22.x'
+
+      - name: Scaffold a tiny Playwright project
+        run: |
+          mkdir -p spike/tests
+          cat > spike/package.json <<'PKG'
+          { "name": "tsio-spike", "private": true, "type": "module" }
+          PKG
+          cat > spike/playwright.config.ts <<'CFG'
+          import {defineConfig, devices} from '@playwright/test';
+          export default defineConfig({
+            testDir: './tests',
+            fullyParallel: false,
+            workers: 1,
+            retries: 0,
+            reporter: [['line'], ['json', {outputFile: 'results.json'}], ['blob', {outputDir: 'blob-report'}]],
+            outputDir: './output',
+            use: {trace: 'off', screenshot: 'only-on-failure'},
+            projects: [{name: 'chromium', use: {...devices['Desktop Chrome']}}],
+          });
+          CFG
+          # Shard 1 gets a passing file; shard 2 gets pass + intentional fail + skip,
+          # so the consolidated summary has something real to render across legs.
+          cat > spike/tests/a.spec.ts <<'SPEC'
+          import {test, expect} from '@playwright/test';
+          test('spike-pass-a', async () => { expect(1 + 1).toBe(2); });
+          SPEC
+          cat > spike/tests/b.spec.ts <<'SPEC'
+          import {test, expect} from '@playwright/test';
+          test('spike-pass-b', async () => { expect('ok').toBe('ok'); });
+          test('spike-fail-b', async () => { expect(1).toBe(2); });
+          test.skip('spike-skip-b', async () => {});
+          SPEC
+
+      - name: Install Playwright + browser
+        working-directory: spike
+        run: |
+          npm i -D @playwright/test
+          # No --with-deps: that runs apt-get, which flaked on ubuntu-22.04
+          # (packages.microsoft.com NOSPLIT). Runner ships the needed libs.
+          npx playwright install chromium
+
+      - name: Run tests (sharded)
+        continue-on-error: true
+        working-directory: spike
+        run: npx playwright test --shard=${{ matrix.shard }}/2
+
+      - name: Upload shard report to TSIO
+        if: ${{ always() && hashFiles('spike/results.json') != '' }}
+        uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@a2ea7f005484c28fedf51e16645f6d3bd683fd63 # 0.10.0 / 2026-05-16
+        with:
+          use-staging: ${{ inputs.use-staging }}
+          composite-identity: ${{ needs.prepare.outputs.composite-identity-json }}
+          total-reports-expected: ${{ needs.prepare.outputs.total-reports-expected }}
+          framework: playwright
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # MUST match this job's `name:` field (shard-1 / shard-2).
+          gh-job-name: shard-${{ matrix.shard }}
+          json-path: spike/results.json
+          screenshots-dir: spike/output
+
+  summary:
+    name: tsio-summary
+    needs: [prepare, shards]
+    if: always()
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      id-token: write
+      statuses: write   # summary flips the pending→success/failure commit status
+      actions: read
+    steps:
+      - name: Render consolidated TSIO summary
+        id: summary
+        uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-summary@a2ea7f005484c28fedf51e16645f6d3bd683fd63 # 0.10.0 / 2026-05-16
+        with:
+          use-staging: ${{ inputs.use-staging }}
+          composite-identity: ${{ needs.prepare.outputs.composite-identity-json }}
+          framework: playwright
+          commit-status-context: tsio-spike/desktop
+          fail-on-test-failures: ${{ inputs.fail-on-test-failures }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Show outputs
+        if: always()
+        env:
+          DESC: ${{ steps.summary.outputs.commit_status_description }}
+          PAYLOAD: ${{ steps.summary.outputs.webhook_payload }}
+        run: |
+          echo "commit_status_description:"
+          echo "$DESC"
+          echo
+          echo "webhook_payload:"
+          echo "$PAYLOAD"
