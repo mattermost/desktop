@@ -6,7 +6,7 @@ import {restoreMessageBox, stubMessageBoxResponses} from '../../helpers/dialog';
 import {clickApplicationMenuItem} from '../../helpers/menu';
 
 test(
-    'clear all data menu item can be cancelled without restarting the app',
+    'MM-T6148 clear all data menu item can be cancelled without restarting the app',
     {tag: ['@P1', '@all']},
     async ({electronApp, mainWindow}) => {
         expect(mainWindow).toBeDefined();

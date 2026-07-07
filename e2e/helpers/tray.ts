@@ -60,7 +60,7 @@ export async function showMainWindowIfHidden(app: ElectronApplication): Promise<
         const refs = (global as any).__e2eTestRefs;
         const mainWindow = refs?.MainWindow?.get?.();
         if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
-            refs?.MainWindow?.show?.();
+            mainWindow.show();
         }
     }).catch(() => {});
 }

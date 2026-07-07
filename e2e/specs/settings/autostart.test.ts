@@ -8,7 +8,7 @@ import {test, expect} from '../../fixtures/index';
 import {openSettingsWindow} from '../../helpers/settingsWindow';
 
 test(
-    'SET-01 toggling autostart updates config.json',
+    'MM-T6190 toggling autostart updates config.json',
     {tag: ['@P1', '@win32', '@linux']},
     async ({electronApp}, testInfo) => {
         const configFilePath = path.join(testInfo.outputDir, 'userdata', 'config.json');

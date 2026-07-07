@@ -14,7 +14,7 @@ test.use({appConfig: demoMattermostConfig});
 test.setTimeout(120_000);
 
 test(
-    'clicking a notification navigates to the correct channel',
+    'MM-T6162 clicking a notification navigates to the correct channel',
     {tag: ['@P0', '@all']},
     async ({electronApp, serverMap}) => {
         if (!process.env.MM_TEST_SERVER_URL) {

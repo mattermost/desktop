@@ -5,7 +5,7 @@ import {test, expect} from '../../fixtures/index';
 import {clickApplicationMenuItem} from '../../helpers/menu';
 
 test(
-    'DIAG-01 Run diagnostics completes from the Help menu',
+    'MM-T6149 Run diagnostics completes from the Help menu',
     {tag: ['@P1', '@all']},
     async ({electronApp}) => {
         await clickApplicationMenuItem(electronApp, 'help', {id: 'diagnostics'});
