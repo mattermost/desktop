@@ -28,13 +28,13 @@ export async function enablePublicLinks(credentials = getTestServerCredentials()
     }
 
     const siteURL = config.ServiceSettings?.SiteURL ?? credentials.baseUrl;
-    await apiRequest(credentials.baseUrl, token, '/api/v4/config', {
+    const patch: ServerConfig = {
+        FileSettings: {EnablePublicLink: true},
+        ...(siteURL ? {ServiceSettings: {SiteURL: siteURL}} : {}),
+    };
+    await apiRequest(credentials.baseUrl, token, '/api/v4/config/patch', {
         method: 'PUT',
-        body: JSON.stringify({
-            ...config,
-            ServiceSettings: {...config.ServiceSettings, SiteURL: siteURL},
-            FileSettings: {...config.FileSettings, EnablePublicLink: true},
-        }),
+        body: JSON.stringify(patch),
     });
 
     return true;
