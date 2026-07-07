@@ -221,6 +221,10 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.base.ref }}
 
+      # Sparse-checked into a separate path, not the default workspace: a plain
+      # second checkout of head.sha here would replace the base-ref tree with a
+      # sparse one containing only this file — wiping out
+      # .github/actions/cancel-e2e-runs/ before the step below can use it.
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         if: github.event.pull_request.head.repo.full_name == github.repository
         with:
@@ -228,6 +232,11 @@ jobs:
           sparse-checkout: |
             e2e/utils/github-actions.js
           sparse-checkout-cone-mode: false
+          path: untrusted-head
+
+      - name: Use PR's github-actions.js
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        run: cp untrusted-head/e2e/utils/github-actions.js e2e/utils/github-actions.js
 
       - name: Cancel E2E runs and mark statuses skipped
         uses: ./.github/actions/cancel-e2e-runs
