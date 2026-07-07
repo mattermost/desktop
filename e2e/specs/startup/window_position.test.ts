@@ -36,6 +36,9 @@ async function tileMainWindowToLeftHalf(app: ElectronApplication): Promise<Windo
         if (win.isFullScreen()) {
             win.setFullScreen(false);
         }
+        if (win.isMaximized()) {
+            win.unmaximize();
+        }
 
         const workArea = screen.getPrimaryDisplay().workArea;
         const bounds = {
@@ -49,12 +52,30 @@ async function tileMainWindowToLeftHalf(app: ElectronApplication): Promise<Windo
     });
 }
 
-async function enterMainWindowFullScreen(app: ElectronApplication): Promise<void> {
+async function enterMainWindowExpanded(app: ElectronApplication): Promise<void> {
     await app.evaluate(async ({BrowserWindow}) => {
         const refs = (global as any).__e2eTestRefs;
         const win = refs?.MainWindow?.get?.() ?? BrowserWindow.getAllWindows().find((candidate) => !candidate.isDestroyed());
         if (!win) {
             throw new Error('Main window not found');
+        }
+
+        // Linux windows set fullscreenable: false in baseWindow.ts — setFullScreen() is a no-op.
+        if (process.platform === 'linux') {
+            await new Promise<void>((resolve, reject) => {
+                const timeout = setTimeout(() => reject(new Error('Timed out waiting for maximize')), 20_000);
+                if (win.isMaximized()) {
+                    clearTimeout(timeout);
+                    resolve();
+                    return;
+                }
+                win.once('maximize', () => {
+                    clearTimeout(timeout);
+                    resolve();
+                });
+                win.maximize();
+            });
+            return;
         }
 
         await new Promise<void>((resolve, reject) => {
@@ -72,7 +93,18 @@ async function enterMainWindowFullScreen(app: ElectronApplication): Promise<void
         });
     });
 
-    expect((await getMainWindowState(app)).isFullScreen).toBe(true);
+    expect(await isMainWindowExpanded(app)).toBe(true);
+}
+
+async function isMainWindowExpanded(app: ElectronApplication): Promise<boolean> {
+    return app.evaluate(({BrowserWindow}) => {
+        const refs = (global as any).__e2eTestRefs;
+        const win = refs?.MainWindow?.get?.() ?? BrowserWindow.getAllWindows().find((candidate) => !candidate.isDestroyed());
+        if (!win) {
+            return false;
+        }
+        return process.platform === 'linux' ? win.isMaximized() : win.isFullScreen();
+    });
 }
 
 async function exerciseWindowChrome(
@@ -128,16 +160,21 @@ test.describe('startup/window_position', () => {
 
             const afterTiled = await getMainWindowState(electronApp);
             expect(afterTiled.isFullScreen).toBe(false);
+            expect(await isMainWindowExpanded(electronApp)).toBe(false);
             expect(Math.abs(afterTiled.bounds.x - tiledBounds.x)).toBeLessThanOrEqual(5);
             expect(Math.abs(afterTiled.bounds.y - tiledBounds.y)).toBeLessThanOrEqual(5);
             expect(Math.abs(afterTiled.bounds.width - tiledBounds.width)).toBeLessThanOrEqual(10);
             expect(Math.abs(afterTiled.bounds.height - tiledBounds.height)).toBeLessThanOrEqual(10);
 
-            await enterMainWindowFullScreen(electronApp);
+            await enterMainWindowExpanded(electronApp);
             await exerciseWindowChrome(electronApp, mainWindow, {openSettings: false});
 
-            const afterFullScreen = await getMainWindowState(electronApp);
-            expect(afterFullScreen.isFullScreen, 'App must remain in full screen after tab and modal interactions').toBe(true);
+            expect(
+                await isMainWindowExpanded(electronApp),
+                process.platform === 'linux'
+                    ? 'App must remain maximized after tab interactions on Linux'
+                    : 'App must remain in full screen after tab and modal interactions',
+            ).toBe(true);
         },
     );
 });
