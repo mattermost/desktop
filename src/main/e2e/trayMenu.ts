@@ -15,9 +15,20 @@ function trayMenuLabelMatches(itemLabel: string, label: string, truncated: strin
         normalizedItem === normalizedTarget;
 }
 
+function normalizeTrayMenuRole(role: string): string {
+    return role.toLowerCase();
+}
+
 function clickTrayMenuItemsByRole(items: MenuItem[], role: string): boolean {
+    const normalizedRole = normalizeTrayMenuRole(role);
     for (const item of items) {
-        if (item.role === role && typeof item.click === 'function') {
+        if (
+            item.role &&
+            normalizeTrayMenuRole(item.role) === normalizedRole &&
+            item.enabled !== false &&
+            item.visible !== false &&
+            typeof item.click === 'function'
+        ) {
             item.click();
             return true;
         }
