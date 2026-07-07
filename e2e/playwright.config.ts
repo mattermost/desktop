@@ -81,6 +81,10 @@ const reporters = process.env.CI ? [
     ['blob', {outputDir: 'blob-report'}],
     ['line'],
     ['junit', {outputFile: 'test-results/e2e-junit.xml'}],
+    // Native Playwright JSON — required by test-system-io-report-upload's
+    // `framework: playwright` parser (it reads suites[].specs[].tests[].results[],
+    // not the JUnit shape analyze-flaky-test.js uses).
+    ['json', {outputFile: 'test-results/results.json'}],
 ] as const : [
     ['html', {open: 'never', outputFolder: 'playwright-report'}],
     ['list'],

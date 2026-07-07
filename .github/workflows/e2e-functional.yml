@@ -44,6 +44,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       platforms: ${{ steps.generate.outputs.platforms }}
+      tsio-composite-identity: ${{ steps.tsio-identity.outputs.composite-identity-json }}
+      tsio-total-reports-expected: ${{ steps.tsio-identity.outputs.total-reports-expected }}
     steps:
       - id: generate
         env:
@@ -53,6 +55,33 @@ jobs:
           # does not drift when GitHub retargets that label to macOS 26.
           platforms=$(echo "${INSTANCE_DETAILS}" | jq -c 'map(if .runner == "macos-latest" then .runner = "macos-26" else . end)')
           echo "platforms=${platforms}" >> "$GITHUB_OUTPUT"
+
+      # One composite identity + total-reports-expected for the whole run
+      # (every platform leg), so all legs land in a single TSIO report group.
+      - id: tsio-identity
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          MM_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          MM_BRANCH: ${{ inputs.version_name }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          RUN_TYPE: ${{ inputs.run_type || 'PR' }}
+          PLATFORMS: ${{ steps.generate.outputs.platforms }}
+        run: |
+          TOTAL=$(echo "${PLATFORMS}" | jq -c 'length')
+          echo "total-reports-expected=${TOTAL}" >> "$GITHUB_OUTPUT"
+          NAME="desktop-$(echo "${RUN_TYPE}" | tr '[:upper:]' '[:lower:]')"
+          if [ -n "${PR_NUMBER}" ]; then
+            COMPOSITE_IDENTITY=$(jq -nc \
+              --arg repo "${GITHUB_REPOSITORY}" --arg sha "${MM_SHA}" --arg run_id "${GITHUB_RUN_ID}" \
+              --arg name "${NAME}" --arg attempt "${GITHUB_RUN_ATTEMPT}" --arg branch "${MM_BRANCH}" --arg pr "${PR_NUMBER}" \
+              '{repository:$repo, commit_sha:$sha, gh_run_id:$run_id, name:$name, gh_run_attempt:$attempt, branch:$branch, gh_pr_number:$pr}')
+          else
+            COMPOSITE_IDENTITY=$(jq -nc \
+              --arg repo "${GITHUB_REPOSITORY}" --arg sha "${MM_SHA}" --arg run_id "${GITHUB_RUN_ID}" \
+              --arg name "${NAME}" --arg attempt "${GITHUB_RUN_ATTEMPT}" --arg branch "${MM_BRANCH}" \
+              '{repository:$repo, commit_sha:$sha, gh_run_id:$run_id, name:$name, gh_run_attempt:$attempt, branch:$branch}')
+          fi
+          echo "composite-identity-json=${COMPOSITE_IDENTITY}" >> "$GITHUB_OUTPUT"
 
   update-initial-status:
     name: Update initial status
@@ -100,7 +129,37 @@ jobs:
       # below). The previous `startsWith(version_name, 'release-') && 'RELEASE'` fallback was
       # for matterwick's release-branch push, which is no longer wired — removed.
       TYPE: ${{ inputs.run_type || 'PR' }}
+      tsio-composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
+      tsio-total-reports-expected: ${{ needs.prepare-matrix.outputs.tsio-total-reports-expected }}
     secrets: inherit
+
+  # Additive TSIO reporting, separate commit-status context from the existing
+  # per-platform status/label flow below (update-final-status / remove-e2e-label).
+  # Does not replace or affect that flow — required checks and the E2E label
+  # contract are untouched.
+  tsio-summary:
+    name: TSIO summary
+    runs-on: ubuntu-24.04
+    needs:
+      - prepare-matrix
+      - e2e-tests
+    if: always()
+    permissions:
+      contents: read
+      id-token: write
+      statuses: write
+    steps:
+      - name: Render TSIO summary + flip commit status
+        uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-summary@a2ea7f005484c28fedf51e16645f6d3bd683fd63 # 0.10.0 / 2026-05-16
+        with:
+          composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
+          framework: playwright
+          commit-status-context: e2e-test/desktop-playwright
+          report-type: ${{ inputs.run_type || 'PR' }}
+          pr-number: ${{ inputs.pr_number }}
+          ref-branch: ${{ inputs.version_name }}
+          fail-on-test-failures: "false"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   update-final-status:
     name: Update final status
