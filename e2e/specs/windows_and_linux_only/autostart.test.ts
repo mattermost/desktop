@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
+import {demoConfig} from '../../helpers/config';
 import {openSettingsWindow} from '../../helpers/settingsWindow';
 
 async function toggleAutostart(settingsWindow: Awaited<ReturnType<typeof openSettingsWindow>>, configFilePath: string) {
@@ -19,21 +20,23 @@ async function toggleAutostart(settingsWindow: Awaited<ReturnType<typeof openSet
 }
 
 test.describe('windows_and_linux_only/autostart', () => {
-    test(
-        'MM-T1289 Start app on login saves autostart preference',
-        {tag: ['@P2', '@win32', '@linux']},
-        async ({electronApp}, testInfo) => {
-            const configFilePath = path.join(testInfo.outputDir, 'userdata', 'config.json');
-            const settingsWindow = await openSettingsWindow(electronApp);
-            await settingsWindow.click('#settingCategoryButton-general');
+    test.describe('MM-T1289 Start app on login saves autostart preference', () => {
+        test.use({appConfig: {...demoConfig, autostart: false}});
 
-            const initial = JSON.parse(fs.readFileSync(configFilePath, 'utf-8')).autostart as boolean;
-            if (!initial) {
+        test(
+            'MM-T1289 Start app on login saves autostart preference',
+            {tag: ['@P2', '@win32', '@linux']},
+            async ({electronApp}, testInfo) => {
+                const configFilePath = path.join(testInfo.outputDir, 'userdata', 'config.json');
+                const settingsWindow = await openSettingsWindow(electronApp);
+                await settingsWindow.click('#settingCategoryButton-general');
+
+                expect(JSON.parse(fs.readFileSync(configFilePath, 'utf-8')).autostart).toBe(false);
                 await toggleAutostart(settingsWindow, configFilePath);
-            }
-            expect(JSON.parse(fs.readFileSync(configFilePath, 'utf-8')).autostart).toBe(true);
-        },
-    );
+                expect(JSON.parse(fs.readFileSync(configFilePath, 'utf-8')).autostart).toBe(true);
+            },
+        );
+    });
 
     test(
         'MM-T1290 Do not start app on login saves autostart preference',

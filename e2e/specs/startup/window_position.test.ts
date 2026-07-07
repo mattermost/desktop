@@ -8,48 +8,91 @@ import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {openSettingsWindow} from '../../helpers/settingsWindow';
+import {evaluateInMainProcessWithArg} from '../../helpers/testRefs';
 
 type WindowBounds = {x: number; y: number; width: number; height: number};
 
-async function getMainWindowState(app: ElectronApplication) {
-    return app.evaluate(({BrowserWindow}) => {
+type MainWindowAction =
+    | {type: 'getState'}
+    | {type: 'tileLeft'}
+    | {type: 'expand'}
+    | {type: 'isExpanded'};
+
+function hasLoginCredentials(): boolean {
+    return Boolean(
+        process.env.MM_TEST_SERVER_URL &&
+        process.env.MM_TEST_USER_NAME &&
+        process.env.MM_TEST_PASSWORD,
+    );
+}
+
+async function evaluateMainWindow<T>(app: ElectronApplication, action: MainWindowAction): Promise<T> {
+    return evaluateInMainProcessWithArg(app, (electron, act) => {
         const refs = (global as any).__e2eTestRefs;
-        const win = refs?.MainWindow?.get?.() ?? BrowserWindow.getAllWindows().find((candidate) => !candidate.isDestroyed());
+        const win = refs?.MainWindow?.get?.() ??
+            electron.BrowserWindow.getAllWindows().find((candidate) => !candidate.isDestroyed());
         if (!win) {
             throw new Error('Main window not found');
         }
-        return {
-            bounds: win.getBounds(),
-            isFullScreen: win.isFullScreen(),
-        };
-    });
+
+        switch (act.type) {
+        case 'getState':
+            return {
+                bounds: win.getBounds(),
+                isFullScreen: win.isFullScreen(),
+            } as T;
+        case 'tileLeft': {
+            if (win.isFullScreen()) {
+                win.setFullScreen(false);
+            }
+            if (win.isMaximized()) {
+                win.unmaximize();
+            }
+
+            const workArea = electron.screen.getPrimaryDisplay().workArea;
+            const bounds = {
+                x: workArea.x,
+                y: workArea.y,
+                width: Math.floor(workArea.width / 2),
+                height: workArea.height,
+            };
+            win.setBounds(bounds);
+            return win.getBounds() as T;
+        }
+        case 'expand':
+            if (process.platform === 'linux') {
+                if (win.isMaximized()) {
+                    win.unmaximize();
+                }
+                win.setBounds(electron.screen.getPrimaryDisplay().workArea);
+            } else {
+                win.setFullScreen(true);
+            }
+            return undefined as T;
+        case 'isExpanded':
+            if (process.platform === 'linux') {
+                const workArea = electron.screen.getPrimaryDisplay().workArea;
+                const bounds = win.getBounds();
+                return (
+                    Math.abs(bounds.x - workArea.x) <= 5 &&
+                    Math.abs(bounds.y - workArea.y) <= 5 &&
+                    Math.abs(bounds.width - workArea.width) <= 10 &&
+                    Math.abs(bounds.height - workArea.height) <= 10
+                ) as T;
+            }
+            return Boolean(win.isFullScreen()) as T;
+        default:
+            throw new Error(`Unsupported main window action: ${(act as MainWindowAction).type}`);
+        }
+    }, action);
+}
+
+async function getMainWindowState(app: ElectronApplication) {
+    return evaluateMainWindow<{bounds: WindowBounds; isFullScreen: boolean}>(app, {type: 'getState'});
 }
 
 async function tileMainWindowToLeftHalf(app: ElectronApplication): Promise<WindowBounds> {
-    return app.evaluate(({BrowserWindow, screen}) => {
-        const refs = (global as any).__e2eTestRefs;
-        const win = refs?.MainWindow?.get?.() ?? BrowserWindow.getAllWindows().find((candidate) => !candidate.isDestroyed());
-        if (!win) {
-            throw new Error('Main window not found');
-        }
-
-        if (win.isFullScreen()) {
-            win.setFullScreen(false);
-        }
-        if (win.isMaximized()) {
-            win.unmaximize();
-        }
-
-        const workArea = screen.getPrimaryDisplay().workArea;
-        const bounds = {
-            x: workArea.x,
-            y: workArea.y,
-            width: Math.floor(workArea.width / 2),
-            height: workArea.height,
-        };
-        win.setBounds(bounds);
-        return win.getBounds();
-    });
+    return evaluateMainWindow<WindowBounds>(app, {type: 'tileLeft'});
 }
 
 async function getPrimaryWorkArea(app: ElectronApplication): Promise<WindowBounds> {
@@ -69,25 +112,7 @@ async function boundsMatchWorkArea(bounds: WindowBounds, workArea: WindowBounds)
 }
 
 async function enterMainWindowExpanded(app: ElectronApplication): Promise<void> {
-    await app.evaluate(({BrowserWindow, screen}) => {
-        const refs = (global as any).__e2eTestRefs;
-        const win = refs?.MainWindow?.get?.() ?? BrowserWindow.getAllWindows().find((candidate) => !candidate.isDestroyed());
-        if (!win) {
-            throw new Error('Main window not found');
-        }
-
-        // Linux windows set fullscreenable: false in baseWindow.ts. WM maximize/fullscreen
-        // events are unreliable under xvfb, so resize to the display work area directly.
-        if (process.platform === 'linux') {
-            if (win.isMaximized()) {
-                win.unmaximize();
-            }
-            win.setBounds(screen.getPrimaryDisplay().workArea);
-            return;
-        }
-
-        win.setFullScreen(true);
-    });
+    await evaluateMainWindow(app, {type: 'expand'});
 
     await expect.poll(
         () => isMainWindowExpanded(app),
@@ -109,11 +134,7 @@ async function isMainWindowExpanded(app: ElectronApplication): Promise<boolean> 
         return boundsMatchWorkArea(state.bounds, workArea);
     }
 
-    return app.evaluate(({BrowserWindow}) => {
-        const refs = (global as any).__e2eTestRefs;
-        const win = refs?.MainWindow?.get?.() ?? BrowserWindow.getAllWindows().find((candidate) => !candidate.isDestroyed());
-        return Boolean(win && win.isFullScreen());
-    });
+    return evaluateMainWindow<boolean>(app, {type: 'isExpanded'});
 }
 
 async function exerciseWindowChrome(
@@ -152,8 +173,8 @@ test.describe('startup/window_position', () => {
         'MM-T4049 Use app in tiled and full screen position',
         {tag: ['@P2', '@all']},
         async ({electronApp, mainWindow, serverMap}) => {
-            if (!process.env.MM_TEST_SERVER_URL) {
-                test.skip(true, 'MM_TEST_SERVER_URL required');
+            if (!hasLoginCredentials()) {
+                test.skip(true, 'MM_TEST_SERVER_URL, MM_TEST_USER_NAME, and MM_TEST_PASSWORD required');
                 return;
             }
 

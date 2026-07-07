@@ -69,14 +69,12 @@ test.describe('windows_and_linux_only/startup_after_reboot', () => {
             try {
                 await waitForAppReady(relaunchedApp);
 
-                const mainWindowVisible = await expect.poll(async () => {
+                await expect.poll(async () => {
                     return relaunchedApp.evaluate(({BrowserWindow}) => {
                         const win = BrowserWindow.getAllWindows().find((candidate) => !candidate.isDestroyed());
                         return Boolean(win && win.isVisible());
                     });
-                }, {timeout: 15_000}).toBe(true).then(() => true).catch(() => false);
-
-                expect(mainWindowVisible, 'Desktop app must show a visible main window after relaunch').toBe(true);
+                }, {timeout: 15_000, message: 'Desktop app must show a visible main window after relaunch'}).toBe(true);
 
                 const hasBlankMainWindow = await relaunchedApp.evaluate(({BrowserWindow}) => {
                     const win = BrowserWindow.getAllWindows().find((candidate) => {
