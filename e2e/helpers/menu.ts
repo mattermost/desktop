@@ -148,26 +148,7 @@ export async function openSignInToAnotherServerModal(app: ElectronApplication) {
     newServerWindowPromise.catch(() => undefined);
 
     try {
-        const opened = await app.evaluate(({app: electronAppInstance}, targetMenuId) => {
-            const root = electronAppInstance.applicationMenu?.getMenuItemById(targetMenuId);
-            const stack = [...(root?.submenu?.items ?? [])];
-            while (stack.length) {
-                const item = stack.shift()!;
-                const label = typeof item.label === 'string' ? item.label : '';
-                if (label.includes('Sign in') && label.includes('Server')) {
-                    item.click();
-                    return true;
-                }
-                if (item.submenu?.items) {
-                    stack.push(...item.submenu.items);
-                }
-            }
-            return false;
-        }, menuId);
-
-        if (!opened) {
-            await clickApplicationMenuItem(app, menuId, {labelIncludes: 'Sign in'});
-        }
+        await clickApplicationMenuItem(app, menuId, {labelIncludes: 'Sign in'});
     } catch (error) {
         await newServerWindowPromise.catch(() => undefined);
         throw error;

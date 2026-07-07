@@ -509,7 +509,7 @@ export async function postAndOpenProfilePopover(
     await activateServerView(electronApp, entry.webContentsId);
     await dismissBlockingOverlays(entry.win);
 
-    const hasJsError = await entry.win.runInRenderer<boolean>(`return (${HAS_CLIENT_JS_ERROR_JS});`).catch(() => false);
+    const hasJsError = await entry.win.runInRenderer<boolean>(HAS_CLIENT_JS_ERROR_JS).catch(() => false);
     const onChannel = await entry.win.runInRenderer<boolean>(`
         return window.location.pathname.includes('/channels/${channelName}');
     `).catch(() => false);

@@ -4,6 +4,7 @@
 import {expect} from '@playwright/test';
 import type {ElectronApplication} from 'playwright';
 
+import {findMainWindow} from './appReadiness';
 import {closeOverlayWindowsIfOpen} from './overlayWindows';
 import type {ServerEntry, ServerMap} from './serverMap';
 import {evaluateInMainProcessWithArg} from './testRefs';
@@ -57,13 +58,7 @@ export async function activateServerView(
         mainWindow?.focus();
     }, webContentsId);
 
-    const mainWindow = app.windows().find((window) => {
-        try {
-            return window.url().includes('index');
-        } catch {
-            return false;
-        }
-    });
+    const mainWindow = findMainWindow(app);
     if (mainWindow) {
         await mainWindow.bringToFront().catch(() => {});
         await mainWindow.keyboard.press('Escape').catch(() => {});

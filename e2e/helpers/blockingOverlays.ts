@@ -1,6 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {findMainWindow} from './appReadiness';
 import {closeDownloadsDropdownIfOpen} from './downloadsDropdown';
 import {closeOverlayWindowsIfOpen} from './overlayWindows';
 import {activateServerView} from './serverContext';
@@ -11,13 +12,7 @@ export async function dismissBlockingOverlays(win: ServerView): Promise<void> {
     await closeDownloadsDropdownIfOpen(win.app);
     await closeOverlayWindowsIfOpen(win.app);
     await activateServerView(win.app, win.webContentsId);
-    const mainWindow = win.app.windows().find((window) => {
-        try {
-            return window.url().includes('index');
-        } catch {
-            return false;
-        }
-    });
+    const mainWindow = findMainWindow(win.app);
     await mainWindow?.keyboard.press('Escape').catch(() => undefined);
     await win.keyboard.press('Escape').catch(() => undefined);
 }

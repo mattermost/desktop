@@ -155,28 +155,22 @@ export async function waitForMockIdpPage(serverWin: ServerView): Promise<void> {
 
 /** Browser-style back after mock in-window IdP (same WebContentsView). */
 export async function navigateBackInServerView(serverWin: ServerView): Promise<void> {
-    const usedWebappBack = await clickWebappHistoryBackIfVisible(serverWin);
-    if (usedWebappBack) {
+    if (await clickWebappHistoryBackIfVisible(serverWin)) {
         return;
     }
 
-    const backShortcut = process.platform === 'darwin' ? 'Meta+[' : 'Alt+ArrowLeft';
-    await serverWin.keyboard.press(backShortcut);
+    await serverWin.evaluate(() => {
+        window.history.back();
+    });
 
-    const returnedToMattermost = await expect.poll(
+    await expect.poll(
         () => serverWin.evaluate(() => {
             return Boolean(document.querySelector('#input_loginId')) ||
                 Boolean(document.querySelector('.DesktopAuthToken')) ||
                 window.location.pathname.includes('/login');
         }).catch(() => false),
-        {timeout: 3_000},
-    ).toBe(true).then(() => true).catch(() => false);
-
-    if (!returnedToMattermost) {
-        await serverWin.evaluate(() => {
-            window.history.back();
-        });
-    }
+        {timeout: 10_000, message: 'Server view must navigate back after history.back()'},
+    ).toBe(true);
 }
 
 export async function clickOpenIdAndWaitForDesktopAuth(serverWin: ServerView): Promise<void> {

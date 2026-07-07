@@ -12,6 +12,21 @@ function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function waitForPopoutAboveBaseline(
+    app: ElectronApplication,
+    baseline: number,
+    timeoutMs = 5_000,
+): Promise<boolean> {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+        if (popoutWindowCount(app) > baseline) {
+            return true;
+        }
+        await sleep(100);
+    }
+    return false;
+}
+
 export async function channelPathname(win: ServerView): Promise<string> {
     return win.evaluate(() => window.location.pathname);
 }
@@ -75,8 +90,7 @@ export async function modifierClickSidebarChannel(
         return true;
     `, true);
 
-    await sleep(750);
-    if (popoutWindowCount(app) > baseline) {
+    if (await waitForPopoutAboveBaseline(app, baseline)) {
         return;
     }
 
@@ -119,8 +133,7 @@ export async function modifierClickSidebarChannel(
         });
     }, {id: win.webContentsId, ...point!, modifier});
 
-    await sleep(750);
-    if (popoutWindowCount(app) > baseline) {
+    if (await waitForPopoutAboveBaseline(app, baseline)) {
         return;
     }
 

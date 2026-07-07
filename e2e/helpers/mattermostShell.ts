@@ -268,23 +268,28 @@ export async function rightClickAtPoint(
 
 export async function listenForNativeContextMenu(app: ElectronApplication, webContentsId: number): Promise<void> {
     await app.evaluate(({webContents}, id) => {
+        const previousListener = (global as any).__e2eNativeContextMenuListener as
+            | ((event: unknown, params: unknown) => void)
+            | undefined;
+        const previousWebContentsId = (global as any).__e2eNativeContextMenuListenerWebContentsId as number | undefined;
+        if (previousListener && previousWebContentsId != null) {
+            const previousWc = webContents.fromId(previousWebContentsId);
+            if (previousWc && !previousWc.isDestroyed()) {
+                previousWc.off('context-menu', previousListener);
+            }
+        }
+
         const wc = webContents.fromId(id);
         if (!wc || wc.isDestroyed()) {
             return;
         }
         delete (global as any).__e2eNativeContextMenu;
 
-        const previousListener = (global as any).__e2eNativeContextMenuListener as
-            | ((event: unknown, params: unknown) => void)
-            | undefined;
-        if (previousListener) {
-            wc.off('context-menu', previousListener);
-        }
-
         const listener = (_event: unknown, params: unknown) => {
             (global as any).__e2eNativeContextMenu = params;
         };
         (global as any).__e2eNativeContextMenuListener = listener;
+        (global as any).__e2eNativeContextMenuListenerWebContentsId = id;
         wc.on('context-menu', listener);
     }, webContentsId);
 }

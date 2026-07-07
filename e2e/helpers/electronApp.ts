@@ -171,8 +171,12 @@ export function clearAllRegistryFiles(): void {
     for (const file of listRegistryFiles()) {
         try {
             fs.rmSync(file, {force: true, recursive: true});
-        } catch {
-            // best-effort stale shard cleanup
+        } catch (error) {
+            const code = (error as NodeJS.ErrnoException).code;
+            if (code === 'ENOENT' || code === 'ENOTDIR') {
+                continue;
+            }
+            console.warn(`[e2e] Failed to remove registry shard ${file}:`, error); // eslint-disable-line no-console
         }
     }
 }

@@ -18,11 +18,15 @@ export const THREADS_LIST_MENU_BUTTON_SELECTOR = [
 
 type LabelPattern = string | RegExp;
 
+function escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function serializeLabelPattern(label: LabelPattern): {source: string; flags: string} {
     if (label instanceof RegExp) {
         return {source: label.source, flags: label.flags};
     }
-    return {source: label, flags: 'i'};
+    return {source: escapeRegExp(label), flags: 'i'};
 }
 
 function labelMatchJs(label: LabelPattern, textExpression: string): string {

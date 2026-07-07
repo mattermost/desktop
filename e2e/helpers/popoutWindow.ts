@@ -10,14 +10,18 @@ import {ServerView} from './serverView';
 
 const POPOUT_URL_FRAGMENT = 'popout.html';
 
-export function popoutWindowCount(app: ElectronApplication): number {
+export function getPopoutWindows(app: ElectronApplication): Page[] {
     return app.windows().filter((window) => {
         try {
             return window.url().includes(POPOUT_URL_FRAGMENT);
         } catch {
             return false;
         }
-    }).length;
+    });
+}
+
+export function popoutWindowCount(app: ElectronApplication): number {
+    return getPopoutWindows(app).length;
 }
 
 function popoutTimeoutMs(): number {
@@ -42,13 +46,7 @@ export async function waitForPopoutWindow(app: ElectronApplication, extraCount =
     let popout: Page | undefined;
 
     await expect.poll(() => {
-        const popouts = app.windows().filter((window) => {
-            try {
-                return window.url().includes(POPOUT_URL_FRAGMENT);
-            } catch {
-                return false;
-            }
-        });
+        const popouts = getPopoutWindows(app);
         if (popouts.length >= baseline + extraCount) {
             popout = popouts[popouts.length - 1];
         }
@@ -154,7 +152,7 @@ export async function getPopoutServerView(app: ElectronApplication): Promise<Ser
 export async function closePopoutWindow(
     app: ElectronApplication,
     popoutWindow: Page,
-    waitForAllClosed = true,
+    waitForAllClosed = false,
 ): Promise<void> {
     const browserWindow = await app.browserWindow(popoutWindow);
     const closeTimeout = process.platform === 'linux' ? 5_000 : 15_000;
@@ -177,13 +175,7 @@ export async function closePopoutWindow(
 }
 
 export async function closeAllPopouts(app: ElectronApplication): Promise<void> {
-    const popoutWindows = app.windows().filter((window) => {
-        try {
-            return window.url().includes(POPOUT_URL_FRAGMENT);
-        } catch {
-            return false;
-        }
-    });
+    const popoutWindows = getPopoutWindows(app);
 
     for (const popout of popoutWindows) {
         await closePopoutWindow(app, popout, false).catch(() => {});
@@ -194,23 +186,42 @@ export async function closeAllPopouts(app: ElectronApplication): Promise<void> {
     }
 }
 
+type DesktopPopoutOptions = Record<string, unknown>;
+
+async function openPopoutViaDesktopApi(
+    win: ServerView,
+    app: ElectronApplication,
+    popoutPath: string,
+    options: DesktopPopoutOptions,
+    unavailableMessage: string,
+): Promise<void> {
+    const windowPromise = waitForPopoutWindowEvent(app);
+    const opened = await win.runInRenderer<boolean>(`
+        const path = ${JSON.stringify(popoutPath)};
+        const options = ${JSON.stringify(options)};
+        const api = window.desktopAPI;
+        if (!api?.openPopout) {
+            return false;
+        }
+        void api.openPopout(path, options);
+        return true;
+    `, true);
+    expect(opened, unavailableMessage).toBe(true);
+    await windowPromise;
+}
+
 export async function openRhsPopoutViaDesktopApi(
     win: ServerView,
     app: ElectronApplication,
     channelPath: string,
 ): Promise<void> {
-    const windowPromise = waitForPopoutWindowEvent(app);
-    const opened = await win.runInRenderer<boolean>(`
-        const path = ${JSON.stringify(channelPath)};
-        const api = window.desktopAPI;
-        if (!api?.openPopout) {
-            return false;
-        }
-        void api.openPopout(path, {isRHS: true});
-        return true;
-    `, true);
-    expect(opened, 'desktopAPI.openPopout must be available in the server view').toBe(true);
-    await windowPromise;
+    await openPopoutViaDesktopApi(
+        win,
+        app,
+        channelPath,
+        {isRHS: true},
+        'desktopAPI.openPopout must be available in the server view',
+    );
 }
 
 export async function openThreadPopoutViaDesktopApi(
@@ -218,18 +229,13 @@ export async function openThreadPopoutViaDesktopApi(
     app: ElectronApplication,
     threadPath: string,
 ): Promise<void> {
-    const windowPromise = waitForPopoutWindowEvent(app);
-    const opened = await win.runInRenderer<boolean>(`
-        const path = ${JSON.stringify(threadPath)};
-        const api = window.desktopAPI;
-        if (!api?.openPopout) {
-            return false;
-        }
-        void api.openPopout(path, {});
-        return true;
-    `, true);
-    expect(opened, 'desktopAPI.openPopout must be available for thread popouts').toBe(true);
-    await windowPromise;
+    await openPopoutViaDesktopApi(
+        win,
+        app,
+        threadPath,
+        {},
+        'desktopAPI.openPopout must be available for thread popouts',
+    );
 }
 
 export async function resetTabsAndPopouts(app: ElectronApplication): Promise<Page> {

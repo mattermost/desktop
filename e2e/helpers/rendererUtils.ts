@@ -153,8 +153,8 @@ export const IS_CHANNEL_VIEW_LOADED_JS = `
 
 /** True when a top-level JS error banner is shown (webapp crashed partially). */
 export const HAS_CLIENT_JS_ERROR_JS = `
-    Boolean(
+    return Boolean(
         document.body?.textContent?.includes('A JavaScript error has occurred')
         || document.querySelector('.error-bar, [data-testid="errorInModal"]'),
-    )
+    );
 `;

@@ -6,7 +6,7 @@ import type {ElectronApplication, Page} from 'playwright';
 
 const MAIN_WINDOW_POLL_MS = 200;
 
-function findMainWindow(app: ElectronApplication): Page | undefined {
+export function findMainWindow(app: ElectronApplication): Page | undefined {
     return app.windows().find((window) => {
         try {
             return window.url().includes('index');

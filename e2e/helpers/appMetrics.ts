@@ -30,6 +30,8 @@ const NON_TAB_PROCESS_MAX: Partial<Record<NodeJS.Platform, number>> = {
     win32: 12,
 };
 
+const DEFAULT_NON_TAB_PROCESS_MAX = 12;
+
 /** Tab/renderer processes for demoConfig (2 servers + main chrome). */
 const TAB_PROCESS_MAX = 30;
 
@@ -58,7 +60,7 @@ export function summarizeAppProcessMetrics(metrics: AppProcessMetric[]): AppProc
 }
 
 export function getNonTabProcessMax(): number {
-    return NON_TAB_PROCESS_MAX[process.platform] ?? 12;
+    return NON_TAB_PROCESS_MAX[process.platform] ?? DEFAULT_NON_TAB_PROCESS_MAX;
 }
 
 export function getTabProcessMax(): number {
