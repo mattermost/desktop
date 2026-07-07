@@ -11,6 +11,7 @@ import ServerHub from 'app/serverHub';
 import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
 import {BROWSER_HISTORY_PUSH, HISTORY, LOAD_FAILED, LOAD_SUCCESS, REQUEST_BROWSER_HISTORY_STATUS} from 'common/communication';
+import Config from 'common/config';
 import {Logger} from 'common/log';
 import type {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
@@ -88,6 +89,11 @@ export class NavigationManager {
                 webContentsView.once(LOAD_FAILED, this.deeplinkFailed);
                 webContentsView.load(urlWithSchema);
             }
+        } else if (!Config.enableServerManagement) {
+            dialog.showErrorBox(
+                localizeMessage('app.navigationManager.serverManagementDisabledTitle', 'Unable to add server'),
+                localizeMessage('app.navigationManager.serverManagementDisabledDescription', 'Your organization\'s settings don\'t allow adding new servers, so this link couldn\'t be opened. Contact your system administrator for more information.'),
+            );
         } else if (ServerManager.hasServers()) {
             ServerHub.showNewServerModal(`${parsedURL.host}${parsedURL.pathname}${parsedURL.search}`);
         } else {
