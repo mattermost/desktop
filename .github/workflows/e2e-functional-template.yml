@@ -445,7 +445,7 @@ jobs:
       # whole run's matrix. Packed into one JSON input (see tsio-config above)
       # to stay under workflow_call's 10-input cap.
       - name: e2e/upload-report-to-tsio
-        if: ${{ always() && inputs.tsio-config != '' }}
+        if: ${{ always() && inputs.tsio-config != '' && hashFiles('e2e/test-results/results.json') != '' }}
         uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@a2ea7f005484c28fedf51e16645f6d3bd683fd63 # 0.10.0 / 2026-05-16
         with:
           composite-identity: ${{ toJSON(fromJSON(inputs.tsio-config).composite_identity) }}

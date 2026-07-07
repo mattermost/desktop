@@ -106,7 +106,7 @@ jobs:
             await updateInitialStatus({ github, context, platforms });
 
   e2e-tests:
-    needs: 
+    needs:
       - prepare-matrix
       - update-initial-status
     name: ${{ matrix.platform }}
@@ -114,8 +114,14 @@ jobs:
       matrix:
         include: ${{ fromJson(needs.prepare-matrix.outputs.platforms) }}
       fail-fast: false
-    # The reusable template runs only untrusted PR code (npm ci / Playwright) with a read-only
-    # token; it inherits the workflow-level contents:read default.
+    # The reusable template runs untrusted PR code (npm ci / Playwright) with a read-only
+    # token; actions:read + id-token:write are additive, needed only to grant the nested
+    # e2e job's TSIO reporting steps (OIDC auth + gh_job_id lookup) — a reusable workflow
+    # can only receive permissions the calling job itself already holds.
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
     uses: ./.github/workflows/e2e-functional-template.yml
     with:
       runs-on: ${{ matrix.runner }}

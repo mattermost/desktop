@@ -124,6 +124,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(inputs.CMT_MATRIX) }}
+    # A reusable workflow can only receive permissions the calling job itself
+    # already holds — the nested e2e job's TSIO reporting steps need
+    # actions:read + id-token:write (same fix as e2e-functional.yml's e2e-tests
+    # job; this workflow has no top-level `permissions:` default, so without
+    # this the nested job would hit the same "requesting actions:read,
+    # id-token:write but only allowed none" rejection e2e-functional.yml hit).
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
     secrets: inherit
     with:
       runs-on: ${{ matrix.environment.runner }}
