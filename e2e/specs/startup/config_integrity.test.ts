@@ -5,10 +5,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {closeElectronApp, closeElectronAppFast} from '../../helpers/electronApp';
 
 test(
-    'config.json is valid JSON after app closes normally',
+    'MM-T6191 config.json is valid JSON after app closes normally',
     {tag: ['@P1', '@all']},
     async ({}, testInfo) => {
         const {mkdirSync} = await import('fs');
@@ -31,8 +31,9 @@ test(
         try {
             await waitForAppReady(app);
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            // Not the fast path: this test reads config.json right after close, so
+            // it needs the lock-release wait to guarantee the file is fully flushed.
+            await closeElectronApp(app, userDataDir);
         }
 
         // Config file must exist and be valid JSON
@@ -49,7 +50,7 @@ test(
 );
 
 test(
-    'malformed config.json at startup does not crash the app',
+    'MM-T6192 malformed config.json at startup does not crash the app',
     {tag: ['@P1', '@all']},
     async ({}, testInfo) => {
         const {mkdirSync} = await import('fs');
@@ -76,8 +77,7 @@ test(
             const windows = app.windows();
             expect(windows.length).toBeGreaterThan(0);
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     },
 );

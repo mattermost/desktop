@@ -7,7 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig, writeConfigFile} from '../../helpers/config';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {closeElectronAppFast} from '../../helpers/electronApp';
 
 async function launchWithRemoveServerModal(testInfo: {outputDir: string}) {
     const {mkdirSync} = await import('fs');
@@ -44,7 +44,7 @@ async function launchWithRemoveServerModal(testInfo: {outputDir: string}) {
 }
 
 test.describe('RemoveServerModal', () => {
-    test('MM-T4390_1 should remove existing server on click Remove', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
+    test('MM-T1286 MM-T4390 Remove existing server on click Remove', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
         const {app, removeServerView, userDataDir} = await launchWithRemoveServerModal(testInfo);
         try {
             await removeServerView.click('button:has-text("Remove")');
@@ -70,8 +70,7 @@ test.describe('RemoveServerModal', () => {
                 expectedConfig.map((s: {name: string; url: string; order: number}) => expect.objectContaining(s)),
             ));
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 
@@ -87,8 +86,7 @@ test.describe('RemoveServerModal', () => {
                 demoConfig.servers.map((s) => expect.objectContaining(s)),
             ));
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 
@@ -100,8 +98,7 @@ test.describe('RemoveServerModal', () => {
             const existing = Boolean(app.windows().find((w) => w.url().includes('removeServer')));
             expect(existing).toBe(false);
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 
@@ -115,8 +112,7 @@ test.describe('RemoveServerModal', () => {
             const existing = Boolean(app.windows().find((w) => w.url().includes('removeServer')));
             expect(existing).toBe(false);
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 });

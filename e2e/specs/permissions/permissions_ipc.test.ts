@@ -2,8 +2,8 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../../fixtures/index';
+import {SHOW_SETTINGS_WINDOW} from '../../helpers/ipcChannels';
 
-const SHOW_SETTINGS_WINDOW = 'show-settings-window';
 type ElectronApplication = Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>;
 
 async function openSettingsWindow(electronApp: ElectronApplication) {
@@ -39,12 +39,7 @@ async function openSettingsWindow(electronApp: ElectronApplication) {
 }
 
 test.describe('permissions/ipc', () => {
-    test('E2E-P01: should return a valid media access status via GET_MEDIA_ACCESS_STATUS IPC', {tag: ['@P2', '@all']}, async ({electronApp}) => {
-        if (process.platform === 'linux') {
-            test.skip(true, 'systemPreferences.getMediaAccessStatus is not available on Linux');
-            return;
-        }
-
+    test('MM-T6163 should return a valid media access status via GET_MEDIA_ACCESS_STATUS IPC', {tag: ['@P2', '@darwin', '@win32']}, async ({electronApp}) => {
         const settingsWindow = await openSettingsWindow(electronApp);
 
         const status = await settingsWindow.evaluate(
@@ -53,12 +48,7 @@ test.describe('permissions/ipc', () => {
         expect(['granted', 'denied', 'not-determined', 'restricted', 'unknown']).toContain(status);
     });
 
-    test('E2E-P02: should open ms-settings:privacy-webcam for camera preferences (Windows only)', {tag: ['@P2', '@all', '@win32']}, async ({electronApp}) => {
-        if (process.platform !== 'win32') {
-            test.skip(true, 'Windows only');
-            return;
-        }
-
+    test('MM-T6164 should open ms-settings:privacy-webcam for camera preferences (Windows only)', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
         const settingsWindow = await openSettingsWindow(electronApp);
 
         await electronApp.evaluate(({shell}) => {
@@ -79,12 +69,7 @@ test.describe('permissions/ipc', () => {
         expect(capturedURL).toBe('ms-settings:privacy-webcam');
     });
 
-    test('E2E-P03: should open ms-settings:privacy-microphone for microphone preferences (Windows only)', {tag: ['@P2', '@all', '@win32']}, async ({electronApp}) => {
-        if (process.platform !== 'win32') {
-            test.skip(true, 'Windows only');
-            return;
-        }
-
+    test('MM-T6165 should open ms-settings:privacy-microphone for microphone preferences (Windows only)', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
         const settingsWindow = await openSettingsWindow(electronApp);
 
         await electronApp.evaluate(({shell}) => {

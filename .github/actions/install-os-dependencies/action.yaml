@@ -62,6 +62,9 @@ runs:
       if: inputs.os == 'macOS'
       shell: bash
       run: |
+        # GitHub-hosted macOS runners ship aws/tap and azure/bicep pre-tapped.
+        # Trust them so Homebrew does not warn on every brew invocation.
+        brew trust aws/tap azure/bicep 2>/dev/null || true
         brew install nss
 
     - name: Install Windows Dependencies

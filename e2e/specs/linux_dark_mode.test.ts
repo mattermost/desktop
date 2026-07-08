@@ -2,12 +2,13 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../fixtures/index';
+import {EMIT_CONFIGURATION} from '../helpers/ipcChannels';
 
-async function toggleDarkMode(electronApp: import('playwright').ElectronApplication) {
-    await electronApp.evaluate(({app}) => {
-        const viewMenu = (app as any).applicationMenu?.getMenuItemById('view');
+async function toggleDarkModeLinux(electronApp: import('playwright').ElectronApplication) {
+    await electronApp.evaluate(({Menu}) => {
+        const viewMenu = Menu.getApplicationMenu()?.getMenuItemById('view');
         const darkModeItem = viewMenu?.submenu?.items?.find(
-            (item: any) => item.label?.toLowerCase().includes('dark mode'),
+            (item) => item.label?.toLowerCase().includes('dark mode'),
         );
         if (!darkModeItem) {
             throw new Error('Toggle Dark Mode menu item not found in View menu');
@@ -16,31 +17,42 @@ async function toggleDarkMode(electronApp: import('playwright').ElectronApplicat
     });
 }
 
+async function setDarkModeConfig(electronApp: import('playwright').ElectronApplication, enabled: boolean) {
+    await electronApp.evaluate(({ipcMain}, {darkMode, channel}) => {
+        const refs = (global as any).__e2eTestRefs;
+        const Config = refs?.Config;
+        if (!Config) {
+            throw new Error('__e2eTestRefs.Config is unavailable');
+        }
+        Config.set('darkMode', darkMode);
+        ipcMain.emit(channel, null, Config.data);
+    }, {darkMode: enabled, channel: EMIT_CONFIGURATION});
+}
+
 test.describe('dark_mode', () => {
     test('MM-T2465 Linux Dark Mode Toggle', {tag: ['@P2', '@linux']}, async ({mainWindow, electronApp}) => {
-        if (process.platform !== 'linux') {
-            test.skip(true, 'Linux only');
-            return;
-        }
-
         expect(mainWindow).not.toBeNull();
 
-        // Toggle Dark Mode
-        await toggleDarkMode(electronApp);
+        await toggleDarkModeLinux(electronApp);
+        await mainWindow.waitForSelector('body.darkMode', {timeout: 10_000});
+        expect(await mainWindow.evaluate(() => document.body.className)).toContain('darkMode');
 
-        // The darkMode class is applied to document.body, not to .topBar directly
-        await mainWindow.waitForSelector('body.darkMode', {timeout: 10000});
+        await toggleDarkModeLinux(electronApp);
+        await mainWindow.waitForSelector('body:not(.darkMode)', {timeout: 10_000});
+        expect(await mainWindow.evaluate(() => document.body.className)).not.toContain('darkMode');
+    });
 
-        const bodyClassWithDarkMode = await mainWindow.evaluate(() => document.body.className);
-        expect(bodyClassWithDarkMode).toContain('darkMode');
+    test('MM-T1310 On Mac set Appearance to Dark — macOS ONLY', {tag: ['@P2', '@darwin']}, async ({mainWindow, electronApp}) => {
+        expect(mainWindow).not.toBeNull();
 
-        // Toggle Light Mode
-        await toggleDarkMode(electronApp);
+        // macOS does not expose "Toggle Dark Mode" in the View menu (linux-only).
+        // Dark mode for the application chrome is driven by Config.darkMode.
+        await setDarkModeConfig(electronApp, true);
+        await mainWindow.waitForSelector('body.darkMode', {timeout: 10_000});
+        expect(await mainWindow.evaluate(() => document.body.className)).toContain('darkMode');
 
-        // Wait for dark mode class to be removed
-        await mainWindow.waitForSelector('body:not(.darkMode)', {timeout: 10000});
-
-        const bodyClassWithLightMode = await mainWindow.evaluate(() => document.body.className);
-        expect(bodyClassWithLightMode).not.toContain('darkMode');
+        await setDarkModeConfig(electronApp, false);
+        await mainWindow.waitForSelector('body:not(.darkMode)', {timeout: 10_000});
+        expect(await mainWindow.evaluate(() => document.body.className)).not.toContain('darkMode');
     });
 });

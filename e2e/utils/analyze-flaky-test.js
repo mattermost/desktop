@@ -1,12 +1,39 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+// CommonJS is required here: GitHub Actions workflows load this file via
+// require() in actions/github-script, which does not support ES modules.
+
 const fs = require('fs');
 const path = require('path');
-
-const {XMLParser} = require('fast-xml-parser');
+const {createRequire} = require('module');
 
 const JUNIT_REPORT_PATH = path.join(__dirname, '..', 'test-results', 'e2e-junit.xml');
+
+function getXMLParserClass() {
+    const packageCandidates = [
+        path.join(__dirname, '..', 'package.json'),
+        path.join(__dirname, '..', '..', 'package.json'),
+    ];
+
+    for (const packageJson of packageCandidates) {
+        try {
+            const {XMLParser} = createRequire(packageJson)('fast-xml-parser');
+            return XMLParser;
+        } catch (error) {
+            const isModuleNotFound =
+                error &&
+                (error.code === 'MODULE_NOT_FOUND' || error.code === 'ERR_MODULE_NOT_FOUND');
+            if (!isModuleNotFound) {
+                throw error;
+            }
+
+            // try the other package root (e2e/ vs repo root)
+        }
+    }
+
+    throw new Error('fast-xml-parser is not installed. Run npm ci in the repo root and e2e/.');
+}
 
 function toNumber(value) {
     const parsed = parseInt(value, 10);
@@ -185,21 +212,63 @@ function getOutcomeCounts(report) {
     return {passed, failed, skipped, total: passed + failed + skipped};
 }
 
-function analyzeFlakyTests() {
-    const exitCode = toNumber(process.env.PLAYWRIGHT_EXIT_CODE || '0');
+function buildAnalysisResult({failureCount, passCount, skipCount, totalCount}) {
+    const collectedCount = passCount + failureCount + skipCount;
 
-    if (!fs.existsSync(JUNIT_REPORT_PATH)) {
-        const failureCount = exitCode === 0 ? 0 : 1;
+    // Playwright can exit 0 when test collection finds nothing (e.g. a broken
+    // import aborts discovery). Treat that as an infrastructure failure so the
+    // PR status check does not go green with "No tests ran".
+    if (collectedCount === 0) {
         return {
-            failureCount,
+            failureCount: 1,
             passCount: 0,
-            skipCount: 0,
-            totalCount: failureCount,
-            newFailedTests: new Array(failureCount).fill('unknown'),
+            skipCount,
+            totalCount,
+            newFailedTests: ['no-tests-collected'],
             os: process.platform,
+            testStatus: 'failure',
+            collectionFailed: true,
         };
     }
 
+    return {
+        failureCount,
+        passCount,
+        skipCount,
+        totalCount,
+        newFailedTests: new Array(failureCount).fill('failed'),
+        os: process.platform,
+        testStatus: failureCount > 0 ? 'failure' : 'success',
+        collectionFailed: false,
+    };
+}
+
+function analyzeFlakyTests() {
+    const hasJunit = fs.existsSync(JUNIT_REPORT_PATH);
+
+    if (!hasJunit) {
+        if (process.env.JOB_STATUS === 'cancelled') {
+            return {
+                failureCount: 0,
+                passCount: 0,
+                skipCount: 0,
+                totalCount: 0,
+                newFailedTests: [],
+                os: process.platform,
+                testStatus: 'error',
+                collectionFailed: false,
+            };
+        }
+
+        return buildAnalysisResult({
+            failureCount: 0,
+            passCount: 0,
+            skipCount: 0,
+            totalCount: 0,
+        });
+    }
+
+    const XMLParser = getXMLParserClass();
     const parser = new XMLParser({
         ignoreAttributes: false,
         attributeNamePrefix: '',
@@ -216,16 +285,15 @@ function analyzeFlakyTests() {
     const reconciledFailed = failureCount;
     const reconciledPassed = Math.max(0, outcomes.total - reconciledFailed - outcomes.skipped);
 
-    return {
-        failureCount,
+    return buildAnalysisResult({
+        failureCount: reconciledFailed,
         passCount: reconciledPassed,
         skipCount: outcomes.skipped,
         totalCount: reconciledFailed + reconciledPassed + outcomes.skipped,
-        newFailedTests: new Array(failureCount).fill('failed'),
-        os: process.platform,
-    };
+    });
 }
 
 module.exports = {
     analyzeFlakyTests,
+    buildAnalysisResult,
 };

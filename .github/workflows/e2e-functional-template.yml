@@ -24,11 +24,6 @@ on:
         type: string
         description: "The E2E tests underlying OS"
         required: true
-      nightly:
-        type: boolean
-        description: "True if this is nightly build"
-        required: false
-        default: false
       cmt:
         type: boolean
         description: "True if this is Compatibility Matrix Testing"
@@ -94,6 +89,15 @@ on:
       SKIPPED_WINDOWS:
         description: "Number of skipped tests on Windows"
         value: ${{ jobs.e2e.outputs.SKIPPED_WINDOWS }}
+      COLLECTION_FAILED_LINUX:
+        description: "Whether Playwright collected zero tests on Linux"
+        value: ${{ jobs.e2e.outputs.COLLECTION_FAILED_LINUX }}
+      COLLECTION_FAILED_MACOS:
+        description: "Whether Playwright collected zero tests on macOS"
+        value: ${{ jobs.e2e.outputs.COLLECTION_FAILED_MACOS }}
+      COLLECTION_FAILED_WINDOWS:
+        description: "Whether Playwright collected zero tests on Windows"
+        value: ${{ jobs.e2e.outputs.COLLECTION_FAILED_WINDOWS }}
       STATUS_WINDOWS:
         description: "The status of the windows test"
         value: ${{ jobs.e2e.outputs.STATUS_WINDOWS }}
@@ -122,11 +126,6 @@ on:
         description: "The E2E tests underlying OS"
         required: true
         default: "ubuntu-24.04"
-      nightly:
-        type: boolean
-        description: "True if this is nightly build"
-        required: false
-        default: false
       cmt:
         type: boolean
         description: "True if this is Compatibility Matrix Testing"
@@ -182,13 +181,18 @@ jobs:
       SKIPPED_LINUX: ${{ steps.analyze-flaky-tests.outputs.SKIPPED_LINUX }}
       SKIPPED_MACOS: ${{ steps.analyze-flaky-tests.outputs.SKIPPED_MACOS }}
       SKIPPED_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.SKIPPED_WINDOWS }}
+      COLLECTION_FAILED_LINUX: ${{ steps.analyze-flaky-tests.outputs.COLLECTION_FAILED_LINUX }}
+      COLLECTION_FAILED_MACOS: ${{ steps.analyze-flaky-tests.outputs.COLLECTION_FAILED_MACOS }}
+      COLLECTION_FAILED_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.COLLECTION_FAILED_WINDOWS }}
     steps:
       - name: e2e/set-required-variables
         id: variables
         run: |
           RUNNER_OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
           echo "RUNNER_OS=${RUNNER_OS}" >> $GITHUB_ENV
-          echo "CI_ENVIRONMENT_NAME=@${RUNNER_OS}" >> $GITHUB_ENV
+          # Report-only tag for Playwright blob/HTML output (@ci-* avoids colliding with
+          # platform selection grep tokens @linux/@darwin/@win32 in playwright.config.ts).
+          echo "CI_ENVIRONMENT_NAME=@ci-${RUNNER_OS}" >> $GITHUB_ENV
           
           # Define build type and suffix
           # inputs.TYPE takes precedence when provided by the caller (e.g. RELEASE, MASTER, PR).
@@ -218,16 +222,11 @@ jobs:
               ;;
           esac
 
-          if ${{ inputs.nightly }}; then
-            echo "BUILD_SUFFIX=desktop-nightly-${RUNNER_OS}" >> $GITHUB_OUTPUT
-            echo "TYPE=NIGHTLY" >> $GITHUB_ENV
-          fi
-
       - name: e2e/set-build-id
         run: echo "BUILD_ID=${{ github.run_id }}-${{ steps.variables.outputs.BUILD_SUFFIX }}" >> $GITHUB_ENV
 
       - name: e2e/checkout-repo
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ inputs.DESKTOP_VERSION }}
 
@@ -235,26 +234,48 @@ jobs:
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: '22.x'
-          cache: "npm"
-          cache-dependency-path: package-lock.json
+          package-manager-cache: false
+          # node_modules is cached in e2e/cache-node-modules; disable setup-node's
+          # npm cache so actions/cache v5 does not hit legacy entries.
+
+      - name: e2e/use-gnu-tar-macos
+        if: runner.os == 'macOS'
+        run: echo "/opt/homebrew/opt/gnu-tar/libexec/gnubin" >> $GITHUB_PATH
 
       - name: e2e/cache-node-modules
         id: cache-node-modules
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             node_modules
-            C:\Users\runneradmin\.electron-gyp
-          key: ${{ runner.os }}-build-node-modules-${{ hashFiles('**/package-lock.json') }}
+            e2e/node_modules
+          enableCrossOsArchive: false
+          # v7: exact restore only — avoids probing legacy v6 blobs that warn on macOS
+          key: ${{ runner.os }}-build-node-modules-v7-${{ hashFiles('**/package-lock.json') }}
+
+      - name: e2e/cache-electron-gyp-windows
+        if: runner.os == 'Windows'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: C:\Users\runneradmin\.electron-gyp
+          enableCrossOsArchive: false
+          key: ${{ runner.os }}-electron-gyp-v7-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-build-node-modules
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
+            ${{ runner.os }}-electron-gyp-v7-${{ hashFiles('**/package-lock.json') }}
 
       - name: e2e/setup-python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        env:
+          # Bypass pip's on-disk HTTP cache entirely so a stale/corrupt entry on the
+          # runner image cannot trigger deserialization warnings (actions/setup-python#1317).
+          PIP_NO_CACHE_DIR: "1"
         with:
-          python-version: "3.10"
+          # Use a version pre-installed on macOS-26 (3.13 is in its toolcache), so
+          # setup-python doesn't install a mismatched interpreter whose pip can't
+          # deserialize the image's pre-baked cache. PIP_NO_CACHE_DIR above is the
+          # remaining guard for non-macOS runners.
+          python-version: "3.13"
+          # Omit `cache` — setup-python only accepts pip/pipenv/poetry, not `false`.
 
       - name: e2e/install-os-dependencies
         uses: ./.github/actions/install-os-dependencies
@@ -265,6 +286,10 @@ jobs:
         run: |
           npm ci
           cd e2e && npm ci
+
+      - name: e2e/enable-public-links
+        if: env.MM_TEST_SERVER_URL != ''
+        run: cd e2e && npm run enable-public-links
 
       - name: e2e/suppress-macos-dialogs
         if: runner.os == 'macOS'
@@ -287,7 +312,7 @@ jobs:
           cd e2e
           export PW_CHROMIUM_ARGS="--disable-gpu --no-sandbox --disable-dev-shm-usage"
           set +e
-          xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' npm test
+          xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' npm test -- --project=linux
           echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
@@ -303,7 +328,7 @@ jobs:
           echo "Running E2E tests…"
           cd e2e
           set +e
-          npm test
+          npm test -- --project=darwin
           echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
@@ -316,7 +341,7 @@ jobs:
           npm run build-test
           cd e2e
           set +e
-          npm test
+          npm test -- --project=win32
           echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
@@ -364,14 +389,14 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           PER_OS_REPORT_URL: ${{ steps.upload-html-report-to-s3.outputs.report_url }}
+          JOB_STATUS: ${{ job.status }}
         with:
           script: |
             process.chdir('./e2e');
             const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
-            const { failureCount, passCount, skipCount, totalCount, os } = analyzeFlakyTests();
+            const { failureCount, passCount, skipCount, totalCount, os, testStatus, collectionFailed } = analyzeFlakyTests();
             const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
             const reportUrl = process.env.PER_OS_REPORT_URL || runUrl;
-            const testStatus = failureCount > 0 || Number(process.env.PLAYWRIGHT_EXIT_CODE || 0) !== 0 ? 'failure' : 'success';
             const setOSOutputs = (suffix) => {
               core.setOutput(`NEW_FAILURES_${suffix}`, String(failureCount));
               core.setOutput(`REPORT_LINK_${suffix}`, reportUrl);
@@ -379,6 +404,7 @@ jobs:
               core.setOutput(`PASSED_${suffix}`, String(passCount));
               core.setOutput(`SKIPPED_${suffix}`, String(skipCount));
               core.setOutput(`TOTAL_${suffix}`, String(totalCount));
+              core.setOutput(`COLLECTION_FAILED_${suffix}`, String(collectionFailed));
             };
             switch (os) {
               case 'linux':
@@ -393,23 +419,3 @@ jobs:
               default:
                 throw new Error(`Unsupported OS: ${os}`);
             }
-
-      - name: Upload Playwright blob report
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: blob-report-${{ env.RUNNER_OS }}
-          path: |
-            e2e/blob-report
-          if-no-files-found: ignore
-          retention-days: 7
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: test-results-${{ env.RUNNER_OS }}
-          path: |
-            e2e/test-results
-          if-no-files-found: ignore
-          retention-days: 7
