@@ -16,6 +16,7 @@ import {
     openPopoutWindow,
 } from '../../helpers/popoutWindow';
 import {buildServerMap} from '../../helpers/serverMap';
+import {evaluateInMainProcessWithArg} from '../../helpers/testRefs';
 
 const config = {
     ...demoMattermostConfig,
@@ -74,18 +75,11 @@ test.describe('server_management/popout_windows', () => {
             const browserWindow = await electronApp.browserWindow(popoutWindow);
             const initialBounds = await browserWindow.evaluate((w) => (w as Electron.BrowserWindow).getBounds());
 
-            // A flat +200 request assumed the display always has 200px of
-            // headroom past the window's current position. CI macOS runners
-            // use a small virtual display, so `initial + 200` routinely
-            // exceeds the work area — macOS then clamps the actual bounds at
-            // the screen edge, which the test misread as "resize failed" by
-            // as much as 456px. Clamp the request to what the display can
-            // actually satisfy so the assertion checks the resize itself,
-            // not whether the display happened to have enough room.
-            const workArea = await browserWindow.evaluate((w) => {
-                const {screen} = require('electron') as typeof import('electron');
-                return screen.getDisplayMatching((w as Electron.BrowserWindow).getBounds()).workArea;
-            });
+            const workArea = await evaluateInMainProcessWithArg(
+                electronApp,
+                (electron, bounds) => electron.screen.getDisplayMatching(bounds).workArea,
+                initialBounds,
+            );
             const margin = 20;
             const newBounds = {
                 x: initialBounds.x,

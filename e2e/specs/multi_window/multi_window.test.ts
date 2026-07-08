@@ -12,6 +12,7 @@ import {demoMattermostConfig} from '../../helpers/config';
 import {closeDownloadsDropdownIfOpen} from '../../helpers/downloadsDropdown';
 import {launchDirectTestApp} from '../../helpers/directLaunch';
 import {closeElectronAppFast, waitForWindow} from '../../helpers/electronApp';
+import {NOTIFICATION_CLICKED} from '../../helpers/ipcChannels';
 import {loginToMattermost} from '../../helpers/login';
 import {waitForMainWindowFocused} from '../../helpers/mainWindowFocus';
 import {POST_TEXTBOX_SELECTOR, waitForChannelPostListLoaded, waitForMattermostShellReady} from '../../helpers/mattermostShell';
@@ -32,12 +33,12 @@ import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {resolvedChannelPath, resolveChannelByName} from '../../helpers/server_api/channel';
 import {seedThreadInChannel} from '../../helpers/server_api/post';
 import {buildServerMap} from '../../helpers/serverMap';
+import {evaluateInMainProcessWithArg} from '../../helpers/testRefs';
 import {
     clickOpenInNewWindowFromRhsThreadMenu,
     clickOpenInNewWindowFromThreadsListMenu,
     clickOpenInNewWindowMenuItem,
 } from '../../helpers/webappMenu';
-import {NOTIFICATION_CLICKED} from '../../../src/common/communication';
 
 const config = {
     ...demoMattermostConfig,
@@ -469,17 +470,11 @@ test.describe('multi_window/multi_window', () => {
         const browserWindow = await electronApp.browserWindow(popoutWindow);
         const initialBounds = await browserWindow.evaluate((w) => (w as Electron.BrowserWindow).getBounds());
 
-        // A flat +200 request assumed the display always has 200px of headroom
-        // past the window's current position. CI macOS runners use a small
-        // virtual display, so `initial + 200` routinely exceeds the work
-        // area — macOS then clamps the actual bounds at the screen edge,
-        // which the test misread as "resize failed". Clamp the request to
-        // what the display can actually satisfy (see the identical fix in
-        // popout_windows.test.ts MM-TXXXX_2).
-        const workArea = await browserWindow.evaluate((w) => {
-            const {screen} = require('electron') as typeof import('electron');
-            return screen.getDisplayMatching((w as Electron.BrowserWindow).getBounds()).workArea;
-        });
+        const workArea = await evaluateInMainProcessWithArg(
+            electronApp,
+            (electron, bounds) => electron.screen.getDisplayMatching(bounds).workArea,
+            initialBounds,
+        );
         const margin = 20;
         const resizedBounds = {
             x: initialBounds.x,

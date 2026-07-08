@@ -48,18 +48,26 @@ export type CustomProfileAttributeDef = {
 const CPA_FIELDS_PATH = '/api/v4/custom_profile_attributes/fields';
 
 /**
+ * Renderer-side JS expression resolving the active custom-attribute edit
+ * section. Inputs and the Save/Cancel row are sibling `.setting-list-item`
+ * nodes under `.setting-list`, so scoping to the input's list-item misses
+ * `#saveSetting`.
+ */
+function customAttributeEditScopeJs(elExpr: string): string {
+    return `(
+        ${elExpr}?.closest('.setting-list') ||
+        ${elExpr}?.closest('section.section-max') ||
+        ${elExpr}?.closest('section')
+    )`;
+}
+
+/**
  * Renderer-side JS expression resolving a custom attribute row from an
- * element within it (a Save/Edit button, or the input itself). A single
- * `closest('a, b, c')` call matches whichever ancestor is nearest in the
- * DOM, not the most specific selector — a wrapper div around some field
- * types (e.g. phone-number formatting) can sit closer than the actual row
- * container, silently excluding it (and whatever the caller needed from it,
- * like the Save button). Try selectors in specificity order instead so the
- * intended row container is always found first.
+ * element within it (e.g. the Edit button in display mode).
  */
 function customAttributeRowJs(elExpr: string): string {
     return `(
-        ${elExpr}?.closest('.setting-list-item') ||
+        ${elExpr}?.closest('.setting-list') ||
         ${elExpr}?.closest('.SettingsBlock') ||
         ${elExpr}?.closest('section') ||
         ${elExpr}?.closest('li') ||
@@ -322,14 +330,18 @@ export async function editTextCustomAttribute(
         await win.fill(`#customAttribute_${fieldId}`, newValue);
     }
     if (save) {
+        await win.waitForSelector('#saveSetting', {timeout: 10_000});
+        await expect.poll(async () => win.runInRenderer<boolean>(`
+            const saveBtn = document.querySelector('#saveSetting');
+            return saveBtn instanceof HTMLButtonElement && !saveBtn.disabled;
+        `), {timeout: 10_000, message: 'Save button must be enabled before saving custom attribute'}).toBe(true);
         await win.runInRenderer<void>(`
             const fieldId = ${JSON.stringify(fieldId)};
             const input = document.querySelector('#customAttribute_' + fieldId);
-            const row = ${customAttributeRowJs('input')} || document;
-            const saveBtn = Array.from(row.querySelectorAll('button'))
-                .find((button) => (button.textContent || '').trim() === 'Save');
+            const scope = ${customAttributeEditScopeJs('input')} || document;
+            const saveBtn = scope.querySelector('#saveSetting') || document.querySelector('#saveSetting');
             if (!(saveBtn instanceof HTMLButtonElement)) {
-                throw new Error('Save button not found for custom attribute row');
+                throw new Error('Save button not found for custom attribute edit section');
             }
             saveBtn.click();
         `);

@@ -87,7 +87,9 @@ test.describe('menu_bar/help_menu', () => {
         'MM-T6151 Show logs menu item opens the log file location',
         {tag: ['@P1', '@all']},
         async ({electronApp}) => {
-            await electronApp.evaluate(({shell}) => {
+            await waitForAppReady(electronApp);
+
+            await evaluateInMainProcess(electronApp, ({shell}) => {
                 (global as any).__e2eShownInFolder = [] as string[];
                 (global as any).__e2eOriginalShowItemInFolder = shell.showItemInFolder.bind(shell);
                 shell.showItemInFolder = (fullPath: string) => {
@@ -100,10 +102,12 @@ test.describe('menu_bar/help_menu', () => {
                 await clickApplicationMenuItem(electronApp, 'help', {id: 'Show logs'});
 
                 await expect.poll(async () => {
-                    return electronApp.evaluate(() => ((global as any).__e2eShownInFolder as string[] | undefined)?.length ?? 0);
+                    return evaluateInMainProcess(electronApp, () => {
+                        return ((global as any).__e2eShownInFolder as string[] | undefined)?.length ?? 0;
+                    });
                 }, {timeout: 10_000}).toBeGreaterThan(0);
             } finally {
-                await electronApp.evaluate(({shell}) => {
+                await evaluateInMainProcess(electronApp, ({shell}) => {
                     const original = (global as any).__e2eOriginalShowItemInFolder;
                     if (original) {
                         shell.showItemInFolder = original;
