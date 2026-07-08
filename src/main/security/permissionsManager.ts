@@ -166,15 +166,18 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
         // Exception for embedded videos such as YouTube
         // We still want to ask permission to do this though
         const isExternalFullscreen = permission === 'fullscreen' && parsedURL.origin !== serverURL.origin;
+        const isTrustedEmbeddedMedia = permission === 'media' && this.isTrustedEmbeddedMediaOrigin(parsedURL, serverURL);
+        const permissionOrigin = isTrustedEmbeddedMedia ? serverURL.origin : parsedURL.origin;
+        const dialogOrigin = isTrustedEmbeddedMedia ? `${serverURL.origin} (via ${parsedURL.origin})` : parsedURL.origin;
 
         // is the requesting url trusted?
-        if (!(isTrustedURL(parsedURL, serverURL) || (permission === 'media' && parsedURL.origin === serverURL.origin) || isExternalFullscreen)) {
+        if (!(isTrustedURL(parsedURL, serverURL) || (permission === 'media' && parsedURL.origin === serverURL.origin) || isTrustedEmbeddedMedia || isExternalFullscreen)) {
             return false;
         }
 
         // For certain permission types, we need to confirm with the user
         if (authorizablePermissionTypes.includes(permission) || isExternalFullscreen) {
-            const currentPermission = this.json[parsedURL.origin]?.[permission];
+            const currentPermission = this.json[permissionOrigin]?.[permission];
 
             // If previously allowed, just allow
             if (currentPermission?.allowed) {
@@ -191,7 +194,7 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
             }
 
             // Make sure we don't pop multiple dialogs for the same permission check
-            const permissionKey = `${parsedURL.origin}:${permission}`;
+            const permissionKey = `${permissionOrigin}:${permission}`;
             if (this.inflightPermissionChecks.has(permissionKey)) {
                 return this.inflightPermissionChecks.get(permissionKey)!;
             }
@@ -205,7 +208,7 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
                 // Show the dialog to ask the user
                 dialog.showMessageBox(mainWindow, {
                     title: localizeMessage('main.permissionsManager.checkPermission.dialog.title', 'Permission Requested'),
-                    message: localizeMessage(`main.permissionsManager.checkPermission.dialog.message.${permission}`, '{appName} ({url}) is requesting the "{permission}" permission.', {appName: app.name, url: parsedURL.origin, permission, externalURL: details.externalURL}),
+                    message: localizeMessage(`main.permissionsManager.checkPermission.dialog.message.${permission}`, '{appName} ({url}) is requesting the "{permission}" permission.', {appName: app.name, url: dialogOrigin, permission, externalURL: details.externalURL}),
                     detail: localizeMessage(`main.permissionsManager.checkPermission.dialog.detail.${permission}`, 'Would you like to grant {appName} this permission?', {appName: app.name}),
                     type: 'question',
                     buttons: [
@@ -219,8 +222,8 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
                         allowed: response === 2,
                         alwaysDeny: (response === 1) ? true : undefined,
                     };
-                    this.json[parsedURL.origin] = {
-                        ...this.json[parsedURL.origin],
+                    this.json[permissionOrigin] = {
+                        ...this.json[permissionOrigin],
                         [permission]: newPermission,
                     };
                     this.writeToFile();
@@ -241,6 +244,14 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
 
         // We've checked everything so we're okay to grant the remaining cases
         return true;
+    };
+
+    private isTrustedEmbeddedMediaOrigin = (requestURL: URL, serverURL: URL) => {
+        return Config.data?.trustedEmbeddedMediaOrigins?.some((originPair) => {
+            const serverOrigin = parseURL(originPair.serverOrigin);
+            const embeddedOrigin = parseURL(originPair.embeddedOrigin);
+            return serverOrigin?.origin === serverURL.origin && embeddedOrigin?.origin === requestURL.origin;
+        }) ?? false;
     };
 
     private openWindowsCameraPreferences = () => shell.openExternal('ms-settings:privacy-webcam');
