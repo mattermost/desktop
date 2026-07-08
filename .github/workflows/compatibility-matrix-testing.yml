@@ -77,6 +77,9 @@ jobs:
     runs-on: ubuntu-22.04
     needs:
       - calculate-commit-hash
+    permissions:
+      contents: read
+      statuses: write
     steps:
       # Best-effort: a transient status-API hiccup here must never block the
       # actual test matrix from running — the `e2e` job below needs this job.

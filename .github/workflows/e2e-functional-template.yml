@@ -102,7 +102,10 @@ env:
 
 jobs:
   e2e:
-    name: e2e-on-${{ inputs.runs-on }}
+    # Includes MM_SERVER_VERSION, not just runs-on: CMT tests multiple server
+    # versions against the same runner (e.g. macos-13 x 9.6.1 and macos-13 x
+    # 9.5.2)
+    name: e2e-on-${{ inputs.runs-on }}-${{ inputs.MM_SERVER_VERSION }}
     runs-on: ${{ inputs.runs-on }}
     # Runs untrusted PR code (npm ci / Playwright) with a read-only token.
     # id-token/actions:read are additive for TSIO reporting (OIDC auth +
@@ -293,8 +296,8 @@ jobs:
           total-reports-expected: ${{ fromJSON(inputs.tsio-config).total_reports_expected }}
           framework: playwright
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          # MUST match this job's `name:` field above (e2e-on-<runner>).
-          gh-job-name: e2e-on-${{ inputs.runs-on }}
+          # MUST match this job's `name:` field above.
+          gh-job-name: e2e-on-${{ inputs.runs-on }}-${{ inputs.MM_SERVER_VERSION }}
           json-path: e2e/test-results/results.json
           screenshots-dir: e2e/test-results
 
