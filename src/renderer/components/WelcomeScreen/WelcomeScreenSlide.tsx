@@ -7,7 +7,7 @@ import React from 'react';
 import './WelcomeScreenSlide.scss';
 
 type WelcomeScreenSlideProps = {
-    title: string;
+    title: string | React.ReactElement;
     subtitle: string | React.ReactElement;
     image: React.ReactNode;
     isMain?: boolean;

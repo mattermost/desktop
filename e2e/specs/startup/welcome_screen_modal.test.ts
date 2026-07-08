@@ -38,7 +38,7 @@ test.describe('startup/welcome_screen_modal', () => {
                     'welcome',
                     'collaborate in real time',
                     'start secure calls instantly',
-                    'integrate with tools you love',
+                    'integrate with your systems',
                 ]);
             } finally {
                 await closeAppSafely(app, userDataDir);
