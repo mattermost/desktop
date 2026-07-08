@@ -4,7 +4,7 @@
 'use strict';
 
 import AppState from 'common/appState';
-import {BROWSER_HISTORY_PUSH, LOAD_FAILED, UPDATE_TARGET_URL} from 'common/communication';
+import {BROWSER_HISTORY_PUSH, LOAD_FAILED, SERVER_URL_CHANGED, UPDATE_TARGET_URL} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {MattermostView, ViewType} from 'common/views/MattermostView';
@@ -24,6 +24,7 @@ jest.mock('electron', () => ({
     },
     WebContentsView: jest.fn().mockImplementation(() => ({
         webContents: {
+            id: 42,
             loadURL: jest.fn(),
             on: jest.fn(),
             once: jest.fn(),
@@ -95,6 +96,7 @@ jest.mock('common/servers/serverManager', () => ({
         silly: jest.fn(),
     }),
     on: jest.fn(),
+    off: jest.fn(),
 }));
 jest.mock('main/server/serverAPI', () => ({
     getServerAPI: jest.fn(),
@@ -338,7 +340,7 @@ describe('main/views/MattermostWebContentsView', () => {
     });
 
     describe('destroy', () => {
-        const window = {contentView: {removeChildView: jest.fn()}, on: jest.fn()};
+        const window = {contentView: {removeChildView: jest.fn()}, on: jest.fn(), off: jest.fn(), isDestroyed: jest.fn(() => false)};
         const contextMenu = {
             dispose: jest.fn(),
         };
@@ -377,6 +379,79 @@ describe('main/views/MattermostWebContentsView', () => {
             mattermostView.removeLoading = 1000;
             mattermostView.destroy();
             expect(spy).toHaveBeenCalledTimes(2);
+        });
+
+        it('should remove listeners on long-lived emitters', () => {
+            const mattermostView = new MattermostWebContentsView(view, {}, window);
+            mattermostView.webContentsView.webContents.close = jest.fn();
+            mattermostView.destroy();
+            expect(ServerManager.off).toHaveBeenCalledWith(SERVER_URL_CHANGED, expect.any(Function));
+            expect(window.off).toHaveBeenCalledWith('blur', expect.any(Function));
+        });
+
+        it('should not throw when the underlying webContents is already gone', () => {
+            const mattermostView = new MattermostWebContentsView(view, {}, window);
+            mattermostView.webContentsView.webContents = undefined;
+            expect(() => mattermostView.destroy()).not.toThrow();
+        });
+
+        it('should not remove browser view when the parent window is already destroyed', () => {
+            const mattermostView = new MattermostWebContentsView(view, {}, window);
+            mattermostView.webContentsView.webContents.close = jest.fn();
+            window.isDestroyed.mockReturnValueOnce(true);
+            expect(() => mattermostView.destroy()).not.toThrow();
+            expect(window.contentView.removeChildView).not.toBeCalled();
+        });
+    });
+
+    describe('teardown during in-flight load (regression)', () => {
+        const window = {on: jest.fn(), off: jest.fn(), contentView: {removeChildView: jest.fn()}, webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
+        let mattermostView;
+
+        beforeEach(() => {
+            MainWindow.get.mockReturnValue(window);
+            ServerManager.getServer.mockReturnValue(server);
+            mattermostView = new MattermostWebContentsView(view, {}, window);
+            mattermostView.webContentsView.webContents.close = jest.fn();
+            mattermostView.log = {info: jest.fn(), verbose: jest.fn(), error: jest.fn()};
+        });
+
+        it('isDestroyed should return true instead of throwing when the webContents is undefined', () => {
+            mattermostView.webContentsView.webContents = undefined;
+            expect(() => mattermostView.isDestroyed()).not.toThrow();
+            expect(mattermostView.isDestroyed()).toBe(true);
+        });
+
+        it('loadRetry should be a guarded no-op when the webContents is undefined', () => {
+            mattermostView.webContentsView.webContents = undefined;
+            expect(() => mattermostView.loadRetry('http://server-1.com/', new Error('test'))).not.toThrow();
+            expect(window.webContents.send).not.toHaveBeenCalled();
+        });
+
+        it('webContentsId should remain valid after the webContents is gone', () => {
+            const id = mattermostView.webContentsId;
+            expect(id).toBe(42);
+            mattermostView.webContentsView.webContents = undefined;
+            expect(mattermostView.webContentsId).toBe(id);
+        });
+
+        it('should not throw when a load rejects after the view has been destroyed', async () => {
+            const error = new Error('ERR_FAILED');
+            const rejection = Promise.reject(error);
+            mattermostView.webContentsView.webContents.loadURL.mockImplementation(() => rejection);
+
+            // Kick off a load, then tear the view down while it is still in flight.
+            mattermostView.load('http://server-1.com');
+            mattermostView.destroy();
+
+            // Electron nulls out the webContents once it is destroyed; the pending
+            // loadURL().catch() must not blow up when it reaches loadRetry/isDestroyed.
+            mattermostView.webContentsView.webContents = undefined;
+
+            await expect(rejection.catch((e) => e)).resolves.toBe(error);
+            await new Promise((resolve) => setImmediate(resolve));
+
+            expect(window.webContents.send).not.toHaveBeenCalledWith(LOAD_FAILED, expect.anything(), expect.anything(), expect.anything());
         });
     });
 
