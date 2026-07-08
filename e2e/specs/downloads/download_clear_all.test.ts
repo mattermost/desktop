@@ -25,7 +25,7 @@ const secondFile = {
 };
 
 test(
-    'DL-07 clear all removes every completed download from the dropdown',
+    'MM-T6131 clear all removes every completed download from the dropdown',
     {tag: ['@P1', '@all']},
     async ({}, testInfo) => {
         const userDataDir = path.join(testInfo.outputDir, 'userdata');

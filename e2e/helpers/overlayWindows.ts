@@ -5,6 +5,28 @@ import type {ElectronApplication} from 'playwright';
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+const hasOverlayOpen = async (app: ElectronApplication, timeoutMs = 3_000): Promise<boolean> => {
+    return Promise.race([
+        app.evaluate(({BrowserWindow}) => {
+            for (const win of BrowserWindow.getAllWindows()) {
+                if (win.isDestroyed()) {
+                    continue;
+                }
+                try {
+                    const url = win.webContents.getURL();
+                    if (url.includes('dropdown') || url.includes('downloadsDropdown.html')) {
+                        return true;
+                    }
+                } catch {
+                    // Ignore windows that disappear while iterating.
+                }
+            }
+            return false;
+        }),
+        sleep(timeoutMs).then(() => false),
+    ]).catch(() => false);
+};
+
 export async function closeOverlayWindowsIfOpen(app: ElectronApplication, timeoutMs = 3_000): Promise<void> {
     // app.evaluate can hang if the Electron main process is blocked or unresponsive
     // (e.g. during teardown). Cap the wait so setup/teardown never deadlock.
@@ -27,4 +49,13 @@ export async function closeOverlayWindowsIfOpen(app: ElectronApplication, timeou
     });
 
     await Promise.race([closePromise, sleep(timeoutMs)]);
+
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+        const remaining = Math.max(0, deadline - Date.now());
+        if (!(await hasOverlayOpen(app, remaining))) {
+            return;
+        }
+        await sleep(100);
+    }
 }

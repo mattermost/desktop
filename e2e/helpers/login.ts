@@ -4,6 +4,7 @@
 import {expect} from '@playwright/test';
 
 import {isTransientEvaluateError} from './testRefs';
+import {CHANNEL_HEADER_SELECTORS, POST_TEXTBOX_SELECTOR} from './rendererUtils';
 import type {ServerView} from './serverView';
 
 async function isMattermostServerUrl(win: ServerView): Promise<boolean> {
@@ -29,8 +30,8 @@ async function hasAppShell(win: ServerView): Promise<boolean> {
 
     return runRendererProbe(win, `
         return Boolean(
-            document.querySelector('#post_textbox')
-            || document.querySelector('#channelHeaderTitle')
+            document.querySelector(${JSON.stringify(POST_TEXTBOX_SELECTOR)})
+            || document.querySelector(${JSON.stringify(CHANNEL_HEADER_SELECTORS)})
             || document.querySelector('input.search-bar.form-control'),
         );
     `);

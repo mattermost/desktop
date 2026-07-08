@@ -8,7 +8,7 @@ import {test as base, type Page} from '@playwright/test';
 import type {ElectronApplication} from 'playwright';
 import {_electron as electron} from 'playwright';
 
-import {waitForAppReady} from '../helpers/appReadiness';
+import {waitForAppReady, waitForMainWindow, waitForMainWindowChrome} from '../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig, writeConfigFile, type AppConfig} from '../helpers/config';
 import {
     closeElectronApp,
@@ -39,9 +39,9 @@ type Fixtures = {
     electronApp: ElectronApplication;
 
     /**
-     * Side-effect fixture: waits until __e2eAppReady is true in the main process.
-     * Both serverMap and mainWindow depend on this. Playwright deduplicates it —
-     * waitForAppReady() runs exactly once even if both fixtures are requested.
+     * Side-effect fixture: waits until __e2eAppReady is true, then (when config
+     * lists servers) until the main-window server dropdown button is visible.
+     * Both serverMap and mainWindow depend on this. Playwright deduplicates it.
      */
     appReady: void;
 
@@ -139,13 +139,18 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
         await fs.rm(userDataDir, {recursive: true, force: true}).catch(() => {});
     },
 
-    appReady: async ({electronApp}, use) => {
+    appReady: async ({electronApp, appConfig}, use) => {
         await waitForAppReady(electronApp);
 
         // Setup path: the main process is freshly launched and responsive, so
         // the default 3s bound is ample for sub-100ms dropdown closes and still
         // fails fast if app.evaluate hangs. No larger setup timeout is needed.
         await closeOverlayWindowsIfOpen(electronApp);
+
+        if (appConfig.servers.length > 0) {
+            await waitForMainWindowChrome(electronApp, {requireServerDropdown: true});
+        }
+
         await use();
     },
 
@@ -157,31 +162,7 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     mainWindow: async ({electronApp, appReady: _appReady}, use) => {
-        let win: Page | undefined;
-        const timeoutAt = Date.now() + 30_000;
-
-        while (Date.now() < timeoutAt) {
-            win = electronApp.windows().find((w) => {
-                try {
-                    return w.url().includes('index');
-                } catch {
-                    return false;
-                }
-            });
-
-            if (win) {
-                break;
-            }
-
-            await new Promise((resolve) => setTimeout(resolve, 200));
-        }
-
-        if (!win) {
-            throw new Error(
-                'mainWindow fixture: no window with \'index\' in URL.\n' +
-                `Available: ${electronApp.windows().map((w) => w.url()).join(', ')}`,
-            );
-        }
+        const win = await waitForMainWindow(electronApp);
         await use(win);
     },
 });

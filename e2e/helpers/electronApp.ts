@@ -169,7 +169,15 @@ export async function cleanupAllRegisteredElectronProcesses(): Promise<void> {
  */
 export function clearAllRegistryFiles(): void {
     for (const file of listRegistryFiles()) {
-        fs.rmSync(file, {force: true});
+        try {
+            fs.rmSync(file, {force: true, recursive: true});
+        } catch (error) {
+            const code = (error as NodeJS.ErrnoException).code;
+            if (code === 'ENOENT' || code === 'ENOTDIR') {
+                continue;
+            }
+            console.warn(`[e2e] Failed to remove registry shard ${file}:`, error); // eslint-disable-line no-console
+        }
     }
 }
 
