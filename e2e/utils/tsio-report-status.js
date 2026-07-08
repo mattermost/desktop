@@ -141,7 +141,7 @@ async function reportTsioStatus({
     await core.summary.addRaw(summaryLines.join('\n')).write();
 
     const descriptionPrefix = upstreamJobsSucceeded ? '' : 'CI job failed (untracked by TSIO), ';
-    const description = `${descriptionPrefix}${stats.passed ?? 0}/${stats.total ?? 0} passed, ${stats.failed ?? 0} failed`.slice(0, 140);
+    const description = `${descriptionPrefix}${stats.passed ?? 0}/${stats.total ?? 0} passed, ${stats.failed ?? 0} failed, ${stats.skipped ?? 0} skipped`.slice(0, 140);
     await github.rest.repos.createCommitStatus({
         owner: context.repo.owner,
         repo: context.repo.repo,

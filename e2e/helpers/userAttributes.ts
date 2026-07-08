@@ -305,7 +305,12 @@ export async function editTextCustomAttribute(
         await win.runInRenderer<void>(`
             const fieldId = ${JSON.stringify(fieldId)};
             const input = document.querySelector('#customAttribute_' + fieldId);
-            const row = input?.closest('.setting-list-item, .SettingsBlock, section, li, div') || document;
+            const row = input?.closest('.setting-list-item') ||
+                input?.closest('.SettingsBlock') ||
+                input?.closest('section') ||
+                input?.closest('li') ||
+                input?.closest('div') ||
+                document;
             const saveBtn = Array.from(row.querySelectorAll('button'))
                 .find((button) => (button.textContent || '').trim() === 'Save');
             if (!(saveBtn instanceof HTMLButtonElement)) {
