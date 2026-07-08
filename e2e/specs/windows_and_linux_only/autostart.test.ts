@@ -1,23 +1,16 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import * as fs from 'fs';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
 import {demoConfig} from '../../helpers/config';
+import {
+    readConfigValue,
+    toggleAutostartSetting,
+    waitForConfigValue,
+} from '../../helpers/settingsConfig';
 import {openSettingsWindow} from '../../helpers/settingsWindow';
-
-async function toggleAutostart(settingsWindow: Awaited<ReturnType<typeof openSettingsWindow>>, configFilePath: string) {
-    const autostartToggle = settingsWindow.locator('#CheckSetting_autostart button');
-    await autostartToggle.waitFor({state: 'visible', timeout: 10_000});
-    const before = JSON.parse(fs.readFileSync(configFilePath, 'utf-8')).autostart as boolean;
-    await autostartToggle.click();
-    await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")', {timeout: 15_000});
-    const after = JSON.parse(fs.readFileSync(configFilePath, 'utf-8')).autostart as boolean;
-    expect(after).toBe(!before);
-    return {before, after};
-}
 
 test.describe('windows_and_linux_only/autostart', () => {
     test.describe('MM-T1289 Start app on login saves autostart preference', () => {
@@ -31,9 +24,8 @@ test.describe('windows_and_linux_only/autostart', () => {
                 const settingsWindow = await openSettingsWindow(electronApp);
                 await settingsWindow.click('#settingCategoryButton-general');
 
-                expect(JSON.parse(fs.readFileSync(configFilePath, 'utf-8')).autostart).toBe(false);
-                await toggleAutostart(settingsWindow, configFilePath);
-                expect(JSON.parse(fs.readFileSync(configFilePath, 'utf-8')).autostart).toBe(true);
+                expect(readConfigValue<boolean>(configFilePath, 'autostart')).toBe(false);
+                await toggleAutostartSetting(settingsWindow, configFilePath);
             },
         );
     });
@@ -46,11 +38,10 @@ test.describe('windows_and_linux_only/autostart', () => {
             const settingsWindow = await openSettingsWindow(electronApp);
             await settingsWindow.click('#settingCategoryButton-general');
 
-            const initial = JSON.parse(fs.readFileSync(configFilePath, 'utf-8')).autostart as boolean;
-            if (initial) {
-                await toggleAutostart(settingsWindow, configFilePath);
+            if (readConfigValue<boolean>(configFilePath, 'autostart')) {
+                await toggleAutostartSetting(settingsWindow, configFilePath);
             }
-            expect(JSON.parse(fs.readFileSync(configFilePath, 'utf-8')).autostart).toBe(false);
+            await waitForConfigValue(configFilePath, 'autostart', false);
         },
     );
 
@@ -71,9 +62,9 @@ test.describe('windows_and_linux_only/autostart', () => {
             const configFilePath = path.join(testInfo.outputDir, 'userdata', 'config.json');
             const settingsWindow = await openSettingsWindow(electronApp);
             await settingsWindow.click('#settingCategoryButton-general');
-            const {before} = await toggleAutostart(settingsWindow, configFilePath);
-            await toggleAutostart(settingsWindow, configFilePath);
-            expect(JSON.parse(fs.readFileSync(configFilePath, 'utf-8')).autostart).toBe(before);
+            const {before} = await toggleAutostartSetting(settingsWindow, configFilePath);
+            await toggleAutostartSetting(settingsWindow, configFilePath);
+            await waitForConfigValue(configFilePath, 'autostart', before);
         },
     );
 });

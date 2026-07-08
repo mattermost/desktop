@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../../fixtures/index';
+import {clickApplicationMenuItem} from '../../helpers/menu';
 
 test.describe('menu/menu', () => {
     test('MM-T4404 should open the 3 dot menu with Alt', {tag: ['@P2', '@win32']}, async ({electronApp, mainWindow}) => {
@@ -27,30 +28,12 @@ test.describe('menu/menu', () => {
     });
 
     test(
-        'MM-T4803 Open Servers Menu using keyboard shortcuts',
+        'MM-T4803 Open Servers Menu from the Window menu',
         {tag: ['@P2', '@all']},
         async ({electronApp, mainWindow}) => {
             expect(mainWindow).toBeDefined();
 
-            const clicked = await electronApp.evaluate(({Menu}) => {
-                const root = Menu.getApplicationMenu();
-                if (!root) {
-                    return false;
-                }
-                const stack = [...root.items];
-                while (stack.length) {
-                    const item = stack.shift()!;
-                    if (item.label === 'Show Servers') {
-                        item.click();
-                        return true;
-                    }
-                    if (item.submenu) {
-                        stack.push(...item.submenu.items);
-                    }
-                }
-                return false;
-            });
-            expect(clicked, '"Show Servers" menu item must exist and be clickable').toBe(true);
+            await clickApplicationMenuItem(electronApp, 'window', {label: 'Show Servers'});
 
             const dropdownWindow = electronApp.windows().find((w) => w.url().includes('dropdown')) ??
                 await electronApp.waitForEvent('window', {

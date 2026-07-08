@@ -63,7 +63,7 @@ test.describe('menu_bar/quit_menu', () => {
             await clickQuitFromMenuBar(electronApp);
 
             let closed = await waitForAppClose(electronApp, 5_000);
-            if (!closed) {
+            if (!closed && process.platform === 'darwin') {
                 // Role-based menu clicks may not terminate the app under Playwright on macOS.
                 await electronApp.evaluate(({ipcMain}) => {
                     ipcMain.emit('quit', null, 'menu-bar-e2e', '');

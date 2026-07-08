@@ -12,6 +12,7 @@ import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile} from 
 import {closeElectronApp} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
+import {ensureAutostartEnabled, waitForConfigValue} from '../../helpers/settingsConfig';
 import {openSettingsWindow} from '../../helpers/settingsWindow';
 
 test.describe('windows_and_linux_only/startup_after_reboot', () => {
@@ -42,15 +43,9 @@ test.describe('windows_and_linux_only/startup_after_reboot', () => {
                 const settingsWindow = await openSettingsWindow(firstApp);
                 await settingsWindow.click('#settingCategoryButton-general');
 
-                const autostartToggle = settingsWindow.locator('#CheckSetting_autostart button');
-                await autostartToggle.waitFor({state: 'visible', timeout: 10_000});
-
                 const configPath = path.join(userDataDir, 'config.json');
-                if (!JSON.parse(fs.readFileSync(configPath, 'utf-8')).autostart) {
-                    await autostartToggle.click();
-                    await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")', {timeout: 15_000});
-                }
-                expect(JSON.parse(fs.readFileSync(configPath, 'utf-8')).autostart).toBe(true);
+                await ensureAutostartEnabled(settingsWindow, configPath);
+                await waitForConfigValue(configPath, 'autostart', true);
 
                 await settingsWindow.close().catch(() => {});
 

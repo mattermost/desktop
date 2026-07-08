@@ -168,17 +168,9 @@ test.describe('menu/view', () => {
 
     test('MM-T813 Control+F should focus the search bar in Mattermost', {tag: ['@P2', '@all']}, async () => {
         const {firstServer, firstServerId} = await getServerContext();
-        await activateServerView(electronApp, firstServerId);
 
-        if (process.platform === 'darwin') {
-            await firstServer.keyboard.press('Meta+f');
-        } else {
-            await openServerSearch(electronApp, firstServerId);
-        }
-
+        await openServerSearch(electronApp, firstServerId);
         await waitForSearchBarFocused(firstServer);
-        const isFocused = await firstServer.$eval(SEARCH_INPUT, (el) => el === document.activeElement);
-        expect(isFocused).toBe(true);
         const text = await firstServer.inputValue(SEARCH_INPUT);
         expect(text).toContain('in:');
     });

@@ -19,7 +19,17 @@ test.describe('notification_trigger/no_flash_taskbar', () => {
             await waitForAppReady(electronApp);
 
             const releaseLock = await acquireExclusiveLock('flash-taskbar-state');
+            let originalFlashWindow: number | undefined;
             try {
+                originalFlashWindow = await electronApp.evaluate(() => {
+                    const refs = (global as any).__e2eTestRefs;
+                    const Config = refs?.Config;
+                    if (!Config) {
+                        return undefined;
+                    }
+                    return Config.notifications?.flashWindow;
+                });
+
                 await electronApp.evaluate(() => {
                     const refs = (global as any).__e2eTestRefs;
                     const Config = refs?.Config;
@@ -39,6 +49,16 @@ test.describe('notification_trigger/no_flash_taskbar', () => {
                     ).not.toContain(true);
                 } finally {
                     await restoreFlashFrameSpy(electronApp);
+                }
+
+                if (originalFlashWindow !== undefined) {
+                    await electronApp.evaluate((flashWindow) => {
+                        const refs = (global as any).__e2eTestRefs;
+                        const Config = refs?.Config;
+                        if (Config) {
+                            Config.set('notifications', {...Config.notifications, flashWindow});
+                        }
+                    }, originalFlashWindow);
                 }
             } finally {
                 await releaseLock();

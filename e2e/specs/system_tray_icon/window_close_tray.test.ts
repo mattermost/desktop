@@ -4,8 +4,8 @@
 import {test, expect} from '../../fixtures/index';
 import {demoConfig, type AppConfig} from '../../helpers/config';
 import {restoreMessageBox, stubMessageBoxResponses} from '../../helpers/dialog';
-import {isMainWindowVisible} from '../../helpers/tray';
 import {evaluateInMainProcess} from '../../helpers/testRefs';
+import {isMainWindowVisible} from '../../helpers/tray';
 
 const closeDialogConfig: AppConfig = {
     ...demoConfig,

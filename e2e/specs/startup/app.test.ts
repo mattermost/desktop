@@ -5,9 +5,10 @@ import {_electron as electron} from 'playwright';
 
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
-import {electronBinaryPath, appDir, demoConfig, emptyConfig, writeConfigFile} from '../../helpers/config';
+import {electronBinaryPath, appDir, demoConfig, writeConfigFile} from '../../helpers/config';
 import {closeAppSafely, closeElectronApp} from '../../helpers/electronApp';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
+import {launchEmptyApp} from '../../helpers/emptyApp';
 
 test.describe('startup/app', () => {
     test.describe.configure({mode: 'serial'});
@@ -64,35 +65,12 @@ test.describe('startup/app', () => {
         async ({}, testInfo) => {
             const releaseLock = await acquireExclusiveLock('startup-empty-app');
             let emptyApp;
+            let welcomeScreen;
             let userDataDir = '';
 
             try {
-            // This test needs a no-servers config. Override before launch.
-            // Since electronApp fixture has already launched with demoConfig,
-            // we test this by launching a fresh app with emptyConfig.
-            // NOTE: In Phase 3, refactor fixture to accept config override.
-            // For now, use a nested launch scoped to this test.
-                userDataDir = testInfo.outputDir + '/empty-userdata';
-                const {mkdirSync} = await import('fs');
-                mkdirSync(userDataDir, {recursive: true});
-                writeConfigFile(userDataDir, emptyConfig);
-
-                emptyApp = await electron.launch({
-                    executablePath: electronBinaryPath,
-                    args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
-                    env: {...process.env, NODE_ENV: 'test'},
-                    timeout: 60_000,
-                });
-
-                let welcomeModal = emptyApp.windows().find((w) => w.url().includes('welcomeScreen'));
-                if (!welcomeModal) {
-                    welcomeModal = await emptyApp.waitForEvent('window', {
-                        predicate: (w) => w.url().includes('welcomeScreen'),
-                        timeout: 15_000,
-                    });
-                }
-                await welcomeModal.waitForLoadState('domcontentloaded');
-                const text = await welcomeModal.innerText('.WelcomeScreen .WelcomeScreen__button');
+                ({app: emptyApp, welcomeScreen, userDataDir} = await launchEmptyApp(testInfo, 'empty-userdata'));
+                const text = await welcomeScreen.innerText('.WelcomeScreen .WelcomeScreen__button');
                 expect(text).toBe('Get Started');
             } finally {
                 await closeAppSafely(emptyApp, userDataDir);
@@ -110,19 +88,7 @@ test.describe('startup/app', () => {
             let userDataDir = '';
 
             try {
-                userDataDir = testInfo.outputDir + '/empty-title-userdata';
-                const {mkdirSync} = await import('fs');
-                mkdirSync(userDataDir, {recursive: true});
-                writeConfigFile(userDataDir, emptyConfig);
-
-                emptyApp = await electron.launch({
-                    executablePath: electronBinaryPath,
-                    args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
-                    env: {...process.env, NODE_ENV: 'test'},
-                    timeout: 60_000,
-                });
-
-                await waitForAppReady(emptyApp);
+                ({app: emptyApp, userDataDir} = await launchEmptyApp(testInfo, 'empty-title-userdata'));
                 const mainWin = emptyApp.windows().find((w) => w.url().includes('index'));
                 expect(mainWin).toBeDefined();
                 const runtimeAppName = await emptyApp.evaluate(({app}) => app.getName());
@@ -143,29 +109,11 @@ test.describe('startup/app', () => {
         async ({}, testInfo) => {
             const releaseLock = await acquireExclusiveLock('startup-empty-app');
             let emptyApp;
+            let welcomeScreen;
             let userDataDir = '';
 
             try {
-                userDataDir = testInfo.outputDir + '/empty-noservers-userdata';
-                const {mkdirSync} = await import('fs');
-                mkdirSync(userDataDir, {recursive: true});
-                writeConfigFile(userDataDir, emptyConfig);
-
-                emptyApp = await electron.launch({
-                    executablePath: electronBinaryPath,
-                    args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
-                    env: {...process.env, NODE_ENV: 'test'},
-                    timeout: 60_000,
-                });
-
-                let welcomeScreen = emptyApp.windows().find((w) => w.url().includes('welcomeScreen'));
-                if (!welcomeScreen) {
-                    welcomeScreen = await emptyApp.waitForEvent('window', {
-                        predicate: (w) => w.url().includes('welcomeScreen'),
-                        timeout: 15_000,
-                    });
-                }
-                await welcomeScreen.waitForLoadState('domcontentloaded');
+                ({app: emptyApp, welcomeScreen, userDataDir} = await launchEmptyApp(testInfo, 'empty-noservers-userdata'));
                 await welcomeScreen.click('#getStartedWelcomeScreen');
                 await welcomeScreen.waitForSelector('#input_url', {timeout: 10_000});
                 await welcomeScreen.waitForSelector('#input_name', {timeout: 10_000});
@@ -185,29 +133,11 @@ test.describe('startup/app', () => {
         async ({}, testInfo) => {
             const releaseLock = await acquireExclusiveLock('startup-empty-app');
             let emptyApp;
+            let welcomeScreen;
             let userDataDir = '';
 
             try {
-                userDataDir = testInfo.outputDir + '/empty-modal-lock-userdata';
-                const {mkdirSync} = await import('fs');
-                mkdirSync(userDataDir, {recursive: true});
-                writeConfigFile(userDataDir, emptyConfig);
-
-                emptyApp = await electron.launch({
-                    executablePath: electronBinaryPath,
-                    args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
-                    env: {...process.env, NODE_ENV: 'test'},
-                    timeout: 60_000,
-                });
-
-                let welcomeScreen = emptyApp.windows().find((w) => w.url().includes('welcomeScreen'));
-                if (!welcomeScreen) {
-                    welcomeScreen = await emptyApp.waitForEvent('window', {
-                        predicate: (w) => w.url().includes('welcomeScreen'),
-                        timeout: 15_000,
-                    });
-                }
-                await welcomeScreen.waitForLoadState('domcontentloaded');
+                ({app: emptyApp, welcomeScreen, userDataDir} = await launchEmptyApp(testInfo, 'empty-modal-lock-userdata'));
                 await welcomeScreen.waitForSelector('.WelcomeScreen', {timeout: 15_000});
                 await welcomeScreen.keyboard.press('Escape');
 

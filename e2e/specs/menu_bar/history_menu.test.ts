@@ -33,18 +33,10 @@ test.describe('history_menu', () => {
         await entry.win.click('#sidebarItem_town-square');
         await expectChannelTitle(entry.win, 'Town Square');
         await entry.win.locator('[aria-label="Back"]').click();
-
-        await entry.win.waitForSelector('#channelHeaderTitle');
-
-        let channelHeaderText = await entry.win.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim());
-        expect(channelHeaderText).toBe('Off-Topic');
+        await expectChannelTitle(entry.win, 'Off-Topic');
 
         await entry.win.locator('[aria-label="Forward"]').click();
-
-        await entry.win.waitForSelector('#channelHeaderTitle');
-
-        channelHeaderText = await entry.win.$eval('#channelHeaderTitle', (el) => (el as HTMLElement).textContent?.trim());
-        expect(channelHeaderText).toBe('Town Square');
+        await expectChannelTitle(entry.win, 'Town Square');
     });
 
     test(
