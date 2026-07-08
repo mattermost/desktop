@@ -4,7 +4,7 @@
 import {test, expect} from '../../fixtures/index';
 
 test(
-    'LNX-05 app launches in a Wayland session',
+    'MM-T6143 app launches in a Wayland session',
     {tag: ['@P2', '@wayland']},
     async ({electronApp, mainWindow}) => {
         const sessionType = await electronApp.evaluate(() => process.env.XDG_SESSION_TYPE ?? '');

@@ -6,7 +6,7 @@ import {demoConfig} from '../../helpers/config';
 import {mattermostDeepLinkUrl, openDeepLinkInApp, waitForServerUrlAndDropdown} from '../../helpers/deeplink';
 
 test(
-    'DL-03 OAuth callback deep link navigates the active server view',
+    'MM-T6129 OAuth callback deep link navigates the active server view',
     {tag: ['@P1', '@all']},
     async ({electronApp, mainWindow}) => {
         const serverName = demoConfig.servers[0].name;

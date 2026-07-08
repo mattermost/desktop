@@ -7,7 +7,7 @@ import {test, expect, type ServerMap} from '../../fixtures/index';
 import {openChannelHeaderMenu, enableBookmarksBar, submitBookmarkModal, waitForBookmarkInBar, clickBookmarkInBar, deleteAllBookmarksInBar} from '../../helpers/channelMenu';
 import {demoMattermostConfig, type AppConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
-import {waitForMattermostShell, recoverServerViewIfNeeded} from '../../helpers/mattermostShell';
+import {recoverServerViewIfNeeded, waitForMattermostShell} from '../../helpers/mattermostShell';
 import {closeOverlayWindowsIfOpen} from '../../helpers/overlayWindows';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 

@@ -13,7 +13,7 @@ import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 
 test(
-    'session is preserved across app restart — no re-login required',
+    'MM-T6193 session is preserved across app restart — no re-login required',
     {tag: ['@P0', '@all']},
     async ({}, testInfo) => {
         if (!process.env.MM_TEST_SERVER_URL) {
