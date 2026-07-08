@@ -78,7 +78,10 @@ jobs:
     needs:
       - calculate-commit-hash
     steps:
+      # Best-effort: a transient status-API hiccup here must never block the
+      # actual test matrix from running — the `e2e` job below needs this job.
       - uses: mattermost/actions/delivery/update-commit-status@218fd96a63451259dc100e1292a5e44af92fe15d
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -182,6 +185,10 @@ jobs:
           TSIO_COMPOSITE_IDENTITY: ${{ needs.calculate-commit-hash.outputs.TSIO_COMPOSITE_IDENTITY }}
           TSIO_TOTAL_REPORTS_EXPECTED: ${{ needs.calculate-commit-hash.outputs.TSIO_TOTAL_REPORTS_EXPECTED }}
           COMMIT_STATUS_CONTEXT: e2e/compatibility-matrix-testing
+          # TSIO only sees test-case-level results — a job-level failure with no
+          # matching failed test (hung worker teardown, crashed runner, npm ci
+          # failure) would otherwise still read as "100% passed".
+          UPSTREAM_JOBS_SUCCEEDED: ${{ needs.e2e.result == 'success' }}
         with:
           script: |
             const {reportUrl, status, stats} = await require('./e2e/utils/tsio-report-status.js')({
@@ -189,6 +196,7 @@ jobs:
               compositeIdentity: JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY),
               totalReportsExpected: parseInt(process.env.TSIO_TOTAL_REPORTS_EXPECTED, 10),
               commitStatusContext: process.env.COMMIT_STATUS_CONTEXT,
+              upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
               failOnTestFailures: true,
             });
             core.info(`TSIO report ${reportUrl}: ${status} (${JSON.stringify(stats)})`);

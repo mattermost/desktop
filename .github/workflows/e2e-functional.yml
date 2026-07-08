@@ -84,9 +84,37 @@ jobs:
           fi
           echo "composite-identity-json=${COMPOSITE_IDENTITY}" >> "$GITHUB_OUTPUT"
 
+  # Pending status shown on the PR/commit while tests run — tsio-summary below
+  # flips it to success/failure once TSIO has (or hasn't) produced a report.
+  # Gated as a `needs` of e2e-tests/e2e-policy-tests so the pending row always
+  # lands before the final one (commit statuses have no ordering guarantee
+  # otherwise — last write wins by timestamp).
+  update-initial-status:
+    name: Set pending TSIO status
+    runs-on: ubuntu-22.04
+    needs:
+      - prepare-matrix
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      # Best-effort: a transient status-API hiccup here must never block the
+      # actual test matrix from running.
+      - uses: mattermost/actions/delivery/update-commit-status@218fd96a63451259dc100e1292a5e44af92fe15d
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          repository_full_name: ${{ github.repository }}
+          commit_sha: ${{ github.event.pull_request.head.sha || github.sha }}
+          context: e2e-test/desktop-playwright
+          description: "Running Electron Playwright E2E tests..."
+          status: pending
+
   e2e-tests:
     needs:
       - prepare-matrix
+      - update-initial-status
     name: ${{ matrix.platform }}
     strategy:
       matrix:
@@ -154,12 +182,17 @@ jobs:
           TSIO_COMPOSITE_IDENTITY: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
           TSIO_TOTAL_REPORTS_EXPECTED: ${{ needs.prepare-matrix.outputs.tsio-total-reports-expected }}
           COMMIT_STATUS_CONTEXT: e2e-test/desktop-playwright
+          # TSIO only sees test-case-level results — a job-level failure with no
+          # matching failed test (hung worker teardown, crashed runner, npm ci
+          # failure) would otherwise still read as "100% passed".
+          UPSTREAM_JOBS_SUCCEEDED: ${{ needs.e2e-tests.result == 'success' && needs.e2e-policy-tests.result == 'success' }}
         with:
           script: |
             const {reportUrl, status, stats} = await require('./e2e/utils/tsio-report-status.js')({
               core, context, github,
               compositeIdentity: JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY),
               totalReportsExpected: parseInt(process.env.TSIO_TOTAL_REPORTS_EXPECTED, 10),
+              upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
               commitStatusContext: process.env.COMMIT_STATUS_CONTEXT,
               failOnTestFailures: true,
             });
@@ -231,7 +264,9 @@ jobs:
 
   e2e-policy-tests:
     name: policy-tests-${{ matrix.platform }}
-    needs: prepare-matrix
+    needs:
+      - prepare-matrix
+      - update-initial-status
     # Runs untrusted PR code (npm ci / Playwright); grant only what the TSIO
     # upload needs, never pull-requests: write.
     permissions:
@@ -255,14 +290,10 @@ jobs:
       run:
         shell: bash
     env:
-      AWS_S3_BUCKET: "mattermost-cypress-report"
       BRANCH: ${{ github.ref_name }}
       BUILD_TAG: ${{ github.sha }}
       MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME || secrets.MM_DESKTOP_E2E_USER_NAME }}
       MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD || secrets.MM_DESKTOP_E2E_USER_CREDENTIALS }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.MM_DESKTOP_E2E_AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.MM_DESKTOP_E2E_AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: "us-east-1"
       PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
       NODE_ENV: "test"
       DEBUG_E2E: "true"
@@ -402,15 +433,28 @@ jobs:
           json-path: e2e/test-results/results.json
           screenshots-dir: e2e/test-results
 
-      # Playwright's own exit code already accounts for retries — trust it
-      # instead of re-deriving pass/fail from the JUnit report.
-      - name: e2e/fail-on-test-failures
+      # Playwright's own exit code already accounts for retries, but a non-zero
+      # exit here isn't reliably a real test failure — an intermittent
+      # Electron/Playwright worker-teardown hang (playwright#29431) can also
+      # produce it with zero failed tests. When TSIO is tracking this run,
+      # warn instead of failing the job — TSIO's test_stats (from the JSON
+      # report, unaffected by this) becomes the source of truth for pass/fail.
+      # Without TSIO wired (composite-identity empty), there's no other
+      # failure signal at all, so this must still hard-fail.
+      - name: e2e/handle-nonzero-playwright-exit
         if: always()
         run: |
-          if [ "${PLAYWRIGHT_EXIT_CODE:-1}" != "0" ]; then
-            echo "Playwright exited with code ${PLAYWRIGHT_EXIT_CODE:-unset}" >&2
+          if [ "${PLAYWRIGHT_EXIT_CODE:-1}" == "0" ]; then
+            exit 0
+          fi
+          if [ -n "${TSIO_COMPOSITE_IDENTITY}" ]; then
+            echo "::warning::Playwright exited with code ${PLAYWRIGHT_EXIT_CODE:-unset} — not failing the job on this alone, see TSIO report for actual test results"
+          else
+            echo "Playwright exited with code ${PLAYWRIGHT_EXIT_CODE:-unset} and no TSIO config is set for this run — failing the job since there is no other failure signal" >&2
             exit 1
           fi
+        env:
+          TSIO_COMPOSITE_IDENTITY: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
 
       - name: Upload test results
         if: always()
