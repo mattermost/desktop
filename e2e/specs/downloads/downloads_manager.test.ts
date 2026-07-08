@@ -55,7 +55,7 @@ async function startSlowDownloadServer(filename: string, chunk = 'slow-download-
 }
 
 test.describe('downloads/downloads_manager', () => {
-    test('MM-22239 should open downloads dropdown when a download starts', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
+    test('MM-T6138 should open downloads dropdown when a download starts', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
         const filename = 'slow-download.txt';
         const {server, url} = await startSlowDownloadServer(filename);
 

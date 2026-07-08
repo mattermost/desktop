@@ -44,7 +44,7 @@ async function launchWithRemoveServerModal(testInfo: {outputDir: string}) {
 }
 
 test.describe('RemoveServerModal', () => {
-    test('MM-T4390_1 should remove existing server on click Remove', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
+    test('MM-T1286 MM-T4390 Remove existing server on click Remove', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
         const {app, removeServerView, userDataDir} = await launchWithRemoveServerModal(testInfo);
         try {
             await removeServerView.click('button:has-text("Remove")');

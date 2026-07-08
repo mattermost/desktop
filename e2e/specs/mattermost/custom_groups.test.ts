@@ -38,7 +38,7 @@ test.describe('mattermost/custom_groups', () => {
         await firstServer!.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
     });
 
-    test('MM-T5584 Viewing and Unarchiving Custom Groups',
+    test('MM-T5584 Viewing Custom Groups',
         {tag: ['@P2', '@all']},
         async ({serverMap}) => {
             const firstServer = serverMap[demoMattermostConfig.servers[0].name]?.[0]?.win;
