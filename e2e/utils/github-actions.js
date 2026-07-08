@@ -2,167 +2,37 @@
 // See LICENSE.txt for license information.
 /* eslint-disable no-console -- Logging is intentional in CI utility scripts */
 
-const E2E_STATUS_CONTEXTS = [
-    'e2e/linux',
-    'e2e/macos',
-    'e2e/windows',
-    'policy-test/macos',
-    'policy-test/windows',
-];
+// TSIO (tsio-summary job) is now the single source of truth for PR/master E2E
+// pass/fail — this constant is only used to mark that one context as
+// cancelled/skipped, not to post pending/final results (see
+// e2e/utils/tsio-report-status.js for the real status logic).
+const E2E_STATUS_CONTEXT = 'e2e-test/desktop-playwright';
 
 const E2E_WORKFLOW_NAME = 'Electron Playwright Tests';
 const ACTIVE_RUN_STATUSES = ['in_progress', 'queued', 'waiting'];
 const CANCELLED_STATUS_DESCRIPTION = 'E2E cancelled — tests skipped';
 
 /**
- * Update initial pending status for all platforms
- * @param {Object} params - Parameters object
- * @param {Object} params.github - GitHub API client from actions/github-script
- * @param {Object} params.context - GitHub Actions context
- * @param {Array} params.platforms - Array of platform objects from matrix
- */
-async function updateInitialStatus({github, context, platforms}) {
-    const workflowUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-
-    await Promise.all(platforms.map((platform) =>
-        github.rest.repos.createCommitStatus({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            sha: context.sha,
-            state: 'pending',
-            context: `e2e/${platform.platform}`,
-            description: `E2E tests for Mattermost desktop app on ${platform.platform} have started...`,
-            target_url: workflowUrl,
-        }),
-    ));
-}
-
-/**
- * Build the short description shown in the PR status check.
- * Only counts tests that actually ran on this platform (passed + failed).
- * Skipped tests are omitted — they are cross-platform guards, not real
- * failures, and inflate the denominator making results look worse.
- *
- *   - all pass:   "All 161 ran, 161 passed"
- *   - any failure: "161 ran, 157 passed, 4 failed"
- */
-function formatStatusDescription({passed, failed, collectionFailed}) {
-    if (collectionFailed) {
-        return 'No tests ran (collection failed)';
-    }
-
-    const ran = passed + failed;
-    if (ran === 0) {
-        return failed > 0 ? `0 ran, ${failed} failed` : 'No tests ran';
-    }
-    if (failed === 0) {
-        return `All ${ran} ran, ${passed} passed`;
-    }
-    return `${ran} ran, ${passed} passed, ${failed} failed`;
-}
-
-async function resolveStatusSha({github, context, prNumber}) {
-    // Commit statuses must target the SHA this workflow run was dispatched for.
-    // PR HEAD moves when a new push cancels an in-flight run; using it would mark
-    // the new commit cancelled instead of the superseded one.
-    if (context.sha) {
-        return context.sha;
-    }
-
-    if (prNumber) {
-        const {data: pr} = await github.rest.pulls.get({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            pull_number: prNumber,
-        });
-        return pr.head.sha;
-    }
-
-    return context.payload.pull_request?.head?.sha;
-}
-
-/**
- * Update final status for all platforms based on test results
- * @param {Object} params - Parameters object
- * @param {Object} params.github - GitHub API client from actions/github-script
- * @param {Object} params.context - GitHub Actions context
- * @param {Array} params.platforms - Array of platform objects from matrix
- * @param {Object} params.outputs - Test outputs from e2e-tests job
- * @param {string} [params.e2eTestsResult] - needs.e2e-tests.result from the workflow
- * @param {number} [params.prNumber] - PR number for status SHA lookup
- */
-async function updateFinalStatus({github, context, platforms, outputs, e2eTestsResult, prNumber}) {
-    const workflowUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-    const sha = await resolveStatusSha({github, context, prNumber});
-    const workflowCancelled = e2eTestsResult === 'cancelled';
-
-    await Promise.all(platforms.map((platform) => {
-        let osKey;
-        if (platform.runner.includes('ubuntu')) {
-            osKey = 'LINUX';
-        } else if (platform.runner.includes('macos')) {
-            osKey = 'MACOS';
-        } else {
-            osKey = 'WINDOWS';
-        }
-
-        const failed = Number(outputs[`NEW_FAILURES_${osKey}`] || 0);
-        const passed = Number(outputs[`PASSED_${osKey}`] || 0);
-        const collectionFailed = outputs[`COLLECTION_FAILED_${osKey}`] === 'true';
-        const platformStatus = outputs[`STATUS_${osKey}`] || '';
-        const reportLink = outputs[`REPORT_LINK_${osKey}`] || workflowUrl;
-        const ran = passed + failed;
-
-        let state;
-        let description;
-
-        if (platformStatus === 'error' || (workflowCancelled && ran === 0)) {
-            state = 'error';
-            description = CANCELLED_STATUS_DESCRIPTION;
-        } else if (ran === 0 && (platformStatus === 'success' || platformStatus === '')) {
-            state = 'error';
-            description = workflowCancelled ? CANCELLED_STATUS_DESCRIPTION : 'E2E incomplete — no tests ran';
-        } else if (failed > 0 || platformStatus === 'failure') {
-            state = 'failure';
-            description = formatStatusDescription({passed, failed, collectionFailed});
-        } else {
-            state = 'success';
-            description = formatStatusDescription({passed, failed, collectionFailed});
-        }
-
-        return github.rest.repos.createCommitStatus({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            sha,
-            state,
-            context: `e2e/${platform.platform}`,
-            description,
-            target_url: reportLink,
-        });
-    }));
-}
-
-/**
- * Mark standard E2E commit statuses as cancelled/skipped on a SHA.
+ * Mark the E2E commit status as cancelled/skipped on a SHA.
  * GitHub commit statuses have no "skipped" state — `error` matches mobile E2E.
  */
 async function markE2EStatusesCancelled({github, context, sha, reason = CANCELLED_STATUS_DESCRIPTION}) {
     const description = String(reason).substring(0, 140);
     const targetUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
-    await Promise.all(E2E_STATUS_CONTEXTS.map((statusContext) =>
-        github.rest.repos.createCommitStatus({
+    try {
+        await github.rest.repos.createCommitStatus({
             owner: context.repo.owner,
             repo: context.repo.repo,
             sha,
             state: 'error',
-            context: statusContext,
+            context: E2E_STATUS_CONTEXT,
             description,
             target_url: targetUrl,
-        }).catch((error) => {
-            console.log(`Could not update ${statusContext} on ${sha}: ${error.message}`);
-        }),
-    ));
+        });
+    } catch (error) {
+        console.log(`Could not update ${E2E_STATUS_CONTEXT} on ${sha}: ${error.message}`);
+    }
 }
 
 /**
@@ -308,12 +178,9 @@ async function removeE2ELabel({github, context}) {
 }
 
 module.exports = {
-    updateInitialStatus,
-    updateFinalStatus,
     removeE2ELabel,
-    formatStatusDescription,
     markE2EStatusesCancelled,
     cancelActiveE2ERuns,
-    E2E_STATUS_CONTEXTS,
+    E2E_STATUS_CONTEXT,
     CANCELLED_STATUS_DESCRIPTION,
 };

@@ -229,6 +229,7 @@ jobs:
         if: github.event.pull_request.head.repo.full_name == github.repository
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
           sparse-checkout: |
             e2e/utils/github-actions.js
           sparse-checkout-cone-mode: false

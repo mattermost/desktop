@@ -2,11 +2,6 @@
 // See LICENSE.txt for license information.
 /* eslint-disable no-console -- Logging is intentional in CI utility scripts */
 
-// Not test-system-io-summary: it reads /api/v1/orchestration/status, which only
-// the dispatch-begin/dispatch-run flow populates. report-upload posts to a
-// disjoint /api/v1/reports/* subsystem, so this re-opens the idempotent begin
-// endpoint to recover the report id, then polls the public status endpoint.
-
 const PRODUCTION_URL = 'https://test-io.test.mattermost.com';
 const STAGING_URL = 'https://staging-test-io.test.mattermost.com';
 
@@ -69,7 +64,10 @@ async function reportTsioStatus({
         throw new Error(`reports/begin failed: ${beginRes.status} ${await beginRes.text()}`);
     }
     const {report_id: reportId} = await beginRes.json();
-    const reportUrl = `${baseUrl}/reports/${reportId}`;
+
+    // /reports/{id} (no prefix) hits the frontend's repo-or-sha catch-all route,
+    // not the report detail page — it needs the g/ (group) prefix.
+    const reportUrl = `${baseUrl}/reports/g/${reportId}`;
 
     let detail;
     for (let attempt = 0; attempt < POLL_ATTEMPTS; attempt++) {

@@ -45,71 +45,6 @@ on:
         required: false
         type: string
         default: ""
-    outputs:
-      NEW_FAILURES_LINUX:
-        description: "The output to comment"
-        value: ${{ jobs.e2e.outputs.NEW_FAILURES_LINUX }}
-      NEW_FAILURES_MACOS:
-        description: "The output to comment"
-        value: ${{ jobs.e2e.outputs.NEW_FAILURES_MACOS }}
-      NEW_FAILURES_WINDOWS:
-        description: "The output to comment"
-        value: ${{ jobs.e2e.outputs.NEW_FAILURES_WINDOWS }}
-      REPORT_LINK_LINUX:
-        description: "Link to Linux report"
-        value: ${{ jobs.e2e.outputs.REPORT_LINK_LINUX }}
-      REPORT_LINK_MACOS:
-        description: "Link to MacOS report"
-        value: ${{ jobs.e2e.outputs.REPORT_LINK_MACOS }}
-      REPORT_LINK_WINDOWS:
-        description: "Link to Windows report"
-        value: ${{ jobs.e2e.outputs.REPORT_LINK_WINDOWS }}
-      STATUS_LINUX:
-        description: "The status of the linux test"
-        value: ${{ jobs.e2e.outputs.STATUS_LINUX }}
-      STATUS_MACOS:
-        description: "The status of the macOS test"
-        value: ${{ jobs.e2e.outputs.STATUS_MACOS }}
-      PASSED_LINUX:
-        description: "Number of passed tests on Linux"
-        value: ${{ jobs.e2e.outputs.PASSED_LINUX }}
-      PASSED_MACOS:
-        description: "Number of passed tests on macOS"
-        value: ${{ jobs.e2e.outputs.PASSED_MACOS }}
-      PASSED_WINDOWS:
-        description: "Number of passed tests on Windows"
-        value: ${{ jobs.e2e.outputs.PASSED_WINDOWS }}
-      TOTAL_LINUX:
-        description: "Total tests on Linux (passed + failed + skipped)"
-        value: ${{ jobs.e2e.outputs.TOTAL_LINUX }}
-      TOTAL_MACOS:
-        description: "Total tests on macOS (passed + failed + skipped)"
-        value: ${{ jobs.e2e.outputs.TOTAL_MACOS }}
-      TOTAL_WINDOWS:
-        description: "Total tests on Windows (passed + failed + skipped)"
-        value: ${{ jobs.e2e.outputs.TOTAL_WINDOWS }}
-      SKIPPED_LINUX:
-        description: "Number of skipped tests on Linux"
-        value: ${{ jobs.e2e.outputs.SKIPPED_LINUX }}
-      SKIPPED_MACOS:
-        description: "Number of skipped tests on macOS"
-        value: ${{ jobs.e2e.outputs.SKIPPED_MACOS }}
-      SKIPPED_WINDOWS:
-        description: "Number of skipped tests on Windows"
-        value: ${{ jobs.e2e.outputs.SKIPPED_WINDOWS }}
-      COLLECTION_FAILED_LINUX:
-        description: "Whether Playwright collected zero tests on Linux"
-        value: ${{ jobs.e2e.outputs.COLLECTION_FAILED_LINUX }}
-      COLLECTION_FAILED_MACOS:
-        description: "Whether Playwright collected zero tests on macOS"
-        value: ${{ jobs.e2e.outputs.COLLECTION_FAILED_MACOS }}
-      COLLECTION_FAILED_WINDOWS:
-        description: "Whether Playwright collected zero tests on Windows"
-        value: ${{ jobs.e2e.outputs.COLLECTION_FAILED_WINDOWS }}
-      STATUS_WINDOWS:
-        description: "The status of the windows test"
-        value: ${{ jobs.e2e.outputs.STATUS_WINDOWS }}
-
   workflow_dispatch:
     inputs:
       MM_TEST_SERVER_URL:
@@ -179,28 +114,6 @@ jobs:
     defaults:
       run:
         shell: bash
-    outputs:
-      NEW_FAILURES_LINUX: ${{ steps.analyze-flaky-tests.outputs.NEW_FAILURES_LINUX }}
-      NEW_FAILURES_MACOS: ${{ steps.analyze-flaky-tests.outputs.NEW_FAILURES_MACOS }}
-      NEW_FAILURES_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.NEW_FAILURES_WINDOWS }}
-      REPORT_LINK_LINUX: ${{ steps.analyze-flaky-tests.outputs.REPORT_LINK_LINUX }}
-      REPORT_LINK_MACOS: ${{ steps.analyze-flaky-tests.outputs.REPORT_LINK_MACOS }}
-      REPORT_LINK_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.REPORT_LINK_WINDOWS }}
-      STATUS_LINUX: ${{ steps.analyze-flaky-tests.outputs.STATUS_LINUX }}
-      STATUS_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.STATUS_WINDOWS }}
-      STATUS_MACOS: ${{ steps.analyze-flaky-tests.outputs.STATUS_MACOS }}
-      PASSED_LINUX: ${{ steps.analyze-flaky-tests.outputs.PASSED_LINUX }}
-      PASSED_MACOS: ${{ steps.analyze-flaky-tests.outputs.PASSED_MACOS }}
-      PASSED_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.PASSED_WINDOWS }}
-      TOTAL_LINUX: ${{ steps.analyze-flaky-tests.outputs.TOTAL_LINUX }}
-      TOTAL_MACOS: ${{ steps.analyze-flaky-tests.outputs.TOTAL_MACOS }}
-      TOTAL_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.TOTAL_WINDOWS }}
-      SKIPPED_LINUX: ${{ steps.analyze-flaky-tests.outputs.SKIPPED_LINUX }}
-      SKIPPED_MACOS: ${{ steps.analyze-flaky-tests.outputs.SKIPPED_MACOS }}
-      SKIPPED_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.SKIPPED_WINDOWS }}
-      COLLECTION_FAILED_LINUX: ${{ steps.analyze-flaky-tests.outputs.COLLECTION_FAILED_LINUX }}
-      COLLECTION_FAILED_MACOS: ${{ steps.analyze-flaky-tests.outputs.COLLECTION_FAILED_MACOS }}
-      COLLECTION_FAILED_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.COLLECTION_FAILED_WINDOWS }}
     steps:
       - name: e2e/set-required-variables
         id: variables
@@ -400,43 +313,6 @@ jobs:
           echo "report_url=${REPORT_URL}" >> "$GITHUB_OUTPUT"
           echo "Playwright report (${RUNNER_OS}) uploaded: ${REPORT_URL}" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: e2e/analyze-flaky-tests
-        id: analyze-flaky-tests
-        if: always()
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        env:
-          PER_OS_REPORT_URL: ${{ steps.upload-html-report-to-s3.outputs.report_url }}
-          JOB_STATUS: ${{ job.status }}
-        with:
-          script: |
-            process.chdir('./e2e');
-            const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
-            const { failureCount, passCount, skipCount, totalCount, os, testStatus, collectionFailed } = analyzeFlakyTests();
-            const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
-            const reportUrl = process.env.PER_OS_REPORT_URL || runUrl;
-            const setOSOutputs = (suffix) => {
-              core.setOutput(`NEW_FAILURES_${suffix}`, String(failureCount));
-              core.setOutput(`REPORT_LINK_${suffix}`, reportUrl);
-              core.setOutput(`STATUS_${suffix}`, testStatus);
-              core.setOutput(`PASSED_${suffix}`, String(passCount));
-              core.setOutput(`SKIPPED_${suffix}`, String(skipCount));
-              core.setOutput(`TOTAL_${suffix}`, String(totalCount));
-              core.setOutput(`COLLECTION_FAILED_${suffix}`, String(collectionFailed));
-            };
-            switch (os) {
-              case 'linux':
-                setOSOutputs('LINUX');
-                break;
-              case 'darwin':
-                setOSOutputs('MACOS');
-                break;
-              case 'win32':
-                setOSOutputs('WINDOWS');
-                break;
-              default:
-                throw new Error(`Unsupported OS: ${os}`);
-            }
-
       # TSIO reporting: upload this leg's native Playwright JSON + screenshots.
       # Gated on tsio-config so callers that don't opt in (ad-hoc
       # workflow_dispatch without config) are untouched. Used by both plain
@@ -456,4 +332,14 @@ jobs:
           gh-job-name: e2e-on-${{ inputs.runs-on }}
           json-path: e2e/test-results/results.json
           screenshots-dir: e2e/test-results
+
+      # Playwright's own exit code already accounts for retries — trust it
+      # instead of re-deriving pass/fail from the JUnit report.
+      - name: e2e/fail-on-test-failures
+        if: always()
+        run: |
+          if [ "${PLAYWRIGHT_EXIT_CODE:-1}" != "0" ]; then
+            echo "Playwright exited with code ${PLAYWRIGHT_EXIT_CODE:-unset}" >&2
+            exit 1
+          fi
 
