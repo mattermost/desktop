@@ -45,6 +45,7 @@ async function reportTsioStatus({
     upstreamJobsSucceeded = true,
 }) {
     const baseUrl = useStaging ? STAGING_URL : PRODUCTION_URL;
+
     // Fallback target for the commit status when no TSIO report ever gets
     // created (begin/poll failed outright) — the reviewer still needs
     // somewhere to click instead of a stuck `pending` row.
@@ -132,14 +133,14 @@ async function reportTsioStatus({
         `**Status:** ${detail.status} · **Report:** [${reportId}](${reportUrl})`,
         `**Tests:** ${stats.passed ?? '?'} passed, ${stats.failed ?? '?'} failed, ${stats.flaky ?? 0} flaky, ` +
             `${stats.skipped ?? '?'} skipped (of ${stats.total ?? '?'})`,
-        ...(!upstreamJobsSucceeded ?
-            ['', ':warning: One or more CI jobs failed outside of any tracked test (e.g. a hung worker, a crashed runner) — forcing this status to failure even though the test stats above may show no failures.'] :
-            []),
+        ...(upstreamJobsSucceeded ?
+            [] :
+            ['', ':warning: One or more CI jobs failed outside of any tracked test (e.g. a hung worker, a crashed runner) — forcing this status to failure even though the test stats above may show no failures.']),
         '',
     ];
     await core.summary.addRaw(summaryLines.join('\n')).write();
 
-    const descriptionPrefix = !upstreamJobsSucceeded ? 'CI job failed (untracked by TSIO), ' : '';
+    const descriptionPrefix = upstreamJobsSucceeded ? '' : 'CI job failed (untracked by TSIO), ';
     const description = `${descriptionPrefix}${stats.passed ?? 0}/${stats.total ?? 0} passed, ${stats.failed ?? 0} failed`.slice(0, 140);
     await github.rest.repos.createCommitStatus({
         owner: context.repo.owner,

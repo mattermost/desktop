@@ -56,17 +56,12 @@ jobs:
       !github.event.pull_request.draft
       && contains(fromJSON('["opened", "reopened", "ready_for_review", "synchronize"]'), github.event.action)
     steps:
+      # Always the base ref's own reviewed copy of github-actions.js — this job
+      # holds write-scoped tokens (issues/pull-requests/actions/statuses), so it
+      # must never execute code sourced from the untrusted PR head.
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ github.event.pull_request.base.ref }}
-
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        if: github.event.pull_request.head.repo.full_name == github.repository
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          sparse-checkout: |
-            e2e/utils/github-actions.js
-          sparse-checkout-cone-mode: false
 
       - name: Cancel running E2E tests and re-trigger
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
@@ -157,17 +152,12 @@ jobs:
       github.event.action == 'labeled'
       && github.event.label.name == 'E2E/Override'
     steps:
+      # Always the base ref's own reviewed copy of github-actions.js — this job
+      # holds write-scoped tokens (issues/pull-requests/actions/statuses), so it
+      # must never execute code sourced from the untrusted PR head.
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ github.event.pull_request.base.ref }}
-
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        if: github.event.pull_request.head.repo.full_name == github.repository
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          sparse-checkout: |
-            e2e/utils/github-actions.js
-          sparse-checkout-cone-mode: false
 
       - name: Strip E2E/Run and cancel in-flight E2E
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
@@ -217,27 +207,15 @@ jobs:
       && github.event.label.name == 'E2E/Run'
       && github.event.sender.login != 'github-actions[bot]'
     steps:
+      # Always the base ref's own reviewed copy of github-actions.js — this job
+      # holds write-scoped tokens (actions/statuses), so it must never execute
+      # code sourced from the untrusted PR head. A single full checkout also
+      # sidesteps the previous bug where a second sparse checkout of head.sha
+      # replaced the base-ref tree, wiping out .github/actions/cancel-e2e-runs/
+      # before this job's next step could use it.
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ github.event.pull_request.base.ref }}
-
-      # Sparse-checked into a separate path, not the default workspace: a plain
-      # second checkout of head.sha here would replace the base-ref tree with a
-      # sparse one containing only this file — wiping out
-      # .github/actions/cancel-e2e-runs/ before the step below can use it.
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        if: github.event.pull_request.head.repo.full_name == github.repository
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          persist-credentials: false
-          sparse-checkout: |
-            e2e/utils/github-actions.js
-          sparse-checkout-cone-mode: false
-          path: untrusted-head
-
-      - name: Use PR's github-actions.js
-        if: github.event.pull_request.head.repo.full_name == github.repository
-        run: cp untrusted-head/e2e/utils/github-actions.js e2e/utils/github-actions.js
 
       - name: Cancel E2E runs and mark statuses skipped
         uses: ./.github/actions/cancel-e2e-runs
