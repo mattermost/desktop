@@ -6,6 +6,7 @@ import type {ElectronApplication} from 'playwright';
 
 import {test, expect} from '../../fixtures/index';
 import {findCallsWidgetWindow, waitForCallsWidgetWindow} from '../../helpers/callsWidget';
+import {waitForMattermostShellReady} from '../../helpers/channelReadiness';
 import {demoMattermostConfig} from '../../helpers/config';
 import {CALLS_LEAVE_CALL} from '../../helpers/ipcChannels';
 import {loginToMattermost} from '../../helpers/login';
@@ -66,6 +67,14 @@ test.describe('calls/calls_functionality', () => {
         serverWin = serverEntry!.win;
 
         await loginToMattermost(serverWin);
+
+        // loginToMattermost only waits for the generic app shell (post
+        // textbox / channel header / search bar) — the sidebar's channel
+        // list can still be hydrating a beat later, so clicking
+        // #sidebarItem_town-square immediately here raced it intermittently
+        // ("Element not found for click"). Same wait media_preview.test.ts
+        // already uses before the identical click.
+        await waitForMattermostShellReady(serverWin, {channelItem: '#sidebarItem_town-square'});
         await serverWin.click('#sidebarItem_town-square');
         await serverWin.waitForSelector('#channelHeaderTitle', {timeout: 10_000});
     });

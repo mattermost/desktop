@@ -99,12 +99,6 @@ async function reportTsioStatus({
             }
         }
     } catch (error) {
-        // Prefer the report link if begin already succeeded (the poll loop
-        // itself failed) — only fall back to the workflow run when no
-        // report exists at all. Swallow a secondary status-API failure so
-        // it doesn't mask the original error. The description is public
-        // (visible on the PR/commit), so keep the raw error out of it —
-        // log it instead and point readers at the workflow run for detail.
         core.error(`TSIO reporting error: ${error.message}`);
         try {
             await github.rest.repos.createCommitStatus({
@@ -126,6 +120,7 @@ async function reportTsioStatus({
     const isComplete = detail.status === 'completed';
     const hasFailures = (stats.failed || 0) > 0;
     const overallState = isComplete && !hasFailures && upstreamJobsSucceeded ? 'success' : 'failure';
+    const targetUrl = isComplete ? reportUrl : runUrl;
 
     const summaryLines = [
         `### Test System IO — ${compositeIdentity.name}`,
@@ -136,6 +131,9 @@ async function reportTsioStatus({
         ...(upstreamJobsSucceeded ?
             [] :
             ['', ':warning: One or more CI jobs failed outside of any tracked test (e.g. a hung worker, a crashed runner) — forcing this status to failure even though the test stats above may show no failures.']),
+        ...(isComplete ?
+            [] :
+            ['', `:warning: Report never reached \`completed\` (stuck at \`${detail.status}\`) — see the [workflow run](${runUrl}) for the shard that didn't finish uploading.`]),
         '',
     ];
     await core.summary.addRaw(summaryLines.join('\n')).write();
@@ -149,7 +147,7 @@ async function reportTsioStatus({
         state: overallState,
         context: commitStatusContext,
         description,
-        target_url: reportUrl,
+        target_url: targetUrl,
     });
 
     if (failOnTestFailures && overallState === 'failure') {

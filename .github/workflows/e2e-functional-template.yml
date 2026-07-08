@@ -107,9 +107,6 @@ jobs:
     # 9.5.2)
     name: e2e-on-${{ inputs.runs-on }}-${{ inputs.MM_SERVER_VERSION }}
     runs-on: ${{ inputs.runs-on }}
-    # Runs untrusted PR code (npm ci / Playwright) with a read-only token.
-    # id-token/actions:read are additive for TSIO reporting (OIDC auth +
-    # gh_job_id lookup) — still no write access to repo contents.
     permissions:
       contents: read
       id-token: write
@@ -281,13 +278,6 @@ jobs:
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
           CI_ENVIRONMENT_NAME: ${{ env.CI_ENVIRONMENT_NAME }}
 
-      # TSIO reporting: upload this leg's native Playwright JSON + screenshots.
-      # Gated on tsio-config so callers that don't opt in (ad-hoc
-      # workflow_dispatch without config) are untouched. Used by both plain
-      # PR/master runs and CMT — the caller decides grouping via `name` inside
-      # composite_identity and computes total_reports_expected once for the
-      # whole run's matrix. Packed into one JSON input (see tsio-config above)
-      # to stay under workflow_call's 10-input cap.
       - name: e2e/upload-report-to-tsio
         if: ${{ always() && inputs.tsio-config != '' && hashFiles('e2e/test-results/results.json') != '' }}
         uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@a2ea7f005484c28fedf51e16645f6d3bd683fd63 # 0.10.0 / 2026-05-16
@@ -301,14 +291,6 @@ jobs:
           json-path: e2e/test-results/results.json
           screenshots-dir: e2e/test-results
 
-      # Playwright's own exit code already accounts for retries, but a non-zero
-      # exit here isn't reliably a real test failure — an intermittent
-      # Electron/Playwright worker-teardown hang (playwright#29431) can also
-      # produce it with zero failed tests. When TSIO is tracking this run,
-      # warn instead of failing the job — TSIO's test_stats (from the JSON
-      # report, unaffected by this) becomes the source of truth for pass/fail.
-      # Without TSIO wired (tsio-config empty, e.g. an ad-hoc manual dispatch),
-      # there's no other failure signal at all, so this must still hard-fail.
       - name: e2e/handle-nonzero-playwright-exit
         if: always()
         run: |

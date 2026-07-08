@@ -2,10 +2,6 @@
 // See LICENSE.txt for license information.
 /* eslint-disable no-console -- Logging is intentional in CI utility scripts */
 
-// TSIO (tsio-summary job) is now the single source of truth for PR/master E2E
-// pass/fail — this constant is only used to mark that one context as
-// cancelled/skipped, not to post pending/final results (see
-// e2e/utils/tsio-report-status.js for the real status logic).
 const E2E_STATUS_CONTEXT = 'e2e-test/desktop-playwright';
 
 const E2E_WORKFLOW_NAME = 'Electron Playwright Tests';

@@ -47,6 +47,26 @@ export type CustomProfileAttributeDef = {
 
 const CPA_FIELDS_PATH = '/api/v4/custom_profile_attributes/fields';
 
+/**
+ * Renderer-side JS expression resolving a custom attribute row from an
+ * element within it (a Save/Edit button, or the input itself). A single
+ * `closest('a, b, c')` call matches whichever ancestor is nearest in the
+ * DOM, not the most specific selector — a wrapper div around some field
+ * types (e.g. phone-number formatting) can sit closer than the actual row
+ * container, silently excluding it (and whatever the caller needed from it,
+ * like the Save button). Try selectors in specificity order instead so the
+ * intended row container is always found first.
+ */
+function customAttributeRowJs(elExpr: string): string {
+    return `(
+        ${elExpr}?.closest('.setting-list-item') ||
+        ${elExpr}?.closest('.SettingsBlock') ||
+        ${elExpr}?.closest('section') ||
+        ${elExpr}?.closest('li') ||
+        ${elExpr}?.closest('div')
+    )`;
+}
+
 export const TEST_PHONE = '555-123-4567';
 export const TEST_UPDATED_PHONE = '555-987-6543';
 export const TEST_URL = 'https://example.com';
@@ -260,7 +280,7 @@ export async function getCustomAttributeLabelsInSettings(win: ServerView): Promi
                 labels.push(nameEl.textContent.trim());
                 continue;
             }
-            const row = button.closest('.setting-list-item, .SettingsBlock, section, li, div');
+            const row = ${customAttributeRowJs('button')};
             const rowText = (row?.textContent || '')
                 .replace(/Edit.*$/s, '')
                 .replace(/Click 'Edit' to add your custom attribute/gi, '')
@@ -305,12 +325,7 @@ export async function editTextCustomAttribute(
         await win.runInRenderer<void>(`
             const fieldId = ${JSON.stringify(fieldId)};
             const input = document.querySelector('#customAttribute_' + fieldId);
-            const row = input?.closest('.setting-list-item') ||
-                input?.closest('.SettingsBlock') ||
-                input?.closest('section') ||
-                input?.closest('li') ||
-                input?.closest('div') ||
-                document;
+            const row = ${customAttributeRowJs('input')} || document;
             const saveBtn = Array.from(row.querySelectorAll('button'))
                 .find((button) => (button.textContent || '').trim() === 'Save');
             if (!(saveBtn instanceof HTMLButtonElement)) {
@@ -347,7 +362,7 @@ export async function getCustomAttributeInputValue(win: ServerView, fieldId: str
         if (!editBtn) {
             return input instanceof HTMLInputElement ? input.value : '';
         }
-        const row = editBtn.closest('.setting-list-item, .SettingsBlock, section, li, div');
+        const row = ${customAttributeRowJs('editBtn')};
         if (!row) {
             return '';
         }

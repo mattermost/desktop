@@ -56,9 +56,6 @@ jobs:
           platforms=$(echo "${INSTANCE_DETAILS}" | jq -c 'map(if .runner == "macos-latest" then .runner = "macos-26" else . end)')
           echo "platforms=${platforms}" >> "$GITHUB_OUTPUT"
 
-      # One composite identity + total-reports-expected for the whole run
-      # (every e2e-tests platform leg, plus the 2 fixed e2e-policy-tests legs),
-      # so all legs land in a single TSIO report group.
       - id: tsio-identity
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -84,11 +81,6 @@ jobs:
           fi
           echo "composite-identity-json=${COMPOSITE_IDENTITY}" >> "$GITHUB_OUTPUT"
 
-  # Pending status shown on the PR/commit while tests run — tsio-summary below
-  # flips it to success/failure once TSIO has (or hasn't) produced a report.
-  # Gated as a `needs` of e2e-tests/e2e-policy-tests so the pending row always
-  # lands before the final one (commit statuses have no ordering guarantee
-  # otherwise — last write wins by timestamp).
   update-initial-status:
     name: Set pending TSIO status
     runs-on: ubuntu-22.04
@@ -120,10 +112,6 @@ jobs:
       matrix:
         include: ${{ fromJson(needs.prepare-matrix.outputs.platforms) }}
       fail-fast: false
-    # The reusable template runs untrusted PR code (npm ci / Playwright) with a read-only
-    # token; actions:read + id-token:write are additive, needed only to grant the nested
-    # e2e job's TSIO reporting steps (OIDC auth + gh_job_id lookup) — a reusable workflow
-    # can only receive permissions the calling job itself already holds.
     permissions:
       contents: read
       actions: read
@@ -136,13 +124,7 @@ jobs:
       MM_SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
       MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME }}
       MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD }}
-      # When matterwick fires this workflow it sets run_type explicitly (MASTER for master
-      # pushes; PR-label runs are dispatched without run_type, defaulting to PR via the `|| 'PR'`
-      # below). The previous `startsWith(version_name, 'release-') && 'RELEASE'` fallback was
-      # for matterwick's release-branch push, which is no longer wired — removed.
       TYPE: ${{ inputs.run_type || 'PR' }}
-      # Packed as one JSON input (see e2e-functional-template.yml's tsio-config) —
-      # workflow_call caps reusable workflows at 10 inputs total.
       tsio-config: ${{ format('{{"composite_identity":{0},"total_reports_expected":"{1}"}}', needs.prepare-matrix.outputs.tsio-composite-identity, needs.prepare-matrix.outputs.tsio-total-reports-expected) }}
     secrets: inherit
 
@@ -182,9 +164,6 @@ jobs:
           TSIO_COMPOSITE_IDENTITY: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
           TSIO_TOTAL_REPORTS_EXPECTED: ${{ needs.prepare-matrix.outputs.tsio-total-reports-expected }}
           COMMIT_STATUS_CONTEXT: e2e-test/desktop-playwright
-          # TSIO only sees test-case-level results — a job-level failure with no
-          # matching failed test (hung worker teardown, crashed runner, npm ci
-          # failure) would otherwise still read as "100% passed".
           UPSTREAM_JOBS_SUCCEEDED: ${{ needs.e2e-tests.result == 'success' && needs.e2e-policy-tests.result == 'success' }}
         with:
           script: |
@@ -324,8 +303,6 @@ jobs:
         with:
           node-version: '22.x'
           package-manager-cache: false
-          # node_modules is cached in e2e/cache-node-modules; disable setup-node's
-          # npm cache so actions/cache v5 does not hit legacy entries.
 
       - name: e2e/use-gnu-tar-macos
         if: runner.os == 'macOS'
@@ -361,16 +338,9 @@ jobs:
       - name: e2e/setup-python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         env:
-          # Bypass pip's on-disk HTTP cache entirely so a stale/corrupt entry on the
-          # runner image cannot trigger deserialization warnings (actions/setup-python#1317).
           PIP_NO_CACHE_DIR: "1"
         with:
-          # Use a version pre-installed on macOS-26 (3.13 is in its toolcache), so
-          # setup-python doesn't install a mismatched interpreter whose pip can't
-          # deserialize the image's pre-baked cache. PIP_NO_CACHE_DIR above is the
-          # remaining guard for non-macOS runners.
           python-version: "3.13"
-          # Omit `cache` — setup-python only accepts pip/pipenv/poetry, not `false`.
 
       - name: e2e/install-os-dependencies
         uses: ./.github/actions/install-os-dependencies
@@ -433,14 +403,6 @@ jobs:
           json-path: e2e/test-results/results.json
           screenshots-dir: e2e/test-results
 
-      # Playwright's own exit code already accounts for retries, but a non-zero
-      # exit here isn't reliably a real test failure — an intermittent
-      # Electron/Playwright worker-teardown hang (playwright#29431) can also
-      # produce it with zero failed tests. When TSIO is tracking this run,
-      # warn instead of failing the job — TSIO's test_stats (from the JSON
-      # report, unaffected by this) becomes the source of truth for pass/fail.
-      # Without TSIO wired (composite-identity empty), there's no other
-      # failure signal at all, so this must still hard-fail.
       - name: e2e/handle-nonzero-playwright-exit
         if: always()
         run: |

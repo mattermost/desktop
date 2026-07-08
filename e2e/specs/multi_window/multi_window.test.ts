@@ -469,11 +469,23 @@ test.describe('multi_window/multi_window', () => {
         const browserWindow = await electronApp.browserWindow(popoutWindow);
         const initialBounds = await browserWindow.evaluate((w) => (w as Electron.BrowserWindow).getBounds());
 
+        // A flat +200 request assumed the display always has 200px of headroom
+        // past the window's current position. CI macOS runners use a small
+        // virtual display, so `initial + 200` routinely exceeds the work
+        // area — macOS then clamps the actual bounds at the screen edge,
+        // which the test misread as "resize failed". Clamp the request to
+        // what the display can actually satisfy (see the identical fix in
+        // popout_windows.test.ts MM-TXXXX_2).
+        const workArea = await browserWindow.evaluate((w) => {
+            const {screen} = require('electron') as typeof import('electron');
+            return screen.getDisplayMatching((w as Electron.BrowserWindow).getBounds()).workArea;
+        });
+        const margin = 20;
         const resizedBounds = {
             x: initialBounds.x,
             y: initialBounds.y,
-            width: initialBounds.width + 200,
-            height: initialBounds.height + 200,
+            width: Math.min(initialBounds.width + 200, (workArea.x + workArea.width) - initialBounds.x - margin),
+            height: Math.min(initialBounds.height + 200, (workArea.y + workArea.height) - initialBounds.y - margin),
         };
 
         await browserWindow.evaluate((w, bounds) => {

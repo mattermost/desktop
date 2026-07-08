@@ -130,12 +130,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(inputs.CMT_MATRIX) }}
-    # A reusable workflow can only receive permissions the calling job itself
-    # already holds — the nested e2e job's TSIO reporting steps need
-    # actions:read + id-token:write (same fix as e2e-functional.yml's e2e-tests
-    # job; this workflow has no top-level `permissions:` default, so without
-    # this the nested job would hit the same "requesting actions:read,
-    # id-token:write but only allowed none" rejection e2e-functional.yml hit).
     permissions:
       contents: read
       actions: read
@@ -152,15 +146,6 @@ jobs:
       # workflow_call caps reusable workflows at 10 inputs total.
       tsio-config: ${{ format('{{"composite_identity":{0},"total_reports_expected":"{1}"}}', needs.calculate-commit-hash.outputs.TSIO_COMPOSITE_IDENTITY, needs.calculate-commit-hash.outputs.TSIO_TOTAL_REPORTS_EXPECTED) }}
 
-  # Consolidated final status + rollup summary, via Test System IO instead of
-  # the hand-rolled artifact-based rollup. One TSIO report group covers every
-  # OS x server-version leg of the CMT run; commit status target_url deep-links
-  # that dashboard page. Context name unchanged (e2e/compatibility-matrix-testing).
-  #
-  # Uses e2e/utils/tsio-report-status.js, not test-system-io-summary — summary
-  # only reads /api/v1/orchestration/status, which report-upload never
-  # populates (see that file's header comment).
-  # https://mattermost.atlassian.net/browse/CLD-5815
   update-final-status:
     runs-on: ubuntu-22.04
     if: always()
