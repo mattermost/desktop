@@ -43,16 +43,13 @@ jest.mock('common/utils/url', () => ({
 }));
 
 jest.mock('common/config', () => ({
-    __esModule: true,
-    default: {
-        data: {
-            trustedEmbeddedMediaOrigins: [],
-        },
-        registryData: {
-            servers: [
-                {url: 'http://gposerver.com'},
-            ],
-        },
+    data: {
+        trustedEmbeddedMediaOrigins: [],
+    },
+    registryData: {
+        servers: [
+            {url: 'http://gposerver.com'},
+        ],
     },
 }));
 
