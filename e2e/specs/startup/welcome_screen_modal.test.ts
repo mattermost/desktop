@@ -5,8 +5,8 @@ import {_electron as electron} from 'playwright';
 
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {electronBinaryPath, appDir, emptyConfig, writeConfigFile} from '../../helpers/config';
+import {closeAppSafely} from '../../helpers/electronApp';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
 
 // All welcome screen tests need a no-servers app. This helper launches one.
@@ -68,10 +68,7 @@ test.describe('startup/welcome_screen_modal', () => {
                     'integrate with tools you love',
                 ]);
             } finally {
-                await app?.close().catch(() => {});
-                if (userDataDir) {
-                    await waitForLockFileRelease(userDataDir).catch(() => {});
-                }
+                await closeAppSafely(app, userDataDir);
                 await releaseLock();
             }
         },
@@ -104,10 +101,7 @@ test.describe('startup/welcome_screen_modal', () => {
                     {timeout: 10_000},
                 ).toBe(firstTitle);
             } finally {
-                await app?.close().catch(() => {});
-                if (userDataDir) {
-                    await waitForLockFileRelease(userDataDir).catch(() => {});
-                }
+                await closeAppSafely(app, userDataDir);
                 await releaseLock();
             }
         },
@@ -127,10 +121,7 @@ test.describe('startup/welcome_screen_modal', () => {
                 await modal.waitForSelector('#input_name', {timeout: 10_000});
                 await modal.waitForSelector('#input_url', {timeout: 10_000});
             } finally {
-                await app?.close().catch(() => {});
-                if (userDataDir) {
-                    await waitForLockFileRelease(userDataDir).catch(() => {});
-                }
+                await closeAppSafely(app, userDataDir);
                 await releaseLock();
             }
         },

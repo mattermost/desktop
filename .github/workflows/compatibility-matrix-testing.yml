@@ -13,7 +13,8 @@ on:
 
 # Supersede an in-flight CMT run for the same ref (e.g. rapid release-branch pushes) so we don't
 # pay for overlapping multi-version matrices. Matterwick reaps the cancelled run's provisioned
-# servers on its workflow_run "completed" (cancelled) event, matched by commit SHA.
+# servers on its workflow_run "completed" (cancelled) event, matched by the dispatched test
+# workflow run id (not commit SHA).
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -39,7 +40,7 @@ jobs:
       DESKTOP_SHA: ${{ steps.repo.outputs.DESKTOP_SHA }}
     steps:
       - name: cmt/checkout-desktop
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ inputs.DESKTOP_VERSION }}
 
