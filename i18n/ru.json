@@ -4,6 +4,8 @@
   "app.menus.contextMenu.openInNewWindow": "Открыть в новом окне",
   "app.navigationManager.invalidLinkDescription": "Ссылка, на которую вы нажали, похоже, имеет неправильный формат и не может быть открыта. Пожалуйста, проверьте URL на наличие ошибок перед повторной попыткой.",
   "app.navigationManager.invalidLinkTitle": "Неверная ссылка",
+  "app.navigationManager.serverManagementDisabledDescription": "Настройки вашей организации не позволяют добавлять новые серверы, поэтому эту ссылку открыть не удалось. Обратитесь к системному администратору за дополнительной информацией.",
+  "app.navigationManager.serverManagementDisabledTitle": "Не удалось добавить сервер",
   "app.navigationManager.viewLimitReached": "Достигнут предел просмотров",
   "app.navigationManager.viewLimitReached.description": "Вы достигли максимального количества открытых окон и вкладок на этом сервере. Пожалуйста, закройте существующее окно или вкладку, либо настройте лимит отображения в модальном меню Настроек.",
   "callsWidgetWindow.cannotStartCall.message": "На другом сервере идет звонок, который необходимо завершить перед присоединением к новому звонку.",
