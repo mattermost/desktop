@@ -418,3 +418,14 @@ export const desktopSourcesOptsSchema = Joi.object({
     }),
     fetchWindowIcons: Joi.boolean(),
 });
+
+export const sessionAttributeFieldSchema = Joi.object({
+    name: Joi.string().required(),
+    type: Joi.string().required(),
+    attrs: Joi.object({
+        enabled: Joi.boolean().required(),
+        ttl_seconds: Joi.number().required(),
+        grace_period_seconds: Joi.number().required(),
+        platforms: Joi.array().items(Joi.string()).required(),
+    }).unknown(true).required(),
+}).unknown(true);
