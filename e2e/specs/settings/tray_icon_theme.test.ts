@@ -3,7 +3,7 @@
 
 import * as path from 'path';
 
-import {test, expect} from '../../fixtures/index';
+import {test} from '../../fixtures/index';
 import {openSettingsWindow} from '../../helpers/settingsWindow';
 import {waitForConfigValue} from '../../helpers/settingsConfig';
 
