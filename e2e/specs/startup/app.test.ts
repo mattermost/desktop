@@ -136,4 +136,89 @@ test.describe('startup/app', () => {
             }
         },
     );
+
+    test(
+        'MM-T4399 New Server Modal should appear when no servers exist',
+        {tag: ['@P1', '@all']},
+        async ({}, testInfo) => {
+            const releaseLock = await acquireExclusiveLock('startup-empty-app');
+            let emptyApp;
+            let userDataDir = '';
+
+            try {
+                userDataDir = testInfo.outputDir + '/empty-noservers-userdata';
+                const {mkdirSync} = await import('fs');
+                mkdirSync(userDataDir, {recursive: true});
+                writeConfigFile(userDataDir, emptyConfig);
+
+                emptyApp = await electron.launch({
+                    executablePath: electronBinaryPath,
+                    args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
+                    env: {...process.env, NODE_ENV: 'test'},
+                    timeout: 60_000,
+                });
+
+                let welcomeScreen = emptyApp.windows().find((w) => w.url().includes('welcomeScreen'));
+                if (!welcomeScreen) {
+                    welcomeScreen = await emptyApp.waitForEvent('window', {
+                        predicate: (w) => w.url().includes('welcomeScreen'),
+                        timeout: 15_000,
+                    });
+                }
+                await welcomeScreen.waitForLoadState('domcontentloaded');
+                await welcomeScreen.click('#getStartedWelcomeScreen');
+                await welcomeScreen.waitForSelector('#input_url', {timeout: 10_000});
+                await welcomeScreen.waitForSelector('#input_name', {timeout: 10_000});
+
+                expect(await welcomeScreen.isVisible('#input_url'), 'Server URL input must be visible').toBe(true);
+                expect(await welcomeScreen.isVisible('#input_name'), 'Server name input must be visible').toBe(true);
+            } finally {
+                await closeAppSafely(emptyApp, userDataDir);
+                await releaseLock();
+            }
+        },
+    );
+
+    test(
+        'MM-T4419 Add Server Modal should not be removable when no servers exist',
+        {tag: ['@P1', '@all']},
+        async ({}, testInfo) => {
+            const releaseLock = await acquireExclusiveLock('startup-empty-app');
+            let emptyApp;
+            let userDataDir = '';
+
+            try {
+                userDataDir = testInfo.outputDir + '/empty-modal-lock-userdata';
+                const {mkdirSync} = await import('fs');
+                mkdirSync(userDataDir, {recursive: true});
+                writeConfigFile(userDataDir, emptyConfig);
+
+                emptyApp = await electron.launch({
+                    executablePath: electronBinaryPath,
+                    args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
+                    env: {...process.env, NODE_ENV: 'test'},
+                    timeout: 60_000,
+                });
+
+                let welcomeScreen = emptyApp.windows().find((w) => w.url().includes('welcomeScreen'));
+                if (!welcomeScreen) {
+                    welcomeScreen = await emptyApp.waitForEvent('window', {
+                        predicate: (w) => w.url().includes('welcomeScreen'),
+                        timeout: 15_000,
+                    });
+                }
+                await welcomeScreen.waitForLoadState('domcontentloaded');
+                await welcomeScreen.waitForSelector('.WelcomeScreen', {timeout: 15_000});
+                await welcomeScreen.keyboard.press('Escape');
+
+                expect(
+                    await welcomeScreen.isVisible('.WelcomeScreen'),
+                    'Welcome screen modal must remain visible after Escape when no servers exist',
+                ).toBe(true);
+            } finally {
+                await closeAppSafely(emptyApp, userDataDir);
+                await releaseLock();
+            }
+        },
+    );
 });
