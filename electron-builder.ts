@@ -36,7 +36,6 @@ const config = {
         'node_modules/windows-focus-assist/**/*',
         'node_modules/registry-js/**/*',
         'node_modules/cf-prefs/**/*',
-        'node_modules/koffi/**/*',
         '!**/node_modules/macos-notification-state/bin/**/*',
         '!**/node_modules/macos-notification-state/build/**/*',
         '!**/node_modules/windows-focus-assist/bin/**/*',
@@ -45,13 +44,11 @@ const config = {
         '!**/node_modules/registry-js/build/**/*',
         '!**/node_modules/cf-prefs/bin/**/*',
         '!**/node_modules/cf-prefs/build/**/*',
-        '!**/node_modules/koffi/bin/**/*',
-        '!**/node_modules/koffi/build/**/*',
         'node_modules/macos-notification-state/build/**/*.node',
         'node_modules/windows-focus-assist/build/Release/**/*.node',
         'node_modules/registry-js/build/Release/**/*.node',
         'node_modules/cf-prefs/build/Release/**/*.node',
-        'node_modules/koffi/build/Release/**/*.node',
+        'node_modules/@koromix/**/*.node',
         {
             from: 'dist',
             to: '.',
@@ -83,7 +80,7 @@ const config = {
         './node_modules/windows-focus-assist/build/Release/**/*.node',
         './node_modules/registry-js/build/Release/**/*.node',
         './node_modules/cf-prefs/build/Release/**/*.node',
-        './node_modules/koffi/build/**/*.node',
+        './node_modules/@koromix/**/*.node',
     ],
     linux: {
         category: 'Network;InstantMessaging',
@@ -140,6 +137,7 @@ const config = {
             NSFocusStatusUsageDescription: 'Focus status is used by Mattermost to determine whether to send notifications or not.',
             LSFileQuarantineEnabled: true,
         },
+        x64ArchFiles: '**/node_modules/@koromix/koffi-darwin-*/darwin_*/koffi.node',
         ...getMacVersions(),
     },
     mas: {
@@ -152,6 +150,7 @@ const config = {
             NSUserActivityTypes: ['INSendMessageIntent'],
         },
         singleArchFiles: '*',
+        x64ArchFiles: '**/node_modules/@koromix/koffi-darwin-*/darwin_*/koffi.node',
     },
     masDev: {
         provisioningProfile: './dev.provisionprofile',

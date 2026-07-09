@@ -98,6 +98,8 @@ export class SessionAttributesManager {
             return undefined;
         }
 
+        log.info('Sending session attributes', {serverId: server.id, payload});
+
         return Buffer.from(JSON.stringify(payload)).toString('base64');
     };
 
