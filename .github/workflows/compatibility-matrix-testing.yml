@@ -133,7 +133,6 @@ jobs:
     permissions:
       contents: read
       actions: read
-      id-token: write
     secrets: inherit
     with:
       runs-on: ${{ matrix.environment.runner }}

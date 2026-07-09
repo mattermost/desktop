@@ -8,8 +8,25 @@ const STAGING_URL = 'https://staging-test-io.test.mattermost.com';
 const TERMINAL_STATUSES = ['completed', 'incomplete'];
 const POLL_ATTEMPTS = 6;
 const POLL_DELAY_MS = 5000;
+const FETCH_TIMEOUT_MS = 30_000;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function fetchWithTimeout(url, init = {}, timeoutMs = FETCH_TIMEOUT_MS) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+        return await fetch(url, {...init, signal: controller.signal});
+    } catch (error) {
+        if (controller.signal.aborted) {
+            throw new Error(`Request timed out after ${timeoutMs}ms: ${url}`);
+        }
+        throw error;
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
 
 /**
  * Recover a report group's id via the idempotent begin endpoint, poll the
@@ -58,7 +75,7 @@ async function reportTsioStatus({
         const idToken = await core.getIDToken(oidcAudience);
         core.setSecret(idToken);
 
-        const beginRes = await fetch(`${baseUrl}/api/v1/reports/begin`, {
+        const beginRes = await fetchWithTimeout(`${baseUrl}/api/v1/reports/begin`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -86,7 +103,7 @@ async function reportTsioStatus({
         reportUrl = `${baseUrl}/reports/g/${reportId}`;
 
         for (let attempt = 0; attempt < POLL_ATTEMPTS; attempt++) {
-            const statusRes = await fetch(`${baseUrl}/api/v1/reports/${reportId}`);
+            const statusRes = await fetchWithTimeout(`${baseUrl}/api/v1/reports/${reportId}`);
             if (!statusRes.ok) {
                 throw new Error(`reports/${reportId} failed: ${statusRes.status} ${await statusRes.text()}`);
             }
