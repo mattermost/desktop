@@ -164,3 +164,15 @@ export function isLightColor(color: string) {
     // > 127.5 is 'light', <= 127.5 is 'dark'
     return hsp > 127.5;
 }
+
+export function isRoutableAddress(family: string, address: string): boolean {
+    return !isLinkLocalAddress(family, address) && address !== '0.0.0.0';
+}
+
+function isLinkLocalAddress(family: string, address: string): boolean {
+    if (family === 'IPv4') {
+        return address.startsWith('169.254.');
+    }
+    const ip = address.split('%')[0].toLowerCase();
+    return ip.startsWith('fe80:');
+}
