@@ -34,7 +34,8 @@ function buildDisplayReportUrl(baseUrl, compositeIdentity) {
     const branch = encodeURIComponent(compositeIdentity.branch || 'main');
     const shortSha = (compositeIdentity.commit_sha || '').slice(0, 7);
     const name = encodeURIComponent(compositeIdentity.name);
-    return `${baseUrl}/reports/${repo}/${branch}/${shortSha}/${name}`;
+    const runId = encodeURIComponent(compositeIdentity.gh_run_id || '');
+    return `${baseUrl}/reports/${repo}/${branch}/${shortSha}/${name}?gh_run_id=${runId}`;
 }
 
 /**
@@ -167,7 +168,15 @@ async function reportTsioStatus({
     const isComplete = detail.status === 'completed';
     const isIncomplete = detail.status === 'incomplete';
     const uploadedShards = Array.isArray(detail.reports) ? detail.reports.length : 0;
-    const hasFailures = (stats.failed || 0) > 0;
+    const failedShards = [];
+    if (Array.isArray(detail.reports)) {
+        for (const report of detail.reports) {
+            if (report.status === 'failed') {
+                failedShards.push(report.display_name || report.gh_job_name || report.id);
+            }
+        }
+    }
+    const hasFailures = (stats.failed || 0) > 0 || failedShards.length > 0;
 
     let overallState = 'failure';
     if (isComplete && !hasFailures && upstreamJobsSucceeded) {
@@ -189,6 +198,10 @@ async function reportTsioStatus({
 
     if (uploadedShards > 0) {
         summaryLines.push(`**Shards uploaded:** ${uploadedShards}/${totalReportsExpected}`);
+    }
+
+    if (failedShards.length > 0) {
+        summaryLines.push(`**Failed shards:** ${failedShards.join(', ')}`);
     }
 
     if (!upstreamJobsSucceeded) {
@@ -229,6 +242,8 @@ async function reportTsioStatus({
         let reason;
         if (!upstreamJobsSucceeded && !hasFailures) {
             reason = 'an upstream CI job failed with no corresponding test failure';
+        } else if (failedShards.length > 0 && (stats.failed || 0) === 0) {
+            reason = `shard(s) failed: ${failedShards.join(', ')}`;
         } else {
             reason = `status=${detail.status}, failed=${stats.failed || 0}`;
         }
