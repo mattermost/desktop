@@ -6,10 +6,22 @@ const PRODUCTION_URL = 'https://test-io.test.mattermost.com';
 const STAGING_URL = 'https://staging-test-io.test.mattermost.com';
 
 const TERMINAL_STATUSES = ['completed', 'incomplete'];
-const POLL_ATTEMPTS = 6;
-const POLL_DELAY_MS = 5000;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function intEnv(name, fallback) {
+    const raw = process.env[name];
+    if (raw === undefined || raw === '') {
+        return fallback;
+    }
+    const n = Number(raw);
+    return Number.isInteger(n) && n > 0 ? n : fallback;
+}
+
+function positiveInt(value, fallback) {
+    const n = Number(value);
+    return Number.isInteger(n) && n > 0 ? n : fallback;
+}
 
 /**
  * Recover a report group's id via the idempotent begin endpoint, poll the
@@ -30,6 +42,10 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  *   results, so a job-level failure with no failing test attached to it (e.g. a hung worker
  *   teardown, a crashed runner, npm ci failing before any test ran) would otherwise still
  *   read as "100% passed" here even though the actual CI run failed.
+ * @param {number} [params.pollAttempts] - How many times to poll report group status (default
+ *   12, or TSIO_POLL_ATTEMPTS env). CMT runs with many legs should pass a higher value.
+ * @param {number} [params.pollDelayMs] - Delay between polls in ms (default 5000, or
+ *   TSIO_POLL_DELAY_MS env).
  * @returns {Promise<{reportUrl: string, status: string, stats: Object}>}
  */
 async function reportTsioStatus({
@@ -43,7 +59,18 @@ async function reportTsioStatus({
     useStaging = false,
     oidcAudience = 'mattermost-test-system-io',
     upstreamJobsSucceeded = true,
+    pollAttempts,
+    pollDelayMs,
 }) {
+    const resolvedPollAttempts = positiveInt(
+        pollAttempts ?? intEnv('TSIO_POLL_ATTEMPTS', 12),
+        12,
+    );
+    const resolvedPollDelayMs = positiveInt(
+        pollDelayMs ?? intEnv('TSIO_POLL_DELAY_MS', 5000),
+        5000,
+    );
+
     const baseUrl = useStaging ? STAGING_URL : PRODUCTION_URL;
 
     // Fallback target for the commit status when no TSIO report ever gets
@@ -85,7 +112,7 @@ async function reportTsioStatus({
         // not the report detail page — it needs the g/ (group) prefix.
         reportUrl = `${baseUrl}/reports/g/${reportId}`;
 
-        for (let attempt = 0; attempt < POLL_ATTEMPTS; attempt++) {
+        for (let attempt = 0; attempt < resolvedPollAttempts; attempt++) {
             const statusRes = await fetch(`${baseUrl}/api/v1/reports/${reportId}`);
             if (!statusRes.ok) {
                 throw new Error(`reports/${reportId} failed: ${statusRes.status} ${await statusRes.text()}`);
@@ -94,8 +121,8 @@ async function reportTsioStatus({
             if (TERMINAL_STATUSES.includes(detail.status)) {
                 break;
             }
-            if (attempt < POLL_ATTEMPTS - 1) {
-                await sleep(POLL_DELAY_MS);
+            if (attempt < resolvedPollAttempts - 1) {
+                await sleep(resolvedPollDelayMs);
             }
         }
     } catch (error) {
@@ -116,11 +143,17 @@ async function reportTsioStatus({
         throw error;
     }
 
+    if (!detail) {
+        throw new Error('TSIO report status never returned after polling');
+    }
+
     const stats = detail.test_stats || {};
     const isComplete = detail.status === 'completed';
+    const isIncomplete = detail.status === 'incomplete';
+    const uploadedShards = Array.isArray(detail.reports) ? detail.reports.length : 0;
     const hasFailures = (stats.failed || 0) > 0;
     const overallState = isComplete && !hasFailures && upstreamJobsSucceeded ? 'success' : 'failure';
-    const targetUrl = isComplete ? reportUrl : runUrl;
+    const targetUrl = isComplete || isIncomplete ? reportUrl : runUrl;
 
     const summaryLines = [
         `### Test System IO — ${compositeIdentity.name}`,
@@ -128,12 +161,17 @@ async function reportTsioStatus({
         `**Status:** ${detail.status} · **Report:** [${reportId}](${reportUrl})`,
         `**Tests:** ${stats.passed ?? '?'} passed, ${stats.failed ?? '?'} failed, ${stats.flaky ?? 0} flaky, ` +
             `${stats.skipped ?? '?'} skipped (of ${stats.total ?? '?'})`,
+        ...(uploadedShards > 0 ?
+            [`**Shards uploaded:** ${uploadedShards}/${totalReportsExpected}`] :
+            []),
         ...(upstreamJobsSucceeded ?
             [] :
             ['', ':warning: One or more CI jobs failed outside of any tracked test (e.g. a hung worker, a crashed runner) — forcing this status to failure even though the test stats above may show no failures.']),
-        ...(isComplete ?
-            [] :
-            ['', `:warning: Report never reached \`completed\` (stuck at \`${detail.status}\`) — see the [workflow run](${runUrl}) for the shard that didn't finish uploading.`]),
+        ...(isIncomplete ?
+            ['', `:warning: Report finalized as \`incomplete\` (${uploadedShards}/${totalReportsExpected} shards) — partial results are in the [TSIO report](${reportUrl}); see the [workflow run](${runUrl}) for missing legs.`] :
+            isComplete ?
+                [] :
+                ['', `:warning: Report never reached a terminal state (stuck at \`${detail.status}\`) after ${resolvedPollAttempts} polls — see the [workflow run](${runUrl}).`]),
         '',
     ];
     await core.summary.addRaw(summaryLines.join('\n')).write();

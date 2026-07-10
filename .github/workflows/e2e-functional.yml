@@ -179,6 +179,8 @@ jobs:
         env:
           TSIO_COMPOSITE_IDENTITY: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
           TSIO_TOTAL_REPORTS_EXPECTED: ${{ needs.prepare-matrix.outputs.tsio-total-reports-expected }}
+          TSIO_POLL_ATTEMPTS: 12
+          TSIO_POLL_DELAY_MS: 5000
           COMMIT_STATUS_CONTEXT: e2e-test/desktop-playwright
           UPSTREAM_JOBS_SUCCEEDED: ${{ needs.e2e-tests.result == 'success' && needs.e2e-policy-tests.result == 'success' }}
         with:
@@ -407,6 +409,13 @@ jobs:
 
       # Joins the same TSIO report group as e2e-tests — gh-job-name must match
       # this job's rendered name (policy-tests-<platform>) above.
+      - name: e2e/write-tsio-failure-stub
+        if: ${{ always() && needs.prepare-matrix.outputs.tsio-composite-identity != '' && hashFiles('e2e/test-results/results.json') == '' && (failure() || cancelled() || (env.PLAYWRIGHT_EXIT_CODE != '0' && env.PLAYWRIGHT_EXIT_CODE != '')) }}
+        run: node e2e/utils/write-tsio-failure-stub.mjs
+        env:
+          TSIO_GH_JOB_NAME: policy-tests-${{ matrix.platform }}
+          PLAYWRIGHT_EXIT_CODE: ${{ env.PLAYWRIGHT_EXIT_CODE }}
+
       - name: e2e/upload-report-to-tsio
         if: ${{ always() && needs.prepare-matrix.outputs.tsio-composite-identity != '' && hashFiles('e2e/test-results/results.json') != '' }}
         uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@a2ea7f005484c28fedf51e16645f6d3bd683fd63 # 0.10.0 / 2026-05-16

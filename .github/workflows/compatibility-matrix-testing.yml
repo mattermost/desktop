@@ -176,6 +176,8 @@ jobs:
         env:
           TSIO_COMPOSITE_IDENTITY: ${{ needs.calculate-commit-hash.outputs.TSIO_COMPOSITE_IDENTITY }}
           TSIO_TOTAL_REPORTS_EXPECTED: ${{ needs.calculate-commit-hash.outputs.TSIO_TOTAL_REPORTS_EXPECTED }}
+          TSIO_POLL_ATTEMPTS: 24
+          TSIO_POLL_DELAY_MS: 5000
           COMMIT_STATUS_CONTEXT: e2e/compatibility-matrix-testing
           # TSIO only sees test-case-level results — a job-level failure with no
           # matching failed test (hung worker teardown, crashed runner, npm ci
