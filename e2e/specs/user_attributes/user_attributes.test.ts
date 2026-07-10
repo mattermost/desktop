@@ -41,6 +41,7 @@ import {
     recoverFromProfileSettings,
     updateCustomProfileAttributeValues,
     type UserPropertyField,
+    waitForCustomAttributeEditInProfileSettings,
 } from '../../helpers/userAttributes';
 
 const FIELD_PREFIX = 'E2E_UA_';
@@ -236,6 +237,7 @@ test.describe('user_attributes/user_attributes', () => {
                     test.skip(true, 'Profile settings UI is not available on this server');
                     return;
                 }
+                await waitForCustomAttributeEditInProfileSettings(win, created!.id);
                 await win.runInRenderer<void>(`
                     document.querySelector('#customAttribute_${created!.id}Edit')?.click();
                 `);

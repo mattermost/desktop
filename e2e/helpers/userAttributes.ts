@@ -268,6 +268,43 @@ export async function recoverFromProfileSettings(win: ServerView): Promise<void>
     await waitForChannelPostListLoaded(win);
 }
 
+async function isCustomAttributeEditVisible(win: ServerView, fieldId: string): Promise<boolean> {
+    return win.runInRenderer<boolean>(`
+        const btn = document.querySelector('#customAttribute_${fieldId}Edit');
+        if (!(btn instanceof HTMLElement)) {
+            return false;
+        }
+        const rect = btn.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+    `);
+}
+
+/** Webapp caches CPA field defs; reload once if API-created fields are missing from Profile Settings. */
+export async function waitForCustomAttributeEditInProfileSettings(win: ServerView, fieldId: string): Promise<void> {
+    await ensureCustomAttributeEditReady(win, fieldId);
+}
+
+async function ensureCustomAttributeEditReady(win: ServerView, fieldId: string): Promise<void> {
+    for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+            await expect.poll(async () => isCustomAttributeEditVisible(win, fieldId), {
+                timeout: attempt === 0 ? 5_000 : 15_000,
+                message: `Custom attribute Edit button #customAttribute_${fieldId}Edit must be visible`,
+            }).toBe(true);
+            return;
+        } catch (error) {
+            if (attempt === 1) {
+                throw error;
+            }
+            await closeProfileSettings(win).catch(() => undefined);
+            await reloadServerView(win.app, win.webContentsId);
+            await waitForMattermostShellReady(win);
+            await dismissBlockingOverlays(win);
+            await openProfileSettings(win);
+        }
+    }
+}
+
 export async function getCustomAttributeLabelsInSettings(win: ServerView): Promise<string[]> {
     return win.runInRenderer<string[]>(`
         const modal = document.querySelector(${JSON.stringify(PROFILE_SETTINGS_MODAL_SELECTOR)})
@@ -307,11 +344,15 @@ export async function editTextCustomAttribute(
     newValue: string,
     save = true,
 ): Promise<void> {
+    await ensureCustomAttributeEditReady(win, fieldId);
     await win.runInRenderer<void>(`
         const fieldId = ${JSON.stringify(fieldId)};
         const editBtn = document.querySelector('#customAttribute_' + fieldId + 'Edit');
-        editBtn?.scrollIntoView({block: 'center'});
-        editBtn?.click();
+        if (!(editBtn instanceof HTMLElement)) {
+            throw new Error('Custom attribute Edit button not found for ' + fieldId);
+        }
+        editBtn.scrollIntoView({block: 'center'});
+        editBtn.click();
     `);
     await win.waitForSelector(`#customAttribute_${fieldId}`, {timeout: 10_000});
     await win.runInRenderer<void>(`
