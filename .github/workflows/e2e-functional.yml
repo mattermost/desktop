@@ -537,6 +537,7 @@ jobs:
           echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
           npm run send-report || true
         env:
+          CI: true
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.version_name }}
 
@@ -549,20 +550,31 @@ jobs:
           echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
           npm run send-report || true
         env:
+          CI: true
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.version_name }}
 
       # Joins the same TSIO report group as e2e-tests — gh-job-name in the
       # upload job must match this job's rendered name (policy-tests-<platform>).
-      - name: e2e/upload-tsio-test-results
+      - name: e2e/prepare-tsio-artifacts
+        id: prepare-tsio
         if: always() && needs.prepare-matrix.outputs.tsio-composite-identity != ''
+        run: |
+          while IFS= read -r line; do
+            if [[ "$line" == has_results=* ]]; then
+              echo "$line" >> "$GITHUB_OUTPUT"
+            else
+              echo "$line"
+            fi
+          done < <(bash .github/scripts/prepare-tsio-artifacts.sh e2e/test-results tsio-artifact/e2e/test-results true)
+
+      - name: e2e/upload-tsio-test-results
+        if: always() && needs.prepare-matrix.outputs.tsio-composite-identity != '' && steps.prepare-tsio.outputs.has_results == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: policy-tsio-${{ matrix.platform }}
-          path: |
-            e2e/test-results/results.json
-            e2e/test-results
-          if-no-files-found: ignore
+          path: tsio-artifact
+          if-no-files-found: error
 
       - name: e2e/handle-nonzero-playwright-exit
         if: always()
@@ -604,6 +616,13 @@ jobs:
       id-token: write
       actions: read
     steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            .github/scripts/restore-tsio-artifacts.sh
+          sparse-checkout-cone-mode: false
+
       - name: e2e/download-tsio-test-results
         id: download-tsio-test-results
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -612,16 +631,17 @@ jobs:
           # Matches the artifact uploaded by e2e-functional-template.yml's e2e job.
           name: tsio-${{ matrix.runner }}-${{ inputs.MM_SERVER_VERSION }}
 
-      - name: e2e/check-tsio-results-present
+      - name: e2e/restore-tsio-artifacts
         id: tsio-results
         if: steps.download-tsio-test-results.outcome == 'success'
         run: |
-          if [ -f e2e/test-results/results.json ]; then
-            echo "found=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "found=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Downloaded TSIO artifact is missing e2e/test-results/results.json — skipping upload"
-          fi
+          while IFS= read -r line; do
+            if [[ "$line" == found=* ]]; then
+              echo "$line" >> "$GITHUB_OUTPUT"
+            else
+              echo "$line"
+            fi
+          done < <(bash .github/scripts/restore-tsio-artifacts.sh)
 
       - name: e2e/upload-report-to-tsio
         if: steps.tsio-results.outputs.found == 'true'
@@ -654,6 +674,13 @@ jobs:
       id-token: write
       actions: read
     steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            .github/scripts/restore-tsio-artifacts.sh
+          sparse-checkout-cone-mode: false
+
       - name: e2e/download-tsio-test-results
         id: download-tsio-test-results
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -661,16 +688,17 @@ jobs:
         with:
           name: policy-tsio-${{ matrix.platform }}
 
-      - name: e2e/check-tsio-results-present
+      - name: e2e/restore-tsio-artifacts
         id: tsio-results
         if: steps.download-tsio-test-results.outcome == 'success'
         run: |
-          if [ -f e2e/test-results/results.json ]; then
-            echo "found=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "found=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Downloaded TSIO artifact is missing e2e/test-results/results.json — skipping upload"
-          fi
+          while IFS= read -r line; do
+            if [[ "$line" == found=* ]]; then
+              echo "$line" >> "$GITHUB_OUTPUT"
+            else
+              echo "$line"
+            fi
+          done < <(bash .github/scripts/restore-tsio-artifacts.sh)
 
       - name: e2e/upload-report-to-tsio
         if: steps.tsio-results.outputs.found == 'true'

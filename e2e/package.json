@@ -7,7 +7,7 @@
     "test": "playwright test",
     "enable-public-links": "tsx scripts/enable-public-links.ts",
     "run:policy": "cross-env RUN_POLICY_E2E=true playwright test specs/policy/policy.test.ts",
-    "send-report": "playwright merge-reports --reporter=html blob-report"
+    "send-report": "playwright merge-reports --config playwright.report-merge.config.ts blob-report"
   },
   "repository": {
     "type": "git",

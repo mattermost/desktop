@@ -277,15 +277,25 @@ jobs:
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
           CI_ENVIRONMENT_NAME: ${{ env.CI_ENVIRONMENT_NAME }}
 
-      - name: e2e/upload-tsio-test-results
+      - name: e2e/prepare-tsio-artifacts
+        id: prepare-tsio
         if: always() && inputs.tsio-config != ''
+        run: |
+          while IFS= read -r line; do
+            if [[ "$line" == has_results=* ]]; then
+              echo "$line" >> "$GITHUB_OUTPUT"
+            else
+              echo "$line"
+            fi
+          done < <(bash .github/scripts/prepare-tsio-artifacts.sh e2e/test-results tsio-artifact/e2e/test-results false)
+
+      - name: e2e/upload-tsio-test-results
+        if: always() && inputs.tsio-config != '' && steps.prepare-tsio.outputs.has_results == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: tsio-${{ inputs.runs-on }}-${{ inputs.MM_SERVER_VERSION }}
-          path: |
-            e2e/test-results/results.json
-            e2e/test-results
-          if-no-files-found: ignore
+          path: tsio-artifact
+          if-no-files-found: error
 
       - name: e2e/handle-nonzero-playwright-exit
         if: always()
