@@ -149,15 +149,13 @@ jobs:
       id-token: write
       statuses: write
     steps:
-      # Always master — this job holds id-token/statuses write and must not
-      # execute repo code from the untrusted PR head (inputs.version_name).
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          ref: master
-          persist-credentials: false
-          sparse-checkout: |
-            e2e/utils/tsio-report-status.js
-          sparse-checkout-cone-mode: false
+      # No checkout / no require(): this job holds id-token + statuses: write,
+      # so it must never load a file from the untrusted PR head. The helper can't
+      # be loaded from `ref: master` either — e2e/utils/tsio-report-status.js is
+      # new in this PR and isn't on master until this merges. So the logic is
+      # INLINED below (the "inlining the logic instead" alternative CodeRabbit
+      # suggested for the trusted-source review comment). The file copy is kept
+      # for compatibility-matrix-testing.yml, which runs on trusted release refs.
 
       - name: Render TSIO summary + flip commit status
         id: summary
@@ -217,7 +215,124 @@ jobs:
               throw new Error('TSIO composite identity or totalReportsExpected is incomplete');
             }
 
-            const {reportUrl, status, stats} = await require('./e2e/utils/tsio-report-status.js')({
+            // Inlined from e2e/utils/tsio-report-status.js (see comment above).
+            const PRODUCTION_URL = 'https://test-io.test.mattermost.com';
+            const STAGING_URL = 'https://staging-test-io.test.mattermost.com';
+            const TERMINAL_STATUSES = ['completed', 'incomplete'];
+            const POLL_ATTEMPTS = 6;
+            const POLL_DELAY_MS = 5000;
+            const FETCH_TIMEOUT_MS = 30_000;
+            const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+            async function fetchJsonWithTimeout(url, {init = {}, label, timeoutMs = FETCH_TIMEOUT_MS} = {}) {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+                try {
+                    const res = await fetch(url, {...init, signal: controller.signal});
+                    if (!res.ok) {
+                        const text = await res.text();
+                        throw new Error(`${label} failed: ${res.status} ${text}`);
+                    }
+                    return await res.json();
+                } catch (error) {
+                    if (controller.signal.aborted) {
+                        throw new Error(`Request timed out after ${timeoutMs}ms: ${url}`);
+                    }
+                    throw error;
+                } finally {
+                    clearTimeout(timeoutId);
+                }
+            }
+
+            async function reportTsioStatus({
+                core, context, github, compositeIdentity, totalReportsExpected,
+                commitStatusContext, failOnTestFailures = true, useStaging = false,
+                oidcAudience = 'mattermost-test-system-io', upstreamJobsSucceeded = true,
+            }) {
+                const baseUrl = useStaging ? STAGING_URL : PRODUCTION_URL;
+                const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+                let reportId;
+                let reportUrl;
+                let detail;
+                try {
+                    const idToken = await core.getIDToken(oidcAudience);
+                    core.setSecret(idToken);
+                    const beginJson = await fetchJsonWithTimeout(`${baseUrl}/api/v1/reports/begin`, {
+                        init: {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json', Authorization: `Bearer ${idToken}`},
+                            body: JSON.stringify({
+                                repository: compositeIdentity.repository,
+                                commit: compositeIdentity.commit_sha,
+                                gh_run_id: compositeIdentity.gh_run_id,
+                                gh_run_attempt: compositeIdentity.gh_run_attempt,
+                                framework: 'playwright',
+                                name: compositeIdentity.name,
+                                branch: compositeIdentity.branch,
+                                total_reports_expected: totalReportsExpected,
+                                ...(compositeIdentity.gh_pr_number ? {gh_pr_number: parseInt(compositeIdentity.gh_pr_number, 10)} : {}),
+                            }),
+                        },
+                        label: 'reports/begin',
+                    });
+                    ({report_id: reportId} = beginJson);
+                    reportUrl = `${baseUrl}/reports/g/${reportId}`;
+                    for (let attempt = 0; attempt < POLL_ATTEMPTS; attempt++) {
+                        detail = await fetchJsonWithTimeout(`${baseUrl}/api/v1/reports/${reportId}`, {label: `reports/${reportId}`});
+                        if (TERMINAL_STATUSES.includes(detail.status)) {
+                            break;
+                        }
+                        if (attempt < POLL_ATTEMPTS - 1) {
+                            await sleep(POLL_DELAY_MS);
+                        }
+                    }
+                } catch (error) {
+                    core.error(`TSIO reporting error: ${error.message}`);
+                    try {
+                        await github.rest.repos.createCommitStatus({
+                            owner: context.repo.owner, repo: context.repo.repo,
+                            sha: compositeIdentity.commit_sha, state: 'failure',
+                            context: commitStatusContext,
+                            description: 'TSIO reporting error — see workflow run for details',
+                            target_url: reportUrl || runUrl,
+                        });
+                    } catch (statusError) {
+                        core.warning(`Failed to create failure commit status: ${statusError.message}`);
+                    }
+                    throw error;
+                }
+                const stats = detail.test_stats || {};
+                const isComplete = detail.status === 'completed';
+                const hasFailures = (stats.failed || 0) > 0;
+                const overallState = isComplete && !hasFailures && upstreamJobsSucceeded ? 'success' : 'failure';
+                const targetUrl = isComplete ? reportUrl : runUrl;
+                const summaryLines = [
+                    `### Test System IO — ${compositeIdentity.name}`,
+                    '',
+                    `**Status:** ${detail.status} · **Report:** [${reportId}](${reportUrl})`,
+                    `**Tests:** ${stats.passed ?? '?'} passed, ${stats.failed ?? '?'} failed, ${stats.flaky ?? 0} flaky, ${stats.skipped ?? '?'} skipped (of ${stats.total ?? '?'})`,
+                    ...(upstreamJobsSucceeded ? [] : ['', ':warning: One or more CI jobs failed outside of any tracked test — forcing this status to failure even though the test stats above may show no failures.']),
+                    ...(isComplete ? [] : ['', `:warning: Report never reached \`completed\` (stuck at \`${detail.status}\`) — see the [workflow run](${runUrl}) for the shard that didn't finish uploading.`]),
+                    '',
+                ];
+                await core.summary.addRaw(summaryLines.join('\n')).write();
+                const descriptionPrefix = upstreamJobsSucceeded ? '' : 'CI job failed (untracked by TSIO), ';
+                const description = `${descriptionPrefix}${stats.passed ?? 0}/${stats.total ?? 0} passed, ${stats.failed ?? 0} failed, ${stats.skipped ?? 0} skipped`.slice(0, 140);
+                await github.rest.repos.createCommitStatus({
+                    owner: context.repo.owner, repo: context.repo.repo,
+                    sha: compositeIdentity.commit_sha, state: overallState,
+                    context: commitStatusContext, description, target_url: targetUrl,
+                });
+                if (failOnTestFailures && overallState === 'failure') {
+                    const reason = !upstreamJobsSucceeded && !hasFailures ?
+                        'an upstream CI job failed with no corresponding test failure' :
+                        `status=${detail.status}, failed=${stats.failed || 0}`;
+                    throw new Error(`TSIO report ${reportId} did not pass: ${reason}`);
+                }
+                return {reportUrl, status: detail.status, stats};
+            }
+
+            const {reportUrl, status, stats} = await reportTsioStatus({
               core, context, github,
               compositeIdentity,
               totalReportsExpected,
