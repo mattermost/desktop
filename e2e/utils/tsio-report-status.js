@@ -24,6 +24,20 @@ function positiveInt(value, fallback) {
 }
 
 /**
+ * Dashboard URL keyed by display identity (repo / branch / short SHA / name).
+ * Lists every TSIO run for that commit+name — matches test-system-io-summary
+ * and test-system-io-dispatch-begin. Use for commit-status target_url.
+ */
+function buildDisplayReportUrl(baseUrl, compositeIdentity) {
+    const repoTrailing = (compositeIdentity.repository || '').split('/').pop() || compositeIdentity.repository;
+    const repo = encodeURIComponent(repoTrailing);
+    const branch = encodeURIComponent(compositeIdentity.branch || 'main');
+    const shortSha = (compositeIdentity.commit_sha || '').slice(0, 7);
+    const name = encodeURIComponent(compositeIdentity.name);
+    return `${baseUrl}/reports/${repo}/${branch}/${shortSha}/${name}`;
+}
+
+/**
  * Recover a report group's id via the idempotent begin endpoint, poll the
  * public status endpoint until the group leaves in_progress, render a step
  * summary, and flip a commit status.
@@ -79,7 +93,8 @@ async function reportTsioStatus({
     const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
     let reportId;
-    let reportUrl;
+    let displayReportUrl;
+    let groupReportUrl;
     let detail;
     try {
         const idToken = await core.getIDToken(oidcAudience);
@@ -108,9 +123,10 @@ async function reportTsioStatus({
         }
         ({report_id: reportId} = await beginRes.json());
 
-        // /reports/{id} (no prefix) hits the frontend's repo-or-sha catch-all route,
-        // not the report detail page — it needs the g/ (group) prefix.
-        reportUrl = `${baseUrl}/reports/g/${reportId}`;
+        displayReportUrl = buildDisplayReportUrl(baseUrl, compositeIdentity);
+
+        // Direct link to this run's merged shard group (job summary only).
+        groupReportUrl = `${baseUrl}/reports/g/${reportId}`;
 
         for (let attempt = 0; attempt < resolvedPollAttempts; attempt++) {
             const statusRes = await fetch(`${baseUrl}/api/v1/reports/${reportId}`);
@@ -135,7 +151,7 @@ async function reportTsioStatus({
                 state: 'failure',
                 context: commitStatusContext,
                 description: 'TSIO reporting error — see workflow run for details',
-                target_url: reportUrl || runUrl,
+                target_url: displayReportUrl || runUrl,
             });
         } catch (statusError) {
             core.warning(`Failed to create failure commit status: ${statusError.message}`);
@@ -152,28 +168,49 @@ async function reportTsioStatus({
     const isIncomplete = detail.status === 'incomplete';
     const uploadedShards = Array.isArray(detail.reports) ? detail.reports.length : 0;
     const hasFailures = (stats.failed || 0) > 0;
-    const overallState = isComplete && !hasFailures && upstreamJobsSucceeded ? 'success' : 'failure';
-    const targetUrl = isComplete || isIncomplete ? reportUrl : runUrl;
+
+    let overallState = 'failure';
+    if (isComplete && !hasFailures && upstreamJobsSucceeded) {
+        overallState = 'success';
+    }
+
+    let targetUrl = runUrl;
+    if (isComplete || isIncomplete) {
+        targetUrl = displayReportUrl;
+    }
 
     const summaryLines = [
         `### Test System IO — ${compositeIdentity.name}`,
         '',
-        `**Status:** ${detail.status} · **Report:** [${reportId}](${reportUrl})`,
+        `**Status:** ${detail.status} · **Report:** [${compositeIdentity.name}](${displayReportUrl}) · [this run](${groupReportUrl})`,
         `**Tests:** ${stats.passed ?? '?'} passed, ${stats.failed ?? '?'} failed, ${stats.flaky ?? 0} flaky, ` +
             `${stats.skipped ?? '?'} skipped (of ${stats.total ?? '?'})`,
-        ...(uploadedShards > 0 ?
-            [`**Shards uploaded:** ${uploadedShards}/${totalReportsExpected}`] :
-            []),
-        ...(upstreamJobsSucceeded ?
-            [] :
-            ['', ':warning: One or more CI jobs failed outside of any tracked test (e.g. a hung worker, a crashed runner) — forcing this status to failure even though the test stats above may show no failures.']),
-        ...(isIncomplete ?
-            ['', `:warning: Report finalized as \`incomplete\` (${uploadedShards}/${totalReportsExpected} shards) — partial results are in the [TSIO report](${reportUrl}); see the [workflow run](${runUrl}) for missing legs.`] :
-            isComplete ?
-                [] :
-                ['', `:warning: Report never reached a terminal state (stuck at \`${detail.status}\`) after ${resolvedPollAttempts} polls — see the [workflow run](${runUrl}).`]),
-        '',
     ];
+
+    if (uploadedShards > 0) {
+        summaryLines.push(`**Shards uploaded:** ${uploadedShards}/${totalReportsExpected}`);
+    }
+
+    if (!upstreamJobsSucceeded) {
+        summaryLines.push(
+            '',
+            ':warning: One or more CI jobs failed outside of any tracked test (e.g. a hung worker, a crashed runner) — forcing this status to failure even though the test stats above may show no failures.',
+        );
+    }
+
+    if (isIncomplete) {
+        summaryLines.push(
+            '',
+            `:warning: Report finalized as \`incomplete\` (${uploadedShards}/${totalReportsExpected} shards) — partial results are in the [TSIO report](${displayReportUrl}); see the [workflow run](${runUrl}) for missing legs.`,
+        );
+    } else if (!isComplete) {
+        summaryLines.push(
+            '',
+            `:warning: Report never reached a terminal state (stuck at \`${detail.status}\`) after ${resolvedPollAttempts} polls — see the [workflow run](${runUrl}).`,
+        );
+    }
+
+    summaryLines.push('');
     await core.summary.addRaw(summaryLines.join('\n')).write();
 
     const descriptionPrefix = upstreamJobsSucceeded ? '' : 'CI job failed (untracked by TSIO), ';
@@ -189,13 +226,16 @@ async function reportTsioStatus({
     });
 
     if (failOnTestFailures && overallState === 'failure') {
-        const reason = !upstreamJobsSucceeded && !hasFailures ?
-            'an upstream CI job failed with no corresponding test failure' :
-            `status=${detail.status}, failed=${stats.failed || 0}`;
+        let reason;
+        if (!upstreamJobsSucceeded && !hasFailures) {
+            reason = 'an upstream CI job failed with no corresponding test failure';
+        } else {
+            reason = `status=${detail.status}, failed=${stats.failed || 0}`;
+        }
         throw new Error(`TSIO report ${reportId} did not pass: ${reason}`);
     }
 
-    return {reportUrl, status: detail.status, stats};
+    return {reportUrl: displayReportUrl, status: detail.status, stats};
 }
 
 module.exports = reportTsioStatus;
