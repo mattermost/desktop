@@ -612,16 +612,27 @@ jobs:
           # Matches the artifact uploaded by e2e-functional-template.yml's e2e job.
           name: tsio-${{ matrix.runner }}-${{ inputs.MM_SERVER_VERSION }}
 
+      - name: e2e/check-tsio-results-present
+        id: tsio-results
+        if: steps.download-tsio-test-results.outcome == 'success'
+        run: |
+          if [ -f e2e/test-results/results.json ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Downloaded TSIO artifact is missing e2e/test-results/results.json — skipping upload"
+          fi
+
       - name: e2e/upload-report-to-tsio
-        if: steps.download-tsio-test-results.outcome == 'success' && hashFiles('e2e/test-results/results.json') != ''
+        if: steps.tsio-results.outputs.found == 'true'
         uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@a2ea7f005484c28fedf51e16645f6d3bd683fd63 # 0.10.0 / 2026-05-16
         with:
           composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
           total-reports-expected: ${{ needs.prepare-matrix.outputs.tsio-total-reports-expected }}
           framework: playwright
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          # Matches the e2e-tests job's rendered `name: ${{ matrix.platform }}`.
-          gh-job-name: ${{ matrix.platform }}
+          # MUST match e2e-functional-template.yml's e2e job `name:` field.
+          gh-job-name: e2e-on-${{ matrix.runner }}-${{ inputs.MM_SERVER_VERSION }}
           json-path: e2e/test-results/results.json
           screenshots-dir: e2e/test-results
 
@@ -650,8 +661,19 @@ jobs:
         with:
           name: policy-tsio-${{ matrix.platform }}
 
+      - name: e2e/check-tsio-results-present
+        id: tsio-results
+        if: steps.download-tsio-test-results.outcome == 'success'
+        run: |
+          if [ -f e2e/test-results/results.json ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Downloaded TSIO artifact is missing e2e/test-results/results.json — skipping upload"
+          fi
+
       - name: e2e/upload-report-to-tsio
-        if: steps.download-tsio-test-results.outcome == 'success' && hashFiles('e2e/test-results/results.json') != ''
+        if: steps.tsio-results.outputs.found == 'true'
         uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@a2ea7f005484c28fedf51e16645f6d3bd683fd63 # 0.10.0 / 2026-05-16
         with:
           composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
