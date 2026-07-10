@@ -1,29 +1,9 @@
 name: E2E PR Trigger
 
-# Automatically adds the E2E/Run label to non-draft PRs targeting master.
-# Adding the label signals Matterwick to provision cloud servers and dispatch
-# the Electron Playwright Tests (e2e-functional.yml) workflow.
-# After tests complete, e2e-functional.yml / e2e-label-cleanup.yml remove the label.
-#
-# E2E/Override (same contract as mattermost-mobile): when present on a PR,
-# opened/synchronize events do not add E2E/Run, and applying the override label
-# strips E2E/Run and cancels in-flight E2E runs.
-#
-# On synchronize: in-progress Electron Playwright Tests runs for this PR are
-# cancelled before re-adding the label so stale runs for the old commit do not
-# block the new one. Runs on other PR branches are left running.
-#
-# The concurrency group ensures rapid pushes to the same PR don't queue multiple
-# label operations: only the most recent push proceeds.
-#
-# Group key is bucketed by event, not just PR number (PR #3891 regression: a
-# same-second, unrelated `labeled` event from a release-notes bot cancelled the
-# `opened` event's in-progress run via cancel-in-progress before it could add
-# E2E/Run, and the winning run's own job conditions didn't match that label —
-# so E2E/Run never got added at all). opened/reopened/ready_for_review/synchronize
-# still share one group (preserves "only the most recent push proceeds" for
-# rapid pushes); every other event (any other label add/remove) gets its own
-# action+label-keyed group so it can't cancel a real trigger run.
+# Adds E2E/Run on non-draft PRs to master (Matterwick dispatches e2e-functional.yml).
+# E2E/Override skips/cancels E2E; manual E2E/Run removal cancels in-flight runs.
+# One job keeps the PR checks list to a single row. Concurrency is keyed by
+# event type so unrelated label bots cannot cancel an in-progress trigger (PR #3891).
 on:
   pull_request:
     types:
@@ -44,8 +24,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  add-e2e-label:
-    name: Add E2E/Run label
+  e2e-label-orchestration:
+    name: E2E label
     runs-on: ubuntu-22.04
     permissions:
       issues: write
@@ -53,17 +33,79 @@ jobs:
       actions: write
       statuses: write
     if: >-
-      !github.event.pull_request.draft
-      && contains(fromJSON('["opened", "reopened", "ready_for_review", "synchronize"]'), github.event.action)
+      (
+        !github.event.pull_request.draft
+        && contains(fromJSON('["opened", "reopened", "ready_for_review", "synchronize"]'), github.event.action)
+      )
+      || (
+        github.event.action == 'labeled'
+        && github.event.label.name == 'E2E/Override'
+      )
+      || (
+        github.event.action == 'unlabeled'
+        && github.event.label.name == 'E2E/Run'
+        && github.event.sender.login != 'github-actions[bot]'
+      )
     steps:
-      # Always the base ref's own reviewed copy of github-actions.js — this job
-      # holds write-scoped tokens (issues/pull-requests/actions/statuses), so it
-      # must never execute code sourced from the untrusted PR head.
+      # Always the base ref's own reviewed copy — this job holds write-scoped
+      # tokens, so it must never execute code from the untrusted PR head.
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ github.event.pull_request.base.ref }}
 
-      - name: Cancel running E2E tests and re-trigger
+      - name: Cancel E2E on manual label removal
+        if: >-
+          github.event.action == 'unlabeled'
+          && github.event.label.name == 'E2E/Run'
+          && github.event.sender.login != 'github-actions[bot]'
+        uses: ./.github/actions/cancel-e2e-runs
+        with:
+          pr_number: ${{ github.event.pull_request.number }}
+          reason: E2E cancelled (E2E/Run label removed)
+
+      - name: Honor E2E/Override
+        if: >-
+          github.event.action == 'labeled'
+          && github.event.label.name == 'E2E/Override'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const {cancelActiveE2ERuns, markE2EStatusesCancelled} = require('./e2e/utils/github-actions.js');
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const pr = context.payload.pull_request;
+
+            try {
+              await github.rest.issues.removeLabel({
+                owner,
+                repo,
+                issue_number,
+                name: 'E2E/Run',
+              });
+            } catch (error) {
+              if (error.status !== 404) {
+                throw error;
+              }
+            }
+
+            await cancelActiveE2ERuns({
+              github,
+              context,
+              prNumber: issue_number,
+              headBranch: pr.head.ref,
+            });
+            await markE2EStatusesCancelled({
+              github,
+              context,
+              sha: pr.head.sha,
+              reason: 'E2E cancelled (E2E/Override label applied)',
+            });
+
+      - name: Refresh E2E/Run label
+        if: >-
+          !github.event.pull_request.draft
+          && contains(fromJSON('["opened", "reopened", "ready_for_review", "synchronize"]'), github.event.action)
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ github.token }}
@@ -139,86 +181,3 @@ jobs:
               issue_number,
               labels: ['E2E/Run'],
             });
-
-  honor-e2e-override:
-    name: Honor E2E/Override
-    runs-on: ubuntu-22.04
-    permissions:
-      issues: write
-      pull-requests: write
-      actions: write
-      statuses: write
-    if: >-
-      github.event.action == 'labeled'
-      && github.event.label.name == 'E2E/Override'
-    steps:
-      # Always the base ref's own reviewed copy of github-actions.js — this job
-      # holds write-scoped tokens (issues/pull-requests/actions/statuses), so it
-      # must never execute code sourced from the untrusted PR head.
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          ref: ${{ github.event.pull_request.base.ref }}
-
-      - name: Strip E2E/Run and cancel in-flight E2E
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        with:
-          github-token: ${{ github.token }}
-          script: |
-            const {cancelActiveE2ERuns, markE2EStatusesCancelled} = require('./e2e/utils/github-actions.js');
-            const { owner, repo } = context.repo;
-            const issue_number = context.issue.number;
-            const pr = context.payload.pull_request;
-
-            try {
-              await github.rest.issues.removeLabel({
-                owner,
-                repo,
-                issue_number,
-                name: 'E2E/Run',
-              });
-            } catch (error) {
-              if (error.status !== 404) {
-                throw error;
-              }
-            }
-
-            await cancelActiveE2ERuns({
-              github,
-              context,
-              prNumber: issue_number,
-              headBranch: pr.head.ref,
-            });
-            await markE2EStatusesCancelled({
-              github,
-              context,
-              sha: pr.head.sha,
-              reason: 'E2E cancelled (E2E/Override label applied)',
-            });
-
-  cancel-on-manual-unlabel:
-    name: Cancel E2E on manual label removal
-    runs-on: ubuntu-22.04
-    permissions:
-      actions: write
-      statuses: write
-      pull-requests: read
-    if: >-
-      github.event.action == 'unlabeled'
-      && github.event.label.name == 'E2E/Run'
-      && github.event.sender.login != 'github-actions[bot]'
-    steps:
-      # Always the base ref's own reviewed copy of github-actions.js — this job
-      # holds write-scoped tokens (actions/statuses), so it must never execute
-      # code sourced from the untrusted PR head. A single full checkout also
-      # sidesteps the previous bug where a second sparse checkout of head.sha
-      # replaced the base-ref tree, wiping out .github/actions/cancel-e2e-runs/
-      # before this job's next step could use it.
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          ref: ${{ github.event.pull_request.base.ref }}
-
-      - name: Cancel E2E runs and mark statuses skipped
-        uses: ./.github/actions/cancel-e2e-runs
-        with:
-          pr_number: ${{ github.event.pull_request.number }}
-          reason: E2E cancelled (E2E/Run label removed)
