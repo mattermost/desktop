@@ -28,7 +28,6 @@ async function markE2EStatusesCancelled({github, context, sha, reason = CANCELLE
         });
     } catch (error) {
         console.log(`Could not update ${E2E_STATUS_CONTEXT} on ${sha}: ${error.message}`);
-        throw error;
     }
 }
 

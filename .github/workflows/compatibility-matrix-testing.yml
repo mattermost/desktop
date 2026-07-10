@@ -20,6 +20,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # TSIO reporting model (CMT):
+  #   1 workflow run  →  1 RC cut (DESKTOP_VERSION)  →  1 resolved SHA
+  #   →  1 composite_identity (name=cmt-desktop)  →  1 TSIO report covering
+  #   every (OS × server-version) matrix leg.
   ## This is picked up after the finish for cleanup
   upload-cmt-server-detals:
     runs-on: ubuntu-22.04
@@ -133,6 +137,7 @@ jobs:
     permissions:
       contents: read
       actions: read
+      id-token: write
     secrets: inherit
     with:
       runs-on: ${{ matrix.environment.runner }}

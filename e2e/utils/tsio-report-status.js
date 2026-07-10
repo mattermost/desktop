@@ -8,30 +8,8 @@ const STAGING_URL = 'https://staging-test-io.test.mattermost.com';
 const TERMINAL_STATUSES = ['completed', 'incomplete'];
 const POLL_ATTEMPTS = 6;
 const POLL_DELAY_MS = 5000;
-const FETCH_TIMEOUT_MS = 30_000;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-async function fetchJsonWithTimeout(url, {init = {}, label, timeoutMs = FETCH_TIMEOUT_MS} = {}) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-    try {
-        const res = await fetch(url, {...init, signal: controller.signal});
-        if (!res.ok) {
-            const text = await res.text();
-            throw new Error(`${label} failed: ${res.status} ${text}`);
-        }
-        return await res.json();
-    } catch (error) {
-        if (controller.signal.aborted) {
-            throw new Error(`Request timed out after ${timeoutMs}ms: ${url}`);
-        }
-        throw error;
-    } finally {
-        clearTimeout(timeoutId);
-    }
-}
 
 /**
  * Recover a report group's id via the idempotent begin endpoint, poll the
@@ -80,37 +58,39 @@ async function reportTsioStatus({
         const idToken = await core.getIDToken(oidcAudience);
         core.setSecret(idToken);
 
-        const beginJson = await fetchJsonWithTimeout(`${baseUrl}/api/v1/reports/begin`, {
-            init: {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${idToken}`,
-                },
-                body: JSON.stringify({
-                    repository: compositeIdentity.repository,
-                    commit: compositeIdentity.commit_sha,
-                    gh_run_id: compositeIdentity.gh_run_id,
-                    gh_run_attempt: compositeIdentity.gh_run_attempt,
-                    framework: 'playwright',
-                    name: compositeIdentity.name,
-                    branch: compositeIdentity.branch,
-                    total_reports_expected: totalReportsExpected,
-                    ...(compositeIdentity.gh_pr_number ? {gh_pr_number: parseInt(compositeIdentity.gh_pr_number, 10)} : {}),
-                }),
+        const beginRes = await fetch(`${baseUrl}/api/v1/reports/begin`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${idToken}`,
             },
-            label: 'reports/begin',
+            body: JSON.stringify({
+                repository: compositeIdentity.repository,
+                commit: compositeIdentity.commit_sha,
+                gh_run_id: compositeIdentity.gh_run_id,
+                gh_run_attempt: compositeIdentity.gh_run_attempt,
+                framework: 'playwright',
+                name: compositeIdentity.name,
+                branch: compositeIdentity.branch,
+                total_reports_expected: totalReportsExpected,
+                ...(compositeIdentity.gh_pr_number ? {gh_pr_number: parseInt(compositeIdentity.gh_pr_number, 10)} : {}),
+            }),
         });
-        ({report_id: reportId} = beginJson);
+        if (!beginRes.ok) {
+            throw new Error(`reports/begin failed: ${beginRes.status} ${await beginRes.text()}`);
+        }
+        ({report_id: reportId} = await beginRes.json());
 
         // /reports/{id} (no prefix) hits the frontend's repo-or-sha catch-all route,
         // not the report detail page — it needs the g/ (group) prefix.
         reportUrl = `${baseUrl}/reports/g/${reportId}`;
 
         for (let attempt = 0; attempt < POLL_ATTEMPTS; attempt++) {
-            detail = await fetchJsonWithTimeout(`${baseUrl}/api/v1/reports/${reportId}`, {
-                label: `reports/${reportId}`,
-            });
+            const statusRes = await fetch(`${baseUrl}/api/v1/reports/${reportId}`);
+            if (!statusRes.ok) {
+                throw new Error(`reports/${reportId} failed: ${statusRes.status} ${await statusRes.text()}`);
+            }
+            detail = await statusRes.json();
             if (TERMINAL_STATUSES.includes(detail.status)) {
                 break;
             }

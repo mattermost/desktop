@@ -39,11 +39,16 @@ permissions:
   contents: read
 
 jobs:
+  # TSIO reporting model (PR / master / release):
+  #   1 workflow run  →  1 composite_identity (gh_run_id + resolved commit SHA + name)
+  #   →  1 TSIO report group aggregating every platform leg + both policy legs.
+  # Matterwick sets run_type=MASTER for master pushes; PR runs default to desktop-pr.
   prepare-matrix:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.instance_details != '' }}
     runs-on: ubuntu-latest
     outputs:
       platforms: ${{ steps.generate.outputs.platforms }}
+      desktop-sha: ${{ steps.resolve-sha.outputs.sha }}
       tsio-composite-identity: ${{ steps.tsio-identity.outputs.composite-identity-json }}
       tsio-total-reports-expected: ${{ steps.tsio-identity.outputs.total-reports-expected }}
     steps:
@@ -56,15 +61,26 @@ jobs:
           platforms=$(echo "${INSTANCE_DETAILS}" | jq -c 'map(if .runner == "macos-latest" then .runner = "macos-26" else . end)')
           echo "platforms=${platforms}" >> "$GITHUB_OUTPUT"
 
+      # Resolve the SHA under test from version_name (branch/tag/SHA), not github.sha
+      # from the dispatch ref — same approach as compatibility-matrix-testing.yml.
+      - name: e2e/checkout-desktop-version
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ inputs.version_name }}
+
+      - id: resolve-sha
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
       - id: tsio-identity
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
-          MM_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          MM_SHA: ${{ steps.resolve-sha.outputs.sha }}
           MM_BRANCH: ${{ inputs.version_name }}
           PR_NUMBER: ${{ inputs.pr_number }}
           RUN_TYPE: ${{ inputs.run_type || 'PR' }}
           PLATFORMS: ${{ steps.generate.outputs.platforms }}
         run: |
+          # platform legs (linux/macos/windows) + policy-tests-macos + policy-tests-windows
           TOTAL=$(( $(echo "${PLATFORMS}" | jq -c 'length') + 2 ))
           echo "total-reports-expected=${TOTAL}" >> "$GITHUB_OUTPUT"
           NAME="desktop-$(echo "${RUN_TYPE}" | tr '[:upper:]' '[:lower:]')"
@@ -98,7 +114,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           repository_full_name: ${{ github.repository }}
-          commit_sha: ${{ github.event.pull_request.head.sha || github.sha }}
+          commit_sha: ${{ needs.prepare-matrix.outputs.desktop-sha }}
           context: e2e-test/desktop-playwright
           description: "Running Electron Playwright E2E tests..."
           status: pending
@@ -115,6 +131,7 @@ jobs:
     permissions:
       contents: read
       actions: read
+      id-token: write
     uses: ./.github/workflows/e2e-functional-template.yml
     with:
       runs-on: ${{ matrix.runner }}
@@ -141,21 +158,20 @@ jobs:
       - prepare-matrix
       - e2e-tests
       - e2e-policy-tests
-      - e2e-tsio-upload
-      - e2e-policy-tsio-upload
     if: always()
     permissions:
       contents: read
       id-token: write
       statuses: write
     steps:
-      # No checkout / no require(): this job holds id-token + statuses: write,
-      # so it must never load a file from the untrusted PR head. The helper can't
-      # be loaded from `ref: master` either — e2e/utils/tsio-report-status.js is
-      # new in this PR and isn't on master until this merges. So the logic is
-      # INLINED below (the "inlining the logic instead" alternative CodeRabbit
-      # suggested for the trusted-source review comment). The file copy is kept
-      # for compatibility-matrix-testing.yml, which runs on trusted release refs.
+      # tsio-report-status.js is repo code, not fetched by github-script itself.
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ inputs.version_name }}
+          persist-credentials: false
+          sparse-checkout: |
+            e2e/utils/tsio-report-status.js
+          sparse-checkout-cone-mode: false
 
       - name: Render TSIO summary + flip commit status
         id: summary
@@ -167,177 +183,12 @@ jobs:
           UPSTREAM_JOBS_SUCCEEDED: ${{ needs.e2e-tests.result == 'success' && needs.e2e-policy-tests.result == 'success' }}
         with:
           script: |
-            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            const commitStatusContext = process.env.COMMIT_STATUS_CONTEXT;
-            const identityRaw = process.env.TSIO_COMPOSITE_IDENTITY;
-            let compositeIdentity;
-            let totalReportsExpected;
-
-            if (!identityRaw) {
-              await github.rest.repos.createCommitStatus({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                sha: context.sha,
-                state: 'failure',
-                context: commitStatusContext,
-                description: 'TSIO summary failed — missing composite identity',
-                target_url: runUrl,
-              });
-              throw new Error('TSIO_COMPOSITE_IDENTITY is missing (prepare-matrix failed or was skipped)');
-            }
-
-            try {
-              compositeIdentity = JSON.parse(identityRaw);
-              totalReportsExpected = parseInt(process.env.TSIO_TOTAL_REPORTS_EXPECTED, 10);
-            } catch (parseError) {
-              await github.rest.repos.createCommitStatus({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                sha: context.sha,
-                state: 'failure',
-                context: commitStatusContext,
-                description: 'TSIO summary failed — invalid composite identity',
-                target_url: runUrl,
-              });
-              throw parseError;
-            }
-
-            if (!compositeIdentity?.commit_sha || !Number.isFinite(totalReportsExpected)) {
-              await github.rest.repos.createCommitStatus({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                sha: compositeIdentity?.commit_sha || context.sha,
-                state: 'failure',
-                context: commitStatusContext,
-                description: 'TSIO summary failed — incomplete composite identity',
-                target_url: runUrl,
-              });
-              throw new Error('TSIO composite identity or totalReportsExpected is incomplete');
-            }
-
-            // Inlined from e2e/utils/tsio-report-status.js (see comment above).
-            const PRODUCTION_URL = 'https://test-io.test.mattermost.com';
-            const STAGING_URL = 'https://staging-test-io.test.mattermost.com';
-            const TERMINAL_STATUSES = ['completed', 'incomplete'];
-            const POLL_ATTEMPTS = 6;
-            const POLL_DELAY_MS = 5000;
-            const FETCH_TIMEOUT_MS = 30_000;
-            const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-            async function fetchJsonWithTimeout(url, {init = {}, label, timeoutMs = FETCH_TIMEOUT_MS} = {}) {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-                try {
-                    const res = await fetch(url, {...init, signal: controller.signal});
-                    if (!res.ok) {
-                        const text = await res.text();
-                        throw new Error(`${label} failed: ${res.status} ${text}`);
-                    }
-                    return await res.json();
-                } catch (error) {
-                    if (controller.signal.aborted) {
-                        throw new Error(`Request timed out after ${timeoutMs}ms: ${url}`);
-                    }
-                    throw error;
-                } finally {
-                    clearTimeout(timeoutId);
-                }
-            }
-
-            async function reportTsioStatus({
-                core, context, github, compositeIdentity, totalReportsExpected,
-                commitStatusContext, failOnTestFailures = true, useStaging = false,
-                oidcAudience = 'mattermost-test-system-io', upstreamJobsSucceeded = true,
-            }) {
-                const baseUrl = useStaging ? STAGING_URL : PRODUCTION_URL;
-                const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-                let reportId;
-                let reportUrl;
-                let detail;
-                try {
-                    const idToken = await core.getIDToken(oidcAudience);
-                    core.setSecret(idToken);
-                    const beginJson = await fetchJsonWithTimeout(`${baseUrl}/api/v1/reports/begin`, {
-                        init: {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json', Authorization: `Bearer ${idToken}`},
-                            body: JSON.stringify({
-                                repository: compositeIdentity.repository,
-                                commit: compositeIdentity.commit_sha,
-                                gh_run_id: compositeIdentity.gh_run_id,
-                                gh_run_attempt: compositeIdentity.gh_run_attempt,
-                                framework: 'playwright',
-                                name: compositeIdentity.name,
-                                branch: compositeIdentity.branch,
-                                total_reports_expected: totalReportsExpected,
-                                ...(compositeIdentity.gh_pr_number ? {gh_pr_number: parseInt(compositeIdentity.gh_pr_number, 10)} : {}),
-                            }),
-                        },
-                        label: 'reports/begin',
-                    });
-                    ({report_id: reportId} = beginJson);
-                    reportUrl = `${baseUrl}/reports/g/${reportId}`;
-                    for (let attempt = 0; attempt < POLL_ATTEMPTS; attempt++) {
-                        detail = await fetchJsonWithTimeout(`${baseUrl}/api/v1/reports/${reportId}`, {label: `reports/${reportId}`});
-                        if (TERMINAL_STATUSES.includes(detail.status)) {
-                            break;
-                        }
-                        if (attempt < POLL_ATTEMPTS - 1) {
-                            await sleep(POLL_DELAY_MS);
-                        }
-                    }
-                } catch (error) {
-                    core.error(`TSIO reporting error: ${error.message}`);
-                    try {
-                        await github.rest.repos.createCommitStatus({
-                            owner: context.repo.owner, repo: context.repo.repo,
-                            sha: compositeIdentity.commit_sha, state: 'failure',
-                            context: commitStatusContext,
-                            description: 'TSIO reporting error — see workflow run for details',
-                            target_url: reportUrl || runUrl,
-                        });
-                    } catch (statusError) {
-                        core.warning(`Failed to create failure commit status: ${statusError.message}`);
-                    }
-                    throw error;
-                }
-                const stats = detail.test_stats || {};
-                const isComplete = detail.status === 'completed';
-                const hasFailures = (stats.failed || 0) > 0;
-                const overallState = isComplete && !hasFailures && upstreamJobsSucceeded ? 'success' : 'failure';
-                const targetUrl = isComplete ? reportUrl : runUrl;
-                const summaryLines = [
-                    `### Test System IO — ${compositeIdentity.name}`,
-                    '',
-                    `**Status:** ${detail.status} · **Report:** [${reportId}](${reportUrl})`,
-                    `**Tests:** ${stats.passed ?? '?'} passed, ${stats.failed ?? '?'} failed, ${stats.flaky ?? 0} flaky, ${stats.skipped ?? '?'} skipped (of ${stats.total ?? '?'})`,
-                    ...(upstreamJobsSucceeded ? [] : ['', ':warning: One or more CI jobs failed outside of any tracked test — forcing this status to failure even though the test stats above may show no failures.']),
-                    ...(isComplete ? [] : ['', `:warning: Report never reached \`completed\` (stuck at \`${detail.status}\`) — see the [workflow run](${runUrl}) for the shard that didn't finish uploading.`]),
-                    '',
-                ];
-                await core.summary.addRaw(summaryLines.join('\n')).write();
-                const descriptionPrefix = upstreamJobsSucceeded ? '' : 'CI job failed (untracked by TSIO), ';
-                const description = `${descriptionPrefix}${stats.passed ?? 0}/${stats.total ?? 0} passed, ${stats.failed ?? 0} failed, ${stats.skipped ?? 0} skipped`.slice(0, 140);
-                await github.rest.repos.createCommitStatus({
-                    owner: context.repo.owner, repo: context.repo.repo,
-                    sha: compositeIdentity.commit_sha, state: overallState,
-                    context: commitStatusContext, description, target_url: targetUrl,
-                });
-                if (failOnTestFailures && overallState === 'failure') {
-                    const reason = !upstreamJobsSucceeded && !hasFailures ?
-                        'an upstream CI job failed with no corresponding test failure' :
-                        `status=${detail.status}, failed=${stats.failed || 0}`;
-                    throw new Error(`TSIO report ${reportId} did not pass: ${reason}`);
-                }
-                return {reportUrl, status: detail.status, stats};
-            }
-
-            const {reportUrl, status, stats} = await reportTsioStatus({
+            const {reportUrl, status, stats} = await require('./e2e/utils/tsio-report-status.js')({
               core, context, github,
-              compositeIdentity,
-              totalReportsExpected,
+              compositeIdentity: JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY),
+              totalReportsExpected: parseInt(process.env.TSIO_TOTAL_REPORTS_EXPECTED, 10),
               upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
-              commitStatusContext,
+              commitStatusContext: process.env.COMMIT_STATUS_CONTEXT,
               failOnTestFailures: true,
             });
             core.info(`TSIO report ${reportUrl}: ${status} (${JSON.stringify(stats)})`);
@@ -411,10 +262,12 @@ jobs:
     needs:
       - prepare-matrix
       - update-initial-status
-    # Runs untrusted PR code (npm ci / Playwright); no OIDC here — TSIO upload
-    # is handled by e2e-policy-tsio-upload after artifacts are saved.
+    # Runs untrusted PR code (npm ci / Playwright); grant only what the TSIO
+    # upload needs, never pull-requests: write.
     permissions:
       contents: read
+      id-token: write
+      actions: read
     strategy:
       matrix:
         include:
@@ -537,7 +390,6 @@ jobs:
           echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
           npm run send-report || true
         env:
-          CI: true
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.version_name }}
 
@@ -550,31 +402,22 @@ jobs:
           echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
           npm run send-report || true
         env:
-          CI: true
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.version_name }}
 
-      # Joins the same TSIO report group as e2e-tests — gh-job-name in the
-      # upload job must match this job's rendered name (policy-tests-<platform>).
-      - name: e2e/prepare-tsio-artifacts
-        id: prepare-tsio
-        if: always() && needs.prepare-matrix.outputs.tsio-composite-identity != ''
-        run: |
-          while IFS= read -r line; do
-            if [[ "$line" == has_results=* ]]; then
-              echo "$line" >> "$GITHUB_OUTPUT"
-            else
-              echo "$line"
-            fi
-          done < <(bash .github/scripts/prepare-tsio-artifacts.sh e2e/test-results tsio-artifact/e2e/test-results true)
-
-      - name: e2e/upload-tsio-test-results
-        if: always() && needs.prepare-matrix.outputs.tsio-composite-identity != '' && steps.prepare-tsio.outputs.has_results == 'true'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      # Joins the same TSIO report group as e2e-tests — gh-job-name must match
+      # this job's rendered name (policy-tests-<platform>) above.
+      - name: e2e/upload-report-to-tsio
+        if: ${{ always() && needs.prepare-matrix.outputs.tsio-composite-identity != '' && hashFiles('e2e/test-results/results.json') != '' }}
+        uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@a2ea7f005484c28fedf51e16645f6d3bd683fd63 # 0.10.0 / 2026-05-16
         with:
-          name: policy-tsio-${{ matrix.platform }}
-          path: tsio-artifact
-          if-no-files-found: error
+          composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
+          total-reports-expected: ${{ needs.prepare-matrix.outputs.tsio-total-reports-expected }}
+          framework: playwright
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          gh-job-name: policy-tests-${{ matrix.platform }}
+          json-path: e2e/test-results/results.json
+          screenshots-dir: e2e/test-results
 
       - name: e2e/handle-nonzero-playwright-exit
         if: always()
@@ -599,115 +442,3 @@ jobs:
           path: e2e/playwright-report
           if-no-files-found: ignore
           retention-days: 7
-
-  e2e-tsio-upload:
-    name: tsio-upload-${{ matrix.platform }}
-    needs:
-      - prepare-matrix
-      - e2e-tests
-    if: always() && needs.prepare-matrix.outputs.tsio-composite-identity != ''
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJson(needs.prepare-matrix.outputs.platforms) }}
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      id-token: write
-      actions: read
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          persist-credentials: false
-          sparse-checkout: |
-            .github/scripts/restore-tsio-artifacts.sh
-          sparse-checkout-cone-mode: false
-
-      - name: e2e/download-tsio-test-results
-        id: download-tsio-test-results
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        continue-on-error: true
-        with:
-          # Matches the artifact uploaded by e2e-functional-template.yml's e2e job.
-          name: tsio-${{ matrix.runner }}-${{ inputs.MM_SERVER_VERSION }}
-
-      - name: e2e/restore-tsio-artifacts
-        id: tsio-results
-        if: steps.download-tsio-test-results.outcome == 'success'
-        run: |
-          while IFS= read -r line; do
-            if [[ "$line" == found=* ]]; then
-              echo "$line" >> "$GITHUB_OUTPUT"
-            else
-              echo "$line"
-            fi
-          done < <(bash .github/scripts/restore-tsio-artifacts.sh)
-
-      - name: e2e/upload-report-to-tsio
-        if: steps.tsio-results.outputs.found == 'true'
-        uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@a2ea7f005484c28fedf51e16645f6d3bd683fd63 # 0.10.0 / 2026-05-16
-        with:
-          composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
-          total-reports-expected: ${{ needs.prepare-matrix.outputs.tsio-total-reports-expected }}
-          framework: playwright
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          # MUST match e2e-functional-template.yml's e2e job `name:` field.
-          gh-job-name: e2e-on-${{ matrix.runner }}-${{ inputs.MM_SERVER_VERSION }}
-          json-path: e2e/test-results/results.json
-          screenshots-dir: e2e/test-results
-
-  e2e-policy-tsio-upload:
-    name: policy-tsio-upload-${{ matrix.platform }}
-    needs:
-      - prepare-matrix
-      - e2e-policy-tests
-    if: always() && needs.prepare-matrix.outputs.tsio-composite-identity != ''
-    strategy:
-      matrix:
-        include:
-          - platform: macos
-          - platform: windows
-      fail-fast: false
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      id-token: write
-      actions: read
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          persist-credentials: false
-          sparse-checkout: |
-            .github/scripts/restore-tsio-artifacts.sh
-          sparse-checkout-cone-mode: false
-
-      - name: e2e/download-tsio-test-results
-        id: download-tsio-test-results
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        continue-on-error: true
-        with:
-          name: policy-tsio-${{ matrix.platform }}
-
-      - name: e2e/restore-tsio-artifacts
-        id: tsio-results
-        if: steps.download-tsio-test-results.outcome == 'success'
-        run: |
-          while IFS= read -r line; do
-            if [[ "$line" == found=* ]]; then
-              echo "$line" >> "$GITHUB_OUTPUT"
-            else
-              echo "$line"
-            fi
-          done < <(bash .github/scripts/restore-tsio-artifacts.sh)
-
-      - name: e2e/upload-report-to-tsio
-        if: steps.tsio-results.outputs.found == 'true'
-        uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@a2ea7f005484c28fedf51e16645f6d3bd683fd63 # 0.10.0 / 2026-05-16
-        with:
-          composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
-          total-reports-expected: ${{ needs.prepare-matrix.outputs.tsio-total-reports-expected }}
-          framework: playwright
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          gh-job-name: policy-tests-${{ matrix.platform }}
-          json-path: e2e/test-results/results.json
-          screenshots-dir: e2e/test-results
