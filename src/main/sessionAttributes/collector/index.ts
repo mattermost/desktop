@@ -3,11 +3,14 @@
 
 import {MacSessionAttributeCollector} from './macSessionAttributeCollector';
 import {SessionAttributeCollector} from './sessionAttributeCollector';
+import {WindowsSessionAttributeCollector} from './windowsSessionAttributeCollector';
 
 function createSessionAttributeCollector(): SessionAttributeCollector {
     switch (process.platform) {
     case 'darwin':
         return new MacSessionAttributeCollector();
+    case 'win32':
+        return new WindowsSessionAttributeCollector();
     default:
         return new SessionAttributeCollector();
     }
