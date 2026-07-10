@@ -201,7 +201,7 @@ async function reportTsioStatus({
         summaryLines.push(`**Failed shards:** ${failedShards.join(', ')}`);
     }
 
-    if (!upstreamJobsSucceeded) {
+    if (!upstreamJobsSucceeded && !hasFailures) {
         summaryLines.push(
             '',
             ':warning: One or more CI jobs failed outside of any tracked test (e.g. a hung worker, a crashed runner) — forcing this status to failure even though the test stats above may show no failures.',
@@ -223,7 +223,7 @@ async function reportTsioStatus({
     summaryLines.push('');
     await core.summary.addRaw(summaryLines.join('\n')).write();
 
-    const descriptionPrefix = upstreamJobsSucceeded ? '' : 'CI job failed (untracked by TSIO), ';
+    const descriptionPrefix = !upstreamJobsSucceeded && !hasFailures ? 'CI job failed (untracked by TSIO), ' : '';
     const description = `${descriptionPrefix}${stats.passed ?? 0}/${stats.total ?? 0} passed, ${stats.failed ?? 0} failed, ${stats.skipped ?? 0} skipped`.slice(0, 140);
     await github.rest.repos.createCommitStatus({
         owner: context.repo.owner,

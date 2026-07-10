@@ -301,15 +301,12 @@ jobs:
       - name: e2e/handle-nonzero-playwright-exit
         if: always()
         run: |
-          if [ "${PLAYWRIGHT_EXIT_CODE:-1}" == "0" ]; then
+          if [ -z "${PLAYWRIGHT_EXIT_CODE:-}" ]; then
             exit 0
           fi
-          if [ -n "${TSIO_CONFIG}" ]; then
-            echo "::warning::Playwright exited with code ${PLAYWRIGHT_EXIT_CODE:-unset} — not failing the job on this alone, see TSIO report for actual test results"
-          else
-            echo "Playwright exited with code ${PLAYWRIGHT_EXIT_CODE:-unset} and no TSIO config is set for this run — failing the job since there is no other failure signal" >&2
-            exit 1
+          if [ "${PLAYWRIGHT_EXIT_CODE}" = "0" ]; then
+            exit 0
           fi
-        env:
-          TSIO_CONFIG: ${{ inputs.tsio-config }}
+          echo "Playwright exited with code ${PLAYWRIGHT_EXIT_CODE}" >&2
+          exit 1
 
