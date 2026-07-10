@@ -24,9 +24,9 @@ function positiveInt(value, fallback) {
 }
 
 /**
- * Dashboard URL keyed by display identity (repo / branch / short SHA / name).
- * Lists every TSIO run for that commit+name — matches test-system-io-summary
- * and test-system-io-dispatch-begin. Use for commit-status target_url.
+ * Commit-level rollup URL (repo / branch / short SHA / name). Dedupes the same
+ * spec across platform shards — headline stats can disagree with GitHub when a
+ * failure is platform-specific. Job summary only; not for commit-status links.
  */
 function buildDisplayReportUrl(baseUrl, compositeIdentity) {
     const repoTrailing = (compositeIdentity.repository || '').split('/').pop() || compositeIdentity.repository;
@@ -34,8 +34,7 @@ function buildDisplayReportUrl(baseUrl, compositeIdentity) {
     const branch = encodeURIComponent(compositeIdentity.branch || 'main');
     const shortSha = (compositeIdentity.commit_sha || '').slice(0, 7);
     const name = encodeURIComponent(compositeIdentity.name);
-    const runId = encodeURIComponent(compositeIdentity.gh_run_id || '');
-    return `${baseUrl}/reports/${repo}/${branch}/${shortSha}/${name}?gh_run_id=${runId}`;
+    return `${baseUrl}/reports/${repo}/${branch}/${shortSha}/${name}`;
 }
 
 /**
@@ -125,8 +124,6 @@ async function reportTsioStatus({
         ({report_id: reportId} = await beginRes.json());
 
         displayReportUrl = buildDisplayReportUrl(baseUrl, compositeIdentity);
-
-        // Direct link to this run's merged shard group (job summary only).
         groupReportUrl = `${baseUrl}/reports/g/${reportId}`;
 
         for (let attempt = 0; attempt < resolvedPollAttempts; attempt++) {
@@ -152,7 +149,7 @@ async function reportTsioStatus({
                 state: 'failure',
                 context: commitStatusContext,
                 description: 'TSIO reporting error — see workflow run for details',
-                target_url: displayReportUrl || runUrl,
+                target_url: groupReportUrl || displayReportUrl || runUrl,
             });
         } catch (statusError) {
             core.warning(`Failed to create failure commit status: ${statusError.message}`);
@@ -185,13 +182,13 @@ async function reportTsioStatus({
 
     let targetUrl = runUrl;
     if (isComplete || isIncomplete) {
-        targetUrl = displayReportUrl;
+        targetUrl = groupReportUrl || displayReportUrl;
     }
 
     const summaryLines = [
         `### Test System IO — ${compositeIdentity.name}`,
         '',
-        `**Status:** ${detail.status} · **Report:** [${compositeIdentity.name}](${displayReportUrl}) · [this run](${groupReportUrl})`,
+        `**Status:** ${detail.status} · **Report:** [this run](${groupReportUrl}) · [all runs for commit](${displayReportUrl})`,
         `**Tests:** ${stats.passed ?? '?'} passed, ${stats.failed ?? '?'} failed, ${stats.flaky ?? 0} flaky, ` +
             `${stats.skipped ?? '?'} skipped (of ${stats.total ?? '?'})`,
     ];
@@ -250,7 +247,7 @@ async function reportTsioStatus({
         throw new Error(`TSIO report ${reportId} did not pass: ${reason}`);
     }
 
-    return {reportUrl: displayReportUrl, status: detail.status, stats};
+    return {reportUrl: groupReportUrl || displayReportUrl, status: detail.status, stats};
 }
 
 module.exports = reportTsioStatus;
