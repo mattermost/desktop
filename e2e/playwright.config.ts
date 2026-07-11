@@ -28,11 +28,16 @@ const PLATFORM_GREP: Record<Platform, RegExp> = {
 // Electron processes are heavy (~300MB each), so cap at 2 in CI and half the CPU
 // count locally (max 4). Override with E2E_WORKERS env var.
 const cpuCount = os.cpus().length;
+
 // Linux CI hits Playwright worker-teardown hangs with 2 parallel Electron workers;
 // one worker can finish with a stuck app.close() and burn the full 90s budget.
-const defaultWorkers = process.env.CI ?
-    (getActivePlatform() === 'linux' ? 1 : 2) :
-    Math.min(4, Math.max(1, Math.floor(cpuCount / 2)));
+function getDefaultWorkers(): number {
+    if (process.env.CI) {
+        return getActivePlatform() === 'linux' ? 1 : 2;
+    }
+    return Math.min(4, Math.max(1, Math.floor(cpuCount / 2)));
+}
+const defaultWorkers = getDefaultWorkers();
 const parsedWorkers = process.env.E2E_WORKERS ? Number.parseInt(process.env.E2E_WORKERS, 10) : NaN;
 const workers = Number.isFinite(parsedWorkers) && parsedWorkers > 0 ? parsedWorkers : defaultWorkers;
 

@@ -294,14 +294,16 @@ async function requestElectronQuit(app: ElectronApplication): Promise<void> {
 async function settleElectronClose(closePromise: Promise<void>, pid: number | undefined, budgetMs: number): Promise<void> {
     const deadline = Date.now() + budgetMs;
     while (Date.now() < deadline) {
-        await drainPlaywrightClose(closePromise, Math.min(1_000, deadline - Date.now()));
-        if (pid && !isProcessAlive(pid)) {
-            // Give Playwright a moment to observe the dead process and reject close().
-            await drainPlaywrightClose(closePromise, Math.min(5_000, deadline - Date.now()));
-            return;
-        }
         if (await isClosePromiseSettled(closePromise)) {
             return;
+        }
+
+        // Keep draining until Playwright observes a dead process and rejects close().
+        // Returning early when the PID is gone but close() is still pending leaves a
+        // gracefullyClose entry that burns the full workerTeardownTimeout (#29431).
+        await drainPlaywrightClose(closePromise, Math.min(2_000, deadline - Date.now()));
+        if (pid && !isProcessAlive(pid)) {
+            await forceKillStrayElectronProcesses();
         }
         await sleep(200);
     }
@@ -377,6 +379,7 @@ async function attemptClose(app: ElectronApplication, timeoutMs: number): Promis
     const start = Date.now();
     await Promise.race([closePromise, sleep(timeoutMs)]);
     const remainingMs = Math.max(0, timeoutMs - (Date.now() - start));
+
     // Playwright keeps a gracefullyClose entry until close() settles (#29431).
     await drainPlaywrightClose(closePromise, Math.max(remainingMs, 2_000));
     return {closed, closePromise};
@@ -443,12 +446,16 @@ export async function closeElectronApp(
 
         // Killing the process does not settle app.close(); wait until Playwright
         // drops the gracefullyClose entry before worker teardown.
-        await settleElectronClose(closePromise, pid, 20_000);
+        const settleBudgetMs = process.platform === 'linux' ? 45_000 : 20_000;
+        await settleElectronClose(closePromise, pid, settleBudgetMs);
     }
 
-    // Fast path on a failed close: return immediately (master-style). The lock
+    // Fast path on a failed close: return once close() has settled. The lock
     // lives in an abandoned dir and worker/global cleanup reaps any live PID.
     if (fastTeardown && !cleanClosed) {
+        if (!(await isClosePromiseSettled(closePromise))) {
+            await settleElectronClose(closePromise, pid, process.platform === 'linux' ? 30_000 : 15_000);
+        }
         if (pid && !isProcessAlive(pid)) {
             unregisterElectronMainProcess(pid);
         }
