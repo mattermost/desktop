@@ -24,29 +24,18 @@ function positiveInt(value, fallback) {
 }
 
 /**
- * Commit-level rollup URL (repo / branch / short SHA / name). Dedupes the same
- * spec across platform shards — headline stats can disagree with GitHub when a
- * failure is platform-specific. Job summary only; not for commit-status links.
+ * Commit-level rollup URL: /reports/{repo}/{branch}/{shortSha}/{name}
+ * e.g. https://test-io.test.mattermost.com/reports/desktop/tsio-spike/cff190a/desktop-pr
  */
 function buildDisplayReportUrl(baseUrl, compositeIdentity) {
     const repoTrailing = (compositeIdentity.repository || '').split('/').pop() || compositeIdentity.repository;
     const repo = encodeURIComponent(repoTrailing);
-    const rawBranch = compositeIdentity.branch || 'main';
-    let branchLabel = rawBranch.replace(/^refs\/heads\//, '').replace(/^refs\/tags\//, '');
-    if (compositeIdentity.gh_pr_number != null) {
-        branchLabel = `pr-${compositeIdentity.gh_pr_number}`;
-    }
-    const branch = encodeURIComponent(branchLabel);
+    const branch = encodeURIComponent(
+        (compositeIdentity.branch || 'main').replace(/^refs\/heads\//, '').replace(/^refs\/tags\//, ''),
+    );
     const shortSha = (compositeIdentity.commit_sha || '').slice(0, 7);
     const name = encodeURIComponent(compositeIdentity.name);
-    let url = `${baseUrl}/reports/${repo}/${branch}/${shortSha}/${name}`;
-    if (compositeIdentity.gh_run_id) {
-        const params = new URLSearchParams();
-        params.set('gh_run_id', String(compositeIdentity.gh_run_id));
-        params.set('gh_run_attempt', String(compositeIdentity.gh_run_attempt || '1'));
-        url += `?${params}`;
-    }
-    return url;
+    return `${baseUrl}/reports/${repo}/${branch}/${shortSha}/${name}`;
 }
 
 /**
@@ -194,7 +183,7 @@ async function reportTsioStatus({
 
     let targetUrl = runUrl;
     if (isComplete || isIncomplete) {
-        targetUrl = groupReportUrl || displayReportUrl;
+        targetUrl = displayReportUrl || groupReportUrl;
     }
 
     const summaryLines = [
@@ -259,7 +248,7 @@ async function reportTsioStatus({
         throw new Error(`TSIO report ${reportId} did not pass: ${reason}`);
     }
 
-    return {reportUrl: groupReportUrl || displayReportUrl, status: detail.status, stats};
+    return {reportUrl: displayReportUrl || groupReportUrl, status: detail.status, stats};
 }
 
 module.exports = reportTsioStatus;
