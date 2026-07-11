@@ -1,43 +1,21 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {expect} from '@playwright/test';
-import type {ElectronApplication, Page} from 'playwright';
+import type {ElectronApplication} from 'playwright';
 
 import {clickTrayMenuItem} from './tray';
-
-async function findSettingsPage(app: ElectronApplication): Promise<Page | null> {
-    return app.windows().find((window) => {
-        try {
-            return window.url().includes('settings');
-        } catch {
-            return false;
-        }
-    }) ?? null;
-}
-
-async function waitForSettingsPage(app: ElectronApplication): Promise<Page> {
-    let settingsWindow: Page | null = null;
-    await expect.poll(async () => {
-        settingsWindow = await findSettingsPage(app);
-        return settingsWindow;
-    }, {timeout: 15_000, message: 'Settings page must open after tray menu click'}).not.toBeNull();
-    await settingsWindow!.waitForLoadState();
-    return settingsWindow!;
-}
+import {waitForSettingsModal} from './settingsWindow';
 
 export function traySettingsMenuLabel(): string {
     return process.platform === 'darwin' ? 'Preferences...' : 'Settings';
 }
 
-export async function openSettingsFromTray(app: ElectronApplication): Promise<Page> {
-    const existingSettings = await findSettingsPage(app);
-    if (existingSettings) {
-        await existingSettings.waitForLoadState();
-        return existingSettings;
+export async function openSettingsFromTray(app: ElectronApplication) {
+    const existingModal = await waitForSettingsModal(app, {timeout: 1_000}).catch(() => null);
+    if (existingModal) {
+        return existingModal;
     }
 
-    // Semantic click avoids i18n / mnemonic label mismatches ("Settings" vs "Settings...").
     try {
         await clickTrayMenuItem(app, 'tray:settings');
     } catch {
@@ -62,7 +40,7 @@ export async function openSettingsFromTray(app: ElectronApplication): Promise<Pa
         }
     }
 
-    return waitForSettingsPage(app);
+    return waitForSettingsModal(app);
 }
 
 export async function clickTrayQuit(app: ElectronApplication): Promise<void> {

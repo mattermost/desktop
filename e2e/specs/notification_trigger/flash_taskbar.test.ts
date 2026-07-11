@@ -5,7 +5,7 @@ import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {demoConfig} from '../../helpers/config';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
-import {installFlashFrameSpy, restoreFlashFrameSpy} from '../../helpers/methodSpy';
+import {getFlashFrameCalls, installFlashFrameSpy, restoreFlashFrameSpy} from '../../helpers/methodSpy';
 import {triggerNotificationEffects} from '../../helpers/notificationEffects';
 
 test.describe('notification_trigger/flash_taskbar', () => {
@@ -33,7 +33,7 @@ test.describe('notification_trigger/flash_taskbar', () => {
                     await triggerNotificationEffects(electronApp, true);
 
                     await expect.poll(
-                        () => electronApp.evaluate(() => (global as any).__e2eFlashFrameCalls ?? []),
+                        () => getFlashFrameCalls(electronApp),
                         {timeout: 10_000, message: 'flashFrame(true) must be called when flashWindow is enabled'},
                     ).toContain(true);
                 } finally {

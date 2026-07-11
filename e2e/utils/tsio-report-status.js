@@ -31,10 +31,22 @@ function positiveInt(value, fallback) {
 function buildDisplayReportUrl(baseUrl, compositeIdentity) {
     const repoTrailing = (compositeIdentity.repository || '').split('/').pop() || compositeIdentity.repository;
     const repo = encodeURIComponent(repoTrailing);
-    const branch = encodeURIComponent(compositeIdentity.branch || 'main');
+    const rawBranch = compositeIdentity.branch || 'main';
+    let branchLabel = rawBranch.replace(/^refs\/heads\//, '').replace(/^refs\/tags\//, '');
+    if (compositeIdentity.gh_pr_number != null) {
+        branchLabel = `pr-${compositeIdentity.gh_pr_number}`;
+    }
+    const branch = encodeURIComponent(branchLabel);
     const shortSha = (compositeIdentity.commit_sha || '').slice(0, 7);
     const name = encodeURIComponent(compositeIdentity.name);
-    return `${baseUrl}/reports/${repo}/${branch}/${shortSha}/${name}`;
+    let url = `${baseUrl}/reports/${repo}/${branch}/${shortSha}/${name}`;
+    if (compositeIdentity.gh_run_id) {
+        const params = new URLSearchParams();
+        params.set('gh_run_id', String(compositeIdentity.gh_run_id));
+        params.set('gh_run_attempt', String(compositeIdentity.gh_run_attempt || '1'));
+        url += `?${params}`;
+    }
+    return url;
 }
 
 /**

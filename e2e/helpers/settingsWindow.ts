@@ -1,43 +1,28 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {ElectronApplication, Page} from 'playwright';
+import type {ElectronApplication} from 'playwright';
 
+import {lookupModalByUrl, waitForModalView} from './modalPage';
+import type {ServerView} from './serverView';
 import {SHOW_SETTINGS_WINDOW} from './ipcChannels';
 import {evaluateInMainProcessWithArg} from './testRefs';
 
-export async function openSettingsWindow(electronApp: ElectronApplication): Promise<Page> {
+const SETTINGS_URL_FRAGMENT = 'settings';
+
+export async function openSettingsWindow(electronApp: ElectronApplication): Promise<ServerView> {
     for (let attempt = 0; attempt < 5; attempt++) {
-        const existingWindow = electronApp.windows().find((window) => window.url().includes('settings'));
-        if (existingWindow) {
-            try {
-                await existingWindow.waitForLoadState();
-                return existingWindow;
-            } catch (error) {
-                if (attempt === 4) {
-                    throw error;
-                }
-                await new Promise((resolve) => setTimeout(resolve, 250));
-                continue;
-            }
+        const existingModal = await lookupModalByUrl(electronApp, {urlIncludes: SETTINGS_URL_FRAGMENT});
+        if (existingModal) {
+            return waitForModalView(electronApp, {urlIncludes: SETTINGS_URL_FRAGMENT});
         }
 
-        // Route through evaluateInMainProcessWithArg to reuse its transient
-        // "Execution context was destroyed" retry behavior instead of
-        // duplicating the try/catch loop here.
         await evaluateInMainProcessWithArg(electronApp, ({ipcMain}, showWindow) => {
             ipcMain.emit(showWindow);
         }, SHOW_SETTINGS_WINDOW);
 
         try {
-            const settingsWindow = electronApp.windows().find((window) => window.url().includes('settings')) ??
-                await electronApp.waitForEvent('window', {
-                    predicate: (window) => window.url().includes('settings'),
-                    timeout: 3_000,
-                });
-
-            await settingsWindow.waitForLoadState();
-            return settingsWindow;
+            return await waitForModalView(electronApp, {urlIncludes: SETTINGS_URL_FRAGMENT});
         } catch (error) {
             if (attempt === 4) {
                 throw error;
@@ -46,5 +31,12 @@ export async function openSettingsWindow(electronApp: ElectronApplication): Prom
         }
     }
 
-    throw new Error('Settings window did not open');
+    throw new Error('Settings modal did not open');
+}
+
+export async function waitForSettingsModal(
+    app: ElectronApplication,
+    options?: {timeout?: number},
+): Promise<ServerView> {
+    return waitForModalView(app, {urlIncludes: SETTINGS_URL_FRAGMENT, timeout: options?.timeout});
 }
