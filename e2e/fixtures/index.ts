@@ -66,7 +66,7 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
             await Promise.race([
                 cleanupRegisteredElectronProcesses(),
                 new Promise<void>((resolve) => {
-                    timeoutHandle = setTimeout(resolve, 20_000);
+                    timeoutHandle = setTimeout(resolve, 45_000);
                     timeoutHandle.unref?.();
                 }),
             ]);
