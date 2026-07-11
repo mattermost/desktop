@@ -1,20 +1,48 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {ElectronApplication} from 'playwright';
+import type {ElectronApplication, Page} from 'playwright';
 
-import {lookupModalByUrl, waitForModalView} from './modalPage';
-import type {ServerView} from './serverView';
 import {SHOW_SETTINGS_WINDOW} from './ipcChannels';
 import {evaluateInMainProcessWithArg} from './testRefs';
 
-const SETTINGS_URL_FRAGMENT = 'settings';
+function findSettingsPage(app: ElectronApplication): Page | undefined {
+    return app.windows().find((window) => {
+        try {
+            return window.url().includes('settings');
+        } catch {
+            return false;
+        }
+    });
+}
 
-export async function openSettingsWindow(electronApp: ElectronApplication): Promise<ServerView> {
+async function waitForSettingsPage(app: ElectronApplication, timeoutMs = 15_000): Promise<Page> {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+        const settingsWindow = findSettingsPage(app);
+        if (settingsWindow) {
+            await settingsWindow.waitForLoadState().catch(() => {});
+            return settingsWindow;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+    throw new Error('Settings window did not open');
+}
+
+export async function openSettingsWindow(electronApp: ElectronApplication): Promise<Page> {
     for (let attempt = 0; attempt < 5; attempt++) {
-        const existingModal = await lookupModalByUrl(electronApp, {urlIncludes: SETTINGS_URL_FRAGMENT});
-        if (existingModal) {
-            return waitForModalView(electronApp, {urlIncludes: SETTINGS_URL_FRAGMENT});
+        const existingWindow = findSettingsPage(electronApp);
+        if (existingWindow) {
+            try {
+                await existingWindow.waitForLoadState();
+                return existingWindow;
+            } catch (error) {
+                if (attempt === 4) {
+                    throw error;
+                }
+                await new Promise((resolve) => setTimeout(resolve, 250));
+                continue;
+            }
         }
 
         await evaluateInMainProcessWithArg(electronApp, ({ipcMain}, showWindow) => {
@@ -22,7 +50,7 @@ export async function openSettingsWindow(electronApp: ElectronApplication): Prom
         }, SHOW_SETTINGS_WINDOW);
 
         try {
-            return await waitForModalView(electronApp, {urlIncludes: SETTINGS_URL_FRAGMENT});
+            return await waitForSettingsPage(electronApp);
         } catch (error) {
             if (attempt === 4) {
                 throw error;
@@ -31,12 +59,12 @@ export async function openSettingsWindow(electronApp: ElectronApplication): Prom
         }
     }
 
-    throw new Error('Settings modal did not open');
+    throw new Error('Settings window did not open');
 }
 
 export async function waitForSettingsModal(
     app: ElectronApplication,
     options?: {timeout?: number},
-): Promise<ServerView> {
-    return waitForModalView(app, {urlIncludes: SETTINGS_URL_FRAGMENT, timeout: options?.timeout});
+): Promise<Page> {
+    return waitForSettingsPage(app, options?.timeout ?? 15_000);
 }

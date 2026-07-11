@@ -13,6 +13,7 @@ import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {ping} from 'common/utils/requests';
 import {parseURL} from 'common/utils/url';
+import NotificationManager from 'main/notifications';
 import {getLocalPreload} from 'main/utils';
 
 import type {UniqueServer} from 'types/config';

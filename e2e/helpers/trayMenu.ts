@@ -3,17 +3,17 @@
 
 import type {ElectronApplication} from 'playwright';
 
-import {clickTrayMenuItem} from './tray';
 import {waitForSettingsModal} from './settingsWindow';
+import {clickTrayMenuItem} from './tray';
 
 export function traySettingsMenuLabel(): string {
     return process.platform === 'darwin' ? 'Preferences...' : 'Settings';
 }
 
 export async function openSettingsFromTray(app: ElectronApplication) {
-    const existingModal = await waitForSettingsModal(app, {timeout: 1_000}).catch(() => null);
-    if (existingModal) {
-        return existingModal;
+    const existingSettings = await waitForSettingsModal(app, {timeout: 1_000}).catch(() => null);
+    if (existingSettings) {
+        return existingSettings;
     }
 
     try {
