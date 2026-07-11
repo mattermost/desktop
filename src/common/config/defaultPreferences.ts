@@ -57,6 +57,7 @@ const defaultPreferences: ConfigV4 = {
     viewLimit: 15,
     themeSyncing: true,
     useNativeTitleBar: false,
+    trustedEmbeddedMediaOrigins: [],
 };
 
 export default defaultPreferences;

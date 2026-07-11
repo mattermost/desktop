@@ -38,7 +38,7 @@ test.describe('startup/welcome_screen_modal', () => {
                     'welcome',
                     'collaborate in real time',
                     'start secure calls instantly',
-                    'integrate with tools you love',
+                    'integrate with your systems',
                 ]);
             } finally {
                 await closeAppSafely(app, userDataDir);
@@ -185,7 +185,7 @@ test.describe('startup/welcome_screen_modal', () => {
                 await nextBtn.click();
 
                 const lastTitle = await getCurrentSlideTitle(modal);
-                expect(normalizeTitle(lastTitle)).toBe('integrate with tools you love');
+                expect(normalizeTitle(lastTitle)).toBe('integrate with your systems');
 
                 await nextBtn.click();
                 await expect.poll(
@@ -220,7 +220,7 @@ test.describe('startup/welcome_screen_modal', () => {
                 ).not.toBe(firstTitle);
 
                 const wrappedTitle = await getCurrentSlideTitle(modal);
-                expect(normalizeTitle(wrappedTitle)).toBe('integrate with tools you love');
+                expect(normalizeTitle(wrappedTitle)).toBe('integrate with your systems');
             } finally {
                 await closeAppSafely(app, userDataDir);
                 await releaseLock();

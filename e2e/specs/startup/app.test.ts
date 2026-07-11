@@ -71,7 +71,7 @@ test.describe('startup/app', () => {
             try {
                 ({app: emptyApp, welcomeScreen, userDataDir} = await launchEmptyApp(testInfo, 'empty-userdata'));
                 const text = await welcomeScreen.innerText('.WelcomeScreen .WelcomeScreen__button');
-                expect(text).toBe('Get Started');
+                expect(text).toBe('Get started');
             } finally {
                 await closeAppSafely(emptyApp, userDataDir);
                 await releaseLock();

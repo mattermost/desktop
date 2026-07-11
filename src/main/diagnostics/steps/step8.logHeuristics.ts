@@ -8,7 +8,7 @@ import {getPercentage} from 'main/utils';
 
 import type {DiagnosticStepResponse} from 'types/diagnostics';
 
-import {readFileLineByLine} from './internal/utils';
+import {countLogLevels} from './internal/utils';
 
 import DiagnosticsStep from '../DiagnosticStep';
 
@@ -18,17 +18,16 @@ const stepDescriptiveName = 'LogHeuristics';
 const run = async (logger: MainLogger): Promise<DiagnosticStepResponse> => {
     try {
         const mainLogFilePath = log.transports.file.getFile().path;
-        const fileData = await readFileLineByLine(mainLogFilePath);
+        const {logLevelAmounts, linesCount} = await countLogLevels(mainLogFilePath);
 
-        const linesCount = fileData.lines.length;
-        const percentageOfErrors = getPercentage(fileData.logLevelAmounts.error, linesCount);
+        const percentageOfErrors = getPercentage(logLevelAmounts.error, linesCount);
 
         /**
          * Ideally we could define a threshold for the error % for which this step would return an appropriate message
          * and/or return all the errors
          */
         const payload = {
-            logLevels: fileData.logLevelAmounts,
+            logLevels: logLevelAmounts,
             percentageOfErrors,
             linesCount,
         };
