@@ -81,7 +81,7 @@
     ],
     "testPathIgnorePatterns": [
       "/node_modules/",
-      "/e2e/",
+      "<rootDir>/e2e/",
       "/webpack.config.test.js"
     ],
     "globals": {
