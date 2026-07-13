@@ -36,6 +36,7 @@ export const REGEX_LOG_FILE_LINE = /\[(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}.\d{3
 export const MASK_EMAIL = 'EMAIL';
 export const MASK_IPV4 = 'IPV4';
 export const MASK_PATH = 'PATH';
+export const MASK_SECRET = 'SECRET';
 export const MASK_URL = 'URL';
 
 export const LOGS_MAX_STRING_LENGTH = 63;

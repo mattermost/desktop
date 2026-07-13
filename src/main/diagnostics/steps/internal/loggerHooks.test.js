@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {MASK_EMAIL, MASK_PATH} from 'common/constants';
+import {MASK_EMAIL, MASK_PATH, MASK_SECRET} from 'common/constants';
 
 import {maskMessageDataHook} from './loggerHooks';
 import {obfuscateByType} from './obfuscators';
@@ -58,6 +58,15 @@ describe('main/diagnostics/loggerHooks', () => {
         };
         const result = maskMessageDataHook(loggerMock)(message, 'file').data[0];
         expect(URLs.some((url) => result.includes(url))).toBe(false);
+    });
+
+    it('should mask sensitive object keys containing "preauth" or "secret"', () => {
+        const message = {
+            data: [{preAuthSecret: 'some-secret-value', serverId: '123'}],
+        };
+        const result = maskMessageDataHook(loggerMock)(message, 'file');
+        expect(result.data[0].preAuthSecret).toBe(MASK_SECRET);
+        expect(result.data[0].serverId).toBe('123');
     });
 
     it('should not allow local prototype pollution', () => {

@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {MASK_EMAIL, MASK_IPV4, MASK_PATH, MASK_URL, REGEX_EMAIL, REGEX_IPV4, REGEX_PATH_DARWIN, REGEX_PATH_LINUX, REGEX_PATH_WIN32, REGEX_URL} from 'common/constants';
+import {MASK_EMAIL, MASK_IPV4, MASK_PATH, MASK_SECRET, MASK_URL, REGEX_EMAIL, REGEX_IPV4, REGEX_PATH_DARWIN, REGEX_PATH_LINUX, REGEX_PATH_WIN32, REGEX_URL} from 'common/constants';
 
 import {truncateString} from './utils';
 
@@ -58,11 +58,18 @@ function maskDataInArray(arr: unknown[]): unknown[] {
     });
 }
 
+const SENSITIVE_OBJECT_KEYS = ['preauth', 'secret'];
+
 function maskDataInObject(obj: Record<string, unknown>): Record<string, unknown> {
     return Object.keys(obj).reduce<Record<string, unknown>>((acc, key) => {
         // Avoid local prototype pollution
         if (key !== '__proto__') {
-            acc[key] = obfuscateByType(obj[key]);
+            const lowerKey = key.toLowerCase();
+            if (SENSITIVE_OBJECT_KEYS.some((pattern) => lowerKey.includes(pattern))) {
+                acc[key] = MASK_SECRET;
+            } else {
+                acc[key] = obfuscateByType(obj[key]);
+            }
         }
         return acc;
     }, {});
