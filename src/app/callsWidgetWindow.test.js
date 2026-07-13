@@ -363,6 +363,38 @@ describe('main/windows/callsWidgetWindow', () => {
         expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith(CALLS_WIDGET_SHARE_SCREEN, 'sourceId', true);
     });
 
+    describe('handleCallsLeave', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+
+        beforeEach(() => {
+            callsWidgetWindow.close = jest.fn();
+            callsWidgetWindow.mainView = {webContentsId: 'mainViewID'};
+            callsWidgetWindow.win = {webContents: {id: 'widgetID'}, isDestroyed: () => false};
+            callsWidgetWindow.popOut = undefined;
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+            delete callsWidgetWindow.mainView;
+            delete callsWidgetWindow.win;
+        });
+
+        it('should not close when the sender is a different server', () => {
+            callsWidgetWindow.handleCallsLeave({sender: {id: 'otherServerID'}});
+            expect(callsWidgetWindow.close).not.toHaveBeenCalled();
+        });
+
+        it('should close when the sender is the calls widget', () => {
+            callsWidgetWindow.handleCallsLeave({sender: {id: 'widgetID'}});
+            expect(callsWidgetWindow.close).toHaveBeenCalled();
+        });
+
+        it('should close when the sender is the main view of the call', () => {
+            callsWidgetWindow.handleCallsLeave({sender: {id: 'mainViewID'}});
+            expect(callsWidgetWindow.close).toHaveBeenCalled();
+        });
+    });
+
     describe('onPopOutOpen', () => {
         const callsWidgetWindow = new CallsWidgetWindow();
 
