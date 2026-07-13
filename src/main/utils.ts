@@ -174,5 +174,6 @@ function isLinkLocalAddress(family: string, address: string): boolean {
         return address.startsWith('169.254.');
     }
     const ip = address.split('%')[0].toLowerCase();
-    return ip.startsWith('fe80:');
+    const firstHextet = parseInt(ip.split(':')[0], 16);
+    return firstHextet >= 0xfe80 && firstHextet <= 0xfebf;
 }

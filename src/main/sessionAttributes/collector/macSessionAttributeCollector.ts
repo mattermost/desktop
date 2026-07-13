@@ -28,11 +28,15 @@ const interfaceTypeMap: Record<string, InterfaceType> = {
 };
 
 export class MacSessionAttributeCollector extends SessionAttributeCollector {
-    private readonly bindings: ReturnType<MacSessionAttributeCollector['loadBindings']>;
+    private readonly bindings?: ReturnType<MacSessionAttributeCollector['loadBindings']>;
 
     constructor() {
         super();
-        this.bindings = this.loadBindings();
+        try {
+            this.bindings = this.loadBindings();
+        } catch (e) {
+            log.warn('Failed to load native bindings, all values will be empty', {error: e});
+        }
     }
 
     private loadBindings() {
@@ -70,9 +74,15 @@ export class MacSessionAttributeCollector extends SessionAttributeCollector {
     }
 
     getHardwareId(): string {
-        return this.useCfRelease((release) => {
+        return this.useRelease((release, ioRelease) => {
+            if (!this.bindings) {
+                return '';
+            }
             const matching = this.bindings.ioServiceMatching('IOPlatformExpertDevice');
             const service = this.bindings.ioServiceGetMatchingService(0, matching);
+            if (service) {
+                ioRelease.push(service);
+            }
             const propKey = this.createCfString('IOPlatformUUID');
             if (propKey) {
                 release.push(propKey);
@@ -103,7 +113,10 @@ export class MacSessionAttributeCollector extends SessionAttributeCollector {
     }
 
     getClientFQDN() {
-        const localStr = this.useCfRelease((release) => {
+        const localStr = this.useRelease((release) => {
+            if (!this.bindings) {
+                return os.hostname();
+            }
             const local = this.bindings.scDynamicStoreCopyLocalHostName(null);
             if (local) {
                 release.push(local);
@@ -114,6 +127,9 @@ export class MacSessionAttributeCollector extends SessionAttributeCollector {
             return os.hostname();
         });
         const searchDomain = this.copyStateDictValue('State:/Network/Global/DNS', 'SearchDomains', (searchArr) => {
+            if (!this.bindings) {
+                return '';
+            }
             const count = Number(this.bindings.cfArrayGetCount(searchArr));
             if (count <= 0) {
                 return '';
@@ -126,7 +142,10 @@ export class MacSessionAttributeCollector extends SessionAttributeCollector {
 
     getNetworkInterfaceType() {
         const primaryService = this.copyStateDictValue('State:/Network/Global/IPv4', 'PrimaryService', (value) => this.cfStringToJS(value));
-        return this.useCfRelease((release) => {
+        return this.useRelease((release) => {
+            if (!this.bindings) {
+                return '';
+            }
             const prefsName = this.createCfString('mattermost-desktop');
             if (prefsName) {
                 release.push(prefsName);
@@ -191,7 +210,10 @@ export class MacSessionAttributeCollector extends SessionAttributeCollector {
     }
 
     private copyStateDictValue(stateKey: string, valueKey: string, read: (value: unknown) => string): string {
-        return this.useCfRelease((release) => {
+        return this.useRelease((release) => {
+            if (!this.bindings) {
+                return '';
+            }
             const storeName = this.createCfString('mattermost-desktop');
             if (storeName) {
                 release.push(storeName);
@@ -240,19 +262,25 @@ export class MacSessionAttributeCollector extends SessionAttributeCollector {
     }
 
     private createCfString(str: string): unknown {
+        if (!this.bindings) {
+            return '';
+        }
         return this.bindings.cfStringCreateWithCString(null, str, kCFStringEncodingUTF8);
     }
 
-    // Helper to make it easier to release CF objects once used
-    // Anything that creates or copies an object must be released
-    private useCfRelease<T>(func: (release: unknown[]) => T, err: (error: unknown) => T): T {
-        const release: Array<() => void> = [];
+    // Helper to make it easier to release native handles once used
+    // CF objects that are created or copied must be released via CFRelease,
+    // while IOKit object handles must be released via IOObjectRelease
+    private useRelease<T>(func: (release: unknown[], ioRelease: number[]) => T, err: (error: unknown) => T): T {
+        const release: unknown[] = [];
+        const ioRelease: number[] = [];
         try {
-            return func(release);
+            return func(release, ioRelease);
         } catch (e) {
             return err(e);
         } finally {
-            release.forEach((r) => this.bindings.cfRelease(r));
+            release.forEach((r) => this.bindings?.cfRelease(r));
+            ioRelease.forEach((r) => this.bindings?.ioObjectRelease(r));
         }
     }
 }

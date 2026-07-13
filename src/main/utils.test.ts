@@ -46,6 +46,11 @@ describe('main/utils', () => {
                 expect(isRoutableAddress('IPv6', 'fe80::1')).toBe(false);
             });
 
+            it('rejects link-local addresses across the full fe80::/10 range', () => {
+                expect(isRoutableAddress('IPv6', 'fe90::1')).toBe(false);
+                expect(isRoutableAddress('IPv6', 'febf::1')).toBe(false);
+            });
+
             it('rejects link-local addresses regardless of case', () => {
                 expect(isRoutableAddress('IPv6', 'FE80::1')).toBe(false);
             });
