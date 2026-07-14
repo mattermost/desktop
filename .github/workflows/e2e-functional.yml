@@ -171,6 +171,7 @@ jobs:
           persist-credentials: false
           sparse-checkout: |
             e2e/utils/tsio-report-status.js
+            e2e/utils/cmt-channel-notify.js
           sparse-checkout-cone-mode: false
 
       - name: Render TSIO summary + flip commit status
@@ -183,6 +184,10 @@ jobs:
           TSIO_POLL_DELAY_MS: 5000
           COMMIT_STATUS_CONTEXT: e2e-test/desktop-playwright
           UPSTREAM_JOBS_SUCCEEDED: ${{ needs.e2e-tests.result == 'success' && needs.e2e-policy-tests.result == 'success' }}
+          # Master shares the CMT/RC channel; PR posts to the E2E QA channel.
+          # Routing is by compositeIdentity.name in cmt-channel-notify.js.
+          MATTERMOST_CMT_WEBHOOK_URL: ${{ secrets.MM_DESKTOP_CMT_WEBHOOK_URL }}
+          MATTERMOST_E2E_WEBHOOK_URL: ${{ secrets.MM_DESKTOP_E2E_WEBHOOK_URL }}
         with:
           script: |
             const {reportUrl, status, stats} = await require('./e2e/utils/tsio-report-status.js')({

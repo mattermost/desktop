@@ -185,6 +185,7 @@ jobs:
           persist-credentials: false
           sparse-checkout: |
             e2e/utils/tsio-report-status.js
+            e2e/utils/cmt-channel-notify.js
           sparse-checkout-cone-mode: false
 
       - name: Render TSIO summary + flip commit status
@@ -196,6 +197,11 @@ jobs:
           TSIO_POLL_ATTEMPTS: 24
           TSIO_POLL_DELAY_MS: 5000
           COMMIT_STATUS_CONTEXT: e2e/compatibility-matrix-testing
+          # Incoming webhook for the Desktop CMT/RC results channel (separate from
+          # PR/master MM_DESKTOP_E2E_WEBHOOK_URL). Optional — when unset, TSIO
+          # status still flips and channel notify is skipped.
+          # RC / CMT channel (same destination as master E2E via resolveWebhookUrl).
+          MATTERMOST_CMT_WEBHOOK_URL: ${{ secrets.MM_DESKTOP_CMT_WEBHOOK_URL }}
           # TSIO only sees test-case-level results — a job-level failure with no
           # matching failed test (hung worker teardown, crashed runner, npm ci
           # failure) would otherwise still read as "100% passed".
