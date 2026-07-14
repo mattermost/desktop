@@ -80,7 +80,7 @@ describe('cmt-channel-notify', () => {
     });
 
     describe('formatCmtChannelMessage', () => {
-        it('renders per-leg passed/failed lines', () => {
+        it('renders failure banner, overall table, and collapsible leg details', () => {
             const text = formatCmtChannelMessage({
                 compositeIdentity: {
                     branch: 'v6.2.0-rc.1',
@@ -104,21 +104,25 @@ describe('cmt-channel-notify', () => {
                 upstreamJobsSucceeded: true,
             });
 
-            assert.match(text, /Desktop CMT — `v6\.2\.0-rc\.1` @ `55afc0b`/);
-            assert.match(text, /:x: \*\*Overall:\*\* failed/);
-            assert.match(text, /\[full report\]\(https:\/\/test-io\.test\.mattermost\.com\/reports\/desktop\/v6\.2\.0-rc\.1\/55afc0b\/cmt-desktop\)/);
-            assert.match(text, /\*\*Linux\*\*/);
-            assert.match(text, /\*\*Windows\*\*/);
-            assert.match(text, /- Server version `11\.9\.0`: :white_check_mark: All 231 passed · \[view report\]\(https:\/\/test-io\.test\.mattermost\.com\/reports\/r\/rid-linux\)/);
-            assert.match(text, /- Server version `11\.9\.0`: :x: 230 passed, 1 failed · \[view report\]\(https:\/\/test-io\.test\.mattermost\.com\/reports\/r\/rid-windows\)/);
+            assert.match(text, /^## ❌ Desktop CMT\n/);
+            assert.match(text, /\*\*Branch:\*\* `v6\.2\.0-rc\.1` · \*\*Commit:\*\* `55afc0b`/);
+            assert.match(text, /🔴 \*\*1 failing test\*\*/);
+            assert.match(text, /\| 🪟 Windows \| Server `11\.9\.0` \| 1 \|/);
+            assert.match(text, /\| ❌ Failed \| \*\*460\*\* \| \*\*1\*\* \| \*\*40\*\* \|/);
+            assert.match(text, /<details>/);
+            assert.match(text, /\| 🐧 Linux \| Server `11\.9\.0` \| ✅ 231\/231 \| \[View\]\(https:\/\/test-io\.test\.mattermost\.com\/reports\/r\/rid-linux\) \|/);
+            assert.match(text, /\| 🪟 Windows \| Server `11\.9\.0` \| ❌ 230\/231 \| \[View\]\(https:\/\/test-io\.test\.mattermost\.com\/reports\/r\/rid-windows\) \|/);
+            assert.match(text, /➡️ \*\*Full report:\*\* https:\/\/test-io\.test\.mattermost\.com\/reports\/desktop\/v6\.2\.0-rc\.1\/55afc0b\/cmt-desktop/);
         });
 
-        it('uses Desktop PR E2E title for desktop-pr reports', () => {
+        it('renders a passed PR report with PR link and no failure banner', () => {
             const text = formatCmtChannelMessage({
                 compositeIdentity: {
+                    repository: 'mattermost/desktop',
                     branch: 'pr-3891',
                     commit_sha: '55afc0b839545804ee156fe95b4c1ac05c9d0cdc',
                     name: 'desktop-pr',
+                    gh_pr_number: '3891',
                 },
                 detail: {
                     status: 'completed',
@@ -130,13 +134,15 @@ describe('cmt-channel-notify', () => {
                 perJobCounts: {},
                 upstreamJobsSucceeded: true,
             });
-            assert.match(text, /Desktop PR E2E — `pr-3891` @ `55afc0b`/);
-            assert.match(text, /:white_check_mark: \*\*Overall:\*\* passed/);
+            assert.match(text, /^## ✅ Desktop PR E2E\n/);
+            assert.match(text, /\*\*PR:\*\* \[#3891\]\(https:\/\/github\.com\/mattermost\/desktop\/pull\/3891\)/);
+            assert.doesNotMatch(text, /failing test/);
+            assert.match(text, /\| ✅ Passed \| \*\*240\*\* \| \*\*0\*\* \| \*\*10\*\* \|/);
         });
     });
 
     describe('buildLegSummaries', () => {
-        it('sorts by server version then OS', () => {
+        it('sorts by OS then suite kind then server version', () => {
             const rows = buildLegSummaries(
                 {
                     'e2e-on-windows-2022-10.5.14': {passed: 1, failed: 0, skipped: 0, flaky: 0},
@@ -147,8 +153,8 @@ describe('cmt-channel-notify', () => {
             );
             assert.deepEqual(rows.map((r) => r.label), [
                 '10.5.14-linux',
-                '10.5.14-windows',
                 '11.9.0-linux',
+                '10.5.14-windows',
             ]);
         });
     });

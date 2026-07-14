@@ -147,31 +147,59 @@ function buildLegSummaries(perJobCounts, uploadedReports, baseUrl) {
     }
 
     rows.sort((a, b) => {
-        // Policy legs last within an OS grouping (handled at format time by kind)
+        const osCmp = (OS_ORDER[a.os] ?? 9) - (OS_ORDER[b.os] ?? 9);
+        if (osCmp !== 0) {
+            return osCmp;
+        }
         if (a.kind !== b.kind) {
             return a.kind === 'policy' ? 1 : -1;
         }
-        if (a.serverVersion !== b.serverVersion) {
-            return a.serverVersion.localeCompare(b.serverVersion, undefined, {numeric: true});
-        }
-        return (OS_ORDER[a.os] ?? 9) - (OS_ORDER[b.os] ?? 9);
+        return a.serverVersion.localeCompare(b.serverVersion, undefined, {numeric: true});
     });
 
     return rows;
 }
 
+const PLATFORM_EMOJI = {
+    linux: '🐧',
+    macos: '🍎',
+    windows: '🪟',
+    unknown: '❔',
+};
+
+const PLATFORM_LABEL = {
+    linux: 'Linux',
+    macos: 'macOS',
+    windows: 'Windows',
+    unknown: 'Other',
+};
+
 /**
- * @param {{status: string, passed: number, failed: number, total: number}} leg
+ * @param {{os: string, kind?: string, serverVersion: string}} leg
+ * @returns {{platform: string, suite: string}}
+ */
+function formatLegLabels(leg) {
+    const emoji = PLATFORM_EMOJI[leg.os] || PLATFORM_EMOJI.unknown;
+    const name = PLATFORM_LABEL[leg.os] || PLATFORM_LABEL.unknown;
+    const suite = leg.kind === 'policy' ? 'Policy' : `Server \`${leg.serverVersion}\``;
+    return {platform: `${emoji} ${name}`, suite};
+}
+
+/**
+ * Denominator is executed tests (passed + failed), matching Playwright summary style.
+ *
+ * @param {{status: string, passed: number, failed: number}} leg
  * @returns {string}
  */
 function formatLegResultText(leg) {
     if (leg.status === 'missing' || leg.status === 'no-results') {
-        return leg.status;
+        return `⚠️ ${leg.status}`;
     }
+    const executed = leg.passed + leg.failed;
     if (leg.status === 'passed') {
-        return `All ${leg.passed} passed`;
+        return `✅ ${leg.passed}/${executed || leg.passed}`;
     }
-    return `${leg.passed} passed, ${leg.failed} failed`;
+    return `❌ ${leg.passed}/${executed}`;
 }
 
 function reportTitleForIdentity(compositeIdentity) {
@@ -185,6 +213,28 @@ function reportTitleForIdentity(compositeIdentity) {
     default:
         return 'Desktop E2E';
     }
+}
+
+/**
+ * @param {Object} compositeIdentity
+ * @returns {string}
+ */
+function formatMetaLine(compositeIdentity) {
+    const branch = (compositeIdentity.branch || '').replace(/^refs\/(heads|tags)\//, '');
+    const shortSha = (compositeIdentity.commit_sha || '').slice(0, 7);
+    const parts = [];
+
+    if (compositeIdentity.gh_pr_number) {
+        const repo = compositeIdentity.repository || 'mattermost/desktop';
+        parts.push(`**PR:** [#${compositeIdentity.gh_pr_number}](https://github.com/${repo}/pull/${compositeIdentity.gh_pr_number})`);
+    }
+    if (branch) {
+        parts.push(`**Branch:** \`${branch}\``);
+    }
+    if (shortSha) {
+        parts.push(`**Commit:** \`${shortSha}\``);
+    }
+    return parts.join(' · ');
 }
 
 /**
@@ -206,63 +256,62 @@ function formatCmtChannelMessage({
     upstreamJobsSucceeded = true,
 }) {
     const stats = detail?.test_stats || {};
-    const branch = (compositeIdentity.branch || '').replace(/^refs\/(heads|tags)\//, '');
-    const shortSha = (compositeIdentity.commit_sha || '').slice(0, 7);
-    const overallFailed = (stats.failed || 0) > 0 || detail?.status !== 'completed' || !upstreamJobsSucceeded;
-    const overallIcon = overallFailed ? ':x:' : ':white_check_mark:';
-    const overall = overallFailed ? 'failed' : 'passed';
+    const passed = stats.passed ?? 0;
+    const failed = stats.failed ?? 0;
+    const skipped = stats.skipped ?? 0;
+    const overallFailed = failed > 0 || detail?.status !== 'completed' || !upstreamJobsSucceeded;
     const title = reportTitleForIdentity(compositeIdentity);
+    const legs = buildLegSummaries(perJobCounts, detail?.reports || [], baseUrl);
 
-    const prPart = compositeIdentity.gh_pr_number ? ` · PR #${compositeIdentity.gh_pr_number}` : '';
     const lines = [
-        `#### ${title} — \`${branch}\` @ \`${shortSha}\`${prPart}`,
-        '',
-        `${overallIcon} **Overall:** ${overall} · ${stats.passed ?? 0} passed / ${stats.failed ?? 0} failed / ${stats.skipped ?? 0} skipped` +
-            (reportUrl ? ` · [full report](${reportUrl})` : ''),
+        `## ${overallFailed ? '❌' : '✅'} ${title}`,
         '',
     ];
 
-    const legs = buildLegSummaries(perJobCounts, detail?.reports || [], baseUrl);
-    if (legs.length === 0) {
-        lines.push('_No per-leg results available yet._');
-    } else {
-        const byOs = {linux: [], macos: [], windows: [], unknown: []};
-        for (const leg of legs) {
-            (byOs[leg.os] || byOs.unknown).push(leg);
-        }
+    const meta = formatMetaLine(compositeIdentity);
+    if (meta) {
+        lines.push(meta, '');
+    }
 
-        const osHeadings = [
-            ['linux', 'Linux'],
-            ['macos', 'macOS'],
-            ['windows', 'Windows'],
-            ['unknown', 'Other'],
-        ];
-
-        for (const [osKey, heading] of osHeadings) {
-            const osLegs = byOs[osKey];
-            if (!osLegs.length) {
-                continue;
-            }
-            lines.push(`**${heading}**`);
-            for (const leg of osLegs) {
-                let icon = ':warning:';
-                if (leg.status === 'passed') {
-                    icon = ':white_check_mark:';
-                } else if (leg.status === 'failed') {
-                    icon = ':x:';
-                }
-                const link = leg.reportUrl ? ` · [view report](${leg.reportUrl})` : '';
-                const prefix = leg.kind === 'policy'
-                    ? 'Policy tests'
-                    : `Server version \`${leg.serverVersion}\``;
-                lines.push(`- ${prefix}: ${icon} ${formatLegResultText(leg)}${link}`);
+    if (failed > 0) {
+        const failingLegs = legs.filter((leg) => leg.status === 'failed' && leg.failed > 0);
+        lines.push(`🔴 **${failed} failing test${failed === 1 ? '' : 's'}**`, '');
+        if (failingLegs.length > 0) {
+            lines.push('| Platform | Suite | Failed |', '|----------|-------|-------:|');
+            for (const leg of failingLegs) {
+                const {platform, suite} = formatLegLabels(leg);
+                lines.push(`| ${platform} | ${suite} | ${leg.failed} |`);
             }
             lines.push('');
         }
     }
 
+    lines.push(
+        '| Overall | Passed | Failed | Skipped |',
+        '|---------|------:|------:|-------:|',
+        `| ${overallFailed ? '❌ Failed' : '✅ Passed'} | **${passed}** | **${failed}** | **${skipped}** |`,
+        '',
+    );
+
+    if (legs.length > 0) {
+        lines.push('<details>', '<summary><strong>Detailed results</strong></summary>', '');
+        lines.push('| Platform | Suite | Result | Report |', '|----------|-------|--------|--------|');
+        for (const leg of legs) {
+            const {platform, suite} = formatLegLabels(leg);
+            const report = leg.reportUrl ? `[View](${leg.reportUrl})` : '—';
+            lines.push(`| ${platform} | ${suite} | ${formatLegResultText(leg)} | ${report} |`);
+        }
+        lines.push('', '</details>', '');
+    } else {
+        lines.push('_No per-leg results available yet._', '');
+    }
+
     if (!upstreamJobsSucceeded) {
-        lines.push('_One or more CI jobs failed outside tracked tests (install/build/teardown)._');
+        lines.push('_One or more CI jobs failed outside tracked tests (install/build/teardown)._', '');
+    }
+
+    if (reportUrl) {
+        lines.push(`➡️ **Full report:** ${reportUrl}`);
     }
 
     return lines.join('\n').trimEnd() + '\n';
