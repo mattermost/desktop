@@ -14,6 +14,23 @@
  */
 
 const OS_ORDER = {linux: 0, macos: 1, windows: 2};
+const FETCH_TIMEOUT_MS = 15_000;
+
+/**
+ * @param {string} url
+ * @param {RequestInit} [options]
+ * @param {number} [timeoutMs]
+ * @returns {Promise<Response>}
+ */
+async function fetchWithTimeout(url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        return await fetch(url, {...options, signal: controller.signal});
+    } finally {
+        clearTimeout(timer);
+    }
+}
 
 /**
  * @param {string} token
@@ -188,12 +205,18 @@ function formatLegLabels(leg) {
 /**
  * Denominator is executed tests (passed + failed), matching Playwright summary style.
  *
- * @param {{status: string, passed: number, failed: number}} leg
+ * @param {{status: string, passed: number, failed: number, skipped?: number}} leg
  * @returns {string}
  */
 function formatLegResultText(leg) {
     if (leg.status === 'missing' || leg.status === 'no-results') {
         return `⚠️ ${leg.status}`;
+    }
+
+    // All-skipped legs are marked "passed" by buildLegSummaries (failed === 0) but
+    // should not render as ✅ 0/0.
+    if ((leg.passed || 0) === 0 && (leg.failed || 0) === 0 && (leg.skipped || 0) > 0) {
+        return '⚠️ not executed';
     }
     const executed = leg.passed + leg.failed;
     if (leg.status === 'passed') {
@@ -245,6 +268,7 @@ function formatMetaLine(compositeIdentity) {
  * @param {string} [params.baseUrl] - TSIO origin for per-leg /reports/r/{id} links
  * @param {Record<string, {passed?: number, failed?: number, skipped?: number, flaky?: number}>} params.perJobCounts
  * @param {boolean} [params.upstreamJobsSucceeded]
+ * @param {boolean} [params.hasFailures] - true when TSIO reports failed shards or failed tests
  * @returns {string}
  */
 function formatCmtChannelMessage({
@@ -254,12 +278,16 @@ function formatCmtChannelMessage({
     baseUrl,
     perJobCounts,
     upstreamJobsSucceeded = true,
+    hasFailures = false,
 }) {
     const stats = detail?.test_stats || {};
     const passed = stats.passed ?? 0;
     const failed = stats.failed ?? 0;
     const skipped = stats.skipped ?? 0;
-    const overallFailed = failed > 0 || detail?.status !== 'completed' || !upstreamJobsSucceeded;
+    const overallFailed = failed > 0 ||
+        detail?.status !== 'completed' ||
+        !upstreamJobsSucceeded ||
+        hasFailures;
     const title = reportTitleForIdentity(compositeIdentity);
     const legs = buildLegSummaries(perJobCounts, detail?.reports || [], baseUrl);
 
@@ -344,7 +372,7 @@ async function fetchPerJobCountsFromConsolidated(baseUrl, compositeIdentity, gro
         params.set('gh_run_attempt', String(compositeIdentity.gh_run_attempt));
     }
 
-    const res = await fetch(`${baseUrl}/api/v1/reports/consolidated?${params}`);
+    const res = await fetchWithTimeout(`${baseUrl}/api/v1/reports/consolidated?${params}`);
     if (!res.ok) {
         throw new Error(`consolidated fetch failed: ${res.status} ${await res.text()}`);
     }
@@ -400,7 +428,7 @@ async function postMattermostWebhook({core, webhookUrl, text, username = 'Deskto
         text,
     };
 
-    const res = await fetch(webhookUrl, {
+    const res = await fetchWithTimeout(webhookUrl, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(body),
@@ -421,6 +449,7 @@ async function postMattermostWebhook({core, webhookUrl, text, username = 'Deskto
  * @param {Object} params.detail
  * @param {string} params.reportUrl
  * @param {boolean} [params.upstreamJobsSucceeded]
+ * @param {boolean} [params.hasFailures]
  * @param {string} [params.webhookUrl]
  */
 async function notifyCmtChannel({
@@ -430,6 +459,7 @@ async function notifyCmtChannel({
     detail,
     reportUrl,
     upstreamJobsSucceeded = true,
+    hasFailures = false,
     webhookUrl,
 }) {
     try {
@@ -448,6 +478,7 @@ async function notifyCmtChannel({
             baseUrl,
             perJobCounts,
             upstreamJobsSucceeded,
+            hasFailures,
         });
 
         await postMattermostWebhook({core, webhookUrl: resolvedWebhook, text});

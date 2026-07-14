@@ -8,10 +8,26 @@ const {
     parseCmtJobName,
     resolveWebhookUrl,
     buildLegSummaries,
+    formatLegResultText,
     formatCmtChannelMessage,
 } = require('./cmt-channel-notify');
 
 describe('cmt-channel-notify', () => {
+    describe('formatLegResultText', () => {
+        it('renders all-skipped legs as not executed instead of ✅ 0/0', () => {
+            assert.equal(
+                formatLegResultText({status: 'passed', passed: 0, failed: 0, skipped: 12}),
+                '⚠️ not executed',
+            );
+        });
+
+        it('preserves missing, no-results, passed, and failed formatting', () => {
+            assert.equal(formatLegResultText({status: 'missing', passed: 0, failed: 0, skipped: 0}), '⚠️ missing');
+            assert.equal(formatLegResultText({status: 'no-results', passed: 0, failed: 0, skipped: 0}), '⚠️ no-results');
+            assert.equal(formatLegResultText({status: 'passed', passed: 231, failed: 0, skipped: 10}), '✅ 231/231');
+            assert.equal(formatLegResultText({status: 'failed', passed: 229, failed: 2, skipped: 10}), '❌ 229/231');
+        });
+    });
     describe('parseCmtJobName', () => {
         it('parses ubuntu, windows, and macos job names', () => {
             assert.deepEqual(parseCmtJobName('e2e-on-ubuntu-latest-11.9.0'), {
@@ -138,6 +154,29 @@ describe('cmt-channel-notify', () => {
             assert.match(text, /\*\*PR:\*\* \[#3891\]\(https:\/\/github\.com\/mattermost\/desktop\/pull\/3891\)/);
             assert.doesNotMatch(text, /failing test/);
             assert.match(text, /\| ✅ Passed \| \*\*240\*\* \| \*\*0\*\* \| \*\*10\*\* \|/);
+        });
+
+        it('marks overall failed when hasFailures is set without test failures', () => {
+            const text = formatCmtChannelMessage({
+                compositeIdentity: {
+                    branch: 'master',
+                    commit_sha: 'a1b2c3d4e5f678901234567890abcdef12345678',
+                    name: 'desktop-master',
+                },
+                detail: {
+                    status: 'completed',
+                    test_stats: {passed: 100, failed: 0, skipped: 0, total: 100},
+                    reports: [],
+                },
+                reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
+                baseUrl: 'https://test-io.test.mattermost.com',
+                perJobCounts: {},
+                upstreamJobsSucceeded: true,
+                hasFailures: true,
+            });
+            assert.match(text, /^## ❌ Desktop Master E2E\n/);
+            assert.match(text, /\| ❌ Failed \| \*\*100\*\* \| \*\*0\*\* \| \*\*0\*\* \|/);
+            assert.doesNotMatch(text, /failing test/);
         });
     });
 

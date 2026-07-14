@@ -239,24 +239,30 @@ async function reportTsioStatus({
     // Channel notify (best-effort). Routing (see resolveWebhookUrl):
     //   cmt-desktop / desktop-master → MM_DESKTOP_CMT_WEBHOOK_URL
     //   desktop-pr                   → MM_DESKTOP_E2E_WEBHOOK_URL
-    const notifyNames = new Set(['cmt-desktop', 'desktop-pr', 'desktop-master']);
-    if (notifyNames.has(compositeIdentity.name)) {
-        const {notifyCmtChannel, resolveWebhookUrl} = require('./cmt-channel-notify.js');
-        const webhookUrl = resolveWebhookUrl(compositeIdentity.name);
-        if (webhookUrl) {
-            // Prefer TSIO links even when the poll timed out at in_progress
-            // (commit status may still point at the Actions run URL).
-            const channelReportUrl = displayReportUrl || groupReportUrl || targetUrl;
-            await notifyCmtChannel({
-                core,
-                baseUrl,
-                compositeIdentity,
-                detail,
-                reportUrl: channelReportUrl,
-                upstreamJobsSucceeded,
-                webhookUrl,
-            });
+    // Failures here must not undo a successfully written commit status.
+    try {
+        const notifyNames = new Set(['cmt-desktop', 'desktop-pr', 'desktop-master']);
+        if (notifyNames.has(compositeIdentity.name)) {
+            const {notifyCmtChannel, resolveWebhookUrl} = require('./cmt-channel-notify.js');
+            const webhookUrl = resolveWebhookUrl(compositeIdentity.name);
+            if (webhookUrl) {
+                // Prefer TSIO links even when the poll timed out at in_progress
+                // (commit status may still point at the Actions run URL).
+                const channelReportUrl = displayReportUrl || groupReportUrl || targetUrl;
+                await notifyCmtChannel({
+                    core,
+                    baseUrl,
+                    compositeIdentity,
+                    detail,
+                    reportUrl: channelReportUrl,
+                    upstreamJobsSucceeded,
+                    hasFailures,
+                    webhookUrl,
+                });
+            }
         }
+    } catch (error) {
+        core.warning(`E2E Mattermost notify setup failed: ${error.message}`);
     }
 
     if (failOnTestFailures && overallState === 'failure') {
