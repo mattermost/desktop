@@ -179,7 +179,29 @@ describe('cmt-channel-notify', () => {
             });
             assert.match(text, /^## ❌ Desktop Master E2E\n/);
             assert.match(text, /\| ❌ Failed \| \*\*100\*\* \| \*\*0\*\* \| \*\*0\*\* \|/);
+            assert.match(text, /TSIO reported failed shard\(s\) not reflected in the test totals/);
             assert.doesNotMatch(text, /failing test/);
+        });
+
+        it('explains non-completed TSIO status when overall failed', () => {
+            const text = formatCmtChannelMessage({
+                compositeIdentity: {
+                    branch: 'master',
+                    commit_sha: 'a1b2c3d4e5f678901234567890abcdef12345678',
+                    name: 'desktop-master',
+                },
+                detail: {
+                    status: 'incomplete',
+                    test_stats: {passed: 50, failed: 0, skipped: 0, total: 50},
+                    reports: [],
+                },
+                reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
+                baseUrl: 'https://test-io.test.mattermost.com',
+                perJobCounts: {},
+                upstreamJobsSucceeded: true,
+            });
+            assert.match(text, /^## ❌ Desktop Master E2E\n/);
+            assert.match(text, /TSIO report status: `incomplete`/);
         });
 
         it('folds test_stats.flaky into the headline passed count', () => {

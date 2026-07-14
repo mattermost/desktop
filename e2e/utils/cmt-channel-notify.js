@@ -344,6 +344,11 @@ function formatCmtChannelMessage({
 
     if (!upstreamJobsSucceeded) {
         lines.push('_One or more CI jobs failed outside tracked tests (install/build/teardown)._', '');
+    } else if (hasFailures && failed === 0) {
+        lines.push('_TSIO reported failed shard(s) not reflected in the test totals; check the full report._', '');
+    }
+    if (detail?.status && detail.status !== 'completed' && upstreamJobsSucceeded) {
+        lines.push(`_TSIO report status: \`${detail.status}\`._`, '');
     }
 
     if (reportUrl) {
