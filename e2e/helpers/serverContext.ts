@@ -9,6 +9,8 @@ import {closeOverlayWindowsIfOpen} from './overlayWindows';
 import type {ServerEntry, ServerMap} from './serverMap';
 import {evaluateInMainProcessWithArg} from './testRefs';
 
+const NOT_YET_REGISTERED_PREFIX = 'No server view registered for webContentsId';
+
 /**
  * Make a specific server WebContentsView the active, focused target for automation
  * and application menu handlers (History, View, Find, etc.).
@@ -23,40 +25,60 @@ export async function activateServerView(
 ): Promise<void> {
     await closeOverlayWindowsIfOpen(app);
 
-    await evaluateInMainProcessWithArg(app, ({webContents, BrowserWindow}, id) => {
-        const refs = (global as any).__e2eTestRefs;
-        if (!refs) {
-            throw new Error('__e2eTestRefs is not available');
+    // WebContentsManager keeps two separate indexes: by internal view id (what
+    // buildServerMap reads to resolve this webContentsId in the first place)
+    // and by webContentsId (what this function needs). The second index can
+    // still be a beat behind the first right after a tab is created, so a
+    // caller that just got this id from buildServerMap can hit a real but
+    // transient "not registered yet" here. Poll specifically for that error;
+    // any other failure (e.g. the webContents was actually destroyed) still
+    // fails immediately.
+    const deadline = Date.now() + 10_000;
+    for (;;) {
+        try {
+            await evaluateInMainProcessWithArg(app, ({webContents, BrowserWindow}, id) => {
+                const refs = (global as any).__e2eTestRefs;
+                if (!refs) {
+                    throw new Error('__e2eTestRefs is not available');
+                }
+
+                const mmView = refs.WebContentsManager.getViewByWebContentsId(id);
+                if (!mmView) {
+                    throw new Error(`No server view registered for webContentsId ${id}`);
+                }
+
+                const tabView = refs.ViewManager.getView(mmView.id);
+                if (tabView) {
+                    refs.ServerManager.updateCurrentServer(tabView.serverId);
+                    refs.TabManager.switchToTab(tabView.id);
+                }
+
+                refs.TabManager.focusCurrentTab();
+
+                const wc = webContents.fromId(id);
+                if (!wc || wc.isDestroyed()) {
+                    throw new Error(`webContents ${id} is not available`);
+                }
+                wc.focus();
+
+                // Menu handlers read this when the app menu blurs the webContents (macOS/Windows).
+                refs.WebContentsManager.focusedWebContentsView = mmView.id;
+
+                const mainWindow = refs.MainWindow.get() ?? BrowserWindow.getAllWindows().find((win) => {
+                    return !win.isDestroyed() && win.webContents.getURL().includes('index');
+                });
+                mainWindow?.show();
+                mainWindow?.focus();
+            }, webContentsId);
+            break;
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            if (!message.includes(NOT_YET_REGISTERED_PREFIX) || Date.now() >= deadline) {
+                throw error;
+            }
+            await new Promise((resolve) => setTimeout(resolve, 100));
         }
-
-        const mmView = refs.WebContentsManager.getViewByWebContentsId(id);
-        if (!mmView) {
-            throw new Error(`No server view registered for webContentsId ${id}`);
-        }
-
-        const tabView = refs.ViewManager.getView(mmView.id);
-        if (tabView) {
-            refs.ServerManager.updateCurrentServer(tabView.serverId);
-            refs.TabManager.switchToTab(tabView.id);
-        }
-
-        refs.TabManager.focusCurrentTab();
-
-        const wc = webContents.fromId(id);
-        if (!wc || wc.isDestroyed()) {
-            throw new Error(`webContents ${id} is not available`);
-        }
-        wc.focus();
-
-        // Menu handlers read this when the app menu blurs the webContents (macOS/Windows).
-        refs.WebContentsManager.focusedWebContentsView = mmView.id;
-
-        const mainWindow = refs.MainWindow.get() ?? BrowserWindow.getAllWindows().find((win) => {
-            return !win.isDestroyed() && win.webContents.getURL().includes('index');
-        });
-        mainWindow?.show();
-        mainWindow?.focus();
-    }, webContentsId);
+    }
 
     const mainWindow = findMainWindow(app);
     if (mainWindow) {

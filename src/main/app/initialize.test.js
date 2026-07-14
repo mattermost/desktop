@@ -125,6 +125,9 @@ jest.mock('main/app/config', () => ({
     handleConfigUpdate: jest.fn(),
     handleUpdateTheme: jest.fn(),
 }));
+jest.mock('main/e2e/appReady', () => ({
+    registerMainWindowE2EReadiness: jest.fn(),
+}));
 jest.mock('main/app/intercom', () => ({
     handleMainWindowIsShown: jest.fn(),
 }));

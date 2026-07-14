@@ -12,7 +12,7 @@ import {
     IS_CHANNEL_VIEW_LOADED_JS,
     IS_COMPOSER_INTERACTIVE_JS,
 } from './rendererUtils';
-import {activateServerView, loadServerViewUrl} from './serverContext';
+import {activateServerView, loadServerViewUrl, reloadServerView} from './serverContext';
 import {resolveChannelByName} from './server_api/channel';
 import type {ServerEntry} from './serverMap';
 import type {ServerView} from './serverView';
@@ -139,7 +139,9 @@ export async function recoverServerViewIfNeeded(
         return;
     }
 
-    await win.runInRenderer('window.location.reload(); return true;', true);
+    // Prefer the Electron view reload path — window.location.reload() can leave
+    // the WebContentsView blank on macOS/Windows CI.
+    await reloadServerView(win.app, win.webContentsId);
     await waitForMattermostShell(win, {channelItem});
 }
 

@@ -8,7 +8,7 @@ import * as path from 'path';
 import {test, expect} from '../fixtures/index';
 import {waitForAppReady} from '../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile} from '../helpers/config';
-import {closeElectronAppFast} from '../helpers/electronApp';
+import {closeElectronAppFast, registerElectronMainProcess} from '../helpers/electronApp';
 import {SHOW_NEW_SERVER_MODAL, SHOW_SETTINGS_WINDOW} from '../helpers/ipcChannels';
 import {loginToMattermost} from '../helpers/login';
 import {buildServerMap, type ServerMap} from '../helpers/serverMap';
@@ -129,6 +129,7 @@ test.describe('focus', () => {
             env: {...process.env, NODE_ENV: 'test'},
             timeout: 60_000,
         });
+        registerElectronMainProcess(electronApp.process()?.pid);
         await waitForAppReady(electronApp);
 
         // Poll until both servers are registered in WebContentsManager

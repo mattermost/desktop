@@ -13,7 +13,6 @@ import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {ping} from 'common/utils/requests';
 import {parseURL} from 'common/utils/url';
-import {signalE2EAppReadyWhenShown} from 'main/e2e/appReady';
 import NotificationManager from 'main/notifications';
 import {getLocalPreload} from 'main/utils';
 
@@ -87,8 +86,6 @@ export function handleMainWindowIsShown() {
             handleShowOnboardingScreens(showWelcomeScreen(), showNewServerModal(), false);
         });
     }
-
-    signalE2EAppReadyWhenShown();
 }
 
 export function handleWelcomeScreenModal(prefillURL?: string) {

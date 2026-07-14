@@ -214,6 +214,7 @@ jobs:
       - name: ci/publish-results
         uses: EnricoMi/publish-unit-test-result-action@d0a4676d0e0b938bc201470d88276b7c74c712b3 # v2.24.0
         with:
+          check_name: Unit Tests (Jest)
           comment_mode: failures
           compare_to_earlier_commit: false
           junit_files: "**/*.xml"
