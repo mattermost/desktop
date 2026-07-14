@@ -99,7 +99,7 @@ describe('cmt-channel-notify', () => {
     });
 
     describe('formatCmtChannelMessage', () => {
-        it('renders failure banner, overall table, and collapsible leg details', () => {
+        it('renders failure banner, overall table, and per-leg details', () => {
             const text = formatCmtChannelMessage({
                 compositeIdentity: {
                     branch: 'v6.2.0-rc.1',
@@ -128,7 +128,8 @@ describe('cmt-channel-notify', () => {
             assert.match(text, /🔴 \*\*1 failing test\*\*/);
             assert.match(text, /\| 🪟 Windows \| Server `11\.9\.0` \| 1 \|/);
             assert.match(text, /\| ❌ Failed \| \*\*460\*\* \| \*\*1\*\* \| \*\*40\*\* \|/);
-            assert.match(text, /<details>/);
+            assert.match(text, /#### Detailed results/);
+            assert.doesNotMatch(text, /<details>/);
             assert.match(text, /\| 🐧 Linux \| Server `11\.9\.0` \| ✅ 231\/231 \| \[View\]\(https:\/\/test-io\.test\.mattermost\.com\/reports\/r\/rid-linux\) \|/);
             assert.match(text, /\| 🪟 Windows \| Server `11\.9\.0` \| ❌ 230\/231 \| \[View\]\(https:\/\/test-io\.test\.mattermost\.com\/reports\/r\/rid-windows\) \|/);
             assert.match(text, /➡️ \*\*Full report:\*\* https:\/\/test-io\.test\.mattermost\.com\/reports\/desktop\/v6\.2\.0-rc\.1\/55afc0b\/cmt-desktop/);

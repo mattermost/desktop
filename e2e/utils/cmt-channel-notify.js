@@ -330,14 +330,15 @@ function formatCmtChannelMessage({
     );
 
     if (legs.length > 0) {
-        lines.push('<details>', '<summary><strong>Detailed results</strong></summary>', '');
+        // Mattermost incoming webhooks do not render GitHub <details>/<summary>.
+        lines.push('#### Detailed results', '');
         lines.push('| Platform | Suite | Result | Report |', '|----------|-------|--------|--------|');
         for (const leg of legs) {
             const {platform, suite} = formatLegLabels(leg);
             const report = leg.reportUrl ? `[View](${leg.reportUrl})` : '—';
             lines.push(`| ${platform} | ${suite} | ${formatLegResultText(leg)} | ${report} |`);
         }
-        lines.push('', '</details>', '');
+        lines.push('');
     } else {
         lines.push('_No per-leg results available yet._', '');
     }
