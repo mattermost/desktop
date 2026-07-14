@@ -1,6 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+// CI util unit tests: run with `node --test e2e/utils/cmt-channel-notify.test.js`.
+// Not a Playwright Electron spec (no browser/app fixtures), so it stays under e2e/utils/.
+
 const {describe, it} = require('node:test');
 const assert = require('node:assert/strict');
 
@@ -177,6 +180,26 @@ describe('cmt-channel-notify', () => {
             assert.match(text, /^## ❌ Desktop Master E2E\n/);
             assert.match(text, /\| ❌ Failed \| \*\*100\*\* \| \*\*0\*\* \| \*\*0\*\* \|/);
             assert.doesNotMatch(text, /failing test/);
+        });
+
+        it('folds test_stats.flaky into the headline passed count', () => {
+            const text = formatCmtChannelMessage({
+                compositeIdentity: {
+                    branch: 'master',
+                    commit_sha: 'a1b2c3d4e5f678901234567890abcdef12345678',
+                    name: 'desktop-master',
+                },
+                detail: {
+                    status: 'completed',
+                    test_stats: {passed: 200, failed: 0, skipped: 5, flaky: 3, total: 208},
+                    reports: [],
+                },
+                reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
+                baseUrl: 'https://test-io.test.mattermost.com',
+                perJobCounts: {},
+                upstreamJobsSucceeded: true,
+            });
+            assert.match(text, /\| ✅ Passed \| \*\*203\*\* \| \*\*0\*\* \| \*\*5\*\* \|/);
         });
     });
 

@@ -17,16 +17,22 @@ const OS_ORDER = {linux: 0, macos: 1, windows: 2};
 const FETCH_TIMEOUT_MS = 15_000;
 
 /**
+ * Fetch with an abort timeout that stays armed until `readBody` finishes
+ * (headers + body), so a stalled `res.json()`/`res.text()` cannot hang CI.
+ *
+ * @template T
  * @param {string} url
- * @param {RequestInit} [options]
+ * @param {RequestInit | undefined} options
+ * @param {(res: Response) => Promise<T>} readBody
  * @param {number} [timeoutMs]
- * @returns {Promise<Response>}
+ * @returns {Promise<T>}
  */
-async function fetchWithTimeout(url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) {
+async function fetchWithTimeout(url, options, readBody, timeoutMs = FETCH_TIMEOUT_MS) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-        return await fetch(url, {...options, signal: controller.signal});
+        const res = await fetch(url, {...(options || {}), signal: controller.signal});
+        return await readBody(res);
     } finally {
         clearTimeout(timer);
     }
@@ -281,7 +287,9 @@ function formatCmtChannelMessage({
     hasFailures = false,
 }) {
     const stats = detail?.test_stats || {};
-    const passed = stats.passed ?? 0;
+
+    // Match buildLegSummaries: fold flaky into passed so the headline matches per-leg totals.
+    const passed = (stats.passed ?? 0) + (stats.flaky ?? 0);
     const failed = stats.failed ?? 0;
     const skipped = stats.skipped ?? 0;
     const overallFailed = failed > 0 ||
@@ -372,11 +380,16 @@ async function fetchPerJobCountsFromConsolidated(baseUrl, compositeIdentity, gro
         params.set('gh_run_attempt', String(compositeIdentity.gh_run_attempt));
     }
 
-    const res = await fetchWithTimeout(`${baseUrl}/api/v1/reports/consolidated?${params}`);
-    if (!res.ok) {
-        throw new Error(`consolidated fetch failed: ${res.status} ${await res.text()}`);
-    }
-    const consol = await res.json();
+    const consol = await fetchWithTimeout(
+        `${baseUrl}/api/v1/reports/consolidated?${params}`,
+        undefined,
+        async (res) => {
+            if (!res.ok) {
+                throw new Error(`consolidated fetch failed: ${res.status} ${await res.text()}`);
+            }
+            return res.json();
+        },
+    );
 
     const counts = {};
     const commitSha = compositeIdentity.commit_sha;
@@ -428,14 +441,22 @@ async function postMattermostWebhook({core, webhookUrl, text, username = 'Deskto
         text,
     };
 
-    const res = await fetchWithTimeout(webhookUrl, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-        throw new Error(`Mattermost webhook failed: ${res.status} ${await res.text()}`);
-    }
+    await fetchWithTimeout(
+        webhookUrl,
+        {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body),
+        },
+        async (res) => {
+            if (!res.ok) {
+                throw new Error(`Mattermost webhook failed: ${res.status} ${await res.text()}`);
+            }
+
+            // Drain body so the abort timer covers the full response, not just headers.
+            await res.text();
+        },
+    );
     core.info('Posted E2E summary to Mattermost channel');
 }
 
