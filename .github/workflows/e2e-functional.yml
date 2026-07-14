@@ -99,7 +99,7 @@ jobs:
 
   update-initial-status:
     name: Set pending TSIO status
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs:
       - prepare-matrix
     permissions:
@@ -197,7 +197,7 @@ jobs:
 
   remove-e2e-label:
     name: Remove E2E label from PR
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       issues: write
       pull-requests: write

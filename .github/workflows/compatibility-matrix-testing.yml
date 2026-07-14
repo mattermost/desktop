@@ -26,7 +26,7 @@ jobs:
   #   every (OS × server-version) matrix leg.
   ## This is picked up after the finish for cleanup
   upload-cmt-server-detals:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: cmt/generate-instance-details-file
         run: echo '${{ inputs.CMT_MATRIX }}' > instance-details.json
@@ -39,9 +39,10 @@ jobs:
           retention-days: 1
 
   calculate-commit-hash:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     outputs:
       DESKTOP_SHA: ${{ steps.repo.outputs.DESKTOP_SHA }}
+      CMT_MATRIX: ${{ steps.normalize-matrix.outputs.matrix }}
       TSIO_COMPOSITE_IDENTITY: ${{ steps.tsio-identity.outputs.composite-identity-json }}
       TSIO_TOTAL_REPORTS_EXPECTED: ${{ steps.tsio-identity.outputs.total-reports-expected }}
     steps:
@@ -54,6 +55,21 @@ jobs:
         id: repo
         run: echo "DESKTOP_SHA=$(git rev-parse HEAD)" >> ${GITHUB_OUTPUT}
 
+      # Matterwick still dispatches ubuntu-22.04 for Linux; pin to ubuntu-latest so
+      # CMT matches PR E2E (24.04) and install-os-dependencies can resolve
+      # libasound2t64. Same idea as e2e-functional.yml remapping macos-latest → macos-26.
+      - name: cmt/normalize-matrix-runners
+        id: normalize-matrix
+        env:
+          CMT_MATRIX: ${{ inputs.CMT_MATRIX }}
+        run: |
+          NORMALIZED=$(echo "${CMT_MATRIX}" | jq -c '
+            .environment |= map(
+              if .runner == "ubuntu-22.04" then .runner = "ubuntu-latest" else . end
+            )
+          ')
+          echo "matrix=${NORMALIZED}" >> "$GITHUB_OUTPUT"
+
       # One composite identity + total-reports-expected for the WHOLE CMT run
       # (every OS x server-version leg), computed once here and threaded into
       # every `e2e` matrix leg below so they land in a single TSIO report group.
@@ -63,7 +79,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           MM_SHA: ${{ steps.repo.outputs.DESKTOP_SHA }}
           MM_BRANCH: ${{ inputs.DESKTOP_VERSION }}
-          CMT_MATRIX: ${{ inputs.CMT_MATRIX }}
+          CMT_MATRIX: ${{ steps.normalize-matrix.outputs.matrix }}
         run: |
           TOTAL=$(echo "${CMT_MATRIX}" | jq -c '(.environment | length) * (.server | length)')
           echo "total-reports-expected=${TOTAL}" >> "$GITHUB_OUTPUT"
@@ -78,7 +94,7 @@ jobs:
           echo "composite-identity-json=${COMPOSITE_IDENTITY}" >> "$GITHUB_OUTPUT"
 
   update-initial-status:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs:
       - calculate-commit-hash
     permissions:
@@ -98,7 +114,8 @@ jobs:
           description: "Compatibility Matrix Testing for ${{ inputs.DESKTOP_VERSION }} version"
           status: pending
 
-  # Input follows the below schema
+  # Input follows the below schema (Matterwick may still send ubuntu-22.04;
+  # calculate-commit-hash remaps Linux to ubuntu-latest before the e2e matrix).
   # {
   #   "environment": [
   #     {
@@ -133,7 +150,7 @@ jobs:
       - update-initial-status
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(inputs.CMT_MATRIX) }}
+      matrix: ${{ fromJson(needs.calculate-commit-hash.outputs.CMT_MATRIX) }}
     permissions:
       contents: read
       actions: read
@@ -151,7 +168,7 @@ jobs:
       tsio-config: ${{ format('{{"composite_identity":{0},"total_reports_expected":"{1}"}}', needs.calculate-commit-hash.outputs.TSIO_COMPOSITE_IDENTITY, needs.calculate-commit-hash.outputs.TSIO_TOTAL_REPORTS_EXPECTED) }}
 
   update-final-status:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: always()
     permissions:
       contents: read
