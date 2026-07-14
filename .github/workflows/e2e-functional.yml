@@ -421,8 +421,11 @@ jobs:
           TSIO_GH_JOB_NAME: policy-tests-${{ matrix.platform }}
           PLAYWRIGHT_EXIT_CODE: ${{ env.PLAYWRIGHT_EXIT_CODE }}
 
+      # Reporting only — a TSIO/upload flake (e.g. screenshot 504) must not fail
+      # the job when Playwright already passed. Commit status still comes from TSIO summary.
       - name: e2e/upload-report-to-tsio
         if: ${{ always() && needs.prepare-matrix.outputs.tsio-composite-identity != '' && hashFiles('e2e/test-results/results.json') != '' }}
+        continue-on-error: true
         uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@a2ea7f005484c28fedf51e16645f6d3bd683fd63 # 0.10.0 / 2026-05-16
         with:
           composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
