@@ -16,6 +16,7 @@ module.exports = merge(base, {
         'windows-focus-assist': 'require("windows-focus-assist")',
         'registry-js': 'require("registry-js")',
         'cf-prefs': 'require("cf-prefs")',
+        koffi: 'require("koffi")',
     },
     externalsPresets: {
         electronMain: true,
