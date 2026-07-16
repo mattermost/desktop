@@ -237,6 +237,9 @@ export class MacSessionAttributeCollector extends SessionAttributeCollector {
             if (valueKeyCF) {
                 release.push(valueKeyCF);
             }
+            if (!dict || !valueKeyCF) {
+                return '';
+            }
             const value = this.bindings.cfDictionaryGetValue(dict, valueKeyCF);
             if (value) {
                 return read(value);
