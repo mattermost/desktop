@@ -24,7 +24,7 @@ import {updateServerInfos} from 'main/app/utils';
 
 import type {SAField, SAPropertyField} from 'types/sessionAttributes';
 
-import SessionAttributeCollector from './collector';
+import getSessionAttributeCollector from './collector';
 
 const log = new Logger('SessionAttributesManager');
 
@@ -118,29 +118,30 @@ export class SessionAttributesManager {
 
     private collectAttribute = (name: string, serverId: string) => {
         try {
+            const collector = getSessionAttributeCollector();
             switch (name) {
             case 'client_ip_address':
-                return SessionAttributeCollector.getClientIPAddress();
+                return collector.getClientIPAddress();
             case 'network_interface_type':
-                return SessionAttributeCollector.getNetworkInterfaceType();
+                return collector.getNetworkInterfaceType();
             case 'vpn_active':
-                return SessionAttributeCollector.getVPNActive();
+                return collector.getVPNActive();
             case 'ssid':
-                return SessionAttributeCollector.getSSID();
+                return collector.getSSID();
             case 'hardware_id':
-                return SessionAttributeCollector.getHardwareId();
+                return collector.getHardwareId();
             case 'mdm_enrolled':
-                return SessionAttributeCollector.getMDMEnrolled();
+                return collector.getMDMEnrolled();
             case 'os_platform':
-                return SessionAttributeCollector.getOSPlatform();
+                return collector.getOSPlatform();
             case 'os_version':
-                return SessionAttributeCollector.getOSVersion();
+                return collector.getOSVersion();
             case 'client_version':
-                return SessionAttributeCollector.getClientVersion();
+                return collector.getClientVersion();
             case 'server_fqdn':
-                return SessionAttributeCollector.getServerFQDN(serverId);
+                return collector.getServerFQDN(serverId);
             case 'client_fqdn':
-                return SessionAttributeCollector.getClientFQDN();
+                return collector.getClientFQDN();
             default:
                 return '';
             }
