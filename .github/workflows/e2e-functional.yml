@@ -39,11 +39,18 @@ permissions:
   contents: read
 
 jobs:
+  # TSIO reporting model (PR / master / release):
+  #   1 workflow run  →  1 composite_identity (gh_run_id + resolved commit SHA + name)
+  #   →  1 TSIO report group aggregating every platform leg + both policy legs.
+  # Matterwick sets run_type=MASTER for master pushes; PR runs default to desktop-pr.
   prepare-matrix:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.instance_details != '' }}
     runs-on: ubuntu-latest
     outputs:
       platforms: ${{ steps.generate.outputs.platforms }}
+      desktop-sha: ${{ steps.resolve-sha.outputs.sha }}
+      tsio-composite-identity: ${{ steps.tsio-identity.outputs.composite-identity-json }}
+      tsio-total-reports-expected: ${{ steps.tsio-identity.outputs.total-reports-expected }}
     steps:
       - id: generate
         env:
@@ -54,30 +61,66 @@ jobs:
           platforms=$(echo "${INSTANCE_DETAILS}" | jq -c 'map(if .runner == "macos-latest" then .runner = "macos-26" else . end)')
           echo "platforms=${platforms}" >> "$GITHUB_OUTPUT"
 
+      # Resolve the SHA under test from version_name (branch/tag/SHA), not github.sha
+      # from the dispatch ref — same approach as compatibility-matrix-testing.yml.
+      - name: e2e/checkout-desktop-version
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ inputs.version_name }}
+
+      - id: resolve-sha
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - id: tsio-identity
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          MM_SHA: ${{ steps.resolve-sha.outputs.sha }}
+          MM_BRANCH: ${{ inputs.version_name }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          RUN_TYPE: ${{ inputs.run_type || 'PR' }}
+          PLATFORMS: ${{ steps.generate.outputs.platforms }}
+        run: |
+          # platform legs (linux/macos/windows) + policy-tests-macos + policy-tests-windows
+          TOTAL=$(( $(echo "${PLATFORMS}" | jq -c 'length') + 2 ))
+          echo "total-reports-expected=${TOTAL}" >> "$GITHUB_OUTPUT"
+          NAME="desktop-$(echo "${RUN_TYPE}" | tr '[:upper:]' '[:lower:]')"
+          if [ -n "${PR_NUMBER}" ]; then
+            COMPOSITE_IDENTITY=$(jq -nc \
+              --arg repo "${GITHUB_REPOSITORY}" --arg sha "${MM_SHA}" --arg run_id "${GITHUB_RUN_ID}" \
+              --arg name "${NAME}" --arg attempt "${GITHUB_RUN_ATTEMPT}" --arg branch "${MM_BRANCH}" --arg pr "${PR_NUMBER}" \
+              '{repository:$repo, commit_sha:$sha, gh_run_id:$run_id, name:$name, gh_run_attempt:$attempt, branch:$branch, gh_pr_number:$pr}')
+          else
+            COMPOSITE_IDENTITY=$(jq -nc \
+              --arg repo "${GITHUB_REPOSITORY}" --arg sha "${MM_SHA}" --arg run_id "${GITHUB_RUN_ID}" \
+              --arg name "${NAME}" --arg attempt "${GITHUB_RUN_ATTEMPT}" --arg branch "${MM_BRANCH}" \
+              '{repository:$repo, commit_sha:$sha, gh_run_id:$run_id, name:$name, gh_run_attempt:$attempt, branch:$branch}')
+          fi
+          echo "composite-identity-json=${COMPOSITE_IDENTITY}" >> "$GITHUB_OUTPUT"
+
   update-initial-status:
-    name: Update initial status
-    needs: prepare-matrix
+    name: Set pending TSIO status
     runs-on: ubuntu-24.04
+    needs:
+      - prepare-matrix
     permissions:
       contents: read
       statuses: write
     steps:
-      - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-
-      - name: Update initial status for all platforms
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      # Best-effort: a transient status-API hiccup here must never block the
+      # actual test matrix from running.
+      - uses: mattermost/actions/delivery/update-commit-status@218fd96a63451259dc100e1292a5e44af92fe15d
+        continue-on-error: true
         env:
-          PLATFORMS: ${{ needs.prepare-matrix.outputs.platforms }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          github-token: ${{ github.token }}
-          script: |
-            const { updateInitialStatus } = require('./e2e/utils/github-actions.js');
-            const platforms = JSON.parse(process.env.PLATFORMS);
-            await updateInitialStatus({ github, context, platforms });
+          repository_full_name: ${{ github.repository }}
+          commit_sha: ${{ needs.prepare-matrix.outputs.desktop-sha }}
+          context: e2e-test/desktop-playwright
+          description: "Running Electron Playwright E2E tests..."
+          status: pending
 
   e2e-tests:
-    needs: 
+    needs:
       - prepare-matrix
       - update-initial-status
     name: ${{ matrix.platform }}
@@ -85,8 +128,10 @@ jobs:
       matrix:
         include: ${{ fromJson(needs.prepare-matrix.outputs.platforms) }}
       fail-fast: false
-    # The reusable template runs only untrusted PR code (npm ci / Playwright) with a read-only
-    # token; it inherits the workflow-level contents:read default.
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
     uses: ./.github/workflows/e2e-functional-template.yml
     with:
       runs-on: ${{ matrix.runner }}
@@ -95,60 +140,71 @@ jobs:
       MM_SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
       MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME }}
       MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD }}
-      # When matterwick fires this workflow it sets run_type explicitly (MASTER for master
-      # pushes; PR-label runs are dispatched without run_type, defaulting to PR via the `|| 'PR'`
-      # below). The previous `startsWith(version_name, 'release-') && 'RELEASE'` fallback was
-      # for matterwick's release-branch push, which is no longer wired — removed.
       TYPE: ${{ inputs.run_type || 'PR' }}
+      tsio-config: ${{ format('{{"composite_identity":{0},"total_reports_expected":"{1}"}}', needs.prepare-matrix.outputs.tsio-composite-identity, needs.prepare-matrix.outputs.tsio-total-reports-expected) }}
     secrets: inherit
 
-  update-final-status:
-    name: Update final status
+  # The single E2E status check for PR/master (e2e-test/desktop-playwright),
+  # replacing the former 5 (e2e/linux, e2e/macos, e2e/windows,
+  # policy-test/macos, policy-test/windows).
+  #
+  # Uses e2e/utils/tsio-report-status.js, not test-system-io-summary — summary
+  # only reads /api/v1/orchestration/status, which report-upload never
+  # populates (see that file's header comment).
+  tsio-summary:
+    name: TSIO summary
     runs-on: ubuntu-24.04
     needs:
       - prepare-matrix
       - e2e-tests
+      - e2e-policy-tests
     if: always()
     permissions:
       contents: read
+      id-token: write
       statuses: write
     steps:
-      - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      # tsio-report-status.js is repo code, not fetched by github-script itself.
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ inputs.version_name }}
+          persist-credentials: false
+          sparse-checkout: |
+            e2e/utils/tsio-report-status.js
+          sparse-checkout-cone-mode: false
 
-      - name: Update final status for all platforms
+      - name: Render TSIO summary + flip commit status
+        id: summary
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
-          PR_NUMBER: ${{ inputs.pr_number }}
-          PLATFORMS: ${{ needs.prepare-matrix.outputs.platforms }}
-          OUTPUTS: ${{ toJSON(needs.e2e-tests.outputs) }}
-          E2E_TESTS_RESULT: ${{ needs.e2e-tests.result }}
+          TSIO_COMPOSITE_IDENTITY: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
+          TSIO_TOTAL_REPORTS_EXPECTED: ${{ needs.prepare-matrix.outputs.tsio-total-reports-expected }}
+          TSIO_POLL_ATTEMPTS: 12
+          TSIO_POLL_DELAY_MS: 5000
+          COMMIT_STATUS_CONTEXT: e2e-test/desktop-playwright
+          UPSTREAM_JOBS_SUCCEEDED: ${{ needs.e2e-tests.result == 'success' && needs.e2e-policy-tests.result == 'success' }}
         with:
-          github-token: ${{ github.token }}
           script: |
-            const { updateFinalStatus } = require('./e2e/utils/github-actions.js');
-            const platforms = JSON.parse(process.env.PLATFORMS);
-            const outputs = JSON.parse(process.env.OUTPUTS);
-            const prNumber = parseInt(process.env.PR_NUMBER, 10) || null;
-            await updateFinalStatus({
-              github,
-              context,
-              platforms,
-              outputs,
-              e2eTestsResult: process.env.E2E_TESTS_RESULT,
-              prNumber,
+            const {reportUrl, status, stats} = await require('./e2e/utils/tsio-report-status.js')({
+              core, context, github,
+              compositeIdentity: JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY),
+              totalReportsExpected: parseInt(process.env.TSIO_TOTAL_REPORTS_EXPECTED, 10),
+              upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
+              commitStatusContext: process.env.COMMIT_STATUS_CONTEXT,
+              failOnTestFailures: true,
             });
+            core.info(`TSIO report ${reportUrl}: ${status} (${JSON.stringify(stats)})`);
 
   remove-e2e-label:
     name: Remove E2E label from PR
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       issues: write
       pull-requests: write
     needs:
       - e2e-tests
       - e2e-policy-tests
-      - update-final-status
+      - tsio-summary
     if: always()
     steps:
       - name: e2e/remove-label-from-pr
@@ -205,11 +261,15 @@ jobs:
 
   e2e-policy-tests:
     name: policy-tests-${{ matrix.platform }}
-    # Runs untrusted PR code (npm ci / Playwright); grant only the commit-status write its
-    # check-for-failures step needs, never pull-requests: write.
+    needs:
+      - prepare-matrix
+      - update-initial-status
+    # Runs untrusted PR code (npm ci / Playwright); grant only what the TSIO
+    # upload needs, never pull-requests: write.
     permissions:
       contents: read
-      statuses: write
+      id-token: write
+      actions: read
     strategy:
       matrix:
         include:
@@ -227,14 +287,10 @@ jobs:
       run:
         shell: bash
     env:
-      AWS_S3_BUCKET: "mattermost-cypress-report"
       BRANCH: ${{ github.ref_name }}
       BUILD_TAG: ${{ github.sha }}
       MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME || secrets.MM_DESKTOP_E2E_USER_NAME }}
       MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD || secrets.MM_DESKTOP_E2E_USER_CREDENTIALS }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.MM_DESKTOP_E2E_AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.MM_DESKTOP_E2E_AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: "us-east-1"
       PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
       NODE_ENV: "test"
       DEBUG_E2E: "true"
@@ -265,8 +321,6 @@ jobs:
         with:
           node-version: '22.x'
           package-manager-cache: false
-          # node_modules is cached in e2e/cache-node-modules; disable setup-node's
-          # npm cache so actions/cache v5 does not hit legacy entries.
 
       - name: e2e/use-gnu-tar-macos
         if: runner.os == 'macOS'
@@ -302,16 +356,9 @@ jobs:
       - name: e2e/setup-python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         env:
-          # Bypass pip's on-disk HTTP cache entirely so a stale/corrupt entry on the
-          # runner image cannot trigger deserialization warnings (actions/setup-python#1317).
           PIP_NO_CACHE_DIR: "1"
         with:
-          # Use a version pre-installed on macOS-26 (3.13 is in its toolcache), so
-          # setup-python doesn't install a mismatched interpreter whose pip can't
-          # deserialize the image's pre-baked cache. PIP_NO_CACHE_DIR above is the
-          # remaining guard for non-macOS runners.
           python-version: "3.13"
-          # Omit `cache` — setup-python only accepts pip/pipenv/poetry, not `false`.
 
       - name: e2e/install-os-dependencies
         uses: ./.github/actions/install-os-dependencies
@@ -360,43 +407,38 @@ jobs:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.version_name }}
 
-      - name: e2e/check-for-failures
-        id: check-failures
-        if: always()
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      # Joins the same TSIO report group as e2e-tests — gh-job-name must match
+      # this job's rendered name (policy-tests-<platform>) above.
+      - name: e2e/write-tsio-failure-stub
+        if: ${{ always() && needs.prepare-matrix.outputs.tsio-composite-identity != '' && hashFiles('e2e/test-results/results.json') == '' && (failure() || cancelled() || (env.PLAYWRIGHT_EXIT_CODE != '0' && env.PLAYWRIGHT_EXIT_CODE != '')) }}
+        run: node e2e/utils/write-tsio-failure-stub.mjs
+        env:
+          TSIO_GH_JOB_NAME: policy-tests-${{ matrix.platform }}
+          PLAYWRIGHT_EXIT_CODE: ${{ env.PLAYWRIGHT_EXIT_CODE }}
+
+      - name: e2e/upload-report-to-tsio
+        if: ${{ always() && needs.prepare-matrix.outputs.tsio-composite-identity != '' && hashFiles('e2e/test-results/results.json') != '' }}
+        uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@a2ea7f005484c28fedf51e16645f6d3bd683fd63 # 0.10.0 / 2026-05-16
         with:
-          script: |
-            process.chdir('./e2e');
-            const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
-            const { formatStatusDescription } = require('./utils/github-actions.js');
-            const { newFailedTests, failureCount, passCount, skipCount, totalCount, collectionFailed } = analyzeFlakyTests();
+          composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
+          total-reports-expected: ${{ needs.prepare-matrix.outputs.tsio-total-reports-expected }}
+          framework: playwright
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          gh-job-name: policy-tests-${{ matrix.platform }}
+          json-path: e2e/test-results/results.json
+          screenshots-dir: e2e/test-results
 
-            const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
-            const platform = process.platform === 'darwin' ? 'macos' : 'windows';
-            const hasFailed = newFailedTests && newFailedTests.length > 0;
-            const description = formatStatusDescription({
-              passed: passCount,
-              failed: failureCount,
-              collectionFailed,
-            });
-
-            try {
-              await github.rest.repos.createCommitStatus({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                sha: context.sha,
-                state: hasFailed ? 'failure' : 'success',
-                context: `policy-test/${platform}`,
-                description,
-                target_url: runUrl,
-              });
-            } catch (e) {
-              console.log(`Could not update commit status: ${e.message}`);
-            }
-
-            if (hasFailed) {
-              core.setFailed(`${newFailedTests.length} policy test(s) failed:\n${newFailedTests.join('\n')}`);
-            }
+      - name: e2e/handle-nonzero-playwright-exit
+        if: always()
+        run: |
+          if [ -z "${PLAYWRIGHT_EXIT_CODE:-}" ]; then
+            exit 0
+          fi
+          if [ "${PLAYWRIGHT_EXIT_CODE}" = "0" ]; then
+            exit 0
+          fi
+          echo "Playwright exited with code ${PLAYWRIGHT_EXIT_CODE}" >&2
+          exit 1
 
       - name: Upload test results
         if: always()

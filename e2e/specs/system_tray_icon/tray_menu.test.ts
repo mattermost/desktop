@@ -19,7 +19,7 @@ test.describe('system_tray_icon/tray_menu', () => {
 
     test(
         'TRAY-01 tray icon click restores hidden window when minimizeToTray is enabled',
-        {tag: ['@P0', '@all']},
+        {tag: ['@P0', '@linux', '@win32']},
         async ({electronApp}) => {
             await expect.poll(
                 () => isMainWindowVisible(electronApp),

@@ -5,6 +5,7 @@ import {expect} from '@playwright/test';
 
 import {isTransientEvaluateError} from './testRefs';
 import {CHANNEL_HEADER_SELECTORS, POST_TEXTBOX_SELECTOR} from './rendererUtils';
+import {reloadServerView} from './serverContext';
 import type {ServerView} from './serverView';
 
 async function isMattermostServerUrl(win: ServerView): Promise<boolean> {
@@ -64,13 +65,21 @@ export async function loginToMattermost(win: ServerView): Promise<void> {
     const loginSelector = '#input_loginId';
     const passwordSelector = '#input_password-input, input[type="password"]';
     const submitSelector = '#saveSetting, button[type="submit"]';
+    const pollStart = Date.now();
+    const reloadAt = pollStart + Math.min(timeout / 2, 15_000);
+    let reloaded = false;
 
+    // Cold cloud hosts often paint a blank hex shell; one mid-wait reload unsticks it.
     await expect.poll(async () => {
         if (await hasAppShell(win)) {
             return 'logged-in';
         }
         if (await hasLoginForm(win)) {
             return 'login-form';
+        }
+        if (!reloaded && Date.now() >= reloadAt) {
+            reloaded = true;
+            await reloadServerView(win.app, win.webContentsId).catch(() => undefined);
         }
         return 'loading';
     }, {

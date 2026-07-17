@@ -16,6 +16,7 @@ import {
     openPopoutWindow,
 } from '../../helpers/popoutWindow';
 import {buildServerMap} from '../../helpers/serverMap';
+import {evaluateInMainProcessWithArg} from '../../helpers/testRefs';
 
 const config = {
     ...demoMattermostConfig,
@@ -74,11 +75,17 @@ test.describe('server_management/popout_windows', () => {
             const browserWindow = await electronApp.browserWindow(popoutWindow);
             const initialBounds = await browserWindow.evaluate((w) => (w as Electron.BrowserWindow).getBounds());
 
+            const workArea = await evaluateInMainProcessWithArg(
+                electronApp,
+                (electron, bounds) => electron.screen.getDisplayMatching(bounds).workArea,
+                initialBounds,
+            );
+            const margin = 20;
             const newBounds = {
                 x: initialBounds.x,
                 y: initialBounds.y,
-                width: initialBounds.width + 200,
-                height: initialBounds.height + 200,
+                width: Math.min(initialBounds.width + 200, (workArea.x + workArea.width) - initialBounds.x - margin),
+                height: Math.min(initialBounds.height + 200, (workArea.y + workArea.height) - initialBounds.y - margin),
             };
 
             await browserWindow.evaluate((w, bounds) => {
