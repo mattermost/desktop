@@ -47,6 +47,34 @@ export type CustomProfileAttributeDef = {
 
 const CPA_FIELDS_PATH = '/api/v4/custom_profile_attributes/fields';
 
+/**
+ * Renderer-side JS expression resolving the active custom-attribute edit
+ * section. Inputs and the Save/Cancel row are sibling `.setting-list-item`
+ * nodes under `.setting-list`, so scoping to the input's list-item misses
+ * `#saveSetting`.
+ */
+function customAttributeEditScopeJs(elExpr: string): string {
+    return `(
+        ${elExpr}?.closest('.setting-list') ||
+        ${elExpr}?.closest('section.section-max') ||
+        ${elExpr}?.closest('section')
+    )`;
+}
+
+/**
+ * Renderer-side JS expression resolving a custom attribute row from an
+ * element within it (e.g. the Edit button in display mode).
+ */
+function customAttributeRowJs(elExpr: string): string {
+    return `(
+        ${elExpr}?.closest('.setting-list') ||
+        ${elExpr}?.closest('.SettingsBlock') ||
+        ${elExpr}?.closest('section') ||
+        ${elExpr}?.closest('li') ||
+        ${elExpr}?.closest('div')
+    )`;
+}
+
 export const TEST_PHONE = '555-123-4567';
 export const TEST_UPDATED_PHONE = '555-987-6543';
 export const TEST_URL = 'https://example.com';
@@ -240,6 +268,43 @@ export async function recoverFromProfileSettings(win: ServerView): Promise<void>
     await waitForChannelPostListLoaded(win);
 }
 
+async function isCustomAttributeEditVisible(win: ServerView, fieldId: string): Promise<boolean> {
+    return win.runInRenderer<boolean>(`
+        const btn = document.querySelector('#customAttribute_${fieldId}Edit');
+        if (!(btn instanceof HTMLElement)) {
+            return false;
+        }
+        const rect = btn.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+    `);
+}
+
+/** Webapp caches CPA field defs; reload once if API-created fields are missing from Profile Settings. */
+export async function waitForCustomAttributeEditInProfileSettings(win: ServerView, fieldId: string): Promise<void> {
+    await ensureCustomAttributeEditReady(win, fieldId);
+}
+
+async function ensureCustomAttributeEditReady(win: ServerView, fieldId: string): Promise<void> {
+    for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+            await expect.poll(async () => isCustomAttributeEditVisible(win, fieldId), {
+                timeout: attempt === 0 ? 5_000 : 15_000,
+                message: `Custom attribute Edit button #customAttribute_${fieldId}Edit must be visible`,
+            }).toBe(true);
+            return;
+        } catch (error) {
+            if (attempt === 1) {
+                throw error;
+            }
+            await closeProfileSettings(win).catch(() => undefined);
+            await reloadServerView(win.app, win.webContentsId);
+            await waitForMattermostShellReady(win);
+            await dismissBlockingOverlays(win);
+            await openProfileSettings(win);
+        }
+    }
+}
+
 export async function getCustomAttributeLabelsInSettings(win: ServerView): Promise<string[]> {
     return win.runInRenderer<string[]>(`
         const modal = document.querySelector(${JSON.stringify(PROFILE_SETTINGS_MODAL_SELECTOR)})
@@ -260,7 +325,7 @@ export async function getCustomAttributeLabelsInSettings(win: ServerView): Promi
                 labels.push(nameEl.textContent.trim());
                 continue;
             }
-            const row = button.closest('.setting-list-item, .SettingsBlock, section, li, div');
+            const row = ${customAttributeRowJs('button')};
             const rowText = (row?.textContent || '')
                 .replace(/Edit.*$/s, '')
                 .replace(/Click 'Edit' to add your custom attribute/gi, '')
@@ -279,11 +344,15 @@ export async function editTextCustomAttribute(
     newValue: string,
     save = true,
 ): Promise<void> {
+    await ensureCustomAttributeEditReady(win, fieldId);
     await win.runInRenderer<void>(`
         const fieldId = ${JSON.stringify(fieldId)};
         const editBtn = document.querySelector('#customAttribute_' + fieldId + 'Edit');
-        editBtn?.scrollIntoView({block: 'center'});
-        editBtn?.click();
+        if (!(editBtn instanceof HTMLElement)) {
+            throw new Error('Custom attribute Edit button not found for ' + fieldId);
+        }
+        editBtn.scrollIntoView({block: 'center'});
+        editBtn.click();
     `);
     await win.waitForSelector(`#customAttribute_${fieldId}`, {timeout: 10_000});
     await win.runInRenderer<void>(`
@@ -302,14 +371,18 @@ export async function editTextCustomAttribute(
         await win.fill(`#customAttribute_${fieldId}`, newValue);
     }
     if (save) {
+        await win.waitForSelector('#saveSetting', {timeout: 10_000});
+        await expect.poll(async () => win.runInRenderer<boolean>(`
+            const saveBtn = document.querySelector('#saveSetting');
+            return saveBtn instanceof HTMLButtonElement && !saveBtn.disabled;
+        `), {timeout: 10_000, message: 'Save button must be enabled before saving custom attribute'}).toBe(true);
         await win.runInRenderer<void>(`
             const fieldId = ${JSON.stringify(fieldId)};
             const input = document.querySelector('#customAttribute_' + fieldId);
-            const row = input?.closest('.setting-list-item, .SettingsBlock, section, li, div') || document;
-            const saveBtn = Array.from(row.querySelectorAll('button'))
-                .find((button) => (button.textContent || '').trim() === 'Save');
+            const scope = ${customAttributeEditScopeJs('input')} || document;
+            const saveBtn = scope.querySelector('#saveSetting') || document.querySelector('#saveSetting');
             if (!(saveBtn instanceof HTMLButtonElement)) {
-                throw new Error('Save button not found for custom attribute row');
+                throw new Error('Save button not found for custom attribute edit section');
             }
             saveBtn.click();
         `);
@@ -342,7 +415,7 @@ export async function getCustomAttributeInputValue(win: ServerView, fieldId: str
         if (!editBtn) {
             return input instanceof HTMLInputElement ? input.value : '';
         }
-        const row = editBtn.closest('.setting-list-item, .SettingsBlock, section, li, div');
+        const row = ${customAttributeRowJs('editBtn')};
         if (!row) {
             return '';
         }

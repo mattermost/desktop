@@ -12,6 +12,7 @@ import {demoMattermostConfig} from '../../helpers/config';
 import {closeDownloadsDropdownIfOpen} from '../../helpers/downloadsDropdown';
 import {launchDirectTestApp} from '../../helpers/directLaunch';
 import {closeElectronAppFast, waitForWindow} from '../../helpers/electronApp';
+import {NOTIFICATION_CLICKED} from '../../helpers/ipcChannels';
 import {loginToMattermost} from '../../helpers/login';
 import {waitForMainWindowFocused} from '../../helpers/mainWindowFocus';
 import {POST_TEXTBOX_SELECTOR, waitForChannelPostListLoaded, waitForMattermostShellReady} from '../../helpers/mattermostShell';
@@ -32,12 +33,12 @@ import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {resolvedChannelPath, resolveChannelByName} from '../../helpers/server_api/channel';
 import {seedThreadInChannel} from '../../helpers/server_api/post';
 import {buildServerMap} from '../../helpers/serverMap';
+import {evaluateInMainProcessWithArg} from '../../helpers/testRefs';
 import {
     clickOpenInNewWindowFromRhsThreadMenu,
     clickOpenInNewWindowFromThreadsListMenu,
     clickOpenInNewWindowMenuItem,
 } from '../../helpers/webappMenu';
-import {NOTIFICATION_CLICKED} from '../../../src/common/communication';
 
 const config = {
     ...demoMattermostConfig,
@@ -469,11 +470,17 @@ test.describe('multi_window/multi_window', () => {
         const browserWindow = await electronApp.browserWindow(popoutWindow);
         const initialBounds = await browserWindow.evaluate((w) => (w as Electron.BrowserWindow).getBounds());
 
+        const workArea = await evaluateInMainProcessWithArg(
+            electronApp,
+            (electron, bounds) => electron.screen.getDisplayMatching(bounds).workArea,
+            initialBounds,
+        );
+        const margin = 20;
         const resizedBounds = {
             x: initialBounds.x,
             y: initialBounds.y,
-            width: initialBounds.width + 200,
-            height: initialBounds.height + 200,
+            width: Math.min(initialBounds.width + 200, (workArea.x + workArea.width) - initialBounds.x - margin),
+            height: Math.min(initialBounds.height + 200, (workArea.y + workArea.height) - initialBounds.y - margin),
         };
 
         await browserWindow.evaluate((w, bounds) => {

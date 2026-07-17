@@ -146,6 +146,7 @@ export async function cleanupRegisteredElectronProcesses(): Promise<void> {
     const pids = readPidsFromFile(file);
     fs.rmSync(file, {force: true});
     await reapPids(pids);
+    await forceKillStrayElectronProcesses();
 }
 
 /**
@@ -160,6 +161,7 @@ export async function cleanupAllRegisteredElectronProcesses(): Promise<void> {
         fs.rmSync(file, {force: true});
     }
     await reapPids(pids);
+    await forceKillStrayElectronProcesses();
 }
 
 /**
@@ -275,6 +277,61 @@ async function drainPlaywrightClose(closePromise: Promise<void>, remainingMs: nu
     await Promise.race([closePromise, sleep(remainingMs)]);
 }
 
+async function requestElectronQuit(app: ElectronApplication): Promise<void> {
+    try {
+        await Promise.race([
+            app.evaluate(() => {
+                const {app: electronApp} = require('electron');
+                electronApp.exit(0);
+            }),
+            sleep(2_000),
+        ]);
+    } catch {
+        // evaluation may fail if the app is already shutting down
+    }
+}
+
+async function settleElectronClose(closePromise: Promise<void>, pid: number | undefined, budgetMs: number): Promise<void> {
+    const deadline = Date.now() + budgetMs;
+    while (Date.now() < deadline) {
+        if (await isClosePromiseSettled(closePromise)) {
+            return;
+        }
+
+        // Keep draining until Playwright observes a dead process and rejects close().
+        // Returning early when the PID is gone but close() is still pending leaves a
+        // gracefullyClose entry that burns the full workerTeardownTimeout (#29431).
+        await drainPlaywrightClose(closePromise, Math.min(2_000, deadline - Date.now()));
+        if (pid && !isProcessAlive(pid)) {
+            await forceKillStrayElectronProcesses();
+        }
+        await sleep(200);
+    }
+}
+
+async function isClosePromiseSettled(closePromise: Promise<void>): Promise<boolean> {
+    const result = await Promise.race([
+        closePromise.then(() => 'settled' as const, () => 'settled' as const),
+        sleep(50).then(() => 'pending' as const),
+    ]);
+    return result === 'settled';
+}
+
+/**
+ * Linux CI can leave Mattermost Electron processes running when app.close() never
+ * settles. Reap by executable path as a worker/global backstop after registry cleanup.
+ */
+export async function forceKillStrayElectronProcesses(): Promise<void> {
+    if (process.platform !== 'linux') {
+        return;
+    }
+    try {
+        execFileSync('pkill', ['-KILL', '-f', 'node_modules/electron/dist/electron'], {stdio: 'ignore'});
+    } catch {
+        // no matching processes
+    }
+}
+
 async function forceShutdownLinux(pid: number): Promise<void> {
     if (!isProcessAlive(pid)) {
         return;
@@ -306,7 +363,12 @@ function signalShutdownAndReturn(pid: number): void {
     }
 }
 
-async function attemptClose(app: ElectronApplication, timeoutMs: number): Promise<boolean> {
+type AttemptCloseResult = {
+    closed: boolean;
+    closePromise: Promise<void>;
+};
+
+async function attemptClose(app: ElectronApplication, timeoutMs: number): Promise<AttemptCloseResult> {
     let closed = false;
 
     // Only mark closed on successful resolve; a rejected close() must leave
@@ -316,8 +378,11 @@ async function attemptClose(app: ElectronApplication, timeoutMs: number): Promis
     }, () => {});
     const start = Date.now();
     await Promise.race([closePromise, sleep(timeoutMs)]);
-    await drainPlaywrightClose(closePromise, timeoutMs - (Date.now() - start));
-    return closed;
+    const remainingMs = Math.max(0, timeoutMs - (Date.now() - start));
+
+    // Playwright keeps a gracefullyClose entry until close() settles (#29431).
+    await drainPlaywrightClose(closePromise, Math.max(remainingMs, 2_000));
+    return {closed, closePromise};
 }
 
 export async function waitForWindow(app: ElectronApplication, pattern: string, timeout = 30_000) {
@@ -360,22 +425,37 @@ export async function closeElectronApp(
     // same userDataDir may be relaunched, so we force-kill on failure (Linux)
     // and always wait for the SingletonLock to release.
     const fastTeardown = Boolean(options.skipLockWaitUnlessCleanClose);
+    const closeTimeoutMs = process.platform === 'linux' && fastTeardown ? 5_000 : 10_000;
 
-    const cleanClosed = await attemptClose(app, 10_000);
-
-    if (!cleanClosed && pid) {
-        if (process.platform === 'linux') {
-            // Always SIGKILL stuck trees on Linux so worker teardown does not sit
-            // in Playwright's 90s gracefullyClose wait with live Electron PIDs.
-            await forceShutdownLinux(pid);
-        } else {
-            signalShutdownAndReturn(pid);
-        }
+    if (process.platform === 'linux') {
+        await requestElectronQuit(app);
     }
 
-    // Fast path on a failed close: return immediately (master-style). The lock
+    const {closed: cleanClosed, closePromise} = await attemptClose(app, closeTimeoutMs);
+
+    if (!cleanClosed) {
+        if (pid) {
+            if (process.platform === 'linux') {
+                // Always SIGKILL stuck trees on Linux so worker teardown does not sit
+                // in Playwright's 90s gracefullyClose wait with live Electron PIDs.
+                await forceShutdownLinux(pid);
+            } else {
+                signalShutdownAndReturn(pid);
+            }
+        }
+
+        // Killing the process does not settle app.close(); wait until Playwright
+        // drops the gracefullyClose entry before worker teardown.
+        const settleBudgetMs = process.platform === 'linux' ? 45_000 : 20_000;
+        await settleElectronClose(closePromise, pid, settleBudgetMs);
+    }
+
+    // Fast path on a failed close: return once close() has settled. The lock
     // lives in an abandoned dir and worker/global cleanup reaps any live PID.
     if (fastTeardown && !cleanClosed) {
+        if (!(await isClosePromiseSettled(closePromise))) {
+            await settleElectronClose(closePromise, pid, process.platform === 'linux' ? 30_000 : 15_000);
+        }
         if (pid && !isProcessAlive(pid)) {
             unregisterElectronMainProcess(pid);
         }
