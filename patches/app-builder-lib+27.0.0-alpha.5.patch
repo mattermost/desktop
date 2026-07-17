@@ -1,40 +1,40 @@
-diff --git a/node_modules/app-builder-lib/out/targets/MsiTarget.js b/node_modules/app-builder-lib/out/targets/MsiTarget.js
-index 6fe63f1..85e3925 100644
---- a/node_modules/app-builder-lib/out/targets/MsiTarget.js
-+++ b/node_modules/app-builder-lib/out/targets/MsiTarget.js
-@@ -215,7 +215,7 @@ class MsiTarget extends core_1.Target {
+diff --git a/node_modules/app-builder-lib/dist/targets/win/MsiTarget.js b/node_modules/app-builder-lib/dist/targets/win/MsiTarget.js
+index 68861bf..c2d8305 100644
+--- a/node_modules/app-builder-lib/dist/targets/win/MsiTarget.js
++++ b/node_modules/app-builder-lib/dist/targets/win/MsiTarget.js
+@@ -220,7 +220,7 @@ export default class MsiTarget extends Target {
                  result += `>\n`;
                  const shortcutName = commonOptions.shortcutName;
                  if (isCreateDesktopShortcut) {
--                    result += `${fileSpace}  <Shortcut Id="desktopShortcut" Directory="DesktopFolder" Name="${xmlAttr(shortcutName)}" WorkingDirectory="APPLICATIONFOLDER" Advertise="yes" Icon="${this.iconId}"/>\n`;
-+                    result += `${fileSpace}  <Shortcut Id="desktopShortcut" Directory="DesktopFolder" Name="${xmlAttr(shortcutName)}" WorkingDirectory="APPLICATIONFOLDER" Advertise="yes"/>\n`;
+-                    result += `${fileSpace}  <Shortcut Id="desktopShortcut" Directory="DesktopFolder" Name="${escapeForXml(shortcutName)}" WorkingDirectory="APPLICATIONFOLDER" Advertise="yes" Icon="${this.iconId}"/>\n`;
++                    result += `${fileSpace}  <Shortcut Id="desktopShortcut" Directory="DesktopFolder" Name="${escapeForXml(shortcutName)}" WorkingDirectory="APPLICATIONFOLDER" Advertise="yes"/>\n`;
                  }
                  const hasMenuCategory = commonOptions.menuCategory != null;
                  const startMenuShortcutDirectoryId = hasMenuCategory ? "AppProgramMenuDir" : "ProgramMenuFolder";
-@@ -223,7 +223,7 @@ class MsiTarget extends core_1.Target {
+@@ -228,7 +228,7 @@ export default class MsiTarget extends Target {
                      if (hasMenuCategory) {
                          dirs.push(`<Directory Id="${startMenuShortcutDirectoryId}" Name="ProgramMenuFolder:\\${commonOptions.menuCategory}\\"/>`);
                      }
--                    result += `${fileSpace}  <Shortcut Id="startMenuShortcut" Directory="${startMenuShortcutDirectoryId}" Name="${xmlAttr(shortcutName)}" WorkingDirectory="APPLICATIONFOLDER" Advertise="yes" Icon="${this.iconId}">\n`;
-+                    result += `${fileSpace}  <Shortcut Id="startMenuShortcut" Directory="${startMenuShortcutDirectoryId}" Name="${xmlAttr(shortcutName)}" WorkingDirectory="APPLICATIONFOLDER" Advertise="yes">\n`;
-                     result += `${fileSpace}    <ShortcutProperty Key="System.AppUserModel.ID" Value="${xmlAttr(this.packager.appInfo.id)}"/>\n`;
+-                    result += `${fileSpace}  <Shortcut Id="startMenuShortcut" Directory="${startMenuShortcutDirectoryId}" Name="${escapeForXml(shortcutName)}" WorkingDirectory="APPLICATIONFOLDER" Advertise="yes" Icon="${this.iconId}">\n`;
++                    result += `${fileSpace}  <Shortcut Id="startMenuShortcut" Directory="${startMenuShortcutDirectoryId}" Name="${escapeForXml(shortcutName)}" WorkingDirectory="APPLICATIONFOLDER" Advertise="yes">\n`;
+                     result += `${fileSpace}    <ShortcutProperty Key="System.AppUserModel.ID" Value="${escapeForXml(this.packager.appInfo.id)}"/>\n`;
                      result += `${fileSpace}  </Shortcut>\n`;
                  }
 diff --git a/node_modules/app-builder-lib/templates/msi/template.xml b/node_modules/app-builder-lib/templates/msi/template.xml
-index 2d5cd3c..ef2d419 100644
+index 2d5cd3c..47faa6a 100644
 --- a/node_modules/app-builder-lib/templates/msi/template.xml
 +++ b/node_modules/app-builder-lib/templates/msi/template.xml
 @@ -1,5 +1,8 @@
  <?xml version="1.0" encoding="UTF-8"?>
 -<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-+<Wix
++<Wix 
 +  xmlns="http://wixtoolset.org/schemas/v4/wxs"
 +  xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util"
 +>
    <!-- https://blogs.msdn.microsoft.com/gremlininthemachine/2006/12/05/msi-wix-and-unicode/ -->
    <Product Id="*" Name="${productName}" UpgradeCode="${upgradeCode}" Version="${version}" Language="1033" Codepage="65001" Manufacturer="${manufacturer}">
      <Package Compressed="yes" InstallerVersion="500"/>
-@@ -13,19 +16,50 @@
+@@ -13,19 +16,51 @@
  
        So, AllowSameVersionUpgrades="yes" allows to build and test MSI with the same version, and previously installed app will be removed.
      -->
@@ -77,6 +77,7 @@ index 2d5cd3c..ef2d419 100644
 +      Impersonate="yes"
 +      Return="ignore"
 +    />
++
 +    <InstallExecuteSequence>
 +      <Custom Action="WixCloseApplications" Before="InstallValidate"/>
 +      <Custom Action="WixCloseApplicationsDeferred" After="InstallInitialize"/>
@@ -86,7 +87,7 @@ index 2d5cd3c..ef2d419 100644
      {{ if (isRunAfterFinish) { }}
        <CustomAction Id="runAfterFinish" FileKey="mainExecutable" ExeCommand="" Execute="immediate" Impersonate="yes" Return="asyncNoWait"/>
        {{ if (!isAssisted) { }}
-@@ -42,6 +76,7 @@
+@@ -42,6 +77,7 @@
        <Property Id="ALLUSERS" Secure="yes" Value="2"/>
      {{ } -}}
      <Property Id="MSIINSTALLPERUSER" Secure="yes" Value="1"/>
@@ -94,7 +95,7 @@ index 2d5cd3c..ef2d419 100644
  
      {{ if (isAssisted) { }}
        <WixVariable Id="WixUISupportPerUser" Value="1" Overridable="yes"/>
-@@ -80,6 +115,7 @@
+@@ -80,6 +116,7 @@
        </UI>
      {{ } -}}
  

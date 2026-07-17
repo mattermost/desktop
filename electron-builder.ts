@@ -19,6 +19,15 @@ function getMacVersions() {
 }
 
 const config = {
+    asar: {
+        unpack: [
+            './node_modules/macos-notification-state/build/Release/**/*.node',
+            './node_modules/windows-focus-assist/build/Release/**/*.node',
+            './node_modules/registry-js/build/Release/**/*.node',
+            './node_modules/cf-prefs/build/Release/**/*.node',
+            './node_modules/@koromix/**/*.node',
+        ],
+    },
     appId: 'Mattermost.Desktop',
     artifactName: '${version}/${name}-${version}-${os}-${arch}.${ext}',
     directories: {
@@ -50,7 +59,6 @@ const config = {
         'node_modules/windows-focus-assist/build/Release/**/*.node',
         'node_modules/registry-js/build/Release/**/*.node',
         'node_modules/cf-prefs/build/Release/**/*.node',
-        'node_modules/@koromix/**/*.node',
         {
             from: 'dist',
             to: '.',
@@ -77,13 +85,6 @@ const config = {
         ],
         priority: 'optional',
     },
-    asarUnpack: [
-        './node_modules/macos-notification-state/build/Release/**/*.node',
-        './node_modules/windows-focus-assist/build/Release/**/*.node',
-        './node_modules/registry-js/build/Release/**/*.node',
-        './node_modules/cf-prefs/build/Release/**/*.node',
-        './node_modules/@koromix/**/*.node',
-    ],
     linux: {
         category: 'Network;InstantMessaging',
         target: [
@@ -115,6 +116,12 @@ const config = {
         executableArgs: [' '],
     },
     mac: {
+        sign: {
+            entitlements: './resources/mac/entitlements.mac.plist',
+            entitlementsInherit: './resources/mac/entitlements.mac.inherit.plist',
+            hardenedRuntime: true,
+            gatekeeperAssess: true,
+        },
         category: 'public.app-category.productivity',
         target: [
             'zip',
@@ -129,33 +136,30 @@ const config = {
                 ],
             },
         ],
-        hardenedRuntime: true,
-        gatekeeperAssess: true,
-        entitlements: './resources/mac/entitlements.mac.plist',
-        entitlementsInherit: './resources/mac/entitlements.mac.inherit.plist',
         extendInfo: {
             NSMicrophoneUsageDescription: 'Microphone access is used to capture audio for voice communication and recordings.',
             NSCameraUsageDescription: 'Camera access is used to capture video for video conferencing and recordings.',
             NSFocusStatusUsageDescription: 'Focus status is used by Mattermost to determine whether to send notifications or not.',
             LSFileQuarantineEnabled: true,
         },
-        x64ArchFiles: '**/node_modules/@koromix/koffi-darwin-*/darwin_*/koffi.node',
         ...getMacVersions(),
     },
     mas: {
-        entitlements: './resources/mac/entitlements.mas.plist',
-        entitlementsInherit: './resources/mac/entitlements.mas.inherit.plist',
-        entitlementsLoginHelper: './resources/mac/entitlements.mas.inherit.plist',
-        provisioningProfile: './mas.provisionprofile',
+        sign: {
+            entitlements: './resources/mac/entitlements.mas.plist',
+            entitlementsInherit: './resources/mac/entitlements.mas.inherit.plist',
+            entitlementsLoginHelper: './resources/mac/entitlements.mas.inherit.plist',
+            provisioningProfile: './mas.provisionprofile',
+        },
         extendInfo: {
             ITSAppUsesNonExemptEncryption: false,
             NSUserActivityTypes: ['INSendMessageIntent'],
         },
-        singleArchFiles: '*',
-        x64ArchFiles: '**/node_modules/@koromix/koffi-darwin-*/darwin_*/koffi.node',
     },
     masDev: {
-        provisioningProfile: './dev.provisionprofile',
+        sign: {
+            provisioningProfile: './dev.provisionprofile',
+        },
     },
     dmg: {
         background: 'src/assets/osx/DMG_BG.png',
@@ -195,7 +199,8 @@ const config = {
             },
         ],
         signExts: ['.dll', '.node'],
-        azureSignOptions: process.env.AZURE_CLIENT_ID ? {
+        sign: process.env.AZURE_CLIENT_ID ? {
+            type: 'azure',
             certificateProfileName: 'mattermost-desktop-app',
             codeSigningAccountName: 'DesktopAppCodeSigning',
             endpoint: 'https://eus.codesigning.azure.net',
@@ -219,7 +224,7 @@ const config = {
 
 if (process.env.CI_MAC_ZIP_ONLY) {
     config.mac.target = ['zip'];
-    config.mac.gatekeeperAssess = false;
+    config.mac.sign.gatekeeperAssess = false;
 }
 
 module.exports = config;
