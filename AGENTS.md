@@ -286,26 +286,31 @@ Open Settings (`Ctrl/Cmd+,`) → switch logging to **Debug** → reproduce → *
 
 ## Cursor Cloud specific instructions
 
-- A virtual display is already running (`DISPLAY=:99` via Xvfb). GUI/manual testing of the app's internal UI (onboarding, settings, modals, tab bar) works out of the box.
+- A virtual display is already running (`DISPLAY=:99` via Xvfb) with Openbox as the window manager. GUI/manual testing of the app's internal UI (onboarding, settings, modals, tab bar) works out of the box.
 - Passwordless sudo is available and required by `npm run linux-dev-setup` (sets the chrome-sandbox setuid bit).
 - `npm start` runs `linux-dev-setup` then launches `electron dist/ --disable-dev-mode`.
 - Benign on startup, not bugs: GTK accel-group assertion warnings, one-time `ENOENT bounds-info.json` on first launch, and isolated `net::ERR_FAILED` from first-launch requests that have no configured server yet (e.g. update checks before any server is added). Treat `net::ERR_FAILED` (and other network errors) as **actionable** when connecting to a configured Mattermost server URL or any other resource the task depends on.
 - Reset app to the fresh onboarding screen: `rm -rf ~/.config/Electron`.
 - The base image has **no Docker daemon and no Go toolchain**. Don't try to build the server from source or run `docker`/`docker-compose`; use the prebuilt server release + PostgreSQL from `apt` (see below).
+- **Manual/GUI testing (including computer-use) needs a `NODE_ENV=test` build**, not a plain `npm run build` + `npm start`. `webpack.config.base.js`'s `DefinePlugin` inlines `process.env.NODE_ENV` into the bundle at **build time**, so setting `NODE_ENV=test` only when launching has no effect on an already-built `dist/`. Without a test build, connecting to a server pops a blocking native "Permission Requested" (notifications) dialog on top of the app that computer-use/`xdotool` cannot reliably click through, since `dialog.showMessageBox` is only skipped when the build itself was compiled with `NODE_ENV=test` (`src/main/security/permissionsManager.ts`). Build and launch instead:
+
+  ```bash
+  npm run build-test               # NODE_ENV=test — outputs to e2e/dist/, NOT dist/
+  npm run linux-dev-setup && ./node_modules/.bin/electron e2e/dist/ --disable-dev-mode
+  ```
+- Do **not** pass `--no-sandbox` when launching manually. Combined with this environment's zygote setup it reliably crashes the app (`GPU process launch failed: error_code=1002`, `Network service crashed`, sometimes a fatal `GPU process isn't usable. Goodbye.` that kills the whole process). The plain launch above works fine because `npm run linux-dev-setup` already configures a real, working `chrome-sandbox` setuid binary — the sandbox doesn't need to be disabled here. If you want extra renderer stability, `--disable-gpu` alone (without `--no-sandbox`) is safe.
+- **Never open Chrome (or any other browser) to work around a stuck or blank app window**, and never let a manual-testing/computer-use session spawn its own second `npm start` or `electron` process from a terminal. A stray second instance — especially one still pointed at the stale `dist/` build instead of `e2e/dist/` — produces confusing symptoms that look like app regressions but are really just two instances fighting each other (the notification dialog reappearing, GPU crashes, focus jumping between windows). Before and after manual GUI testing, confirm exactly one Electron process tree is running and pointed at the intended build dir: `ps -ef | grep -i electron`.
 
 ### Typing into a server view (WebContentsView)
 
-Bare Xvfb runs **no window manager**, so synthetic keyboard input (computer use / `xdotool`) reaches the internal app chrome but **not** an external server view — the Mattermost web app's own login form and message box won't receive keystrokes. Each server renders in a `WebContentsView` whose `webContents.focus()` is gated on the main window being focused (`src/app/views/MattermostWebContentsView.ts`), and without a WM the window never gets X focus events.
+Each server renders in a `WebContentsView` whose `webContents.focus()` is gated on the main window being focused (`src/app/views/MattermostWebContentsView.ts`). A synthetic click (computer use / `xdotool`) landing *inside* the WebContentsView content (e.g. directly on the login form) does not reliably transfer OS/Electron-level keyboard focus to it, even though the outer `BrowserWindow` and Openbox both report the window as focused — this is not a missing-window-manager issue.
 
-- For GUI keyboard entry into server views, run a lightweight WM first (install, then launch as separate steps):
+Working procedure for manual/GUI keyboard entry into a server view (e.g. the login form):
 
-  ```bash
-  sudo apt-get install -y openbox
-  DISPLAY=:99 openbox &
-  ```
+1. Click once on the app's own internal chrome — the tab bar / server-tab area at the very top of the window, above the WebContentsView content — before typing anything. This is what actually triggers the app to call `view.focus()` and forward keyboard focus to the WebContentsView; it also lands on whatever element already has autofocus inside it (e.g. the login form's "Email or Username" field).
+2. From there, use **keyboard only** — `Tab` to move between fields, type, `Enter` to submit. Do **not** click a second time inside the WebContentsView content: a raw click on a different field (e.g. clicking directly into the password field after typing the username) silently drops focus from the whole view, and any further typed text goes nowhere with no error logged.
 
-  Leave Openbox running in the background.
-- For deterministic, focus-independent login, drive the server view through the main process instead of the OS. The E2E harness already does this — reuse `loginToMattermost` / the `ServerView` helper (see `e2e/AGENTS.md` and `e2e/helpers/`), which types via `webContents` rather than synthetic X events. This works headless without a WM.
+This is a manual-testing/computer-use-specific quirk — real users with a physical mouse don't hit it. For scripted (non-GUI) testing, the E2E harness avoids it entirely by driving `webContents` via Playwright/CDP (`loginToMattermost` / `ServerView` helper, see `e2e/AGENTS.md` and `e2e/helpers/`) instead of OS-level synthetic input.
 
 ### Running a local Mattermost server (for login / manual testing)
 
