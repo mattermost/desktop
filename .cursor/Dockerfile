@@ -8,7 +8,6 @@ ARG NVM_VERSION=0.40.3
 ENV DEBIAN_FRONTEND=noninteractive
 ENV NVM_DIR=/home/ubuntu/.nvm
 ENV DISPLAY=:99
-ENV ELECTRON_DISABLE_SANDBOX=1
 ENV PATH=/home/ubuntu/.nvm/versions/node/v${NODE_VERSION}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 RUN apt-get update && \
