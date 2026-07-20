@@ -9,13 +9,23 @@ DISPLAY="${DISPLAY:-:99}"
 export DISPLAY
 
 persist_dbus_env() {
-    printf 'export DBUS_SESSION_BUS_ADDRESS=%s\n' "${DBUS_SESSION_BUS_ADDRESS}" > /home/ubuntu/.cloud-agent-env
+    printf 'export DBUS_SESSION_BUS_ADDRESS=%q\n' "${DBUS_SESSION_BUS_ADDRESS}" > /home/ubuntu/.cloud-agent-env
+}
+
+probe_dbus_session() {
+    timeout 2 dbus-send --session --print-reply \
+        --dest=org.freedesktop.DBus /org/freedesktop/DBus \
+        org.freedesktop.DBus.GetId >/dev/null 2>&1
 }
 
 ensure_dbus() {
     if [ -n "${DBUS_SESSION_BUS_ADDRESS:-}" ]; then
-        persist_dbus_env
-        return 0
+        if probe_dbus_session; then
+            persist_dbus_env
+            return 0
+        fi
+        log "Existing DBUS_SESSION_BUS_ADDRESS is unreachable; starting a new session bus."
+        unset DBUS_SESSION_BUS_ADDRESS
     fi
 
     if ! command -v dbus-launch >/dev/null 2>&1; then
