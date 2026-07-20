@@ -300,6 +300,9 @@ jobs:
           gh-job-name: e2e-on-${{ inputs.runs-on }}-${{ inputs.MM_SERVER_VERSION }}
           json-path: e2e/test-results/results.json
           screenshots-dir: e2e/test-results
+          # TEMP_TSIO_STAGING: point uploads at staging while validating TSIO #76.
+          # REVERT before merge / after staging sign-off — remove this line (default = prod).
+          use-staging: "true"
 
       - name: e2e/handle-nonzero-playwright-exit
         if: always()
