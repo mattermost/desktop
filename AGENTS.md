@@ -289,7 +289,7 @@ Open Settings (`Ctrl/Cmd+,`) → switch logging to **Debug** → reproduce → *
 - A virtual display is already running (`DISPLAY=:99` via Xvfb). GUI/manual testing of the app's internal UI (onboarding, settings, modals, tab bar) works out of the box.
 - Passwordless sudo is available and required by `npm run linux-dev-setup` (sets the chrome-sandbox setuid bit).
 - `npm start` runs `linux-dev-setup` then launches `electron dist/ --disable-dev-mode`.
-- Benign on startup, not bugs: GTK accel-group assertion warnings, one-time `ENOENT bounds-info.json` on first launch, `net::ERR_FAILED`.
+- Benign on startup, not bugs: GTK accel-group assertion warnings, one-time `ENOENT bounds-info.json` on first launch, and isolated `net::ERR_FAILED` from first-launch requests that have no configured server yet (e.g. update checks before any server is added). Treat `net::ERR_FAILED` (and other network errors) as **actionable** when connecting to a configured Mattermost server URL or any other resource the task depends on.
 - Reset app to the fresh onboarding screen: `rm -rf ~/.config/Electron`.
 - The base image has **no Docker daemon and no Go toolchain**. Don't try to build the server from source or run `docker`/`docker-compose`; use the prebuilt server release + PostgreSQL from `apt` (see below).
 
@@ -297,7 +297,14 @@ Open Settings (`Ctrl/Cmd+,`) → switch logging to **Debug** → reproduce → *
 
 Bare Xvfb runs **no window manager**, so synthetic keyboard input (computer use / `xdotool`) reaches the internal app chrome but **not** an external server view — the Mattermost web app's own login form and message box won't receive keystrokes. Each server renders in a `WebContentsView` whose `webContents.focus()` is gated on the main window being focused (`src/app/views/MattermostWebContentsView.ts`), and without a WM the window never gets X focus events.
 
-- For GUI keyboard entry into server views, run a lightweight WM first: `sudo apt-get install -y openbox && DISPLAY=:99 openbox &` (leave it running).
+- For GUI keyboard entry into server views, run a lightweight WM first (install, then launch as separate steps):
+
+  ```bash
+  sudo apt-get install -y openbox
+  DISPLAY=:99 openbox &
+  ```
+
+  Leave Openbox running in the background.
 - For deterministic, focus-independent login, drive the server view through the main process instead of the OS. The E2E harness already does this — reuse `loginToMattermost` / the `ServerView` helper (see `e2e/AGENTS.md` and `e2e/helpers/`), which types via `webContents` rather than synthetic X events. This works headless without a WM.
 
 ### Running a local Mattermost server (for login / manual testing)
@@ -313,10 +320,11 @@ The Desktop App needs a real server to add and log into. Spin one up with the pr
    sudo -u postgres psql -c "CREATE DATABASE mattermost_test OWNER mmuser;"
    ```
 
-2. Download and extract the server (pick the latest version), then start it in a long-lived session (e.g. tmux). Configure it via `MM_*` env vars and enable local mode so `mmctl` can seed without auth:
+2. Download and extract a pinned server release, then start it in a long-lived session (e.g. tmux). Configure it via `MM_*` env vars and enable local mode so `mmctl` can seed without auth:
 
    ```bash
-   curl -sL -o /tmp/mattermost.tar.gz https://releases.mattermost.com/11.9.0/mattermost-11.9.0-linux-amd64.tar.gz
+   MATTERMOST_VERSION=11.9.0
+   curl -fsSL -o /tmp/mattermost.tar.gz "https://releases.mattermost.com/${MATTERMOST_VERSION}/mattermost-${MATTERMOST_VERSION}-linux-amd64.tar.gz"
    tar xzf /tmp/mattermost.tar.gz -C ~/
    cd ~/mattermost
    export MM_SQLSETTINGS_DRIVERNAME=postgres
