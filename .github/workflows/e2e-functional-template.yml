@@ -31,7 +31,7 @@ on:
         default: false
       TYPE:
         type: string
-        description: "e.g. PR, NIGHTLY, RELEASE or CMT (Compatibility Matrix Testing)"
+        description: "e.g. PR, MASTER, or CMT (Compatibility Matrix Testing)"
         required: false
         default: "PR"
       MM_SERVER_VERSION:
@@ -125,7 +125,7 @@ jobs:
           echo "CI_ENVIRONMENT_NAME=@ci-${RUNNER_OS}" >> $GITHUB_ENV
           
           # Define build type and suffix
-          # inputs.TYPE takes precedence when provided by the caller (e.g. RELEASE, MASTER, PR).
+          # inputs.TYPE takes precedence when provided by the caller (PR, MASTER, CMT).
           INPUT_TYPE="${{ inputs.TYPE }}"
           case "${{ github.event_name }}" in
             "pull_request")
@@ -134,7 +134,7 @@ jobs:
               ;;
             "workflow_dispatch")
               if ${{ inputs.cmt }}; then
-                echo "BUILD_SUFFIX=desktop-release-${RUNNER_OS}" >> $GITHUB_OUTPUT
+                echo "BUILD_SUFFIX=desktop-cmt-${RUNNER_OS}" >> $GITHUB_OUTPUT
                 echo "TYPE=${INPUT_TYPE:-CMT}" >> $GITHUB_ENV
                 echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
                 echo "ZEPHYR_FOLDER_${RUNNER_OS^^}_REPORT=${{
@@ -143,12 +143,17 @@ jobs:
                   '12358651'
                 }}" >> $GITHUB_ENV
               else
-                echo "BUILD_SUFFIX=desktop-manual-trigger-${RUNNER_OS}" >> $GITHUB_OUTPUT
-                echo "TYPE=${INPUT_TYPE:-MANUAL}" >> $GITHUB_ENV
+                # Matterwick PR / master dispatches land here (workflow_call → this template
+                # still sees workflow_dispatch as the root event on the caller).
+                TYPE_VALUE="${INPUT_TYPE:-PR}"
+                TYPE_LOWER=$(echo "${TYPE_VALUE}" | tr '[:upper:]' '[:lower:]')
+                echo "BUILD_SUFFIX=desktop-${TYPE_LOWER}-${RUNNER_OS}" >> $GITHUB_OUTPUT
+                echo "TYPE=${TYPE_VALUE}" >> $GITHUB_ENV
               fi
               ;;
             "push")
-              echo "BUILD_SUFFIX=desktop-push-${RUNNER_OS}" >> $GITHUB_OUTPUT
+              echo "BUILD_SUFFIX=desktop-master-${RUNNER_OS}" >> $GITHUB_OUTPUT
+              echo "TYPE=${INPUT_TYPE:-MASTER}" >> $GITHUB_ENV
               ;;
           esac
 

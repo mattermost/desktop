@@ -25,7 +25,7 @@ on:
         required: true
       run_type:
         type: string
-        description: "Run type for test reporting (PR / MASTER / RELEASE). Matterwick sends MASTER for master pushes; PR-label runs leave this blank (default PR). Settable on manual dispatch for ad-hoc RELEASE runs."
+        description: "Run type for test reporting (PR / MASTER). Matterwick sends MASTER for master pushes; PR-label runs leave this blank (default PR)."
         required: false
         default: ""
       pr_number:
