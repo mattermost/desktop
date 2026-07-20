@@ -137,7 +137,9 @@ jobs:
                 echo "BUILD_SUFFIX=desktop-cmt-${RUNNER_OS}" >> $GITHUB_OUTPUT
                 echo "TYPE=${INPUT_TYPE:-CMT}" >> $GITHUB_ENV
                 echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
-                echo "ZEPHYR_FOLDER_${RUNNER_OS^^}_REPORT=${{
+                # Use tr, not ${var^^} — macOS runners ship Bash 3.2 which rejects ^^.
+                RUNNER_OS_UPPER=$(echo "${RUNNER_OS}" | tr '[:lower:]' '[:upper:]')
+                echo "ZEPHYR_FOLDER_${RUNNER_OS_UPPER}_REPORT=${{
                   runner.os == 'Linux' && '12358649' ||
                   runner.os == 'macOS' && '12358650' ||
                   '12358651'
