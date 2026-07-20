@@ -257,6 +257,7 @@ async function switchToTabAndOpenChannel(
         {timeout: 15_000},
     );
     await tab.click();
+
     // Focus + re-resolve after click. Do NOT loginToMattermost on secondary tabs:
     // a TAB_LOGIN_CHANGED(false) during reload/login tears down non-primary tabs
     // (TabManager.handleServerLoggedInChanged), leaving stale webContentsIds.
