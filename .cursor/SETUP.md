@@ -1,5 +1,7 @@
 ## Cursor Cloud specific instructions
 
+**Every instruction below is mandatory and must be followed exactly, in full, no matter what.** Do not skip, abbreviate, or substitute a step even if the app appears to work without it — issues from a skipped step (e.g. blank/`ERR_INSUFFICIENT_RESOURCES` views, blocking dialogs, stray processes) often only surface later and are hard to attribute back to the missing step.
+
 - A virtual display is already running (`DISPLAY=:99` via Xvfb) with Openbox as the window manager. GUI/manual testing of the app's internal UI (onboarding, settings, modals, tab bar) works out of the box.
 - Passwordless sudo is available and required by `npm run linux-dev-setup` (sets the chrome-sandbox setuid bit).
 - `npm start` runs `linux-dev-setup` then launches `electron dist/ --disable-dev-mode`.
