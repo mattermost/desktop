@@ -18,7 +18,6 @@ import {updateServerInfos} from 'main/app/utils';
 
 import type {SAField} from 'types/sessionAttributes';
 
-import SessionAttributeCollector from './collector';
 import {SessionAttributesManager} from './sessionAttributesManager';
 
 jest.mock('electron', () => ({
@@ -56,12 +55,14 @@ jest.mock('main/app/utils', () => ({
     updateServerInfos: jest.fn(),
 }));
 
+const mockCollector = {
+    getClientIPAddress: jest.fn(() => '10.0.0.1'),
+    getOSPlatform: jest.fn(() => 'macos'),
+};
+
 jest.mock('./collector', () => ({
     __esModule: true,
-    default: {
-        getClientIPAddress: jest.fn(() => '10.0.0.1'),
-        getOSPlatform: jest.fn(() => 'macos'),
-    },
+    default: jest.fn(() => mockCollector),
 }));
 
 const manifest: SAField[] = [
@@ -79,7 +80,6 @@ const ServerManagerMock = jest.mocked(ServerManager);
 const WebContentsManagerMock = jest.mocked(WebContentsManager);
 const updateServerInfosMock = jest.mocked(updateServerInfos);
 const ipcMainMock = jest.mocked(ipcMain);
-const SessionAttributeCollectorMock = jest.mocked(SessionAttributeCollector);
 
 describe('main/sessionAttributes/sessionAttributesManager', () => {
     let manager: SessionAttributesManager;
@@ -125,7 +125,7 @@ describe('main/sessionAttributes/sessionAttributesManager', () => {
         });
 
         expect(header).toBeUndefined();
-        expect(SessionAttributeCollectorMock.getClientIPAddress).not.toHaveBeenCalled();
+        expect(mockCollector.getClientIPAddress).not.toHaveBeenCalled();
     });
 
     it('returns undefined without MMAUTHTOKEN cookie', () => {
@@ -144,8 +144,8 @@ describe('main/sessionAttributes/sessionAttributesManager', () => {
             client_ip_address: '10.0.0.1',
             os_platform: 'macos',
         });
-        expect(SessionAttributeCollectorMock.getClientIPAddress).toHaveBeenCalled();
-        expect(SessionAttributeCollectorMock.getOSPlatform).toHaveBeenCalled();
+        expect(mockCollector.getClientIPAddress).toHaveBeenCalled();
+        expect(mockCollector.getOSPlatform).toHaveBeenCalled();
     });
 
     it('does not resend attributes before TTL expires', () => {
@@ -179,11 +179,11 @@ describe('main/sessionAttributes/sessionAttributesManager', () => {
         expect(header).toBeDefined();
         const decoded = JSON.parse(Buffer.from(header!, 'base64').toString('utf8'));
         expect(decoded.os_platform).toBe('macos');
-        expect(SessionAttributeCollectorMock.getOSPlatform).toHaveBeenCalled();
+        expect(mockCollector.getOSPlatform).toHaveBeenCalled();
     });
 
     it('omits blank attribute values from the header', () => {
-        SessionAttributeCollectorMock.getClientIPAddress.mockReturnValue('');
+        mockCollector.getClientIPAddress.mockReturnValue('');
         ServerManagerMock.getRemoteInfo.mockReturnValue({
             sessionAttributesManifest: [
                 {name: 'client_ip_address', type: 'string', ttl_seconds: 30, grace_period_seconds: 60, platforms: ['desktop']},
