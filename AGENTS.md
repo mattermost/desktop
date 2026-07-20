@@ -282,3 +282,12 @@ Open Settings (`Ctrl/Cmd+,`) → switch logging to **Debug** → reproduce → *
 3. **Restart** app (and computer if needed).
 4. **Reset data** — **View → Clear All Data**, or delete the config directory.
 5. **Collect debug logs and heap snapshots**.
+
+
+## Cursor Cloud specific instructions
+
+- A virtual display is already running (`DISPLAY=:99` via Xvfb). GUI/manual testing of the Electron app works out of the box.
+- Passwordless sudo is available and required by `npm run linux-dev-setup` (sets the chrome-sandbox setuid bit).
+- `npm start` runs `linux-dev-setup` then launches `electron dist/ --disable-dev-mode`.
+- Benign on startup, not bugs: GTK accel-group assertion warnings, one-time `ENOENT bounds-info.json` on first launch, `net::ERR_FAILED`.
+- Reset app to the fresh onboarding screen: `rm -rf ~/.config/Electron`.
