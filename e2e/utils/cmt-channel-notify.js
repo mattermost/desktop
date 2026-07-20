@@ -88,7 +88,7 @@ function parseCmtJobName(jobName) {
 
 /**
  * Webhook routing:
- *   cmt-desktop + desktop-master → MM_DESKTOP_CMT_WEBHOOK_URL (RC / master channel)
+ *   cmt-desktop + desktop-master → MM_E2E_RELEASE_WEBHOOK_URL (RC / master channel)
  *   desktop-pr                   → MM_DESKTOP_E2E_WEBHOOK_URL (PR channel)
  *
  * MATTERMOST_WEBHOOK_URL remains a fallback for workflows that set only one URL.

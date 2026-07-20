@@ -237,7 +237,7 @@ async function reportTsioStatus({
     });
 
     // Channel notify (best-effort). Routing (see resolveWebhookUrl):
-    //   cmt-desktop / desktop-master → MM_DESKTOP_CMT_WEBHOOK_URL
+    //   cmt-desktop / desktop-master → MM_E2E_RELEASE_WEBHOOK_URL
     //   desktop-pr                   → MM_DESKTOP_E2E_WEBHOOK_URL
     // Failures here must not undo a successfully written commit status.
     try {
