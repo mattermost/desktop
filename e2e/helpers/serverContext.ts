@@ -44,7 +44,13 @@ export async function activateServerView(
 
                 const mmView = refs.WebContentsManager.getViewByWebContentsId(id);
                 if (!mmView) {
-                    throw new Error(`No server view registered for webContentsId ${id}`);
+                    const known = webContents.getAllWebContents().
+                        filter((wc) => !wc.isDestroyed()).
+                        map((wc) => wc.id);
+                    throw new Error(
+                        `No server view registered for webContentsId ${id}` +
+                        (known.length ? ` (live webContents: ${known.join(', ')})` : ''),
+                    );
                 }
 
                 const tabView = refs.ViewManager.getView(mmView.id);
