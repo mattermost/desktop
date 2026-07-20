@@ -292,6 +292,7 @@ Open Settings (`Ctrl/Cmd+,`) → switch logging to **Debug** → reproduce → *
 - Benign on startup, not bugs: GTK accel-group assertion warnings, one-time `ENOENT bounds-info.json` on first launch, and isolated `net::ERR_FAILED` from first-launch requests that have no configured server yet (e.g. update checks before any server is added). Treat `net::ERR_FAILED` (and other network errors) as **actionable** when connecting to a configured Mattermost server URL or any other resource the task depends on.
 - Reset app to the fresh onboarding screen: `rm -rf ~/.config/Electron`.
 - The base image has **no Docker daemon and no Go toolchain**. Don't try to build the server from source or run `docker`/`docker-compose`; use the prebuilt server release + PostgreSQL from `apt` (see below).
+- `/dev/shm` defaults to a **64MB tmpfs**, which is too small for Electron/Chromium once a real Mattermost server is loaded in a `WebContentsView` (each renderer process shares it). This surfaces as `ERR_INSUFFICIENT_RESOURCES` in the view instead of the loaded web app, even though host RAM is plentiful — it's not a memory-sizing problem, it's this mount. Remount it larger before launching the app: `sudo mount -o remount,size=2G /dev/shm`.
 - **Manual/GUI testing (including computer-use) needs a `NODE_ENV=test` build**, not a plain `npm run build` + `npm start`. `webpack.config.base.js`'s `DefinePlugin` inlines `process.env.NODE_ENV` into the bundle at **build time**, so setting `NODE_ENV=test` only when launching has no effect on an already-built `dist/`. Without a test build, connecting to a server pops a blocking native "Permission Requested" (notifications) dialog on top of the app that computer-use/`xdotool` cannot reliably click through, since `dialog.showMessageBox` is only skipped when the build itself was compiled with `NODE_ENV=test` (`src/main/security/permissionsManager.ts`). Build and launch instead:
 
   ```bash
@@ -336,6 +337,7 @@ The Desktop App needs a real server to add and log into. Spin one up with the pr
    export MM_SQLSETTINGS_DATASOURCE="postgres://mmuser:mmuser_password@127.0.0.1:5432/mattermost_test?sslmode=disable&connect_timeout=10"
    export MM_SERVICESETTINGS_SITEURL="http://localhost:8065"
    export MM_SERVICESETTINGS_ENABLELOCALMODE=true
+   export MM_SERVICESETTINGS_ENABLEONBOARDINGFLOW=false   # skip the "Welcome to Mattermost" checklist modal after login
    ./bin/mattermost   # keep running; wait for "Server is listening on"
    ```
 
