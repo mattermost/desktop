@@ -71,7 +71,7 @@ test.describe('server_management/tab_management', () => {
         const {_electron: electron} = await import('playwright');
         electronApp = await electron.launch({
             executablePath: electronBinaryPath,
-            args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
+            args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'],
             env: {...process.env, NODE_ENV: 'test'},
             timeout: 60_000,
         });
