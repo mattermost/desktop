@@ -286,8 +286,55 @@ Open Settings (`Ctrl/Cmd+,`) → switch logging to **Debug** → reproduce → *
 
 ## Cursor Cloud specific instructions
 
-- A virtual display is already running (`DISPLAY=:99` via Xvfb). GUI/manual testing of the Electron app works out of the box.
+- A virtual display is already running (`DISPLAY=:99` via Xvfb). GUI/manual testing of the app's internal UI (onboarding, settings, modals, tab bar) works out of the box.
 - Passwordless sudo is available and required by `npm run linux-dev-setup` (sets the chrome-sandbox setuid bit).
 - `npm start` runs `linux-dev-setup` then launches `electron dist/ --disable-dev-mode`.
 - Benign on startup, not bugs: GTK accel-group assertion warnings, one-time `ENOENT bounds-info.json` on first launch, `net::ERR_FAILED`.
 - Reset app to the fresh onboarding screen: `rm -rf ~/.config/Electron`.
+- The base image has **no Docker daemon and no Go toolchain**. Don't try to build the server from source or run `docker`/`docker-compose`; use the prebuilt server release + PostgreSQL from `apt` (see below).
+
+### Typing into a server view (WebContentsView)
+
+Bare Xvfb runs **no window manager**, so synthetic keyboard input (computer use / `xdotool`) reaches the internal app chrome but **not** an external server view — the Mattermost web app's own login form and message box won't receive keystrokes. Each server renders in a `WebContentsView` whose `webContents.focus()` is gated on the main window being focused (`src/app/views/MattermostWebContentsView.ts`), and without a WM the window never gets X focus events.
+
+- For GUI keyboard entry into server views, run a lightweight WM first: `sudo apt-get install -y openbox && DISPLAY=:99 openbox &` (leave it running).
+- For deterministic, focus-independent login, drive the server view through the main process instead of the OS. The E2E harness already does this — reuse `loginToMattermost` / the `ServerView` helper (see `e2e/AGENTS.md` and `e2e/helpers/`), which types via `webContents` rather than synthetic X events. This works headless without a WM.
+
+### Running a local Mattermost server (for login / manual testing)
+
+The Desktop App needs a real server to add and log into. Spin one up with the prebuilt **Enterprise Edition** binary (unlicensed → Team Edition features; it also bundles `mmctl`) backed by PostgreSQL.
+
+1. Install and start PostgreSQL, then create the DB user and database:
+
+   ```bash
+   sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql
+   sudo pg_ctlcluster 16 main start
+   sudo -u postgres psql -c "CREATE USER mmuser WITH PASSWORD 'mmuser_password';"
+   sudo -u postgres psql -c "CREATE DATABASE mattermost_test OWNER mmuser;"
+   ```
+
+2. Download and extract the server (pick the latest version), then start it in a long-lived session (e.g. tmux). Configure it via `MM_*` env vars and enable local mode so `mmctl` can seed without auth:
+
+   ```bash
+   curl -sL -o /tmp/mattermost.tar.gz https://releases.mattermost.com/11.9.0/mattermost-11.9.0-linux-amd64.tar.gz
+   tar xzf /tmp/mattermost.tar.gz -C ~/
+   cd ~/mattermost
+   export MM_SQLSETTINGS_DRIVERNAME=postgres
+   export MM_SQLSETTINGS_DATASOURCE="postgres://mmuser:mmuser_password@127.0.0.1:5432/mattermost_test?sslmode=disable&connect_timeout=10"
+   export MM_SERVICESETTINGS_SITEURL="http://localhost:8065"
+   export MM_SERVICESETTINGS_ENABLELOCALMODE=true
+   ./bin/mattermost   # keep running; wait for "Server is listening on"
+   ```
+
+3. Seed a system admin, a regular user, and a team (local mode needs no login):
+
+   ```bash
+   ./bin/mmctl --local user create --email admin@example.com --username sysadmin --password 'Sys-Admin-123!' --system-admin
+   ./bin/mmctl --local user create --email user1@example.com --username user-1 --password 'User-Test-123!'
+   ./bin/mmctl --local team create --name main --display-name "Main Team"
+   ./bin/mmctl --local team users add main sysadmin user-1
+   ```
+
+4. Verify it's up: `curl -s http://localhost:8065/api/v4/system/ping` → `{"status":"OK"}`.
+
+The Desktop App can now add `http://localhost:8065` and log in as `sysadmin` / `Sys-Admin-123!`. Server-backed E2E specs read these credentials from `MM_TEST_SERVER_URL`, `MM_TEST_USER_NAME`, and `MM_TEST_PASSWORD`.
