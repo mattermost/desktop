@@ -247,41 +247,6 @@ function getServerWebContentsIds(map: ServerMap, serverName: string): number[] {
     return (map[serverName] ?? []).map((entry) => entry.webContentsId);
 }
 
-async function assertServerMapContainsIds(
-    serverName: string,
-    expectedIds: number[],
-    message: string,
-) {
-    const map = await buildServerMap(electronApp);
-    const actualIds = getServerWebContentsIds(map, serverName);
-    expect(actualIds.length, message).toBeGreaterThanOrEqual(expectedIds.length);
-    expect(actualIds, message).toEqual(expect.arrayContaining(expectedIds));
-    return map;
-}
-
-/** Regression: secondary tabs must not be torn down while they finish loading. */
-async function assertSecondaryTabsRemainRegistered(
-    serverName: string,
-    expectedMap: ServerMap,
-) {
-    const expectedIds = getServerWebContentsIds(expectedMap, serverName);
-    expect(expectedIds.length, 'Three Mattermost tabs should be registered').toBeGreaterThanOrEqual(3);
-
-    // Cheap ID/count poll only — full shell readiness is covered by
-    // navigateToSecondAndThirdTabs. Waiting on background-tab shells here
-    // added minutes per OS in CI.
-    await expect.poll(async () => {
-        const map = await buildServerMap(electronApp);
-        const actualIds = getServerWebContentsIds(map, serverName);
-        return actualIds.length >= expectedIds.length &&
-            expectedIds.every((id) => actualIds.includes(id));
-    }, {
-        timeout: 15_000,
-        intervals: [250, 500, 1000],
-        message: 'Secondary Mattermost tabs must remain registered with stable webContentsIds',
-    }).toBe(true);
-}
-
 async function switchToTabAndOpenChannel(
     serverName: string,
     tabIndex: number,
@@ -313,13 +278,14 @@ async function switchToTabAndOpenChannel(
     await waitForMattermostShellReady(entry.win, {channelItem});
     await entry.win.click(channelItem);
 
-    await assertServerMapContainsIds(
-        serverName,
-        expectedIds,
-        `Mattermost tabs must remain registered after opening channel on tab ${tabIndex}`,
-    );
+    localServerMap = await buildServerMap(electronApp);
+    const actualIds = getServerWebContentsIds(localServerMap, serverName);
+    expect(actualIds.length, `Mattermost tabs must remain registered after opening channel on tab ${tabIndex}`).
+        toBeGreaterThanOrEqual(expectedIds.length);
+    expect(actualIds, `Mattermost tab webContentsIds must remain stable after opening channel on tab ${tabIndex}`).
+        toEqual(expect.arrayContaining(expectedIds));
 
-    return buildServerMap(electronApp);
+    return localServerMap;
 }
 
 async function navigateToSecondAndThirdTabs(serverName: string, expectedIds: number[]) {
@@ -421,12 +387,6 @@ test.describe('Menu/window_menu', () => {
     });
 
     test.describe('MM-T4385 select tab from menu', () => {
-        test('should keep secondary tabs registered after creation', {tag: ['@P2', '@all']}, async () => {
-            const serverName = windowMenuConfig.servers[0].name;
-            const createdMap = await createExtraTabs();
-            await assertSecondaryTabsRemainRegistered(serverName, createdMap);
-        });
-
         test('MM-T4385_1 should show the second tab', {tag: ['@P2', '@all']}, async () => {
             const serverName = windowMenuConfig.servers[0].name;
             const createdMap = await createExtraTabs();
