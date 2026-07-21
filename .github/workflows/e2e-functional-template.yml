@@ -303,8 +303,9 @@ jobs:
       - name: e2e/upload-report-to-tsio
         if: ${{ always() && inputs.tsio-config != '' && hashFiles('e2e/test-results/results.json') != '' }}
         continue-on-error: true
-        uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@606431efb597481b0857066be8130e86c22d2a03 # release-0.11.0 / 2026-07-21
+        uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@b5580f407a2776c064c626cc3c42295f2111fdc7 # staging validation — main@b5580f4 (#81 Maestro FilePath + Detox paths)
         with:
+          use-staging: true
           composite-identity: ${{ toJSON(fromJSON(inputs.tsio-config).composite_identity) }}
           total-reports-expected: ${{ fromJSON(inputs.tsio-config).total_reports_expected }}
           framework: playwright

@@ -219,6 +219,7 @@ jobs:
               commitStatusContext: process.env.COMMIT_STATUS_CONTEXT,
               upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
               failOnTestFailures: true,
+              useStaging: true,
             });
             core.info(`TSIO report ${reportUrl}: ${status} (${JSON.stringify(stats)})`);
 

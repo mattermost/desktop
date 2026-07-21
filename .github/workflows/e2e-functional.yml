@@ -200,6 +200,7 @@ jobs:
               upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
               commitStatusContext: process.env.COMMIT_STATUS_CONTEXT,
               failOnTestFailures: true,
+              useStaging: true,
             });
             core.info(`TSIO report ${reportUrl}: ${status} (${JSON.stringify(stats)})`);
 
@@ -435,8 +436,9 @@ jobs:
       - name: e2e/upload-report-to-tsio
         if: ${{ always() && needs.prepare-matrix.outputs.tsio-composite-identity != '' && hashFiles('e2e/test-results/results.json') != '' }}
         continue-on-error: true
-        uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@606431efb597481b0857066be8130e86c22d2a03 # release-0.11.0 / 2026-07-21
+        uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@b5580f407a2776c064c626cc3c42295f2111fdc7 # staging validation — main@b5580f4 (#81 Maestro FilePath + Detox paths)
         with:
+          use-staging: true
           composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
           total-reports-expected: ${{ needs.prepare-matrix.outputs.tsio-total-reports-expected }}
           framework: playwright
