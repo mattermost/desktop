@@ -218,9 +218,6 @@ jobs:
               commitStatusContext: process.env.COMMIT_STATUS_CONTEXT,
               upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
               failOnTestFailures: true,
-              // TEMP_TSIO_STAGING: poll staging while validating TSIO #76.
-              // REVERT before merge / after staging sign-off — delete useStaging (default = prod).
-              useStaging: true,
             });
             core.info(`TSIO report ${reportUrl}: ${status} (${JSON.stringify(stats)})`);
 

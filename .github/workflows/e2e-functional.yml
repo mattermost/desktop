@@ -197,9 +197,6 @@ jobs:
               upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
               commitStatusContext: process.env.COMMIT_STATUS_CONTEXT,
               failOnTestFailures: true,
-              // TEMP_TSIO_STAGING: poll staging while validating TSIO #76.
-              // REVERT before merge / after staging sign-off — delete useStaging (default = prod).
-              useStaging: true,
             });
             core.info(`TSIO report ${reportUrl}: ${status} (${JSON.stringify(stats)})`);
 
@@ -438,9 +435,6 @@ jobs:
           gh-job-name: policy-tests-${{ matrix.platform }}
           json-path: e2e/test-results/results.json
           screenshots-dir: e2e/test-results
-          # TEMP_TSIO_STAGING: point uploads at staging while validating TSIO #76.
-          # REVERT before merge / after staging sign-off — remove this line (default = prod).
-          use-staging: "true"
 
       - name: e2e/handle-nonzero-playwright-exit
         if: always()
