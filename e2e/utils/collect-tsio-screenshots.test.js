@@ -13,6 +13,7 @@ const {pathToFileURL} = require('node:url');
 describe('collect-tsio-screenshots', () => {
     /** @type {string} */
     let tmpDir;
+
     /** @type {(opts?: object) => Promise<{copied: number, skippedMissing: number, outDir: string}>} */
     let collectTsioScreenshots;
 
