@@ -87,11 +87,13 @@ function parseCmtJobName(jobName) {
 }
 
 /**
- * Webhook routing:
- *   cmt-desktop              → MM_E2E_RELEASE_WEBHOOK_URL (RC / CMT channel)
- *   desktop-master + desktop-pr → MM_DESKTOP_E2E_WEBHOOK_URL (PR / master channel)
+ * Webhook routing (fail closed for named report groups):
+ *   cmt-desktop                 → MATTERMOST_CMT_WEBHOOK_URL only
+ *   desktop-master / desktop-pr → MATTERMOST_E2E_WEBHOOK_URL only
  *
- * MATTERMOST_WEBHOOK_URL remains a fallback for workflows that set only one URL.
+ * Named groups never fall back to MATTERMOST_WEBHOOK_URL (avoids posting
+ * CMT/PR/master to the wrong channel when a dedicated secret is missing).
+ * Unknown names still use MATTERMOST_WEBHOOK_URL as a generic fallback.
  *
  * @param {string} reportName - compositeIdentity.name
  * @param {NodeJS.ProcessEnv} [env]
@@ -99,10 +101,10 @@ function parseCmtJobName(jobName) {
  */
 function resolveWebhookUrl(reportName, env = process.env) {
     if (reportName === 'cmt-desktop') {
-        return env.MATTERMOST_CMT_WEBHOOK_URL || env.MATTERMOST_WEBHOOK_URL || '';
+        return env.MATTERMOST_CMT_WEBHOOK_URL || '';
     }
     if (reportName === 'desktop-master' || reportName === 'desktop-pr') {
-        return env.MATTERMOST_E2E_WEBHOOK_URL || env.MATTERMOST_WEBHOOK_URL || '';
+        return env.MATTERMOST_E2E_WEBHOOK_URL || '';
     }
     return env.MATTERMOST_WEBHOOK_URL || '';
 }
@@ -451,7 +453,7 @@ async function fetchPerJobCountsFromConsolidated(baseUrl, compositeIdentity, gro
  */
 async function postMattermostWebhook({core, webhookUrl, text, username = 'Desktop E2E'}) {
     if (!webhookUrl) {
-        core.info('MATTERMOST_WEBHOOK_URL not set — skipping E2E channel notify');
+        core.info('Mattermost webhook URL not set — skipping E2E channel notify');
         return;
     }
 

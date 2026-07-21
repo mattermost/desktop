@@ -96,6 +96,31 @@ describe('cmt-channel-notify', () => {
                 '',
             );
         });
+
+        it('does not use the shared webhook when a dedicated CMT secret is missing', () => {
+            assert.equal(
+                resolveWebhookUrl('cmt-desktop', {MATTERMOST_WEBHOOK_URL: env.MATTERMOST_WEBHOOK_URL}),
+                '',
+            );
+        });
+
+        it('does not use the shared webhook when a dedicated E2E secret is missing for master', () => {
+            assert.equal(
+                resolveWebhookUrl('desktop-master', {MATTERMOST_WEBHOOK_URL: env.MATTERMOST_WEBHOOK_URL}),
+                '',
+            );
+        });
+
+        it('does not use the shared webhook when a dedicated E2E secret is missing for PR', () => {
+            assert.equal(
+                resolveWebhookUrl('desktop-pr', {MATTERMOST_WEBHOOK_URL: env.MATTERMOST_WEBHOOK_URL}),
+                '',
+            );
+        });
+
+        it('still uses the shared webhook for unknown report names', () => {
+            assert.equal(resolveWebhookUrl('unknown-report', env), env.MATTERMOST_WEBHOOK_URL);
+        });
     });
 
     describe('formatCmtChannelMessage', () => {
