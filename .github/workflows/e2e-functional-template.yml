@@ -297,7 +297,7 @@ jobs:
       - name: e2e/upload-report-to-tsio
         if: ${{ always() && inputs.tsio-config != '' && hashFiles('e2e/test-results/results.json') != '' }}
         continue-on-error: true
-        uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@19aef73a2a9b62ad94ed695e71c142f35ee4c6f1 # 0.12.1 / 2026-07-20
+        uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@606431efb597481b0857066be8130e86c22d2a03 # release-0.11.0 / 2026-07-21
         with:
           composite-identity: ${{ toJSON(fromJSON(inputs.tsio-config).composite_identity) }}
           total-reports-expected: ${{ fromJSON(inputs.tsio-config).total_reports_expected }}

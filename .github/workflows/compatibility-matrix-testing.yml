@@ -197,7 +197,9 @@ jobs:
         env:
           TSIO_COMPOSITE_IDENTITY: ${{ needs.calculate-commit-hash.outputs.TSIO_COMPOSITE_IDENTITY }}
           TSIO_TOTAL_REPORTS_EXPECTED: ${{ needs.calculate-commit-hash.outputs.TSIO_TOTAL_REPORTS_EXPECTED }}
-          TSIO_POLL_ATTEMPTS: 24
+          # Large CMT matrices upload many screenshot batches; keep headroom for
+          # consolidation so legs are not reported as missing.
+          TSIO_POLL_ATTEMPTS: 48
           TSIO_POLL_DELAY_MS: 5000
           COMMIT_STATUS_CONTEXT: e2e/compatibility-matrix-testing
           # Incoming webhook for the Desktop CMT/RC results channel (separate from

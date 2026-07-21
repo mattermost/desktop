@@ -292,12 +292,13 @@ function formatCmtChannelMessage({
     const passed = (stats.passed ?? 0) + (stats.flaky ?? 0);
     const failed = stats.failed ?? 0;
     const skipped = stats.skipped ?? 0;
-    const overallFailed = failed > 0 ||
-        detail?.status !== 'completed' ||
-        !upstreamJobsSucceeded ||
-        hasFailures;
+    // Overall pass/fail follows tests + upstream CI — not TSIO consolidation state.
+    // Stuck `in_progress` / `incomplete` with 0 failures must not render as ❌ Failed.
+    const overallFailed = failed > 0 || !upstreamJobsSucceeded || hasFailures;
+    const tsioPending = Boolean(detail?.status && detail.status !== 'completed');
     const title = reportTitleForIdentity(compositeIdentity);
     const legs = buildLegSummaries(perJobCounts, detail?.reports || [], baseUrl);
+    const missingLegs = legs.filter((leg) => leg.status === 'missing' || leg.status === 'no-results');
 
     const lines = [
         `## ${overallFailed ? '❌' : '✅'} ${title}`,
@@ -348,8 +349,20 @@ function formatCmtChannelMessage({
     } else if (hasFailures && failed === 0) {
         lines.push('_TSIO reported failed shard(s) not reflected in the test totals; check the full report._', '');
     }
-    if (detail?.status && detail.status !== 'completed' && upstreamJobsSucceeded) {
+    if (tsioPending && upstreamJobsSucceeded && !overallFailed) {
+        lines.push(
+            `_TSIO report status: \`${detail.status}\` (consolidation still catching up; not treated as a test failure)._`,
+            '',
+        );
+    } else if (tsioPending && overallFailed) {
         lines.push(`_TSIO report status: \`${detail.status}\`._`, '');
+    }
+    if (missingLegs.length > 0) {
+        const labels = missingLegs.map((leg) => {
+            const {platform, suite} = formatLegLabels(leg);
+            return `${platform} / ${suite}`;
+        }).join(', ');
+        lines.push(`_Missing or empty leg report(s): ${labels}._`, '');
     }
 
     if (reportUrl) {

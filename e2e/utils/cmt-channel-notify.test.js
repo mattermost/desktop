@@ -184,7 +184,45 @@ describe('cmt-channel-notify', () => {
             assert.doesNotMatch(text, /failing test/);
         });
 
-        it('explains non-completed TSIO status when overall failed', () => {
+        it('keeps overall passed when TSIO is still consolidating with 0 failures', () => {
+            const text = formatCmtChannelMessage({
+                compositeIdentity: {
+                    repository: 'mattermost/desktop',
+                    branch: 'pr-3916',
+                    commit_sha: 'b41298f0abc1234567890abcdef1234567890abcd',
+                    name: 'desktop-pr',
+                    gh_pr_number: '3916',
+                },
+                detail: {
+                    status: 'in_progress',
+                    test_stats: {passed: 674, failed: 0, skipped: 51, total: 725},
+                    reports: [
+                        {id: 'rid-linux', gh_job_name: 'e2e-on-ubuntu-latest-11.10.0-rc1', status: 'complete'},
+                        {id: 'rid-mac', gh_job_name: 'e2e-on-macos-14-11.10.0-rc1', status: 'complete'},
+                        {id: 'rid-win', gh_job_name: 'e2e-on-windows-2022-11.10.0-rc1', status: 'complete'},
+                        {id: 'rid-win-policy', gh_job_name: 'policy-tests-windows', status: 'complete'},
+                    ],
+                },
+                reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/pr-3916/b41298f/desktop-pr',
+                baseUrl: 'https://test-io.test.mattermost.com',
+                perJobCounts: {
+                    'e2e-on-ubuntu-latest-11.10.0-rc1': {passed: 216, failed: 0, skipped: 10, flaky: 0},
+                    'e2e-on-macos-14-11.10.0-rc1': {passed: 220, failed: 0, skipped: 10, flaky: 0},
+                    'e2e-on-windows-2022-11.10.0-rc1': {passed: 237, failed: 0, skipped: 10, flaky: 0},
+                    'policy-tests-windows': {passed: 9, failed: 0, skipped: 0, flaky: 0},
+                    'policy-tests-macos': {passed: 0, failed: 0, skipped: 0, flaky: 0},
+                },
+                upstreamJobsSucceeded: true,
+            });
+            assert.match(text, /^## ✅ Desktop PR E2E\n/);
+            assert.match(text, /\| ✅ Passed \| \*\*674\*\* \| \*\*0\*\* \| \*\*51\*\* \|/);
+            assert.match(text, /TSIO report status: `in_progress` \(consolidation still catching up; not treated as a test failure\)/);
+            assert.match(text, /Missing or empty leg report\(s\): 🍎 macOS \/ Policy/);
+            assert.match(text, /\| 🍎 macOS \| Policy \| ⚠️ missing \|/);
+            assert.doesNotMatch(text, /\| ❌ Failed \|/);
+        });
+
+        it('still marks overall failed for incomplete TSIO when tests failed', () => {
             const text = formatCmtChannelMessage({
                 compositeIdentity: {
                     branch: 'master',
@@ -193,7 +231,7 @@ describe('cmt-channel-notify', () => {
                 },
                 detail: {
                     status: 'incomplete',
-                    test_stats: {passed: 50, failed: 0, skipped: 0, total: 50},
+                    test_stats: {passed: 49, failed: 1, skipped: 0, total: 50},
                     reports: [],
                 },
                 reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
