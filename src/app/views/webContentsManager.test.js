@@ -1,8 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {session} from 'electron';
+import {ipcMain, session} from 'electron';
 
+import AppState from 'common/appState';
 import ServerManager from 'common/servers/serverManager';
 import ViewManager from 'common/views/viewManager';
 import {flushCookiesStore} from 'main/app/utils';
@@ -370,8 +371,6 @@ describe('app/views/webContentsManager', () => {
         it('should handle login state change for existing view', () => {
             webContentsManager.webContentsIdToView.set(123, mockView);
 
-            // Emit the IPC event
-            const ipcMain = require('electron').ipcMain;
             ipcMain.emit('tab-login-changed', mockEvent, true);
 
             expect(ServerManager.setLoggedIn).toHaveBeenCalledWith('server-1', true);
@@ -382,8 +381,6 @@ describe('app/views/webContentsManager', () => {
             webContentsManager.webContentsIdToView.set(123, mockView);
             ViewManager.isPrimaryView.mockReturnValue(true);
 
-            // Emit the IPC event
-            const ipcMain = require('electron').ipcMain;
             ipcMain.emit('tab-login-changed', mockEvent, false);
 
             expect(ServerManager.setLoggedIn).toHaveBeenCalledWith('server-1', false);
@@ -394,7 +391,6 @@ describe('app/views/webContentsManager', () => {
             webContentsManager.webContentsIdToView.set(123, mockView);
             ViewManager.isPrimaryView.mockReturnValue(false);
 
-            const ipcMain = require('electron').ipcMain;
             ipcMain.emit('tab-login-changed', mockEvent, false);
 
             expect(ServerManager.setLoggedIn).not.toHaveBeenCalled();
@@ -405,7 +401,6 @@ describe('app/views/webContentsManager', () => {
             webContentsManager.webContentsIdToView.set(123, mockView);
             ViewManager.isPrimaryView.mockReturnValue(false);
 
-            const ipcMain = require('electron').ipcMain;
             ipcMain.emit('tab-login-changed', mockEvent, true);
 
             expect(ServerManager.setLoggedIn).toHaveBeenCalledWith('server-1', true);
@@ -413,8 +408,6 @@ describe('app/views/webContentsManager', () => {
         });
 
         it('should do nothing when view does not exist', () => {
-            // Emit the IPC event
-            const ipcMain = require('electron').ipcMain;
             ipcMain.emit('tab-login-changed', mockEvent, true);
 
             expect(ServerManager.setLoggedIn).not.toHaveBeenCalled();
@@ -431,7 +424,6 @@ describe('app/views/webContentsManager', () => {
             id: 'test-view',
             serverId: 'server-1',
         };
-        const AppState = require('common/appState');
 
         beforeEach(() => {
             webContentsManager.webContentsIdToView = new Map();
@@ -449,7 +441,6 @@ describe('app/views/webContentsManager', () => {
             webContentsManager.webContentsIdToView.set(123, mockView);
             ViewManager.isPrimaryView.mockReturnValue(true);
 
-            const ipcMain = require('electron').ipcMain;
             ipcMain.emit('session_expired', mockEvent, true);
 
             expect(ServerManager.setLoggedIn).toHaveBeenCalledWith('server-1', false);
@@ -460,7 +451,6 @@ describe('app/views/webContentsManager', () => {
             webContentsManager.webContentsIdToView.set(123, mockView);
             ViewManager.isPrimaryView.mockReturnValue(false);
 
-            const ipcMain = require('electron').ipcMain;
             ipcMain.emit('session_expired', mockEvent, true);
 
             expect(ServerManager.setLoggedIn).not.toHaveBeenCalled();

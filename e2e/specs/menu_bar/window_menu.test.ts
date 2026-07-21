@@ -11,9 +11,9 @@ import {appDir, demoMattermostConfig, electronBinaryPath, writeConfigFile} from 
 import {closeDownloadsDropdownIfOpen} from '../../helpers/downloadsDropdown';
 import {closeElectronAppFast, registerElectronMainProcess, waitForWindow} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
-import {waitForMattermostShellReady} from '../../helpers/mattermostShell';
+import {waitForMattermostShell, waitForMattermostShellReady} from '../../helpers/mattermostShell';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
-import {buildServerMap} from '../../helpers/serverMap';
+import {buildServerMap, type ServerMap} from '../../helpers/serverMap';
 
 const windowMenuConfig = {
     ...demoMattermostConfig,
@@ -243,15 +243,38 @@ async function createExtraTabs() {
     return buildServerMap(electronApp);
 }
 
+function getServerWebContentsIds(map: ServerMap, serverName: string): number[] {
+    return (map[serverName] ?? []).map((entry) => entry.webContentsId);
+}
+
+async function assertServerMapContainsIds(
+    serverName: string,
+    expectedIds: number[],
+    message: string,
+) {
+    const map = await buildServerMap(electronApp);
+    const actualIds = getServerWebContentsIds(map, serverName);
+    expect(actualIds.length, message).toBeGreaterThanOrEqual(expectedIds.length);
+    expect(actualIds, message).toEqual(expect.arrayContaining(expectedIds));
+    return map;
+}
+
 /** Regression: secondary tabs must not be torn down while they finish loading. */
-async function assertSecondaryTabsRemainRegistered(serverName: string) {
-    for (let i = 0; i < 10; i++) {
-        await new Promise((resolve) => setTimeout(resolve, 200));
-        const map = await buildServerMap(electronApp);
-        expect(
-            map[serverName]?.length ?? 0,
-            'Secondary Mattermost tabs must remain registered after creation',
-        ).toBeGreaterThanOrEqual(3);
+async function assertSecondaryTabsRemainRegistered(
+    serverName: string,
+    expectedMap: ServerMap,
+) {
+    const expectedIds = getServerWebContentsIds(expectedMap, serverName);
+    expect(expectedIds.length, 'Three Mattermost tabs should be registered').toBeGreaterThanOrEqual(3);
+
+    const secondaryEntries = (expectedMap[serverName] ?? []).slice(1, 3);
+    for (const entry of secondaryEntries) {
+        await waitForMattermostShell(entry.win, {timeout: 60_000});
+        await assertServerMapContainsIds(
+            serverName,
+            expectedIds,
+            'Secondary Mattermost tabs must remain registered with stable webContentsIds',
+        );
     }
 }
 
@@ -259,17 +282,25 @@ async function switchToTabAndOpenChannel(
     serverName: string,
     tabIndex: number,
     channelItem: string,
+    expectedIds: number[],
 ) {
     let localServerMap = await buildServerMap(electronApp);
     await expect.poll(async () => {
         localServerMap = await buildServerMap(electronApp);
+        const actualIds = getServerWebContentsIds(localServerMap, serverName);
+        if (!expectedIds.every((id) => actualIds.includes(id))) {
+            return null;
+        }
         return localServerMap[serverName]?.[tabIndex - 1]?.webContentsId ?? null;
     }, {
         timeout: 30_000,
         message: `Mattermost tab ${tabIndex} must be registered before switch`,
     }).not.toBeNull();
 
-    const entry = localServerMap[serverName][tabIndex - 1];
+    const expectedId = expectedIds[tabIndex - 1];
+    const entry = localServerMap[serverName].find((candidate) => candidate.webContentsId === expectedId) ??
+        localServerMap[serverName][tabIndex - 1];
+    expect(entry?.webContentsId, `Mattermost tab ${tabIndex} webContentsId must match createExtraTabs map`).toBe(expectedId);
 
     // Switch via TabManager (same path the Window menu uses). Avoid DOM tab click +
     // focusMainWindow here: that widened the race where a loading secondary tab's
@@ -278,25 +309,27 @@ async function switchToTabAndOpenChannel(
     await waitForMattermostShellReady(entry.win, {channelItem});
     await entry.win.click(channelItem);
 
-    localServerMap = await buildServerMap(electronApp);
-    expect(
-        localServerMap[serverName]?.length ?? 0,
+    await assertServerMapContainsIds(
+        serverName,
+        expectedIds,
         `Mattermost tabs must remain registered after opening channel on tab ${tabIndex}`,
-    ).toBeGreaterThanOrEqual(tabIndex);
+    );
 
-    return localServerMap;
+    return buildServerMap(electronApp);
 }
 
-async function navigateToSecondAndThirdTabs(serverName: string) {
+async function navigateToSecondAndThirdTabs(serverName: string, expectedIds: number[]) {
     await switchToTabAndOpenChannel(
         serverName,
         2,
         '#sidebarItem_off-topic',
+        expectedIds,
     );
     return switchToTabAndOpenChannel(
         serverName,
         3,
         '#sidebarItem_town-square',
+        expectedIds,
     );
 }
 
@@ -385,13 +418,15 @@ test.describe('Menu/window_menu', () => {
 
     test.describe('MM-T4385 select tab from menu', () => {
         test('should keep secondary tabs registered after creation', {tag: ['@P2', '@all']}, async () => {
-            await createExtraTabs();
-            await assertSecondaryTabsRemainRegistered(windowMenuConfig.servers[0].name);
+            const serverName = windowMenuConfig.servers[0].name;
+            const createdMap = await createExtraTabs();
+            await assertSecondaryTabsRemainRegistered(serverName, createdMap);
         });
 
         test('MM-T4385_1 should show the second tab', {tag: ['@P2', '@all']}, async () => {
-            await createExtraTabs();
-            await navigateToSecondAndThirdTabs(windowMenuConfig.servers[0].name);
+            const serverName = windowMenuConfig.servers[0].name;
+            const createdMap = await createExtraTabs();
+            await navigateToSecondAndThirdTabs(serverName, getServerWebContentsIds(createdMap, serverName));
 
             // Tab title updates asynchronously after channel navigation — poll for it.
             await expect(mainWindow.locator('.active')).toContainText('Town Square', {timeout: 10_000});
@@ -401,8 +436,9 @@ test.describe('Menu/window_menu', () => {
         });
 
         test('MM-T4385_2 should show the third tab', {tag: ['@P2', '@all']}, async () => {
-            await createExtraTabs();
-            await navigateToSecondAndThirdTabs(windowMenuConfig.servers[0].name);
+            const serverName = windowMenuConfig.servers[0].name;
+            const createdMap = await createExtraTabs();
+            await navigateToSecondAndThirdTabs(serverName, getServerWebContentsIds(createdMap, serverName));
 
             await clickWindowMenuItem(electronApp, {accelerator: 'CmdOrCtrl+2'});
             await clickWindowMenuItem(electronApp, {accelerator: 'CmdOrCtrl+3'});
@@ -410,8 +446,9 @@ test.describe('Menu/window_menu', () => {
         });
 
         test('MM-T4385_3 should show the first tab', {tag: ['@P2', '@all']}, async () => {
-            await createExtraTabs();
-            await navigateToSecondAndThirdTabs(windowMenuConfig.servers[0].name);
+            const serverName = windowMenuConfig.servers[0].name;
+            const createdMap = await createExtraTabs();
+            await navigateToSecondAndThirdTabs(serverName, getServerWebContentsIds(createdMap, serverName));
 
             await clickWindowMenuItem(electronApp, {accelerator: 'CmdOrCtrl+2'});
             await clickWindowMenuItem(electronApp, {accelerator: 'CmdOrCtrl+1'});
@@ -424,7 +461,17 @@ test.describe('Menu/window_menu', () => {
         await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 15_000});
 
         const serverName = windowMenuConfig.servers[0].name;
-        await switchToTabAndOpenChannel(serverName, 2, '#sidebarItem_off-topic');
+        let createdMap = await buildServerMap(electronApp);
+        await expect.poll(async () => {
+            createdMap = await buildServerMap(electronApp);
+            return createdMap[serverName]?.length ?? 0;
+        }, {timeout: 30_000}).toBeGreaterThanOrEqual(2);
+        await switchToTabAndOpenChannel(
+            serverName,
+            2,
+            '#sidebarItem_off-topic',
+            getServerWebContentsIds(createdMap, serverName),
+        );
 
         await expect.poll(() => getActiveTabTitle(electronApp), {timeout: 15_000}).toContain('Off-Topic');
 
