@@ -78,6 +78,7 @@ describe('cmt-channel-notify', () => {
         const env = {
             MATTERMOST_CMT_WEBHOOK_URL: 'https://mm.example/hooks/cmt',
             MATTERMOST_E2E_WEBHOOK_URL: 'https://mm.example/hooks/e2e',
+            MATTERMOST_MASTER_HEALTH_WEBHOOK_URL: 'https://mm.example/hooks/master-health',
             MATTERMOST_WEBHOOK_URL: 'https://mm.example/hooks/fallback',
         };
 
@@ -85,8 +86,11 @@ describe('cmt-channel-notify', () => {
             assert.equal(resolveWebhookUrl('cmt-desktop', env), env.MATTERMOST_CMT_WEBHOOK_URL);
         });
 
-        it('sends master and PR runs to the E2E webhook', () => {
-            assert.equal(resolveWebhookUrl('desktop-master', env), env.MATTERMOST_E2E_WEBHOOK_URL);
+        it('sends master runs to the master-health webhook', () => {
+            assert.equal(resolveWebhookUrl('desktop-master', env), env.MATTERMOST_MASTER_HEALTH_WEBHOOK_URL);
+        });
+
+        it('sends PR runs to the E2E webhook', () => {
             assert.equal(resolveWebhookUrl('desktop-pr', env), env.MATTERMOST_E2E_WEBHOOK_URL);
         });
 
@@ -104,9 +108,12 @@ describe('cmt-channel-notify', () => {
             );
         });
 
-        it('does not use the shared webhook when a dedicated E2E secret is missing for master', () => {
+        it('does not use the shared or PR webhook when master-health secret is missing', () => {
             assert.equal(
-                resolveWebhookUrl('desktop-master', {MATTERMOST_WEBHOOK_URL: env.MATTERMOST_WEBHOOK_URL}),
+                resolveWebhookUrl('desktop-master', {
+                    MATTERMOST_WEBHOOK_URL: env.MATTERMOST_WEBHOOK_URL,
+                    MATTERMOST_E2E_WEBHOOK_URL: env.MATTERMOST_E2E_WEBHOOK_URL,
+                }),
                 '',
             );
         });
