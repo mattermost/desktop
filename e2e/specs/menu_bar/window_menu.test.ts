@@ -240,8 +240,11 @@ async function createExtraTabs() {
         message: 'Three Mattermost tabs should be registered',
     }).toBeGreaterThanOrEqual(3);
 
-    // Confirm secondary tabs are not torn down while they finish loading.
-    // (Non-primary onLogout used to destroy siblings via handleServerLoggedInChanged.)
+    return buildServerMap(electronApp);
+}
+
+/** Regression: secondary tabs must not be torn down while they finish loading. */
+async function assertSecondaryTabsRemainRegistered(serverName: string) {
     for (let i = 0; i < 10; i++) {
         await new Promise((resolve) => setTimeout(resolve, 200));
         const map = await buildServerMap(electronApp);
@@ -250,8 +253,6 @@ async function createExtraTabs() {
             'Secondary Mattermost tabs must remain registered after creation',
         ).toBeGreaterThanOrEqual(3);
     }
-
-    return buildServerMap(electronApp);
 }
 
 async function switchToTabAndOpenChannel(
@@ -383,6 +384,11 @@ test.describe('Menu/window_menu', () => {
     });
 
     test.describe('MM-T4385 select tab from menu', () => {
+        test('should keep secondary tabs registered after creation', {tag: ['@P2', '@all']}, async () => {
+            await createExtraTabs();
+            await assertSecondaryTabsRemainRegistered(windowMenuConfig.servers[0].name);
+        });
+
         test('MM-T4385_1 should show the second tab', {tag: ['@P2', '@all']}, async () => {
             await createExtraTabs();
             await navigateToSecondAndThirdTabs(windowMenuConfig.servers[0].name);

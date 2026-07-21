@@ -150,7 +150,10 @@ jest.mock('app/mainWindow/modals/modalManager', () => ({
     isModalDisplayed: jest.fn(),
 }));
 jest.mock('./webContentEvents', () => ({}));
-jest.mock('common/appState', () => ({}));
+jest.mock('common/appState', () => ({
+    updateExpired: jest.fn(),
+    updateUnreadsAndMentionsPerServer: jest.fn(),
+}));
 jest.mock('app/popoutMenu', () => ({
     default: jest.fn(),
 }));
@@ -416,6 +419,52 @@ describe('app/views/webContentsManager', () => {
 
             expect(ServerManager.setLoggedIn).not.toHaveBeenCalled();
             expect(flushCookiesStore).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('handleSessionExpired', () => {
+        const webContentsManager = new WebContentsManager();
+        const mockEvent = {
+            sender: {id: 123},
+        };
+        const mockView = {
+            id: 'test-view',
+            serverId: 'server-1',
+        };
+        const AppState = require('common/appState');
+
+        beforeEach(() => {
+            webContentsManager.webContentsIdToView = new Map();
+            ServerManager.setLoggedIn = jest.fn();
+            ViewManager.getViewLog.mockReturnValue({debug: jest.fn()});
+            ViewManager.isPrimaryView.mockReturnValue(true);
+            AppState.updateExpired.mockClear();
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should mark logged out when primary view session expires', () => {
+            webContentsManager.webContentsIdToView.set(123, mockView);
+            ViewManager.isPrimaryView.mockReturnValue(true);
+
+            const ipcMain = require('electron').ipcMain;
+            ipcMain.emit('session_expired', mockEvent, true);
+
+            expect(ServerManager.setLoggedIn).toHaveBeenCalledWith('server-1', false);
+            expect(AppState.updateExpired).toHaveBeenCalledWith('server-1', true);
+        });
+
+        it('should ignore session expiry from non-primary view', () => {
+            webContentsManager.webContentsIdToView.set(123, mockView);
+            ViewManager.isPrimaryView.mockReturnValue(false);
+
+            const ipcMain = require('electron').ipcMain;
+            ipcMain.emit('session_expired', mockEvent, true);
+
+            expect(ServerManager.setLoggedIn).not.toHaveBeenCalled();
+            expect(AppState.updateExpired).not.toHaveBeenCalled();
         });
     });
 

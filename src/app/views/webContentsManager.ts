@@ -265,6 +265,13 @@ export class WebContentsManager {
         }
         ViewManager.getViewLog(view.id).debug('handleSessionExpired', isExpired);
 
+        // Same as handleTabLoginChanged: a non-primary view must not drive server-wide
+        // logout/teardown (TabManager.handleServerLoggedInChanged removes sibling tabs).
+        if (isExpired && !ViewManager.isPrimaryView(view.id)) {
+            log.debug('handleSessionExpired: ignoring expiry from non-primary view', {viewId: view.id});
+            return;
+        }
+
         if (isExpired) {
             this.setLoggedIn(view, false);
         }
