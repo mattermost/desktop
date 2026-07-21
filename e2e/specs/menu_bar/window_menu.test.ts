@@ -11,7 +11,7 @@ import {appDir, demoMattermostConfig, electronBinaryPath, writeConfigFile} from 
 import {closeDownloadsDropdownIfOpen} from '../../helpers/downloadsDropdown';
 import {closeElectronAppFast, registerElectronMainProcess, waitForWindow} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
-import {waitForMattermostShell, waitForMattermostShellReady} from '../../helpers/mattermostShell';
+import {waitForMattermostShellReady} from '../../helpers/mattermostShell';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {buildServerMap, type ServerMap} from '../../helpers/serverMap';
 
@@ -267,15 +267,19 @@ async function assertSecondaryTabsRemainRegistered(
     const expectedIds = getServerWebContentsIds(expectedMap, serverName);
     expect(expectedIds.length, 'Three Mattermost tabs should be registered').toBeGreaterThanOrEqual(3);
 
-    const secondaryEntries = (expectedMap[serverName] ?? []).slice(1, 3);
-    for (const entry of secondaryEntries) {
-        await waitForMattermostShell(entry.win, {timeout: 60_000});
-        await assertServerMapContainsIds(
-            serverName,
-            expectedIds,
-            'Secondary Mattermost tabs must remain registered with stable webContentsIds',
-        );
-    }
+    // Cheap ID/count poll only — full shell readiness is covered by
+    // navigateToSecondAndThirdTabs. Waiting on background-tab shells here
+    // added minutes per OS in CI.
+    await expect.poll(async () => {
+        const map = await buildServerMap(electronApp);
+        const actualIds = getServerWebContentsIds(map, serverName);
+        return actualIds.length >= expectedIds.length &&
+            expectedIds.every((id) => actualIds.includes(id));
+    }, {
+        timeout: 15_000,
+        intervals: [250, 500, 1000],
+        message: 'Secondary Mattermost tabs must remain registered with stable webContentsIds',
+    }).toBe(true);
 }
 
 async function switchToTabAndOpenChannel(
