@@ -292,6 +292,7 @@ function formatCmtChannelMessage({
     const passed = (stats.passed ?? 0) + (stats.flaky ?? 0);
     const failed = stats.failed ?? 0;
     const skipped = stats.skipped ?? 0;
+
     // Overall pass/fail follows tests + upstream CI — not TSIO consolidation state.
     // Stuck `in_progress` / `incomplete` with 0 failures must not render as ❌ Failed.
     const overallFailed = failed > 0 || !upstreamJobsSucceeded || hasFailures;

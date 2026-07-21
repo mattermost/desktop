@@ -240,9 +240,9 @@ async function reportTsioStatus({
             `:warning: Report finalized as \`incomplete\` (${uploadedShards}/${totalReportsExpected} shards) — partial results are in the [TSIO report](${displayReportUrl}); see the [workflow run](${runUrl}) for missing legs.`,
         );
     } else if (!isComplete) {
-        const shardsNote = uploadedShards >= totalReportsExpected && totalReportsExpected > 0
-            ? `All ${uploadedShards}/${totalReportsExpected} shards are uploaded; TSIO consolidation is still \`${detail.status}\`.`
-            : `TSIO group still \`${detail.status}\` after polling (${uploadedShards}/${totalReportsExpected} shards).`;
+        const shardsNote = uploadedShards >= totalReportsExpected && totalReportsExpected > 0 ?
+            `All ${uploadedShards}/${totalReportsExpected} shards are uploaded; TSIO consolidation is still \`${detail.status}\`.` :
+            `TSIO group still \`${detail.status}\` after polling (${uploadedShards}/${totalReportsExpected} shards).`;
         summaryLines.push(
             '',
             `:warning: ${shardsNote} Commit status follows upstream jobs and test failures, not TSIO consolidation — see the [workflow run](${runUrl}).`,
