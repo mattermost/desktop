@@ -96,6 +96,7 @@ jest.mock('common/views/viewManager', () => ({
     getViewLog: jest.fn(),
     getView: jest.fn(),
     getPrimaryView: jest.fn(),
+    isPrimaryView: jest.fn(),
 }));
 
 jest.mock('main/app/utils', () => ({
@@ -356,6 +357,7 @@ describe('app/views/webContentsManager', () => {
         beforeEach(() => {
             webContentsManager.webContentsIdToView = new Map();
             ServerManager.setLoggedIn = jest.fn();
+            ViewManager.isPrimaryView.mockReturnValue(true);
         });
 
         afterEach(() => {
@@ -373,14 +375,37 @@ describe('app/views/webContentsManager', () => {
             expect(flushCookiesStore).toHaveBeenCalled();
         });
 
-        it('should handle logout state change for existing view', () => {
+        it('should handle logout state change for primary view', () => {
             webContentsManager.webContentsIdToView.set(123, mockView);
+            ViewManager.isPrimaryView.mockReturnValue(true);
 
             // Emit the IPC event
             const ipcMain = require('electron').ipcMain;
             ipcMain.emit('tab-login-changed', mockEvent, false);
 
             expect(ServerManager.setLoggedIn).toHaveBeenCalledWith('server-1', false);
+            expect(flushCookiesStore).toHaveBeenCalled();
+        });
+
+        it('should ignore logout from non-primary view', () => {
+            webContentsManager.webContentsIdToView.set(123, mockView);
+            ViewManager.isPrimaryView.mockReturnValue(false);
+
+            const ipcMain = require('electron').ipcMain;
+            ipcMain.emit('tab-login-changed', mockEvent, false);
+
+            expect(ServerManager.setLoggedIn).not.toHaveBeenCalled();
+            expect(flushCookiesStore).not.toHaveBeenCalled();
+        });
+
+        it('should still accept login from non-primary view', () => {
+            webContentsManager.webContentsIdToView.set(123, mockView);
+            ViewManager.isPrimaryView.mockReturnValue(false);
+
+            const ipcMain = require('electron').ipcMain;
+            ipcMain.emit('tab-login-changed', mockEvent, true);
+
+            expect(ServerManager.setLoggedIn).toHaveBeenCalledWith('server-1', true);
             expect(flushCookiesStore).toHaveBeenCalled();
         });
 

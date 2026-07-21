@@ -177,11 +177,21 @@ export class WebContentsManager {
     };
 
     private handleTabLoginChanged = (event: IpcMainEvent, loggedIn: boolean) => {
-        log.debug('handleTabLoggedIn', {webContentsId: event.sender.id});
+        log.debug('handleTabLoggedIn', {webContentsId: event.sender.id, loggedIn});
         const view = this.getViewByWebContentsId(event.sender.id);
         if (!view) {
             return;
         }
+
+        // Secondary tabs share the server session. A loading secondary tab can emit
+        // onLogout(false) before cookies/session are visible; treating that as a
+        // server-wide logout destroys sibling tabs (TabManager.handleServerLoggedInChanged).
+        // Only the primary view may mark the server logged out. Login from any tab is fine.
+        if (!loggedIn && !ViewManager.isPrimaryView(view.id)) {
+            log.debug('handleTabLoginChanged: ignoring logout from non-primary view', {viewId: view.id});
+            return;
+        }
+
         this.setLoggedIn(view, loggedIn);
     };
 

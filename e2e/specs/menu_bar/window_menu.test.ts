@@ -232,14 +232,26 @@ async function createExtraTabs() {
     await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 15_000});
 
     const serverName = windowMenuConfig.servers[0].name;
-    let map = await buildServerMap(electronApp);
-    const deadline = Date.now() + 30_000;
-    while ((map[serverName]?.length ?? 0) < 3 && Date.now() < deadline) {
+    await expect.poll(async () => {
+        const map = await buildServerMap(electronApp);
+        return map[serverName]?.length ?? 0;
+    }, {
+        timeout: 30_000,
+        message: 'Three Mattermost tabs should be registered',
+    }).toBeGreaterThanOrEqual(3);
+
+    // Confirm secondary tabs are not torn down while they finish loading.
+    // (Non-primary onLogout used to destroy siblings via handleServerLoggedInChanged.)
+    for (let i = 0; i < 10; i++) {
         await new Promise((resolve) => setTimeout(resolve, 200));
-        map = await buildServerMap(electronApp);
+        const map = await buildServerMap(electronApp);
+        expect(
+            map[serverName]?.length ?? 0,
+            'Secondary Mattermost tabs must remain registered after creation',
+        ).toBeGreaterThanOrEqual(3);
     }
-    expect(map[serverName]?.length, 'Three Mattermost tabs should be registered').toBeGreaterThanOrEqual(3);
-    return map;
+
+    return buildServerMap(electronApp);
 }
 
 async function switchToTabAndOpenChannel(
@@ -247,34 +259,29 @@ async function switchToTabAndOpenChannel(
     tabIndex: number,
     channelItem: string,
 ) {
-    await expect.poll(async () => {
-        const map = await buildServerMap(electronApp);
-        return map[serverName]?.length ?? 0;
-    }, {timeout: 30_000}).toBeGreaterThanOrEqual(tabIndex);
-
-    const tab = await mainWindow.waitForSelector(
-        `.TabBar li.serverTabItem:nth-child(${tabIndex})`,
-        {timeout: 15_000},
-    );
-    await tab.click();
-
-    // Focus + re-resolve after click. Do NOT loginToMattermost on secondary tabs:
-    // a TAB_LOGIN_CHANGED(false) during reload/login tears down non-primary tabs
-    // (TabManager.handleServerLoggedInChanged), leaving stale webContentsIds.
-    await focusMainWindow();
     let localServerMap = await buildServerMap(electronApp);
     await expect.poll(async () => {
         localServerMap = await buildServerMap(electronApp);
         return localServerMap[serverName]?.[tabIndex - 1]?.webContentsId ?? null;
     }, {
         timeout: 30_000,
-        message: `Mattermost tab ${tabIndex} must remain registered after switch`,
+        message: `Mattermost tab ${tabIndex} must be registered before switch`,
     }).not.toBeNull();
 
-    const view = localServerMap[serverName][tabIndex - 1].win;
-    await prepareMattermostServerView(electronApp, view.webContentsId);
-    await waitForMattermostShellReady(view, {channelItem});
-    await view.click(channelItem);
+    const entry = localServerMap[serverName][tabIndex - 1];
+
+    // Switch via TabManager (same path the Window menu uses). Avoid DOM tab click +
+    // focusMainWindow here: that widened the race where a loading secondary tab's
+    // transient onLogout destroyed siblings before the view was re-resolved.
+    await prepareMattermostServerView(electronApp, entry.webContentsId);
+    await waitForMattermostShellReady(entry.win, {channelItem});
+    await entry.win.click(channelItem);
+
+    localServerMap = await buildServerMap(electronApp);
+    expect(
+        localServerMap[serverName]?.length ?? 0,
+        `Mattermost tabs must remain registered after opening channel on tab ${tabIndex}`,
+    ).toBeGreaterThanOrEqual(tabIndex);
 
     return localServerMap;
 }
