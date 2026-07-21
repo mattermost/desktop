@@ -88,8 +88,8 @@ function parseCmtJobName(jobName) {
 
 /**
  * Webhook routing:
- *   cmt-desktop + desktop-master → MM_E2E_RELEASE_WEBHOOK_URL (RC / master channel)
- *   desktop-pr                   → MM_DESKTOP_E2E_WEBHOOK_URL (PR channel)
+ *   cmt-desktop              → MM_E2E_RELEASE_WEBHOOK_URL (RC / CMT channel)
+ *   desktop-master + desktop-pr → MM_DESKTOP_E2E_WEBHOOK_URL (PR / master channel)
  *
  * MATTERMOST_WEBHOOK_URL remains a fallback for workflows that set only one URL.
  *
@@ -98,10 +98,10 @@ function parseCmtJobName(jobName) {
  * @returns {string}
  */
 function resolveWebhookUrl(reportName, env = process.env) {
-    if (reportName === 'cmt-desktop' || reportName === 'desktop-master') {
+    if (reportName === 'cmt-desktop') {
         return env.MATTERMOST_CMT_WEBHOOK_URL || env.MATTERMOST_WEBHOOK_URL || '';
     }
-    if (reportName === 'desktop-pr') {
+    if (reportName === 'desktop-master' || reportName === 'desktop-pr') {
         return env.MATTERMOST_E2E_WEBHOOK_URL || env.MATTERMOST_WEBHOOK_URL || '';
     }
     return env.MATTERMOST_WEBHOOK_URL || '';

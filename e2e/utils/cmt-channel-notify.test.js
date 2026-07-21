@@ -81,18 +81,18 @@ describe('cmt-channel-notify', () => {
             MATTERMOST_WEBHOOK_URL: 'https://mm.example/hooks/fallback',
         };
 
-        it('sends CMT and master to the CMT webhook', () => {
+        it('sends CMT to the release webhook', () => {
             assert.equal(resolveWebhookUrl('cmt-desktop', env), env.MATTERMOST_CMT_WEBHOOK_URL);
-            assert.equal(resolveWebhookUrl('desktop-master', env), env.MATTERMOST_CMT_WEBHOOK_URL);
         });
 
-        it('sends PR runs to the E2E webhook', () => {
+        it('sends master and PR runs to the E2E webhook', () => {
+            assert.equal(resolveWebhookUrl('desktop-master', env), env.MATTERMOST_E2E_WEBHOOK_URL);
             assert.equal(resolveWebhookUrl('desktop-pr', env), env.MATTERMOST_E2E_WEBHOOK_URL);
         });
 
-        it('does not fall back master to the PR webhook when CMT secret is missing', () => {
+        it('does not fall back CMT to the E2E webhook when release secret is missing', () => {
             assert.equal(
-                resolveWebhookUrl('desktop-master', {MATTERMOST_E2E_WEBHOOK_URL: env.MATTERMOST_E2E_WEBHOOK_URL}),
+                resolveWebhookUrl('cmt-desktop', {MATTERMOST_E2E_WEBHOOK_URL: env.MATTERMOST_E2E_WEBHOOK_URL}),
                 '',
             );
         });
