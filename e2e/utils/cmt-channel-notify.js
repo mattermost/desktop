@@ -88,9 +88,9 @@ function parseCmtJobName(jobName) {
 
 /**
  * Webhook routing (fail closed for named report groups):
- *   cmt-desktop      → MATTERMOST_CMT_WEBHOOK_URL only (MM_E2E_RELEASE_WEBHOOK_URL)
- *   desktop-master   → MATTERMOST_MASTER_HEALTH_WEBHOOK_URL only (MM_E2E_MASTER_HEALTH_WEBHOOK_URL)
- *   desktop-pr       → MATTERMOST_E2E_WEBHOOK_URL only (MM_DESKTOP_E2E_WEBHOOK_URL)
+ *   cmt-desktop                → MATTERMOST_CMT_WEBHOOK_URL only (MM_E2E_RELEASE_WEBHOOK_URL)
+ *   desktop-master/desktop-main → MATTERMOST_MASTER_HEALTH_WEBHOOK_URL only (MM_E2E_MASTER_HEALTH_WEBHOOK_URL)
+ *   desktop-pr                 → MATTERMOST_E2E_WEBHOOK_URL only (MM_DESKTOP_E2E_WEBHOOK_URL)
  *
  * Named groups never fall back to MATTERMOST_WEBHOOK_URL (avoids posting
  * CMT/PR/master to the wrong channel when a dedicated secret is missing).
@@ -104,7 +104,7 @@ function resolveWebhookUrl(reportName, env = process.env) {
     if (reportName === 'cmt-desktop') {
         return env.MATTERMOST_CMT_WEBHOOK_URL || '';
     }
-    if (reportName === 'desktop-master') {
+    if (reportName === 'desktop-master' || reportName === 'desktop-main') {
         return env.MATTERMOST_MASTER_HEALTH_WEBHOOK_URL || '';
     }
     if (reportName === 'desktop-pr') {
@@ -244,6 +244,7 @@ function reportTitleForIdentity(compositeIdentity) {
     case 'desktop-pr':
         return 'Desktop PR E2E';
     case 'desktop-master':
+    case 'desktop-main':
         return 'Desktop Master E2E';
     default:
         return 'Desktop E2E';

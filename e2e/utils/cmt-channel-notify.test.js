@@ -88,6 +88,7 @@ describe('cmt-channel-notify', () => {
 
         it('sends master runs to the master-health webhook', () => {
             assert.equal(resolveWebhookUrl('desktop-master', env), env.MATTERMOST_MASTER_HEALTH_WEBHOOK_URL);
+            assert.equal(resolveWebhookUrl('desktop-main', env), env.MATTERMOST_MASTER_HEALTH_WEBHOOK_URL);
         });
 
         it('sends PR runs to the E2E webhook', () => {

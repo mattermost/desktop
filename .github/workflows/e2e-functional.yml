@@ -83,6 +83,10 @@ jobs:
           # platform legs (linux/macos/windows) + policy-tests-macos + policy-tests-windows
           TOTAL=$(( $(echo "${PLATFORMS}" | jq -c 'length') + 2 ))
           echo "total-reports-expected=${TOTAL}" >> "$GITHUB_OUTPUT"
+          # Accept MAIN as an alias for MASTER (mobile-style); Matterwick sends MASTER.
+          if [ "${RUN_TYPE}" = "MAIN" ]; then
+            RUN_TYPE=MASTER
+          fi
           NAME="desktop-$(echo "${RUN_TYPE}" | tr '[:upper:]' '[:lower:]')"
           if [ -n "${PR_NUMBER}" ]; then
             COMPOSITE_IDENTITY=$(jq -nc \

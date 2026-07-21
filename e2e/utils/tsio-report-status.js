@@ -268,11 +268,11 @@ async function reportTsioStatus({
 
     // Channel notify (best-effort). Routing (see resolveWebhookUrl):
     //   cmt-desktop      → MM_E2E_RELEASE_WEBHOOK_URL
-    //   desktop-master   → MM_E2E_MASTER_HEALTH_WEBHOOK_URL
-    //   desktop-pr       → MM_DESKTOP_E2E_WEBHOOK_URL
+    //   desktop-master / desktop-main → MM_E2E_MASTER_HEALTH_WEBHOOK_URL
+    //   desktop-pr                    → MM_DESKTOP_E2E_WEBHOOK_URL
     // Failures here must not undo a successfully written commit status.
     try {
-        const notifyNames = new Set(['cmt-desktop', 'desktop-pr', 'desktop-master']);
+        const notifyNames = new Set(['cmt-desktop', 'desktop-pr', 'desktop-master', 'desktop-main']);
         if (notifyNames.has(compositeIdentity.name)) {
             const {notifyCmtChannel, resolveWebhookUrl} = require('./cmt-channel-notify.js');
             const webhookUrl = resolveWebhookUrl(compositeIdentity.name);
