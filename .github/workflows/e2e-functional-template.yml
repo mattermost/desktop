@@ -292,6 +292,12 @@ jobs:
           TSIO_GH_JOB_NAME: e2e-on-${{ inputs.runs-on }}-${{ inputs.MM_SERVER_VERSION }}
           PLAYWRIGHT_EXIT_CODE: ${{ env.PLAYWRIGHT_EXIT_CODE }}
 
+      # report-upload walks every png/jpg under screenshots-dir; Electron userdata
+      # under e2e/test-results includes cache icons, so collect failure shots only.
+      - name: e2e/collect-tsio-screenshots
+        if: ${{ always() && inputs.tsio-config != '' && hashFiles('e2e/test-results/results.json') != '' }}
+        run: node e2e/utils/collect-tsio-screenshots.mjs
+
       # Reporting only — a TSIO/upload flake (e.g. screenshot 504) must not fail
       # the job when Playwright already passed. Commit status still comes from TSIO summary.
       - name: e2e/upload-report-to-tsio
@@ -306,7 +312,7 @@ jobs:
           # MUST match this job's `name:` field above.
           gh-job-name: e2e-on-${{ inputs.runs-on }}-${{ inputs.MM_SERVER_VERSION }}
           json-path: e2e/test-results/results.json
-          screenshots-dir: e2e/test-results
+          screenshots-dir: e2e/test-results/tsio-screenshots
 
       - name: e2e/handle-nonzero-playwright-exit
         if: always()
