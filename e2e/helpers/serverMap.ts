@@ -41,6 +41,16 @@ export async function buildServerMap(app: ElectronApplication): Promise<ServerMa
                             return null;
                         }
 
+                        // Require both indexes to agree so we never hand activateServerView
+                        // a webContentsId that was already removed (e.g. after logout tears
+                        // down non-primary tabs via TabManager.handleServerLoggedInChanged).
+                        const byWebContentsId = refs.WebContentsManager.getViewByWebContentsId(
+                            webContentsView.webContentsId,
+                        );
+                        if (!byWebContentsId || byWebContentsId.id !== webContentsView.id) {
+                            return null;
+                        }
+
                         return {
                             serverName: server.name,
                             webContentsId: webContentsView.webContentsId,

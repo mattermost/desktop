@@ -25,7 +25,7 @@ on:
         required: true
       run_type:
         type: string
-        description: "Run type for test reporting (PR / MASTER / RELEASE). Matterwick sends MASTER for master pushes; PR-label runs leave this blank (default PR). Settable on manual dispatch for ad-hoc RELEASE runs."
+        description: "Run type for test reporting (PR / MASTER). Matterwick sends MASTER for master pushes; PR-label runs leave this blank (default PR)."
         required: false
         default: ""
       pr_number:
@@ -171,6 +171,7 @@ jobs:
           persist-credentials: false
           sparse-checkout: |
             e2e/utils/tsio-report-status.js
+            e2e/utils/cmt-channel-notify.js
           sparse-checkout-cone-mode: false
 
       - name: Render TSIO summary + flip commit status
@@ -183,6 +184,10 @@ jobs:
           TSIO_POLL_DELAY_MS: 5000
           COMMIT_STATUS_CONTEXT: e2e-test/desktop-playwright
           UPSTREAM_JOBS_SUCCEEDED: ${{ needs.e2e-tests.result == 'success' && needs.e2e-policy-tests.result == 'success' }}
+          # Master shares the CMT/RC channel; PR posts to the E2E QA channel.
+          # Routing is by compositeIdentity.name in cmt-channel-notify.js.
+          MATTERMOST_CMT_WEBHOOK_URL: ${{ secrets.MM_E2E_RELEASE_WEBHOOK_URL }}
+          MATTERMOST_E2E_WEBHOOK_URL: ${{ secrets.MM_DESKTOP_E2E_WEBHOOK_URL }}
         with:
           script: |
             const {reportUrl, status, stats} = await require('./e2e/utils/tsio-report-status.js')({
@@ -416,8 +421,11 @@ jobs:
           TSIO_GH_JOB_NAME: policy-tests-${{ matrix.platform }}
           PLAYWRIGHT_EXIT_CODE: ${{ env.PLAYWRIGHT_EXIT_CODE }}
 
+      # Reporting only — a TSIO/upload flake (e.g. screenshot 504) must not fail
+      # the job when Playwright already passed. Commit status still comes from TSIO summary.
       - name: e2e/upload-report-to-tsio
         if: ${{ always() && needs.prepare-matrix.outputs.tsio-composite-identity != '' && hashFiles('e2e/test-results/results.json') != '' }}
+        continue-on-error: true
         uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@81017b2d568d1fc1f1fdaa7299b177fae53c63e1 # 0.10.0 / 2026-05-16
         with:
           composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}

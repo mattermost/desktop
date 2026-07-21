@@ -14,7 +14,6 @@ import {loginToMattermost} from '../../helpers/login';
 import {waitForMattermostShellReady} from '../../helpers/mattermostShell';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {buildServerMap} from '../../helpers/serverMap';
-import type {ServerView} from '../../helpers/serverView';
 
 const windowMenuConfig = {
     ...demoMattermostConfig,
@@ -243,21 +242,14 @@ async function createExtraTabs() {
     return map;
 }
 
-async function prepareTabView(app: ElectronApplication, view: ServerView) {
-    await prepareMattermostServerView(app, view.webContentsId);
-    await loginToMattermost(view);
-}
-
 async function switchToTabAndOpenChannel(
     serverName: string,
     tabIndex: number,
     channelItem: string,
-    initialServerMap?: Awaited<ReturnType<typeof buildServerMap>>,
 ) {
-    let localServerMap = initialServerMap ?? await buildServerMap(electronApp);
     await expect.poll(async () => {
-        localServerMap = await buildServerMap(electronApp);
-        return localServerMap[serverName]?.length ?? 0;
+        const map = await buildServerMap(electronApp);
+        return map[serverName]?.length ?? 0;
     }, {timeout: 30_000}).toBeGreaterThanOrEqual(tabIndex);
 
     const tab = await mainWindow.waitForSelector(
@@ -265,8 +257,22 @@ async function switchToTabAndOpenChannel(
         {timeout: 15_000},
     );
     await tab.click();
+
+    // Focus + re-resolve after click. Do NOT loginToMattermost on secondary tabs:
+    // a TAB_LOGIN_CHANGED(false) during reload/login tears down non-primary tabs
+    // (TabManager.handleServerLoggedInChanged), leaving stale webContentsIds.
+    await focusMainWindow();
+    let localServerMap = await buildServerMap(electronApp);
+    await expect.poll(async () => {
+        localServerMap = await buildServerMap(electronApp);
+        return localServerMap[serverName]?.[tabIndex - 1]?.webContentsId ?? null;
+    }, {
+        timeout: 30_000,
+        message: `Mattermost tab ${tabIndex} must remain registered after switch`,
+    }).not.toBeNull();
+
     const view = localServerMap[serverName][tabIndex - 1].win;
-    await prepareTabView(electronApp, view);
+    await prepareMattermostServerView(electronApp, view.webContentsId);
     await waitForMattermostShellReady(view, {channelItem});
     await view.click(channelItem);
 
@@ -274,18 +280,16 @@ async function switchToTabAndOpenChannel(
 }
 
 async function navigateToSecondAndThirdTabs(serverName: string) {
-    let localServerMap = await switchToTabAndOpenChannel(
+    await switchToTabAndOpenChannel(
         serverName,
         2,
         '#sidebarItem_off-topic',
     );
-    localServerMap = await switchToTabAndOpenChannel(
+    return switchToTabAndOpenChannel(
         serverName,
         3,
         '#sidebarItem_town-square',
-        localServerMap,
     );
-    return localServerMap;
 }
 
 test.describe('Menu/window_menu', () => {

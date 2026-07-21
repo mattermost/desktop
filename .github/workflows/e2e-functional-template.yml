@@ -31,7 +31,7 @@ on:
         default: false
       TYPE:
         type: string
-        description: "e.g. PR, NIGHTLY, RELEASE or CMT (Compatibility Matrix Testing)"
+        description: "e.g. PR, MASTER, or CMT (Compatibility Matrix Testing)"
         required: false
         default: "PR"
       MM_SERVER_VERSION:
@@ -125,7 +125,7 @@ jobs:
           echo "CI_ENVIRONMENT_NAME=@ci-${RUNNER_OS}" >> $GITHUB_ENV
           
           # Define build type and suffix
-          # inputs.TYPE takes precedence when provided by the caller (e.g. RELEASE, MASTER, PR).
+          # inputs.TYPE takes precedence when provided by the caller (PR, MASTER, CMT).
           INPUT_TYPE="${{ inputs.TYPE }}"
           case "${{ github.event_name }}" in
             "pull_request")
@@ -134,21 +134,28 @@ jobs:
               ;;
             "workflow_dispatch")
               if ${{ inputs.cmt }}; then
-                echo "BUILD_SUFFIX=desktop-release-${RUNNER_OS}" >> $GITHUB_OUTPUT
+                echo "BUILD_SUFFIX=desktop-cmt-${RUNNER_OS}" >> $GITHUB_OUTPUT
                 echo "TYPE=${INPUT_TYPE:-CMT}" >> $GITHUB_ENV
                 echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
-                echo "ZEPHYR_FOLDER_${RUNNER_OS^^}_REPORT=${{
+                # Use tr, not ${var^^} — macOS runners ship Bash 3.2 which rejects ^^.
+                RUNNER_OS_UPPER=$(echo "${RUNNER_OS}" | tr '[:lower:]' '[:upper:]')
+                echo "ZEPHYR_FOLDER_${RUNNER_OS_UPPER}_REPORT=${{
                   runner.os == 'Linux' && '12358649' ||
                   runner.os == 'macOS' && '12358650' ||
                   '12358651'
                 }}" >> $GITHUB_ENV
               else
-                echo "BUILD_SUFFIX=desktop-manual-trigger-${RUNNER_OS}" >> $GITHUB_OUTPUT
-                echo "TYPE=${INPUT_TYPE:-MANUAL}" >> $GITHUB_ENV
+                # Matterwick PR / master dispatches land here (workflow_call → this template
+                # still sees workflow_dispatch as the root event on the caller).
+                TYPE_VALUE="${INPUT_TYPE:-PR}"
+                TYPE_LOWER=$(echo "${TYPE_VALUE}" | tr '[:upper:]' '[:lower:]')
+                echo "BUILD_SUFFIX=desktop-${TYPE_LOWER}-${RUNNER_OS}" >> $GITHUB_OUTPUT
+                echo "TYPE=${TYPE_VALUE}" >> $GITHUB_ENV
               fi
               ;;
             "push")
-              echo "BUILD_SUFFIX=desktop-push-${RUNNER_OS}" >> $GITHUB_OUTPUT
+              echo "BUILD_SUFFIX=desktop-master-${RUNNER_OS}" >> $GITHUB_OUTPUT
+              echo "TYPE=${INPUT_TYPE:-MASTER}" >> $GITHUB_ENV
               ;;
           esac
 
@@ -285,8 +292,11 @@ jobs:
           TSIO_GH_JOB_NAME: e2e-on-${{ inputs.runs-on }}-${{ inputs.MM_SERVER_VERSION }}
           PLAYWRIGHT_EXIT_CODE: ${{ env.PLAYWRIGHT_EXIT_CODE }}
 
+      # Reporting only — a TSIO/upload flake (e.g. screenshot 504) must not fail
+      # the job when Playwright already passed. Commit status still comes from TSIO summary.
       - name: e2e/upload-report-to-tsio
         if: ${{ always() && inputs.tsio-config != '' && hashFiles('e2e/test-results/results.json') != '' }}
+        continue-on-error: true
         uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@81017b2d568d1fc1f1fdaa7299b177fae53c63e1 # 0.10.0 / 2026-05-16
         with:
           composite-identity: ${{ toJSON(fromJSON(inputs.tsio-config).composite_identity) }}

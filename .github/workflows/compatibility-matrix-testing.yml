@@ -55,9 +55,10 @@ jobs:
         id: repo
         run: echo "DESKTOP_SHA=$(git rev-parse HEAD)" >> ${GITHUB_OUTPUT}
 
-      # Matterwick still dispatches ubuntu-22.04 for Linux; pin to ubuntu-latest so
-      # CMT matches PR E2E (24.04) and install-os-dependencies can resolve
-      # libasound2t64. Same idea as e2e-functional.yml remapping macos-latest → macos-26.
+      # Matterwick still dispatches ubuntu-22.04 for Linux and macos-13/macos-14 for
+      # macOS. Remap so CMT matches PR E2E: Linux → ubuntu-latest (libasound2t64 on
+      # 24.04), macOS → macos-26 (macos-13/14 are unavailable / queue for ~24h).
+      # Same idea as e2e-functional.yml remapping macos-latest → macos-26.
       - name: cmt/normalize-matrix-runners
         id: normalize-matrix
         env:
@@ -65,7 +66,9 @@ jobs:
         run: |
           NORMALIZED=$(echo "${CMT_MATRIX}" | jq -c '
             .environment |= map(
-              if .runner == "ubuntu-22.04" then .runner = "ubuntu-latest" else . end
+              if .runner == "ubuntu-22.04" then .runner = "ubuntu-latest"
+              elif .runner == "macos-13" or .runner == "macos-14" or .runner == "macos-latest" then .runner = "macos-26"
+              else . end
             )
           ')
           echo "matrix=${NORMALIZED}" >> "$GITHUB_OUTPUT"
@@ -114,8 +117,8 @@ jobs:
           description: "Compatibility Matrix Testing for ${{ inputs.DESKTOP_VERSION }} version"
           status: pending
 
-  # Input follows the below schema (Matterwick may still send ubuntu-22.04;
-  # calculate-commit-hash remaps Linux to ubuntu-latest before the e2e matrix).
+  # Input follows the below schema (Matterwick may still send ubuntu-22.04 /
+  # macos-13 / macos-14; calculate-commit-hash remaps those before the e2e matrix).
   # {
   #   "environment": [
   #     {
@@ -185,6 +188,7 @@ jobs:
           persist-credentials: false
           sparse-checkout: |
             e2e/utils/tsio-report-status.js
+            e2e/utils/cmt-channel-notify.js
           sparse-checkout-cone-mode: false
 
       - name: Render TSIO summary + flip commit status
@@ -196,6 +200,11 @@ jobs:
           TSIO_POLL_ATTEMPTS: 24
           TSIO_POLL_DELAY_MS: 5000
           COMMIT_STATUS_CONTEXT: e2e/compatibility-matrix-testing
+          # Incoming webhook for the Desktop CMT/RC results channel (separate from
+          # PR/master MM_DESKTOP_E2E_WEBHOOK_URL). Optional — when unset, TSIO
+          # status still flips and channel notify is skipped.
+          # RC / CMT channel (same destination as master E2E via resolveWebhookUrl).
+          MATTERMOST_CMT_WEBHOOK_URL: ${{ secrets.MM_E2E_RELEASE_WEBHOOK_URL }}
           # TSIO only sees test-case-level results — a job-level failure with no
           # matching failed test (hung worker teardown, crashed runner, npm ci
           # failure) would otherwise still read as "100% passed".
