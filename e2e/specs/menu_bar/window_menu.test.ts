@@ -13,7 +13,7 @@ import {closeElectronAppFast, registerElectronMainProcess, waitForWindow} from '
 import {loginToMattermost} from '../../helpers/login';
 import {waitForMattermostShellReady} from '../../helpers/mattermostShell';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
-import {buildServerMap} from '../../helpers/serverMap';
+import {buildServerMap, type ServerMap} from '../../helpers/serverMap';
 
 const windowMenuConfig = {
     ...demoMattermostConfig,
@@ -232,63 +232,74 @@ async function createExtraTabs() {
     await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 15_000});
 
     const serverName = windowMenuConfig.servers[0].name;
-    let map = await buildServerMap(electronApp);
-    const deadline = Date.now() + 30_000;
-    while ((map[serverName]?.length ?? 0) < 3 && Date.now() < deadline) {
-        await new Promise((resolve) => setTimeout(resolve, 200));
-        map = await buildServerMap(electronApp);
-    }
-    expect(map[serverName]?.length, 'Three Mattermost tabs should be registered').toBeGreaterThanOrEqual(3);
-    return map;
+    await expect.poll(async () => {
+        const map = await buildServerMap(electronApp);
+        return map[serverName]?.length ?? 0;
+    }, {
+        timeout: 30_000,
+        message: 'Three Mattermost tabs should be registered',
+    }).toBeGreaterThanOrEqual(3);
+
+    return buildServerMap(electronApp);
+}
+
+function getServerWebContentsIds(map: ServerMap, serverName: string): number[] {
+    return (map[serverName] ?? []).map((entry) => entry.webContentsId);
 }
 
 async function switchToTabAndOpenChannel(
     serverName: string,
     tabIndex: number,
     channelItem: string,
+    expectedIds: number[],
 ) {
-    await expect.poll(async () => {
-        const map = await buildServerMap(electronApp);
-        return map[serverName]?.length ?? 0;
-    }, {timeout: 30_000}).toBeGreaterThanOrEqual(tabIndex);
-
-    const tab = await mainWindow.waitForSelector(
-        `.TabBar li.serverTabItem:nth-child(${tabIndex})`,
-        {timeout: 15_000},
-    );
-    await tab.click();
-
-    // Focus + re-resolve after click. Do NOT loginToMattermost on secondary tabs:
-    // a TAB_LOGIN_CHANGED(false) during reload/login tears down non-primary tabs
-    // (TabManager.handleServerLoggedInChanged), leaving stale webContentsIds.
-    await focusMainWindow();
     let localServerMap = await buildServerMap(electronApp);
     await expect.poll(async () => {
         localServerMap = await buildServerMap(electronApp);
+        const actualIds = getServerWebContentsIds(localServerMap, serverName);
+        if (!expectedIds.every((id) => actualIds.includes(id))) {
+            return null;
+        }
         return localServerMap[serverName]?.[tabIndex - 1]?.webContentsId ?? null;
     }, {
         timeout: 30_000,
-        message: `Mattermost tab ${tabIndex} must remain registered after switch`,
+        message: `Mattermost tab ${tabIndex} must be registered before switch`,
     }).not.toBeNull();
 
-    const view = localServerMap[serverName][tabIndex - 1].win;
-    await prepareMattermostServerView(electronApp, view.webContentsId);
-    await waitForMattermostShellReady(view, {channelItem});
-    await view.click(channelItem);
+    const expectedId = expectedIds[tabIndex - 1];
+    const entry = localServerMap[serverName].find((candidate) => candidate.webContentsId === expectedId) ??
+        localServerMap[serverName][tabIndex - 1];
+    expect(entry?.webContentsId, `Mattermost tab ${tabIndex} webContentsId must match createExtraTabs map`).toBe(expectedId);
+
+    // Switch via TabManager (same path the Window menu uses). Avoid DOM tab click +
+    // focusMainWindow here: that widened the race where a loading secondary tab's
+    // transient onLogout destroyed siblings before the view was re-resolved.
+    await prepareMattermostServerView(electronApp, entry.webContentsId);
+    await waitForMattermostShellReady(entry.win, {channelItem});
+    await entry.win.click(channelItem);
+
+    localServerMap = await buildServerMap(electronApp);
+    const actualIds = getServerWebContentsIds(localServerMap, serverName);
+    expect(actualIds.length, `Mattermost tabs must remain registered after opening channel on tab ${tabIndex}`).
+        toBeGreaterThanOrEqual(expectedIds.length);
+    expect(actualIds, `Mattermost tab webContentsIds must remain stable after opening channel on tab ${tabIndex}`).
+        toEqual(expect.arrayContaining(expectedIds));
 
     return localServerMap;
 }
 
-async function navigateToSecondAndThirdTabs(serverName: string) {
+async function navigateToSecondAndThirdTabs(serverName: string, expectedIds: number[]) {
     await switchToTabAndOpenChannel(
         serverName,
         2,
         '#sidebarItem_off-topic',
+        expectedIds,
     );
     return switchToTabAndOpenChannel(
         serverName,
         3,
         '#sidebarItem_town-square',
+        expectedIds,
     );
 }
 
@@ -377,8 +388,9 @@ test.describe('Menu/window_menu', () => {
 
     test.describe('MM-T4385 select tab from menu', () => {
         test('MM-T4385_1 should show the second tab', {tag: ['@P2', '@all']}, async () => {
-            await createExtraTabs();
-            await navigateToSecondAndThirdTabs(windowMenuConfig.servers[0].name);
+            const serverName = windowMenuConfig.servers[0].name;
+            const createdMap = await createExtraTabs();
+            await navigateToSecondAndThirdTabs(serverName, getServerWebContentsIds(createdMap, serverName));
 
             // Tab title updates asynchronously after channel navigation — poll for it.
             await expect(mainWindow.locator('.active')).toContainText('Town Square', {timeout: 10_000});
@@ -388,8 +400,9 @@ test.describe('Menu/window_menu', () => {
         });
 
         test('MM-T4385_2 should show the third tab', {tag: ['@P2', '@all']}, async () => {
-            await createExtraTabs();
-            await navigateToSecondAndThirdTabs(windowMenuConfig.servers[0].name);
+            const serverName = windowMenuConfig.servers[0].name;
+            const createdMap = await createExtraTabs();
+            await navigateToSecondAndThirdTabs(serverName, getServerWebContentsIds(createdMap, serverName));
 
             await clickWindowMenuItem(electronApp, {accelerator: 'CmdOrCtrl+2'});
             await clickWindowMenuItem(electronApp, {accelerator: 'CmdOrCtrl+3'});
@@ -397,8 +410,9 @@ test.describe('Menu/window_menu', () => {
         });
 
         test('MM-T4385_3 should show the first tab', {tag: ['@P2', '@all']}, async () => {
-            await createExtraTabs();
-            await navigateToSecondAndThirdTabs(windowMenuConfig.servers[0].name);
+            const serverName = windowMenuConfig.servers[0].name;
+            const createdMap = await createExtraTabs();
+            await navigateToSecondAndThirdTabs(serverName, getServerWebContentsIds(createdMap, serverName));
 
             await clickWindowMenuItem(electronApp, {accelerator: 'CmdOrCtrl+2'});
             await clickWindowMenuItem(electronApp, {accelerator: 'CmdOrCtrl+1'});
@@ -411,7 +425,17 @@ test.describe('Menu/window_menu', () => {
         await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 15_000});
 
         const serverName = windowMenuConfig.servers[0].name;
-        await switchToTabAndOpenChannel(serverName, 2, '#sidebarItem_off-topic');
+        let createdMap = await buildServerMap(electronApp);
+        await expect.poll(async () => {
+            createdMap = await buildServerMap(electronApp);
+            return createdMap[serverName]?.length ?? 0;
+        }, {timeout: 30_000}).toBeGreaterThanOrEqual(2);
+        await switchToTabAndOpenChannel(
+            serverName,
+            2,
+            '#sidebarItem_off-topic',
+            getServerWebContentsIds(createdMap, serverName),
+        );
 
         await expect.poll(() => getActiveTabTitle(electronApp), {timeout: 15_000}).toContain('Off-Topic');
 

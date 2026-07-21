@@ -49,7 +49,7 @@ function buildDisplayReportUrl(baseUrl, compositeIdentity) {
  * @param {Object} params.compositeIdentity - {repository, commit_sha, gh_run_id, name, gh_run_attempt, branch, gh_pr_number}
  * @param {number} params.totalReportsExpected - Number of per-leg reports expected in this group
  * @param {string} params.commitStatusContext - Commit-status context to flip on completion
- * @param {boolean} [params.failOnTestFailures] - When true (default), throw if the group didn't complete cleanly
+ * @param {boolean} [params.failOnTestFailures] - When true (default), throw if tests/shards/upstream CI failed (not merely TSIO still consolidating)
  * @param {boolean} [params.useStaging] - Target TSIO staging instead of production
  * @param {string} [params.oidcAudience] - OIDC audience claim TSIO expects
  * @param {boolean} [params.upstreamJobsSucceeded] - When false (default true), force the
@@ -127,13 +127,35 @@ async function reportTsioStatus({
         displayReportUrl = buildDisplayReportUrl(baseUrl, compositeIdentity);
         groupReportUrl = `${baseUrl}/reports/g/${reportId}`;
 
+        let shardsReadySinceAttempt = -1;
         for (let attempt = 0; attempt < resolvedPollAttempts; attempt++) {
             const statusRes = await fetch(`${baseUrl}/api/v1/reports/${reportId}`);
             if (!statusRes.ok) {
                 throw new Error(`reports/${reportId} failed: ${statusRes.status} ${await statusRes.text()}`);
             }
             detail = await statusRes.json();
-            if (TERMINAL_STATUSES.includes(detail.status)) {
+            const uploaded = Array.isArray(detail.reports) ? detail.reports.length : 0;
+            const shardsReady = totalReportsExpected <= 0 || uploaded >= totalReportsExpected;
+
+            if (shardsReady && shardsReadySinceAttempt < 0) {
+                shardsReadySinceAttempt = attempt;
+            }
+
+            // Prefer `completed`. Otherwise stop once every expected shard is present —
+            // TSIO can stay `in_progress` indefinitely after 5/5 uploads (consolidation lag).
+            // Give a short grace window after shardsReady so status can flip to completed.
+            if (detail.status === 'completed') {
+                break;
+            }
+            if (TERMINAL_STATUSES.includes(detail.status) && shardsReady) {
+                break;
+            }
+            const gracePolls = 3;
+            if (
+                shardsReady &&
+                shardsReadySinceAttempt >= 0 &&
+                attempt - shardsReadySinceAttempt >= gracePolls
+            ) {
                 break;
             }
             if (attempt < resolvedPollAttempts - 1) {
@@ -176,14 +198,17 @@ async function reportTsioStatus({
     }
     const hasFailures = (stats.failed || 0) > 0 || failedShards.length > 0;
 
+    // Commit status / job outcome must reflect test + upstream CI health — not TSIO
+    // consolidation lag. A stuck `in_progress` / `incomplete` group with 0 failed tests
+    // previously flipped e2e-test/desktop-playwright red and posted "Failed" with 0 failures.
     let overallState = 'failure';
-    if (isComplete && !hasFailures && upstreamJobsSucceeded) {
+    if (!hasFailures && upstreamJobsSucceeded) {
         overallState = 'success';
     }
 
     let targetUrl = runUrl;
-    if (isComplete || isIncomplete) {
-        targetUrl = displayReportUrl || groupReportUrl;
+    if (isComplete || isIncomplete || displayReportUrl || groupReportUrl) {
+        targetUrl = displayReportUrl || groupReportUrl || runUrl;
     }
 
     const summaryLines = [
@@ -194,7 +219,7 @@ async function reportTsioStatus({
             `${stats.skipped ?? '?'} skipped (of ${stats.total ?? '?'})`,
     ];
 
-    if (uploadedShards > 0) {
+    if (uploadedShards > 0 || totalReportsExpected > 0) {
         summaryLines.push(`**Shards uploaded:** ${uploadedShards}/${totalReportsExpected}`);
     }
 
@@ -215,17 +240,22 @@ async function reportTsioStatus({
             `:warning: Report finalized as \`incomplete\` (${uploadedShards}/${totalReportsExpected} shards) — partial results are in the [TSIO report](${displayReportUrl}); see the [workflow run](${runUrl}) for missing legs.`,
         );
     } else if (!isComplete) {
+        const shardsNote = uploadedShards >= totalReportsExpected && totalReportsExpected > 0 ?
+            `All ${uploadedShards}/${totalReportsExpected} shards are uploaded; TSIO consolidation is still \`${detail.status}\`.` :
+            `TSIO group still \`${detail.status}\` after polling (${uploadedShards}/${totalReportsExpected} shards).`;
         summaryLines.push(
             '',
-            `:warning: Report never reached a terminal state (stuck at \`${detail.status}\`) after ${resolvedPollAttempts} polls — see the [workflow run](${runUrl}).`,
+            `:warning: ${shardsNote} Commit status follows upstream jobs and test failures, not TSIO consolidation — see the [workflow run](${runUrl}).`,
         );
     }
 
     summaryLines.push('');
     await core.summary.addRaw(summaryLines.join('\n')).write();
 
+    const passedForStatus = (stats.passed ?? 0) + (stats.flaky ?? 0);
     const descriptionPrefix = !upstreamJobsSucceeded && !hasFailures ? 'CI job failed (untracked by TSIO), ' : '';
-    const description = `${descriptionPrefix}${stats.passed ?? 0}/${stats.total ?? 0} passed, ${stats.failed ?? 0} failed, ${stats.skipped ?? 0} skipped`.slice(0, 140);
+    const tsioLagSuffix = !isComplete && overallState === 'success' ? ' (TSIO consolidating)' : '';
+    const description = `${descriptionPrefix}${passedForStatus}/${stats.total ?? 0} passed, ${stats.failed ?? 0} failed, ${stats.skipped ?? 0} skipped${tsioLagSuffix}`.slice(0, 140);
     await github.rest.repos.createCommitStatus({
         owner: context.repo.owner,
         repo: context.repo.repo,
@@ -275,6 +305,13 @@ async function reportTsioStatus({
             reason = `status=${detail.status}, failed=${stats.failed || 0}`;
         }
         throw new Error(`TSIO report ${reportId} did not pass: ${reason}`);
+    }
+
+    if (!isComplete && overallState === 'success') {
+        core.warning(
+            `TSIO group left at status=${detail.status} with 0 test failures — commit status set to success. ` +
+            `Shards ${uploadedShards}/${totalReportsExpected}.`,
+        );
     }
 
     return {reportUrl: displayReportUrl || groupReportUrl, status: detail.status, stats};

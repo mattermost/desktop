@@ -98,6 +98,9 @@ export class ServerManager extends EventEmitter {
         if (!server) {
             return;
         }
+        if (server.isLoggedIn === loggedIn) {
+            return;
+        }
         if (!loggedIn) {
             server.theme = undefined;
         }
