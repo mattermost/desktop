@@ -152,20 +152,8 @@ async function exerciseWindowChrome(
     }
 
     if (openSettings) {
-        // Open + cancelModal exercises settings chrome while tiled/fullscreen.
-        // Avoid clicking category buttons here: on Linux CI, after parent tiling the
-        // settings WebContentsView can tear down mid-click ("Target page ... closed").
-        // focus.test uses the same cancelModal close path successfully.
         const settingsWindow = await openSettingsWindow(electronApp);
-        await settingsWindow.waitForSelector('.SettingsModal', {timeout: 15_000});
-        if (process.platform === 'linux') {
-            // ModalView defers setBounds by 10ms on Linux; wait for the view to settle
-            // after the parent was tiled before touching the page.
-            await new Promise((resolve) => setTimeout(resolve, 300));
-        }
-        if (settingsWindow.isClosed()) {
-            throw new Error('Settings window closed before cancelModal could run');
-        }
+        await settingsWindow.click('#settingCategoryButton-general');
         await settingsWindow.evaluate(() => {
             const desktop = (window as Window & {desktop?: {modals?: {cancelModal?: () => void}}}).desktop;
             if (!desktop?.modals?.cancelModal) {
@@ -198,9 +186,6 @@ test.describe('startup/window_position', () => {
             await mainWindow.waitForSelector('#newTabButton', {timeout: 30_000});
 
             const tiledBounds = await tileMainWindowToLeftHalf(electronApp);
-
-            // Let MAIN_WINDOW_RESIZED / modal bound handlers settle before opening settings.
-            await new Promise((resolve) => setTimeout(resolve, 300));
             await exerciseWindowChrome(electronApp, mainWindow);
 
             const afterTiled = await getMainWindowState(electronApp);
