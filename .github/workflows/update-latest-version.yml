@@ -34,12 +34,12 @@ jobs:
           echo "OK: Input ref is valid ($REF)"
 
       - name: Checkout repository
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ inputs.ref }}
 
       - name: Setup AWS credentials
-        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
+        uses: aws-actions/configure-aws-credentials@517a711dbcd0e402f90c77e7e2f81e849156e31d # v6.2.2
         with:
           aws-region: us-east-1
           role-to-assume: ${{ secrets.MM_DESKTOP_RELEASE_AWS_ROLE_TO_ASSUME }}

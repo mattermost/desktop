@@ -2,32 +2,70 @@
 // See LICENSE.txt for license information.
 
 import {expect} from '@playwright/test';
-import type {ElectronApplication} from 'playwright';
+import type {ElectronApplication, Page} from 'playwright';
+
+const MAIN_WINDOW_POLL_MS = 200;
+
+export function findMainWindow(app: ElectronApplication): Page | undefined {
+    return app.windows().find((window) => {
+        try {
+            return window.url().includes('index');
+        } catch {
+            return false;
+        }
+    });
+}
+
+/** Resolve the internal main window (index.html wrapper). */
+export async function waitForMainWindow(
+    app: ElectronApplication,
+    options?: {timeout?: number},
+): Promise<Page> {
+    const timeout = options?.timeout ?? 30_000;
+    let mainWindow: Page | undefined;
+
+    await expect.poll(async () => {
+        mainWindow = findMainWindow(app);
+        return mainWindow;
+    }, {
+        timeout,
+        intervals: [MAIN_WINDOW_POLL_MS, 500, 1000],
+        message: 'Main window (index.html) must appear',
+    }).not.toBeUndefined();
+
+    if (!mainWindow) {
+        throw new Error(
+            'Main window was not available.\n' +
+            `Available: ${app.windows().map((window) => window.url()).join(', ')}`,
+        );
+    }
+
+    return mainWindow;
+}
 
 /**
- * Wait until the main process has set global.__e2eAppReady = true.
- *
- * This flag is set in src/main/app/initialize.ts after handleMainWindowIsShown()
- * when NODE_ENV === 'test'. It fires once per app launch, after all views are
- * initialized and the main window is shown.
- *
- * IMPORTANT: app.evaluate() runs in the MAIN process context.
- * ipcRenderer does NOT exist there — only main-process Electron APIs do.
- * We read the global directly, not via IPC.
+ * Wait until main-window chrome needed for server management is rendered.
+ * Used when config already lists servers — catches broken wrapper UI that
+ * __e2eAppReady alone would miss.
  */
-export async function waitForAppReady(app: ElectronApplication): Promise<void> {
-    // macOS CI runners are slower and may show Resume dialogs that delay startup.
-    // Windows GitHub-hosted runners are similarly slow (cold-start Electron +
-    // Visual Studio environment); 30s consistently timed out on `windows-2022`.
-    // Linux (xvfb) is fastest. 60s on Windows matches the macOS budget.
-    let timeout: number;
-    if (process.platform === 'darwin') {
-        timeout = 60_000;
-    } else if (process.platform === 'win32') {
-        timeout = 60_000;
-    } else {
-        timeout = 30_000;
+export async function waitForMainWindowChrome(
+    app: ElectronApplication,
+    options?: {requireServerDropdown?: boolean; timeout?: number},
+): Promise<Page> {
+    const timeout = options?.timeout ?? 30_000;
+    const deadline = Date.now() + timeout;
+    const mainWindow = await waitForMainWindow(app, {timeout});
+
+    if (options?.requireServerDropdown) {
+        const remaining = Math.max(0, deadline - Date.now());
+        await mainWindow.waitForSelector('.ServerDropdownButton', {timeout: remaining});
     }
+
+    return mainWindow;
+}
+
+export async function waitForAppReady(app: ElectronApplication): Promise<void> {
+    const timeout = process.platform === 'linux' ? 30_000 : 60_000;
 
     await expect.poll(
         async () => {
@@ -45,13 +83,7 @@ export async function waitForAppReady(app: ElectronApplication): Promise<void> {
             }
         },
         {
-            message: [
-                'Timed out waiting for __e2eAppReady.',
-                `Timeout: ${timeout}ms.`,
-                'Check that initialize.ts sets __e2eAppReady after handleMainWindowIsShown().',
-                'On macOS, verify that global-setup.ts successfully wrote NSQuitAlwaysKeepsWindows=false',
-                'to prevent the "Reopen windows" dialog from blocking startup.',
-            ].join(' '),
+            message: `Timed out waiting for __e2eAppReady (${timeout}ms)`,
             timeout,
             intervals: [200, 500, 1000, 2000],
         },

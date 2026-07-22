@@ -13,15 +13,20 @@ on:
 
 # Supersede an in-flight CMT run for the same ref (e.g. rapid release-branch pushes) so we don't
 # pay for overlapping multi-version matrices. Matterwick reaps the cancelled run's provisioned
-# servers on its workflow_run "completed" (cancelled) event, matched by commit SHA.
+# servers on its workflow_run "completed" (cancelled) event, matched by the dispatched test
+# workflow run id (not commit SHA).
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # TSIO reporting model (CMT):
+  #   1 workflow run  →  1 RC cut (DESKTOP_VERSION)  →  1 resolved SHA
+  #   →  1 composite_identity (name=cmt-desktop)  →  1 TSIO report covering
+  #   every (OS × server-version) matrix leg.
   ## This is picked up after the finish for cleanup
   upload-cmt-server-detals:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: cmt/generate-instance-details-file
         run: echo '${{ inputs.CMT_MATRIX }}' > instance-details.json
@@ -34,12 +39,15 @@ jobs:
           retention-days: 1
 
   calculate-commit-hash:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     outputs:
       DESKTOP_SHA: ${{ steps.repo.outputs.DESKTOP_SHA }}
+      CMT_MATRIX: ${{ steps.normalize-matrix.outputs.matrix }}
+      TSIO_COMPOSITE_IDENTITY: ${{ steps.tsio-identity.outputs.composite-identity-json }}
+      TSIO_TOTAL_REPORTS_EXPECTED: ${{ steps.tsio-identity.outputs.total-reports-expected }}
     steps:
       - name: cmt/checkout-desktop
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ inputs.DESKTOP_VERSION }}
 
@@ -47,12 +55,59 @@ jobs:
         id: repo
         run: echo "DESKTOP_SHA=$(git rev-parse HEAD)" >> ${GITHUB_OUTPUT}
 
+      # Matterwick still dispatches ubuntu-22.04 for Linux and macos-13/macos-14 for
+      # macOS. Remap so CMT matches PR E2E: Linux → ubuntu-latest (libasound2t64 on
+      # 24.04), macOS → macos-26 (macos-13/14 are unavailable / queue for ~24h).
+      # Same idea as e2e-functional.yml remapping macos-latest → macos-26.
+      - name: cmt/normalize-matrix-runners
+        id: normalize-matrix
+        env:
+          CMT_MATRIX: ${{ inputs.CMT_MATRIX }}
+        run: |
+          NORMALIZED=$(echo "${CMT_MATRIX}" | jq -c '
+            .environment |= map(
+              if .runner == "ubuntu-22.04" then .runner = "ubuntu-latest"
+              elif .runner == "macos-13" or .runner == "macos-14" or .runner == "macos-latest" then .runner = "macos-26"
+              else . end
+            )
+          ')
+          echo "matrix=${NORMALIZED}" >> "$GITHUB_OUTPUT"
+
+      # One composite identity + total-reports-expected for the WHOLE CMT run
+      # (every OS x server-version leg), computed once here and threaded into
+      # every `e2e` matrix leg below so they land in a single TSIO report group.
+      - name: cmt/tsio-identity
+        id: tsio-identity
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          MM_SHA: ${{ steps.repo.outputs.DESKTOP_SHA }}
+          MM_BRANCH: ${{ inputs.DESKTOP_VERSION }}
+          CMT_MATRIX: ${{ steps.normalize-matrix.outputs.matrix }}
+        run: |
+          TOTAL=$(echo "${CMT_MATRIX}" | jq -c '(.environment | length) * (.server | length)')
+          echo "total-reports-expected=${TOTAL}" >> "$GITHUB_OUTPUT"
+          COMPOSITE_IDENTITY=$(jq -nc \
+            --arg repo "${GITHUB_REPOSITORY}" \
+            --arg sha "${MM_SHA}" \
+            --arg run_id "${GITHUB_RUN_ID}" \
+            --arg attempt "${GITHUB_RUN_ATTEMPT}" \
+            --arg name "cmt-desktop" \
+            --arg branch "${MM_BRANCH}" \
+            '{repository:$repo, commit_sha:$sha, gh_run_id:$run_id, name:$name, gh_run_attempt:$attempt, branch:$branch}')
+          echo "composite-identity-json=${COMPOSITE_IDENTITY}" >> "$GITHUB_OUTPUT"
+
   update-initial-status:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs:
       - calculate-commit-hash
+    permissions:
+      contents: read
+      statuses: write
     steps:
+      # Best-effort: a transient status-API hiccup here must never block the
+      # actual test matrix from running — the `e2e` job below needs this job.
       - uses: mattermost/actions/delivery/update-commit-status@218fd96a63451259dc100e1292a5e44af92fe15d
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -62,7 +117,8 @@ jobs:
           description: "Compatibility Matrix Testing for ${{ inputs.DESKTOP_VERSION }} version"
           status: pending
 
-  # Input follows the below schema
+  # Input follows the below schema (Matterwick may still send ubuntu-22.04 /
+  # macos-13 / macos-14; calculate-commit-hash remaps those before the e2e matrix).
   # {
   #   "environment": [
   #     {
@@ -93,10 +149,15 @@ jobs:
     name: ${{ matrix.environment.os }}-${{ matrix.server.version }}
     uses: ./.github/workflows/e2e-functional-template.yml
     needs:
+      - calculate-commit-hash
       - update-initial-status
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(inputs.CMT_MATRIX) }}
+      matrix: ${{ fromJson(needs.calculate-commit-hash.outputs.CMT_MATRIX) }}
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
     secrets: inherit
     with:
       runs-on: ${{ matrix.environment.runner }}
@@ -105,43 +166,62 @@ jobs:
       DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
       MM_SERVER_VERSION: ${{ matrix.server.version }}
       TYPE: "CMT"
+      # Packed as one JSON input (see e2e-functional-template.yml's tsio-config) —
+      # workflow_call caps reusable workflows at 10 inputs total.
+      tsio-config: ${{ format('{{"composite_identity":{0},"total_reports_expected":"{1}"}}', needs.calculate-commit-hash.outputs.TSIO_COMPOSITE_IDENTITY, needs.calculate-commit-hash.outputs.TSIO_TOTAL_REPORTS_EXPECTED) }}
 
-  # We need to duplicate here in order to set the proper commit status
-  # https://mattermost.atlassian.net/browse/CLD-5815
-  update-failure-final-status:
-    runs-on: ubuntu-22.04
-    if: failure() || cancelled()
+  update-final-status:
+    runs-on: ubuntu-24.04
+    if: always()
+    permissions:
+      contents: read
+      id-token: write
+      statuses: write
     needs:
       - calculate-commit-hash
       - e2e
     steps:
-      - uses: mattermost/actions/delivery/update-commit-status@218fd96a63451259dc100e1292a5e44af92fe15d
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # tsio-report-status.js is repo code, not fetched by github-script itself.
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          repository_full_name: mattermost/desktop
-          commit_sha: ${{ needs.calculate-commit-hash.outputs.DESKTOP_SHA }}
-          context: e2e/compatibility-matrix-testing
-          description: "Compatibility Matrix Testing for ${{ inputs.DESKTOP_VERSION }} version"
-          status: failure
+          ref: ${{ inputs.DESKTOP_VERSION }}
+          persist-credentials: false
+          sparse-checkout: |
+            e2e/utils/tsio-report-status.js
+            e2e/utils/cmt-channel-notify.js
+          sparse-checkout-cone-mode: false
 
-  # https://mattermost.atlassian.net/browse/CLD-5815
-  update-success-final-status:
-    runs-on: ubuntu-22.04
-    if: success()
-    needs:
-      - calculate-commit-hash
-      - e2e
-    steps:
-      - uses: mattermost/actions/delivery/update-commit-status@218fd96a63451259dc100e1292a5e44af92fe15d
+      - name: Render TSIO summary + flip commit status
+        id: summary
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TSIO_COMPOSITE_IDENTITY: ${{ needs.calculate-commit-hash.outputs.TSIO_COMPOSITE_IDENTITY }}
+          TSIO_TOTAL_REPORTS_EXPECTED: ${{ needs.calculate-commit-hash.outputs.TSIO_TOTAL_REPORTS_EXPECTED }}
+          # Large CMT matrices upload many screenshot batches; keep headroom for
+          # consolidation so legs are not reported as missing.
+          TSIO_POLL_ATTEMPTS: 48
+          TSIO_POLL_DELAY_MS: 5000
+          COMMIT_STATUS_CONTEXT: e2e/compatibility-matrix-testing
+          # Incoming webhook for the Desktop CMT/RC results channel (separate from
+          # PR MM_DESKTOP_E2E_WEBHOOK_URL and master MM_E2E_MASTER_HEALTH_WEBHOOK_URL).
+          # Optional — when unset, TSIO status still flips and channel notify is skipped.
+          MATTERMOST_CMT_WEBHOOK_URL: ${{ secrets.MM_E2E_RELEASE_WEBHOOK_URL }}
+          # TSIO only sees test-case-level results — a job-level failure with no
+          # matching failed test (hung worker teardown, crashed runner, npm ci
+          # failure) would otherwise still read as "100% passed".
+          UPSTREAM_JOBS_SUCCEEDED: ${{ needs.e2e.result == 'success' }}
         with:
-          repository_full_name: mattermost/desktop
-          commit_sha: ${{ needs.calculate-commit-hash.outputs.DESKTOP_SHA }}
-          context: e2e/compatibility-matrix-testing
-          description: "Compatibility Matrix Testing for ${{ inputs.DESKTOP_VERSION }} version"
-          status: success
+          script: |
+            const {reportUrl, status, stats} = await require('./e2e/utils/tsio-report-status.js')({
+              core, context, github,
+              compositeIdentity: JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY),
+              totalReportsExpected: parseInt(process.env.TSIO_TOTAL_REPORTS_EXPECTED, 10),
+              commitStatusContext: process.env.COMMIT_STATUS_CONTEXT,
+              upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
+              failOnTestFailures: true,
+            });
+            core.info(`TSIO report ${reportUrl}: ${status} (${JSON.stringify(stats)})`);
+
 
   # Instance cleanup is handled by Matterwick: when this workflow completes, GitHub sends a
   # workflow_run "completed" event and Matterwick destroys the servers it provisioned for this

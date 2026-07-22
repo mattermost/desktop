@@ -7,10 +7,13 @@ import * as os from 'os';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
-import {waitForAppReady} from '../../helpers/appReadiness';
-import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile} from '../../helpers/config';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {demoMattermostConfig} from '../../helpers/config';
+import {launchDirectTestApp} from '../../helpers/directLaunch';
+import {closeElectronAppFast, waitForWindow} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
+import {waitForMattermostShell, waitForMattermostShellReady, recoverServerViewIfNeeded} from '../../helpers/mattermostShell';
+import {closeOverlayWindowsIfOpen} from '../../helpers/overlayWindows';
+import {activateServerView} from '../../helpers/serverContext';
 import {buildServerMap} from '../../helpers/serverMap';
 
 if (!process.env.MM_TEST_SERVER_URL) {
@@ -37,56 +40,6 @@ let electronApp: ElectronApplication;
 let mainWindow: ElectronPage;
 let userDataDir: string;
 
-async function waitForWindow(app: ElectronApplication, pattern: string, timeout = 30_000) {
-    const timeoutAt = Date.now() + timeout;
-    while (Date.now() < timeoutAt) {
-        const win = app.windows().find((window) => {
-            try {
-                return window.url().includes(pattern);
-            } catch {
-                return false;
-            }
-        });
-
-        if (win) {
-            await win.waitForLoadState().catch(() => {});
-            return win;
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, 200));
-    }
-
-    throw new Error(`Timed out waiting for window matching "${pattern}"`);
-}
-
-async function closeElectronApp(app: ElectronApplication, dataDir: string) {
-    let pid: number | undefined;
-    try {
-        pid = app.process()?.pid;
-    } catch {
-        pid = undefined;
-    }
-
-    let cleanClosed = false;
-    await Promise.race([
-        app.close().catch(() => {}).then(() => {
-            cleanClosed = true;
-        }),
-        new Promise<void>((resolve) => setTimeout(resolve, 10_000)),
-    ]);
-
-    if (!cleanClosed && pid) {
-        try {
-            process.kill(pid, 'SIGTERM');
-        } catch {
-            // already exited
-        }
-        return;
-    }
-
-    await waitForLockFileRelease(dataDir).catch(() => {});
-}
-
 async function getMattermostServer() {
     const serverMap = await buildServerMap(electronApp);
     const mmServer = serverMap[config.servers[0].name]?.[0]?.win;
@@ -95,6 +48,8 @@ async function getMattermostServer() {
 }
 
 async function resetState() {
+    await closeOverlayWindowsIfOpen(electronApp);
+
     await electronApp.evaluate(() => {
         const refs = (global as any).__e2eTestRefs;
         const servers = refs?.ServerManager?.getAllServers?.() ?? [];
@@ -130,8 +85,11 @@ async function resetState() {
     mainWindow = await waitForWindow(electronApp, 'index');
     await mainWindow.bringToFront().catch(() => {});
     await mainWindow.keyboard.press('Escape').catch(() => {});
+
     const mmServer = await getMattermostServer();
-    await mmServer.waitForSelector('#sidebarItem_town-square', {timeout: 15_000});
+    await activateServerView(electronApp, mmServer.webContentsId);
+    await waitForMattermostShell(mmServer, {timeout: 45_000});
+    await recoverServerViewIfNeeded(mmServer);
     await mmServer.click('#sidebarItem_town-square').catch(() => {});
 }
 
@@ -180,21 +138,41 @@ async function getVisibleTabOrder() {
     return order;
 }
 
+/**
+ * Open a second and third tab (assumed already created), navigate each to a
+ * distinct channel, and return the resolved server map used to reach them.
+ * Shared by MM-T2635_1 and MM-T2635_2, which otherwise duplicated this setup.
+ */
+async function navigateToSecondAndThirdTabs(serverName: string) {
+    let localServerMap = await buildServerMap(electronApp);
+    await expect.poll(async () => {
+        localServerMap = await buildServerMap(electronApp);
+        return localServerMap[serverName]?.length ?? 0;
+    }, {timeout: 30_000}).toBeGreaterThanOrEqual(3);
+
+    const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 10_000});
+    await secondTab.click();
+    const secondView = localServerMap[serverName][1].win;
+    await activateServerView(electronApp, localServerMap[serverName][1].webContentsId);
+    await waitForMattermostShellReady(secondView, {channelItem: '#sidebarItem_off-topic'});
+    await secondView.click('#sidebarItem_off-topic');
+
+    const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 10_000});
+    await thirdTab.click();
+    const thirdView = localServerMap[serverName][2].win;
+    await activateServerView(electronApp, localServerMap[serverName][2].webContentsId);
+    await waitForMattermostShellReady(thirdView, {channelItem: '#sidebarItem_town-square'});
+    await thirdView.click('#sidebarItem_town-square');
+
+    return localServerMap;
+}
+
 test.describe('server_management/drag_and_drop', () => {
     test.describe.configure({mode: 'serial'});
 
     test.beforeAll(async () => {
         userDataDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'mm-drag-drop-e2e-'));
-        writeConfigFile(userDataDir, config);
-
-        const {_electron: electron} = await import('playwright');
-        electronApp = await electron.launch({
-            executablePath: electronBinaryPath,
-            args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
-            env: {...process.env, NODE_ENV: 'test'},
-            timeout: 60_000,
-        });
-        await waitForAppReady(electronApp);
+        electronApp = await launchDirectTestApp(userDataDir, config);
         mainWindow = await waitForWindow(electronApp, 'index');
         const mmServer = await getMattermostServer();
         await loginToMattermost(mmServer);
@@ -206,7 +184,7 @@ test.describe('server_management/drag_and_drop', () => {
     });
 
     test.afterAll(async () => {
-        await closeElectronApp(electronApp, userDataDir);
+        await closeElectronAppFast(electronApp, userDataDir);
     });
 
     test.describe('MM-T2635 should be able to drag and drop tabs', () => {
@@ -222,23 +200,7 @@ test.describe('server_management/drag_and_drop', () => {
             // message from the renderer hasn't yet been processed by the main process when
             // getCurrentActiveTabView() runs.
             const serverName = config.servers[0].name;
-            let localServerMap = await buildServerMap(electronApp);
-            await expect.poll(async () => {
-                localServerMap = await buildServerMap(electronApp);
-                return localServerMap[serverName]?.length ?? 0;
-            }, {timeout: 30_000}).toBeGreaterThanOrEqual(3);
-
-            const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 10_000});
-            await secondTab.click();
-            const secondView = localServerMap[serverName][1].win;
-            await secondView.waitForSelector('#sidebarItem_off-topic', {timeout: 30_000});
-            await secondView.click('#sidebarItem_off-topic');
-
-            const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 10_000});
-            await thirdTab.click();
-            const thirdView = localServerMap[serverName][2].win;
-            await thirdView.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
-            await thirdView.click('#sidebarItem_town-square');
+            await navigateToSecondAndThirdTabs(serverName);
 
             // Tab titles update asynchronously after channel navigation — poll for each.
             await expect(mainWindow.locator('.TabBar li.serverTabItem:nth-child(1)')).toContainText('Town Square', {timeout: 15_000});
@@ -254,23 +216,7 @@ test.describe('server_management/drag_and_drop', () => {
             await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 15_000});
 
             const serverName = config.servers[0].name;
-            let localServerMap = await buildServerMap(electronApp);
-            await expect.poll(async () => {
-                localServerMap = await buildServerMap(electronApp);
-                return localServerMap[serverName]?.length ?? 0;
-            }, {timeout: 30_000}).toBeGreaterThanOrEqual(3);
-
-            const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 10_000});
-            await secondTab.click();
-            const secondView = localServerMap[serverName][1].win;
-            await secondView.waitForSelector('#sidebarItem_off-topic', {timeout: 30_000});
-            await secondView.click('#sidebarItem_off-topic');
-
-            const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 10_000});
-            await thirdTab.click();
-            const thirdView = localServerMap[serverName][2].win;
-            await thirdView.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
-            await thirdView.click('#sidebarItem_town-square');
+            await navigateToSecondAndThirdTabs(serverName);
 
             const visibleTabOrder = await getVisibleTabOrder();
 

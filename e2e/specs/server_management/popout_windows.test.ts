@@ -6,11 +6,17 @@ import * as os from 'os';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
-import {waitForAppReady} from '../../helpers/appReadiness';
-import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile} from '../../helpers/config';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {demoMattermostConfig} from '../../helpers/config';
+import {launchDirectTestApp} from '../../helpers/directLaunch';
+import {closeElectronAppFast, waitForWindow} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
+import {
+    closeAllPopouts,
+    closePopoutWindow,
+    openPopoutWindow,
+} from '../../helpers/popoutWindow';
 import {buildServerMap} from '../../helpers/serverMap';
+import {evaluateInMainProcessWithArg} from '../../helpers/testRefs';
 
 const config = {
     ...demoMattermostConfig,
@@ -25,138 +31,11 @@ let electronApp: ElectronApplication;
 let mainWindow: ElectronPage;
 let userDataDir: string;
 
-async function waitForWindow(app: ElectronApplication, pattern: string, timeout = 30_000) {
-    const timeoutAt = Date.now() + timeout;
-    while (Date.now() < timeoutAt) {
-        const win = app.windows().find((window) => {
-            try {
-                return window.url().includes(pattern);
-            } catch {
-                return false;
-            }
-        });
-
-        if (win) {
-            await win.waitForLoadState().catch(() => {});
-            return win;
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, 200));
-    }
-
-    throw new Error(`Timed out waiting for window matching "${pattern}"`);
-}
-
-async function closeElectronApp(app: ElectronApplication, dataDir: string) {
-    let pid: number | undefined;
-    try {
-        pid = app.process()?.pid;
-    } catch {
-        pid = undefined;
-    }
-
-    let cleanClosed = false;
-    await Promise.race([
-        app.close().catch(() => {}).then(() => {
-            cleanClosed = true;
-        }),
-        new Promise<void>((resolve) => setTimeout(resolve, 10_000)),
-    ]);
-
-    if (!cleanClosed && pid) {
-        try {
-            process.kill(pid, 'SIGTERM');
-        } catch {
-            // already exited
-        }
-        return;
-    }
-
-    await waitForLockFileRelease(dataDir).catch(() => {});
-}
-
 async function getMattermostServer() {
     const serverMap = await buildServerMap(electronApp);
     const mmServer = serverMap[config.servers[0].name]?.[0]?.win;
     expect(mmServer).toBeDefined();
     return mmServer!;
-}
-
-async function clickFileMenuItem(app: ElectronApplication, label: string) {
-    await app.evaluate(({app: electronAppInstance, BrowserWindow}, expectedLabel) => {
-        const fileMenu = (electronAppInstance as any).applicationMenu.getMenuItemById('file');
-        const items = fileMenu?.submenu?.items ?? [];
-        const item = items.find((candidate: any) => {
-            const candidateLabel = typeof candidate.label === 'string' ? candidate.label.trim() : '';
-            return candidateLabel === expectedLabel;
-        });
-
-        if (!item) {
-            throw new Error(`File menu item not found: ${expectedLabel}`);
-        }
-
-        // getFocusedWindow() may return null in headless CI; use the main window ref
-        const refs = (global as any).__e2eTestRefs;
-        const targetWindow = BrowserWindow.getFocusedWindow() ??
-            refs?.MainWindow?.get?.() ??
-            BrowserWindow.getAllWindows().find((w) => !w.isDestroyed()) ??
-            null;
-        item.click(undefined, targetWindow, undefined);
-    }, label);
-}
-
-async function openPopoutWindow() {
-    await mainWindow.bringToFront().catch(() => {});
-
-    // Snapshot existing window objects so we can identify *new* ones after the
-    // action by identity rather than URL — a URL-based snapshot can miss windows
-    // that navigate or have duplicate URLs.
-    // Every BaseWindow constructs a child URLView (loads urlView.html) on creation,
-    // so naively taking the first new `window` event would return the URLView
-    // page — not the popout BrowserWindow we want. Filter explicitly by popout.html.
-    const before = new Set(electronApp.windows());
-
-    await clickFileMenuItem(electronApp, 'New Window');
-
-    let popout: import('playwright').Page | undefined;
-    await expect.poll(() => {
-        popout = electronApp.windows().find((w) => {
-            try {
-                return w.url().includes('popout.html') && !before.has(w);
-            } catch {
-                return false;
-            }
-        });
-        return Boolean(popout);
-    }, {timeout: 15_000, message: 'popout window with popout.html URL did not appear'}).toBe(true);
-
-    await popout!.waitForLoadState().catch(() => {});
-    return popout!;
-}
-
-async function closeAllPopouts() {
-    const popoutWindows = electronApp.windows().filter((window) => {
-        try {
-            return window.url().includes('popout.html');
-        } catch {
-            return false;
-        }
-    });
-
-    for (const popout of popoutWindows) {
-        const browserWindow = await electronApp.browserWindow(popout);
-        await browserWindow.evaluate((w) => (w as Electron.BrowserWindow).close()).catch(() => {});
-    }
-
-    await expect.poll(() => {
-        return electronApp.windows().filter((window) => {
-            try {
-                return window.url().includes('popout.html');
-            } catch {
-                return false;
-            }
-        }).length;
-    }, {timeout: 10_000}).toBe(0);
 }
 
 test.describe('server_management/popout_windows', () => {
@@ -165,16 +44,7 @@ test.describe('server_management/popout_windows', () => {
 
     test.beforeAll(async () => {
         userDataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'mm-popout-e2e-'));
-        writeConfigFile(userDataDir, config);
-
-        const {_electron: electron} = await import('playwright');
-        electronApp = await electron.launch({
-            executablePath: electronBinaryPath,
-            args: [appDir, `--user-data-dir=${userDataDir}`, '--no-sandbox', '--disable-gpu'],
-            env: {...process.env, NODE_ENV: 'test'},
-            timeout: 60_000,
-        });
-        await waitForAppReady(electronApp);
+        electronApp = await launchDirectTestApp(userDataDir, config);
         mainWindow = await waitForWindow(electronApp, 'index');
         const mmServer = await getMattermostServer();
         await loginToMattermost(mmServer);
@@ -182,7 +52,7 @@ test.describe('server_management/popout_windows', () => {
     });
 
     test.beforeEach(async () => {
-        await closeAllPopouts();
+        await closeAllPopouts(electronApp);
         const mmServer = await getMattermostServer();
         await mmServer.waitForSelector('#sidebarItem_town-square', {timeout: 15_000});
         await mmServer.click('#sidebarItem_town-square').catch(() => {});
@@ -190,26 +60,32 @@ test.describe('server_management/popout_windows', () => {
     });
 
     test.afterAll(async () => {
-        await closeElectronApp(electronApp, userDataDir);
+        await closeElectronAppFast(electronApp, userDataDir);
     });
 
     test.describe('MM-TXXXX popout window functionality', () => {
-        test('MM-TXXXX_1 should create a new popout window using File menu', {tag: ['@P2', '@all']}, async () => {
-            const popoutWindow = await openPopoutWindow();
+        test('MM-TXXXX_1 should create a new popout window', {tag: ['@P2', '@all']}, async () => {
+            const popoutWindow = await openPopoutWindow(electronApp, mainWindow);
             expect(popoutWindow).toBeDefined();
             expect(electronApp.windows().filter((w) => w.url().includes('popout.html')).length).toBe(1);
         });
 
         test('MM-TXXXX_2 should allow resizing the popout window', {tag: ['@P2', '@all']}, async () => {
-            const popoutWindow = await openPopoutWindow();
+            const popoutWindow = await openPopoutWindow(electronApp, mainWindow);
             const browserWindow = await electronApp.browserWindow(popoutWindow);
             const initialBounds = await browserWindow.evaluate((w) => (w as Electron.BrowserWindow).getBounds());
 
+            const workArea = await evaluateInMainProcessWithArg(
+                electronApp,
+                (electron, bounds) => electron.screen.getDisplayMatching(bounds).workArea,
+                initialBounds,
+            );
+            const margin = 20;
             const newBounds = {
                 x: initialBounds.x,
                 y: initialBounds.y,
-                width: initialBounds.width + 200,
-                height: initialBounds.height + 200,
+                width: Math.min(initialBounds.width + 200, (workArea.x + workArea.width) - initialBounds.x - margin),
+                height: Math.min(initialBounds.height + 200, (workArea.y + workArea.height) - initialBounds.y - margin),
             };
 
             await browserWindow.evaluate((w, bounds) => {
@@ -224,7 +100,7 @@ test.describe('server_management/popout_windows', () => {
         });
 
         test('MM-TXXXX_3 should allow moving the popout window', {tag: ['@P2', '@all']}, async () => {
-            const popoutWindow = await openPopoutWindow();
+            const popoutWindow = await openPopoutWindow(electronApp, mainWindow);
             const browserWindow = await electronApp.browserWindow(popoutWindow);
             const initialBounds = await browserWindow.evaluate((w) => (w as Electron.BrowserWindow).getBounds());
 
@@ -240,18 +116,17 @@ test.describe('server_management/popout_windows', () => {
             }, newBounds);
 
             const currentBounds = await browserWindow.evaluate((w) => (w as Electron.BrowserWindow).getBounds());
-            expect(Math.abs(currentBounds.x - newBounds.x)).toBeLessThan(10);
-            expect(Math.abs(currentBounds.y - newBounds.y)).toBeLessThan(10);
+
+            // macOS clamps window positions against the menu bar and dock, so the actual y
+            // (and sometimes x) can be shifted by the OS even when setBounds returns success.
+            const tolerance = process.platform === 'darwin' ? 250 : 10;
+            expect(Math.abs(currentBounds.x - newBounds.x)).toBeLessThan(tolerance);
+            expect(Math.abs(currentBounds.y - newBounds.y)).toBeLessThan(tolerance);
         });
 
         test('MM-TXXXX_4 should close the popout window using close button', {tag: ['@P2', '@all']}, async () => {
-            const popoutWindow = await openPopoutWindow();
-            const browserWindow = await electronApp.browserWindow(popoutWindow);
-            await browserWindow.evaluate((w) => (w as Electron.BrowserWindow).close());
-
-            await expect.poll(() => {
-                return electronApp.windows().filter((w) => w.url().includes('popout.html')).length;
-            }, {timeout: 10_000}).toBe(0);
+            const popoutWindow = await openPopoutWindow(electronApp, mainWindow);
+            await closePopoutWindow(electronApp, popoutWindow);
         });
 
         // NOTE: there is intentionally no "close popout windows when main window is
@@ -262,7 +137,7 @@ test.describe('server_management/popout_windows', () => {
 
     test.describe('MM-T4411 popout window content functionality', () => {
         test('MM-T4411_1 should display the same server content in popout window', {tag: ['@P2', '@all']}, async () => {
-            const popoutWindow = await openPopoutWindow();
+            const popoutWindow = await openPopoutWindow(electronApp, mainWindow);
 
             const mainWindowTitle = await mainWindow.title();
             const popoutWindowTitle = await popoutWindow.title();
@@ -276,7 +151,7 @@ test.describe('server_management/popout_windows', () => {
             await mainView.waitForSelector('#sidebarItem_off-topic');
             await mainView.click('#sidebarItem_off-topic');
 
-            const popoutWindow = await openPopoutWindow();
+            const popoutWindow = await openPopoutWindow(electronApp, mainWindow);
             expect(popoutWindow).toBeDefined();
 
             const mainTabText = await mainWindow.innerText('.TabBar li.serverTabItem.active');

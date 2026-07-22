@@ -9,8 +9,8 @@ import {_electron as electron} from 'playwright';
 
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
 import {appDir, demoConfig, electronBinaryPath, exampleURL, mattermostURL, writeConfigFile} from '../../helpers/config';
+import {closeElectronAppFast} from '../../helpers/electronApp';
 import {buildServerMap} from '../../helpers/serverMap';
 
 const isSupported = (process.platform === 'win32' || process.platform === 'darwin') && process.env.RUN_POLICY_E2E === 'true';
@@ -187,8 +187,10 @@ async function launchPolicyApp(testInfo: {outputDir: string}, options: LaunchOpt
 }
 
 async function closePolicyApp(app: Awaited<ReturnType<typeof electron.launch>> | undefined, userDataDir: string) {
-    await app?.close().catch(() => {});
-    await waitForLockFileRelease(userDataDir).catch(() => {});
+    if (!app) {
+        return;
+    }
+    await closeElectronAppFast(app, userDataDir);
 }
 
 async function getMainWindow(app: Awaited<ReturnType<typeof electron.launch>>) {
@@ -236,7 +238,7 @@ test.describe('policy', () => {
         cleanupPolicy();
     });
 
-    test('MM-T_GPO_1 should display the predefined server name in the dropdown button', policyTestMetadata, async ({}, testInfo) => {
+    test('MM-T6166 should display the predefined server name in the dropdown button', policyTestMetadata, async ({}, testInfo) => {
         test.skip(!isSupported, 'RUN_POLICY_E2E=true on macOS/Windows required');
         const policyServer = {name: 'Policy Server', url: mattermostURL};
         setupPolicy({servers: [policyServer]});
@@ -254,7 +256,7 @@ test.describe('policy', () => {
         }
     });
 
-    test('MM-T_GPO_2 should load the predefined server URL in a BrowserView', policyTestMetadata, async ({}, testInfo) => {
+    test('MM-T6167 should load the predefined server URL in a BrowserView', policyTestMetadata, async ({}, testInfo) => {
         test.skip(!isSupported, 'RUN_POLICY_E2E=true on macOS/Windows required');
         const policyServer = {name: 'Policy Server', url: mattermostURL};
         setupPolicy({servers: [policyServer]});
@@ -268,7 +270,7 @@ test.describe('policy', () => {
         }
     });
 
-    test('MM-T_GPO_3 should hide the Add Server button when server management is disabled by policy', policyTestMetadata, async ({}, testInfo) => {
+    test('MM-T6168 should hide the Add Server button when server management is disabled by policy', policyTestMetadata, async ({}, testInfo) => {
         test.skip(!isSupported, 'RUN_POLICY_E2E=true on macOS/Windows required');
         setupPolicy({
             servers: [{name: 'Managed Server', url: mattermostURL}],
@@ -284,7 +286,7 @@ test.describe('policy', () => {
         }
     });
 
-    test('MM-T_GPO_NP_1 should show the welcome screen when no policy and no config exist', policyTestMetadata, async ({}, testInfo) => {
+    test('MM-T6169 should show the welcome screen when no policy and no config exist', policyTestMetadata, async ({}, testInfo) => {
         test.skip(!isSupported, 'RUN_POLICY_E2E=true on macOS/Windows required');
         test.skip(!canRunBaseline, 'Baseline policy tests require no HKLM policy');
 
@@ -300,13 +302,13 @@ test.describe('policy', () => {
             }
             await welcomeWindow.waitForLoadState('domcontentloaded');
             const buttonText = await welcomeWindow.innerText('.WelcomeScreen .WelcomeScreen__button');
-            expect(buttonText).toBe('Get Started');
+            expect(buttonText).toBe('Get started');
         } finally {
             await closePolicyApp(app, userDataDir);
         }
     });
 
-    test('MM-T_GPO_NP_2 should show the Add Server button when no policy restricts server management', policyTestMetadata, async ({}, testInfo) => {
+    test('MM-T6170 should show the Add Server button when no policy restricts server management', policyTestMetadata, async ({}, testInfo) => {
         test.skip(!isSupported, 'RUN_POLICY_E2E=true on macOS/Windows required');
         test.skip(!canRunBaseline, 'Baseline policy tests require no HKLM policy');
 
@@ -323,7 +325,7 @@ test.describe('policy', () => {
         }
     });
 
-    test('MM-T_GPO_5 should display all predefined servers from policy in the dropdown', policyTestMetadata, async ({}, testInfo) => {
+    test('MM-T6171 should display all predefined servers from policy in the dropdown', policyTestMetadata, async ({}, testInfo) => {
         test.skip(!isSupported, 'RUN_POLICY_E2E=true on macOS/Windows required');
         const policyServers = [
             {name: 'Policy Server 1', url: mattermostURL},
@@ -345,7 +347,7 @@ test.describe('policy', () => {
         }
     });
 
-    test('MM-T_GPO_6 should show edit button but hide remove button for a predefined policy server', policyTestMetadata, async ({}, testInfo) => {
+    test('MM-T6172 should show edit button but hide remove button for a predefined policy server', policyTestMetadata, async ({}, testInfo) => {
         test.skip(!isSupported, 'RUN_POLICY_E2E=true on macOS/Windows required');
         setupPolicy({
             servers: [{name: 'Managed Server', url: mattermostURL}],
@@ -362,7 +364,7 @@ test.describe('policy', () => {
         }
     });
 
-    test('MM-T_GPO_7 should display both the policy server and the user-configured server in the dropdown', policyTestMetadata, async ({}, testInfo) => {
+    test('MM-T6173 should display both the policy server and the user-configured server in the dropdown', policyTestMetadata, async ({}, testInfo) => {
         test.skip(!isSupported, 'RUN_POLICY_E2E=true on macOS/Windows required');
         const policyServer = {name: 'Policy Server', url: mattermostURL};
         setupPolicy({servers: [policyServer]});
@@ -388,7 +390,7 @@ test.describe('policy', () => {
         }
     });
 
-    test('MM-T_GPO_4 should report enableUpdateNotifications=false when auto-updater is disabled by policy', policyTestMetadata, async ({}, testInfo) => {
+    test('MM-T6174 should report enableUpdateNotifications=false when auto-updater is disabled by policy', policyTestMetadata, async ({}, testInfo) => {
         test.skip(!isSupported, 'RUN_POLICY_E2E=true on macOS/Windows required');
         setupPolicy({enableAutoUpdater: false});
 

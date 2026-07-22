@@ -37,6 +37,7 @@ import {
     TAB_LOGIN_CHANGED,
     SESSION_ATTRIBUTES_MANIFEST_INVALIDATED,
     SESSION_ATTRIBUTES_RESEND_REQUESTED,
+    SESSION_ATTRIBUTES_FIELD_UPDATED,
     METRICS_SEND,
     METRICS_REQUEST,
     METRICS_RECEIVE,
@@ -85,6 +86,7 @@ const desktopAPI: DesktopAPI = {
     onLogout: () => ipcRenderer.send(TAB_LOGIN_CHANGED, false),
     invalidateSessionAttributeManifest: () => ipcRenderer.send(SESSION_ATTRIBUTES_MANIFEST_INVALIDATED),
     resendSessionAttributes: () => ipcRenderer.send(SESSION_ATTRIBUTES_RESEND_REQUESTED),
+    updateSessionAttribute: (field) => ipcRenderer.send(SESSION_ATTRIBUTES_FIELD_UPDATED, field),
 
     // Unreads/mentions/notifications
     sendNotification: (title, body, channelId, teamId, url, silent, soundName) =>

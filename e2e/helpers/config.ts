@@ -2,17 +2,34 @@
 // See LICENSE.txt for license information.
 
 import * as fs from 'fs';
+import {createRequire} from 'module';
 import * as path from 'path';
+
+const require = createRequire(__filename);
 
 export const sourceRootDir = path.join(__dirname, '../..');
 
-// The Electron binary from the npm package
-export const electronBinaryPath = (() => {
+function getElectronBinaryPath(): string {
     if (process.platform === 'darwin') {
         return path.join(sourceRootDir, 'node_modules/electron/dist/Electron.app/Contents/MacOS/Electron');
     }
     const ext = process.platform === 'win32' ? '.exe' : '';
     return path.join(sourceRootDir, `node_modules/electron/dist/electron${ext}`);
+}
+
+// Electron 42+ no longer downloads its binary during npm install. Playwright
+// launches via executablePath, so trigger the lazy download before tests run.
+export function ensureElectronBinary(): void {
+    const binaryPath = getElectronBinaryPath();
+    if (!fs.existsSync(binaryPath)) {
+        require(path.join(sourceRootDir, 'node_modules/electron'));
+    }
+}
+
+// The Electron binary from the npm package
+export const electronBinaryPath = (() => {
+    ensureElectronBinary();
+    return getElectronBinaryPath();
 })();
 
 // Test build app directory — built by `npm run build-test` (NODE_ENV=test)
@@ -34,6 +51,7 @@ export type AppConfig = {
     showTrayIcon: boolean;
     trayIconTheme: string;
     minimizeToTray: boolean;
+    alwaysClose?: boolean;
     notifications: {flashWindow: number; bounceIcon: boolean; bounceIconType: string};
     showUnreadBadge: boolean;
     useSpellChecker: boolean;

@@ -2,14 +2,10 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../../fixtures/index';
+import {clickApplicationMenuItem} from '../../helpers/menu';
 
 test.describe('menu/menu', () => {
     test('MM-T4404 should open the 3 dot menu with Alt', {tag: ['@P2', '@win32']}, async ({electronApp, mainWindow}) => {
-        if (process.platform === 'darwin') {
-            test.skip(true, 'No keyboard shortcut for macOS');
-            return;
-        }
-
         expect(mainWindow).toBeDefined();
 
         await mainWindow.waitForSelector('button.three-dot-menu');
@@ -30,4 +26,21 @@ test.describe('menu/menu', () => {
         });
         expect(settingsWindow).toBeDefined();
     });
+
+    test(
+        'MM-T4803 Open Servers Menu from the Window menu',
+        {tag: ['@P2', '@all']},
+        async ({electronApp, mainWindow}) => {
+            expect(mainWindow).toBeDefined();
+
+            await clickApplicationMenuItem(electronApp, 'window', {label: 'Show Servers'});
+
+            const dropdownWindow = electronApp.windows().find((w) => w.url().includes('dropdown')) ??
+                await electronApp.waitForEvent('window', {
+                    predicate: (w) => w.url().includes('dropdown'),
+                    timeout: 10_000,
+                });
+            expect(dropdownWindow, 'Server dropdown window must appear after Show Servers menu click').toBeDefined();
+        },
+    );
 });
