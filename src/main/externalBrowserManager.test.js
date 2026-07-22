@@ -60,10 +60,13 @@ function mockExecFileReject(error) {
     });
 }
 
-describe('main/browserManager', () => {
+describe('main/externalBrowserManager', () => {
+    let externalBrowserManager;
     let getInstalledBrowsers;
+    let getCachedBrowsers;
     let openLinkInBrowser;
     let clearBrowserCache;
+    let init;
     const originalPlatform = process.platform;
 
     beforeEach(() => {
@@ -72,10 +75,12 @@ describe('main/browserManager', () => {
         mockExistsSync.mockReturnValue(true);
         mockEnumerateValues.mockReturnValue([]);
 
-        const browserManager = require('./browserManager').default;
-        getInstalledBrowsers = browserManager.getInstalledBrowsers;
-        openLinkInBrowser = browserManager.openLinkInBrowser;
-        clearBrowserCache = browserManager.clearBrowserCache;
+        externalBrowserManager = require('./externalBrowserManager').default;
+        getInstalledBrowsers = externalBrowserManager.getInstalledBrowsers;
+        getCachedBrowsers = externalBrowserManager.getCachedBrowsers;
+        openLinkInBrowser = externalBrowserManager.openLinkInBrowser;
+        clearBrowserCache = externalBrowserManager.clearBrowserCache;
+        init = externalBrowserManager.init;
         clearBrowserCache();
     });
 
@@ -320,6 +325,57 @@ describe('main/browserManager', () => {
             expect(mockExecFile).not.toHaveBeenCalled();
             expect(browsers.length).toBe(1);
         });
+
+        it('should return empty cached browsers before detection completes', () => {
+            expect(getCachedBrowsers()).toEqual([]);
+        });
+
+        it('should expose detected browsers via getCachedBrowsers after load', async () => {
+            Object.defineProperty(process, 'platform', {value: 'darwin'});
+            mockExecFile.mockImplementation((file, args, opts, callback) => {
+                const cb = resolveExecCallback(opts, callback);
+                if (typeof cb !== 'function') {
+                    return;
+                }
+
+                if (file === 'mdfind' && args[0].includes('com.apple.Safari')) {
+                    cb(null, {stdout: '/Applications/Safari.app\n', stderr: ''});
+                    return;
+                }
+
+                cb(new Error('not found'));
+            });
+
+            await getInstalledBrowsers();
+            expect(getCachedBrowsers()).toEqual([{
+                name: 'Safari',
+                executable: 'open',
+                args: ['-b', 'com.apple.Safari'],
+            }]);
+        });
+
+        it('should preload browsers in the background via init without awaiting', async () => {
+            Object.defineProperty(process, 'platform', {value: 'darwin'});
+            mockExecFile.mockImplementation((file, args, opts, callback) => {
+                const cb = resolveExecCallback(opts, callback);
+                if (typeof cb !== 'function') {
+                    return;
+                }
+
+                if (file === 'mdfind' && args[0].includes('com.apple.Safari')) {
+                    cb(null, {stdout: '/Applications/Safari.app\n', stderr: ''});
+                    return;
+                }
+
+                cb(new Error('not found'));
+            });
+
+            expect(init()).toBeUndefined();
+            expect(getCachedBrowsers()).toEqual([]);
+
+            await getInstalledBrowsers();
+            expect(getCachedBrowsers().map((browser) => browser.name)).toEqual(['Safari']);
+        });
     });
 
     describe('openLinkInBrowser', () => {
@@ -350,6 +406,17 @@ describe('main/browserManager', () => {
                 {timeout: 10000},
                 expect.any(Function),
             );
+        });
+
+        it('should refuse to open non-http(s) URLs', async () => {
+            const {shell} = require('electron');
+            const browser = {name: 'Chrome', executable: 'open', args: ['-b', 'com.google.Chrome']};
+
+            await openLinkInBrowser('file:///etc/passwd', browser);
+            await openLinkInBrowser('mattermost://server/team', browser);
+
+            expect(mockExecFile).not.toHaveBeenCalled();
+            expect(shell.openExternal).not.toHaveBeenCalled();
         });
 
         it('should fall back to shell.openExternal on failure', async () => {

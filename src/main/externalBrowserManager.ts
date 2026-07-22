@@ -10,6 +10,7 @@ import type {RegistryValue} from 'registry-js';
 import {HKEY, enumerateValues} from 'registry-js';
 
 import {Logger} from 'common/log';
+import {isHttpLink} from 'common/utils/url';
 
 const execFile = promisify(execFileOriginal);
 const log = new Logger('ExternalBrowserManager');
@@ -122,6 +123,11 @@ export class ExternalBrowserManager {
     };
 
     openLinkInBrowser = async (url: string, browser: BrowserInfo): Promise<void> => {
+        if (!isHttpLink(url)) {
+            log.error('Refusing to open non-http(s) URL in external browser', {browser: browser.name});
+            return;
+        }
+
         log.debug('Opening link in external browser', {browser: browser.name});
         try {
             await execFile(browser.executable, [...browser.args, url], {timeout: 10000});
@@ -193,6 +199,7 @@ export class ExternalBrowserManager {
         const seenNames = new Set<string>();
         const found: BrowserInfo[] = [];
 
+        // Sequential registry reads — enumerateValues is sync and should not overlap.
         for (const hive of WINDOWS_REGISTRY_ROOTS) {
             for (const browser of KNOWN_WINDOWS_BROWSERS) {
                 if (seenNames.has(browser.name)) {
