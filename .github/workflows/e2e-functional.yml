@@ -186,10 +186,11 @@ jobs:
           TSIO_POLL_DELAY_MS: 5000
           COMMIT_STATUS_CONTEXT: e2e-test/desktop-playwright
           UPSTREAM_JOBS_SUCCEEDED: ${{ needs.e2e-tests.result == 'success' && needs.e2e-policy-tests.result == 'success' }}
-          # Master shares the CMT/RC channel; PR posts to the E2E QA channel.
+          # PR → MM_DESKTOP_E2E_WEBHOOK_URL; master → MM_E2E_MASTER_HEALTH_WEBHOOK_URL;
+          # CMT/RC uses MM_E2E_RELEASE_WEBHOOK_URL (compatibility-matrix-testing.yml).
           # Routing is by compositeIdentity.name in cmt-channel-notify.js.
-          MATTERMOST_CMT_WEBHOOK_URL: ${{ secrets.MM_E2E_RELEASE_WEBHOOK_URL }}
           MATTERMOST_E2E_WEBHOOK_URL: ${{ secrets.MM_DESKTOP_E2E_WEBHOOK_URL }}
+          MATTERMOST_MASTER_HEALTH_WEBHOOK_URL: ${{ secrets.MM_E2E_MASTER_HEALTH_WEBHOOK_URL }}
         with:
           script: |
             const {reportUrl, status, stats} = await require('./e2e/utils/tsio-report-status.js')({
@@ -434,7 +435,7 @@ jobs:
       - name: e2e/upload-report-to-tsio
         if: ${{ always() && needs.prepare-matrix.outputs.tsio-composite-identity != '' && hashFiles('e2e/test-results/results.json') != '' }}
         continue-on-error: true
-        uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@606431efb597481b0857066be8130e86c22d2a03 # release-0.11.0 / 2026-07-21
+        uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@45fb048848edc392f398144f45e2f3e30f43aeaa # release-0.12.0 / main@45fb048 (#81 Maestro FilePath + Detox paths, #82 background finalize)
         with:
           composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
           total-reports-expected: ${{ needs.prepare-matrix.outputs.tsio-total-reports-expected }}

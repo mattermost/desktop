@@ -203,9 +203,8 @@ jobs:
           TSIO_POLL_DELAY_MS: 5000
           COMMIT_STATUS_CONTEXT: e2e/compatibility-matrix-testing
           # Incoming webhook for the Desktop CMT/RC results channel (separate from
-          # PR/master MM_DESKTOP_E2E_WEBHOOK_URL). Optional — when unset, TSIO
-          # status still flips and channel notify is skipped.
-          # RC / CMT channel (same destination as master E2E via resolveWebhookUrl).
+          # PR MM_DESKTOP_E2E_WEBHOOK_URL and master MM_E2E_MASTER_HEALTH_WEBHOOK_URL).
+          # Optional — when unset, TSIO status still flips and channel notify is skipped.
           MATTERMOST_CMT_WEBHOOK_URL: ${{ secrets.MM_E2E_RELEASE_WEBHOOK_URL }}
           # TSIO only sees test-case-level results — a job-level failure with no
           # matching failed test (hung worker teardown, crashed runner, npm ci
