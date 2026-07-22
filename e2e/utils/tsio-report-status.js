@@ -206,9 +206,15 @@ async function reportTsioStatus({
         overallState = 'success';
     }
 
+    // Commit-status target_url:
+    //   - Report uploaded (complete/incomplete) → TSIO, including when tests failed.
+    //   - Clean completed report but CI failed outside tests → workflow run.
+    //   - Begin/poll never produced a report URL → workflow run (see catch above).
+    //   - Still consolidating (non-terminal) → workflow run; channel notify still prefers TSIO.
     let targetUrl = runUrl;
-    if (isComplete || isIncomplete || displayReportUrl || groupReportUrl) {
-        targetUrl = displayReportUrl || groupReportUrl || runUrl;
+    if ((isComplete || isIncomplete) && displayReportUrl) {
+        const unrelatedCiFailure = !upstreamJobsSucceeded && !hasFailures && isComplete;
+        targetUrl = unrelatedCiFailure ? runUrl : displayReportUrl;
     }
 
     const summaryLines = [
