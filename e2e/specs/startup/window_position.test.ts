@@ -198,6 +198,7 @@ test.describe('startup/window_position', () => {
             await mainWindow.waitForSelector('#newTabButton', {timeout: 30_000});
 
             const tiledBounds = await tileMainWindowToLeftHalf(electronApp);
+
             // Let MAIN_WINDOW_RESIZED / modal bound handlers settle before opening settings.
             await new Promise((resolve) => setTimeout(resolve, 300));
             await exerciseWindowChrome(electronApp, mainWindow);
