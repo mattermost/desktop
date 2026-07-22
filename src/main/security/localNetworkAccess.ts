@@ -31,6 +31,7 @@ LOCAL_NETWORK_BLOCKLIST.addSubnet('172.16.0.0', 12, 'ipv4');
 LOCAL_NETWORK_BLOCKLIST.addSubnet('192.168.0.0', 16, 'ipv4');
 LOCAL_NETWORK_BLOCKLIST.addSubnet('::1', 128, 'ipv6');
 LOCAL_NETWORK_BLOCKLIST.addSubnet('fc00::', 7, 'ipv6');
+LOCAL_NETWORK_BLOCKLIST.addSubnet('fec0::', 10, 'ipv6');
 LOCAL_NETWORK_BLOCKLIST.addSubnet('fe80::', 10, 'ipv6');
 
 export async function shouldCancelLocalNetworkRequest(

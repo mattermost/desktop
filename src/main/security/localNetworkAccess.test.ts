@@ -29,6 +29,7 @@ describe('main/security/localNetworkAccess', () => {
             expect(isLocalOrPrivateIPAddress('::1')).toBe(true);
             expect(isLocalOrPrivateIPAddress('fc00::1')).toBe(true);
             expect(isLocalOrPrivateIPAddress('fd00::1')).toBe(true);
+            expect(isLocalOrPrivateIPAddress('fec0::1')).toBe(true);
             expect(isLocalOrPrivateIPAddress('fe80::1')).toBe(true);
             expect(isLocalOrPrivateIPAddress('::ffff:127.0.0.1')).toBe(true);
             expect(isLocalOrPrivateIPAddress('2606:4700:4700::1111')).toBe(false);
