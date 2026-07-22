@@ -90,8 +90,7 @@ async function embedIframe(
     }, {id: webContentsId, url, timeoutMs}) as Promise<{event: 'load' | 'error' | 'timeout'; bodyText: string | null}>;
 }
 
-// Registers a service worker, then has it fetch `targetUrl` from its own (webContents-less)
-// context and report back — exercising whether worker requests bypass the filter.
+// Registers a service worker, then has it fetch `targetUrl` and report back.
 async function serviceWorkerFetch(
     app: ElectronApplication,
     webContentsId: number,
@@ -176,9 +175,6 @@ test.describe('local network access policy (MM-69241)', {tag: ['@P0', '@all']}, 
         const allowed = await embedIframe(electronApp, entry!.webContentsId, `${localServers.fakeServerOrigin}/embed`);
         expect(allowed.bodyText, 'ordinary http subframes must still load and commit').toContain('mm-e2e-fake-server');
     });
-
-    // Bypass paths flagged in review. These assert the secure outcome; a failure means the
-    // path bypasses the filter and the product must be fixed.
 
     test('blocks a redirect from the configured server to a local service', async ({electronApp, serverMap, localServers}) => {
         const entry = serverMap.local?.[0];

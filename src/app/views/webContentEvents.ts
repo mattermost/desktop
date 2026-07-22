@@ -42,8 +42,6 @@ import {composeUserAgent} from '../../main/utils';
 
 const log = new Logger('WebContentsEventManager');
 
-type NavigationEvent = Event<WebContentsWillNavigateEventParams | WebContentsWillFrameNavigateEventParams>;
-
 export class WebContentsEventManager {
     listeners: Record<number, () => void>;
     popupWindow?: {win: BrowserWindow; serverURL?: URL; contextMenu?: ContextMenu};
@@ -93,7 +91,7 @@ export class WebContentsEventManager {
     };
 
     private generateWillNavigate = (webContentsId: number) => {
-        return (event: NavigationEvent, url?: string) => {
+        return (event: Event<WebContentsWillNavigateEventParams>, url?: string) => {
             this.log(webContentsId).debug('will-navigate');
 
             const navigationURL = url || event.url;
@@ -148,7 +146,7 @@ export class WebContentsEventManager {
                 return;
             }
 
-            this.log(webContentsId).warn('Prevented subframe from navigating to a blocked protocol');
+            this.log(webContentsId).debug('Prevented subframe from navigating to a blocked protocol');
             event.preventDefault();
         };
     };

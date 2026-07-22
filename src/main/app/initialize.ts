@@ -349,11 +349,7 @@ async function initializeAfterAppReady() {
     defaultSession.webRequest.onBeforeRequest(async (details, callback) => {
         try {
             const shouldCancel = await shouldCancelLocalNetworkRequest(
-                {
-                    url: details.url,
-                    webContentsId: details.webContentsId,
-                    webContents: details.webContents,
-                },
+                details,
                 ServerManager.getAllServers().map((server) => server.url),
                 (webContentsId) => Boolean(WebContentsManager.getViewByWebContentsId(webContentsId)),
             );
@@ -362,7 +358,7 @@ async function initializeAfterAppReady() {
                 log.warn('Blocked server content from accessing local or private network URL', {
                     resourceType: details.resourceType,
                     origin: parseURL(details.url)?.origin,
-                    webContentsId: details.webContentsId || details.webContents?.id,
+                    webContentsId: details.webContentsId,
                 });
                 callback({cancel: true});
                 return;

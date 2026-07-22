@@ -2,7 +2,6 @@
 // See LICENSE.txt for license information.
 
 import {
-    getRequestWebContentsId,
     isLocalOrPrivateIPAddress,
     shouldCancelLocalNetworkRequest,
     shouldBlockLocalNetworkRequest,
@@ -71,14 +70,12 @@ describe('main/security/localNetworkAccess', () => {
         });
 
         it('allows WebSocket connections to the configured server origin', async () => {
-            // The server is configured over https; its websocket uses wss on the same host.
             await expect(shouldBlockLocalNetworkRequest(
                 'wss://127.0.0.1:8065/api/v4/websocket',
                 [new URL('https://127.0.0.1:8065')],
                 emptyLookup,
             )).resolves.toBe(false);
 
-            // A server configured over http should allow its ws websocket too.
             await expect(shouldBlockLocalNetworkRequest(
                 'ws://127.0.0.1:8065/api/v4/websocket',
                 [new URL('http://127.0.0.1:8065')],
@@ -92,23 +89,6 @@ describe('main/security/localNetworkAccess', () => {
         });
     });
 
-    describe('getRequestWebContentsId', () => {
-        it('uses webContentsId when present', () => {
-            expect(getRequestWebContentsId({
-                url: 'http://127.0.0.1:7777/secret',
-                webContentsId: 1,
-                webContents: {id: 2},
-            })).toBe(1);
-        });
-
-        it('falls back to webContents.id', () => {
-            expect(getRequestWebContentsId({
-                url: 'http://127.0.0.1:7777/secret',
-                webContents: {id: 2},
-            })).toBe(2);
-        });
-    });
-
     describe('shouldCancelLocalNetworkRequest', () => {
         const isServerWebContents = (webContentsId: number) => webContentsId === 1;
 
@@ -117,18 +97,6 @@ describe('main/security/localNetworkAccess', () => {
                 {
                     url: 'http://127.0.0.1:7777/secret',
                     webContentsId: 1,
-                },
-                [new URL('http://127.0.0.1:8065')],
-                isServerWebContents,
-                emptyLookup,
-            )).resolves.toBe(true);
-        });
-
-        it('blocks server view requests using webContents.id', async () => {
-            await expect(shouldCancelLocalNetworkRequest(
-                {
-                    url: 'http://127.0.0.1:7777/secret',
-                    webContents: {id: 1},
                 },
                 [new URL('http://127.0.0.1:8065')],
                 isServerWebContents,
@@ -160,7 +128,7 @@ describe('main/security/localNetworkAccess', () => {
             )).resolves.toBe(false);
         });
 
-        it('blocks unowned requests (e.g. service workers) to local/private targets', async () => {
+        it('blocks unowned requests to local/private targets', async () => {
             await expect(shouldCancelLocalNetworkRequest(
                 {
                     url: 'http://127.0.0.1:7777/secret',

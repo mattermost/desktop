@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import dns from 'dns/promises';
-import {isIP} from 'net';
+import {BlockList, isIP} from 'net';
 
 import {parseURL} from 'common/utils/url';
 
@@ -15,18 +15,23 @@ type LookupFunction = (hostname: string) => Promise<LookupAddress[]>;
 export type LocalNetworkRequestDetails = {
     url: string;
     webContentsId?: number;
-    webContents?: {
-        id: number;
-    };
 }
 
 type IsServerWebContents = (webContentsId: number) => boolean;
 
 const defaultLookup: LookupFunction = (hostname: string) => dns.lookup(hostname, {all: true, verbatim: true});
 
-export function getRequestWebContentsId(details: LocalNetworkRequestDetails): number | undefined {
-    return details.webContentsId || details.webContents?.id;
-}
+const LOCAL_NETWORK_BLOCKLIST = new BlockList();
+
+LOCAL_NETWORK_BLOCKLIST.addSubnet('0.0.0.0', 8, 'ipv4');
+LOCAL_NETWORK_BLOCKLIST.addSubnet('10.0.0.0', 8, 'ipv4');
+LOCAL_NETWORK_BLOCKLIST.addSubnet('127.0.0.0', 8, 'ipv4');
+LOCAL_NETWORK_BLOCKLIST.addSubnet('169.254.0.0', 16, 'ipv4');
+LOCAL_NETWORK_BLOCKLIST.addSubnet('172.16.0.0', 12, 'ipv4');
+LOCAL_NETWORK_BLOCKLIST.addSubnet('192.168.0.0', 16, 'ipv4');
+LOCAL_NETWORK_BLOCKLIST.addSubnet('::1', 128, 'ipv6');
+LOCAL_NETWORK_BLOCKLIST.addSubnet('fc00::', 7, 'ipv6');
+LOCAL_NETWORK_BLOCKLIST.addSubnet('fe80::', 10, 'ipv6');
 
 export async function shouldCancelLocalNetworkRequest(
     details: LocalNetworkRequestDetails,
@@ -34,21 +39,15 @@ export async function shouldCancelLocalNetworkRequest(
     isServerWebContents: IsServerWebContents,
     lookup: LookupFunction = defaultLookup,
 ): Promise<boolean> {
-    const webContentsId = getRequestWebContentsId(details);
-
-    if (webContentsId && !isServerWebContents(webContentsId)) {
+    if (details.webContentsId && !isServerWebContents(details.webContentsId)) {
         return false;
     }
 
-    // Unowned requests reach here too: Electron exposes no webContentsId for service/shared
-    // workers, so without this they would bypass the filter. Configured origins stay exempt.
     return shouldBlockLocalNetworkRequest(details.url, serverURLs, lookup);
 }
 
-// ws/wss included so server content cannot probe the local network over WebSockets.
 const FILTERED_PROTOCOLS = new Set(['http:', 'https:', 'ws:', 'wss:']);
 
-// Normalize ws/wss to http/https so a server's WebSocket counts as the same configured origin.
 const WEBSOCKET_PROTOCOL_EQUIVALENTS: {[protocol: string]: string} = {
     'ws:': 'http:',
     'wss:': 'https:',
@@ -113,98 +112,14 @@ function isLocalhostHostname(hostname: string): boolean {
 }
 
 export function isLocalOrPrivateIPAddress(address: string): boolean {
-    if (isIP(address) === 4) {
-        return isLocalOrPrivateIPv4(address);
+    const family = isIP(address);
+    if (family === 4) {
+        return LOCAL_NETWORK_BLOCKLIST.check(address, 'ipv4');
     }
 
-    if (isIP(address) === 6) {
-        return isLocalOrPrivateIPv6(address);
+    if (family === 6) {
+        return LOCAL_NETWORK_BLOCKLIST.check(address, 'ipv6');
     }
 
     return false;
-}
-
-function isLocalOrPrivateIPv4(address: string): boolean {
-    const parts = address.split('.').map((part) => Number(part));
-    const [first, second] = parts;
-
-    return (
-        first === 0 ||
-        first === 10 ||
-        first === 127 ||
-        (first === 169 && second === 254) ||
-        (first === 172 && second >= 16 && second <= 31) ||
-        (first === 192 && second === 168)
-    );
-}
-
-function isLocalOrPrivateIPv6(address: string): boolean {
-    const bytes = parseIPv6Bytes(address);
-    if (!bytes) {
-        return false;
-    }
-
-    if (isIPv4MappedIPv6(bytes)) {
-        return isLocalOrPrivateIPv4(bytes.slice(12).join('.'));
-    }
-
-    const isLoopback = bytes.slice(0, 15).every((byte) => byte === 0) && bytes[15] === 1;
-    const isUniqueLocal = (bytes[0] & 0xfe) === 0xfc;
-    const isLinkLocal = bytes[0] === 0xfe && (bytes[1] & 0xc0) === 0x80;
-
-    return isLoopback || isUniqueLocal || isLinkLocal;
-}
-
-function isIPv4MappedIPv6(bytes: number[]): boolean {
-    return bytes.slice(0, 10).every((byte) => byte === 0) && bytes[10] === 0xff && bytes[11] === 0xff;
-}
-
-function parseIPv6Bytes(address: string): number[] | undefined {
-    const expandedAddress = expandIPv4Tail(address);
-    const [left, right] = expandedAddress.split('::');
-    const leftParts = left ? left.split(':') : [];
-    const rightParts = right ? right.split(':') : [];
-    const missingParts = 8 - leftParts.length - rightParts.length;
-
-    if (missingParts < 0 || expandedAddress.split('::').length > 2) {
-        return undefined;
-    }
-
-    const parts = [
-        ...leftParts,
-        ...Array(Math.max(missingParts, 0)).fill('0'),
-        ...rightParts,
-    ];
-
-    if (parts.length !== 8) {
-        return undefined;
-    }
-
-    const bytes: number[] = [];
-    for (const part of parts) {
-        const value = Number.parseInt(part || '0', 16);
-        if (!Number.isFinite(value) || value < 0 || value > 0xffff) {
-            return undefined;
-        }
-        bytes.push((value >> 8) & 0xff, value & 0xff);
-    }
-
-    return bytes;
-}
-
-function expandIPv4Tail(address: string): string {
-    const lastColon = address.lastIndexOf(':');
-    if (lastColon === -1) {
-        return address;
-    }
-
-    const tail = address.slice(lastColon + 1);
-    if (isIP(tail) !== 4) {
-        return address;
-    }
-
-    const parts = tail.split('.').map((part) => Number(part));
-    const first = ((parts[0] << 8) | parts[1]).toString(16);
-    const second = ((parts[2] << 8) | parts[3]).toString(16);
-    return `${address.slice(0, lastColon)}:${first}:${second}`;
 }

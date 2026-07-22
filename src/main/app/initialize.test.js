@@ -349,15 +349,6 @@ describe('main/app/initialize', () => {
                 expect(callback).toHaveBeenCalledWith({cancel: true});
             });
 
-            it('cancels server-view requests to local/private targets (via webContents.id fallback)', async () => {
-                const handler = await getRegisteredHandler();
-                const callback = jest.fn();
-
-                await handler({url: 'http://127.0.0.1:7777/secret', webContents: {id: SERVER_WEBCONTENTS_ID}, resourceType: 'subFrame'}, callback);
-
-                expect(callback).toHaveBeenCalledWith({cancel: true});
-            });
-
             it('allows requests to the configured server origin', async () => {
                 const handler = await getRegisteredHandler();
                 const callback = jest.fn();
@@ -376,7 +367,7 @@ describe('main/app/initialize', () => {
                 expect(callback).toHaveBeenCalledWith({});
             });
 
-            it('cancels unowned requests (service workers) to local/private targets', async () => {
+            it('cancels unowned requests to local/private targets', async () => {
                 const handler = await getRegisteredHandler();
                 const callback = jest.fn();
 
