@@ -344,7 +344,7 @@ describe('app/menus/appMenu/file', () => {
         });
 
         it('should include hidden CmdOrCtrl+W accelerator when main window is focused and there are less than 2 tabs', () => {
-            const mockMainWindow = {};
+            const mockMainWindow = {webContents: {isDevToolsFocused: jest.fn(() => false)}};
             MainWindow.get.mockReturnValue(mockMainWindow);
             BrowserWindow.getFocusedWindow.mockReturnValue(mockMainWindow);
             TabManager.getOrderedTabsForServer.mockReturnValue([{id: 'tab-1'}]);
@@ -360,6 +360,77 @@ describe('app/menus/appMenu/file', () => {
                 item.accelerator === 'CmdOrCtrl+W',
             );
             expect(hiddenCloseItem).not.toBe(undefined);
+        });
+
+        it('should bind CmdOrCtrl+W to Close Tab when main window content is focused with multiple tabs', () => {
+            const mockMainWindow = {webContents: {isDevToolsFocused: jest.fn(() => false)}};
+            MainWindow.get.mockReturnValue(mockMainWindow);
+            BrowserWindow.getFocusedWindow.mockReturnValue(mockMainWindow);
+            TabManager.getOrderedTabsForServer.mockReturnValue([{id: 'tab-1'}, {id: 'tab-2'}]);
+            localizeMessage.mockImplementation((id) => {
+                if (id === 'main.menus.app.window.closeTab') {
+                    return 'Close Tab';
+                }
+                if (id === 'main.menus.app.window.closeWindow') {
+                    return 'Close Window';
+                }
+                return id;
+            });
+
+            const menu = createFileMenu();
+            const closeTab = menu.submenu.find((item) => item.label === 'Close Tab');
+            const closeWindow = menu.submenu.find((item) => item.role === 'close');
+
+            expect(closeTab).toBeDefined();
+            expect(closeTab.accelerator).toBe('CmdOrCtrl+W');
+            expect(closeWindow.accelerator).toBe('CmdOrCtrl+Shift+W');
+        });
+
+        it('should give CmdOrCtrl+W to role close when main window DevTools is focused', () => {
+            const mockMainWindow = {webContents: {isDevToolsFocused: jest.fn(() => true)}};
+            MainWindow.get.mockReturnValue(mockMainWindow);
+            BrowserWindow.getFocusedWindow.mockReturnValue(mockMainWindow);
+            TabManager.getOrderedTabsForServer.mockReturnValue([{id: 'tab-1'}, {id: 'tab-2'}]);
+            localizeMessage.mockImplementation((id) => {
+                if (id === 'main.menus.app.window.closeTab') {
+                    return 'Close Tab';
+                }
+                if (id === 'main.menus.app.window.closeWindow') {
+                    return 'Close Window';
+                }
+                return id;
+            });
+
+            const menu = createFileMenu();
+            const closeTab = menu.submenu.find((item) => item.label === 'Close Tab');
+            const closeWindow = menu.submenu.find((item) => item.role === 'close');
+
+            expect(closeTab).toBeUndefined();
+            expect(closeWindow.accelerator).toBe('CmdOrCtrl+W');
+        });
+
+        it('should give CmdOrCtrl+W to role close when a non-main window is focused', () => {
+            const mockMainWindow = {webContents: {isDevToolsFocused: jest.fn(() => false)}};
+            const otherWindow = {webContents: {isDevToolsFocused: jest.fn(() => false)}};
+            MainWindow.get.mockReturnValue(mockMainWindow);
+            BrowserWindow.getFocusedWindow.mockReturnValue(otherWindow);
+            TabManager.getOrderedTabsForServer.mockReturnValue([{id: 'tab-1'}, {id: 'tab-2'}]);
+            localizeMessage.mockImplementation((id) => {
+                if (id === 'main.menus.app.window.closeTab') {
+                    return 'Close Tab';
+                }
+                if (id === 'main.menus.app.window.closeWindow') {
+                    return 'Close Window';
+                }
+                return id;
+            });
+
+            const menu = createFileMenu();
+            const closeTab = menu.submenu.find((item) => item.label === 'Close Tab');
+            const closeWindow = menu.submenu.find((item) => item.role === 'close');
+
+            expect(closeTab).toBeUndefined();
+            expect(closeWindow.accelerator).toBe('CmdOrCtrl+W');
         });
     });
 });
