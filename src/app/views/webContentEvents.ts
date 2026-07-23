@@ -1,7 +1,12 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {WebContents, Event} from 'electron';
+import type {
+    WebContents,
+    Event,
+    WebContentsWillFrameNavigateEventParams,
+    WebContentsWillNavigateEventParams,
+} from 'electron';
 import {BrowserWindow, dialog, shell} from 'electron';
 
 import CallsWidgetWindow from 'app/callsWidgetWindow';
@@ -30,7 +35,7 @@ import ViewManager from 'common/views/viewManager';
 import ContextMenu from 'main/contextMenu';
 import {localizeMessage} from 'main/i18nManager';
 
-import {generateHandleConsoleMessage, isCustomProtocol, isMattermostProtocol} from './webContentEventsCommon';
+import {generateHandleConsoleMessage, isAllowedSubframeNavigation, isCustomProtocol, isMattermostProtocol} from './webContentEventsCommon';
 
 import allowProtocolDialog from '../../main/security/allowProtocolDialog';
 import {composeUserAgent} from '../../main/utils';
@@ -86,12 +91,13 @@ export class WebContentsEventManager {
     };
 
     private generateWillNavigate = (webContentsId: number) => {
-        return (event: Event, url: string) => {
+        return (event: Event<WebContentsWillNavigateEventParams>, url?: string) => {
             this.log(webContentsId).debug('will-navigate');
 
-            const parsedURL = parseURL(url);
+            const navigationURL = url || event.url;
+            const parsedURL = parseURL(navigationURL);
             if (!parsedURL) {
-                this.log(webContentsId).warn(`Prevented navigation to invalid URL: ${url}`);
+                this.log(webContentsId).warn(`Prevented navigation to invalid URL: ${navigationURL}`);
                 event.preventDefault();
                 return;
             }
@@ -116,7 +122,7 @@ export class WebContentsEventManager {
             }
 
             if (isCustomProtocol(parsedURL)) {
-                allowProtocolDialog.handleDialogEvent(url).catch((err) => {
+                allowProtocolDialog.handleDialogEvent(navigationURL).catch((err) => {
                     this.log(webContentsId).warn('Error handling custom protocol dialog', err);
                 });
                 event.preventDefault();
@@ -124,6 +130,23 @@ export class WebContentsEventManager {
             }
 
             this.log(webContentsId).info('Prevented desktop from navigating to external URL');
+            event.preventDefault();
+        };
+    };
+
+    private generateWillFrameNavigate = (webContentsId: number) => {
+        return (event: Event<WebContentsWillFrameNavigateEventParams>) => {
+            // will-frame-navigate also fires for the main frame; defer that to will-navigate
+            // so the policy (and any protocol dialog) does not run twice.
+            if (event.isMainFrame) {
+                return;
+            }
+
+            if (isAllowedSubframeNavigation(event.url)) {
+                return;
+            }
+
+            this.log(webContentsId).debug('Prevented subframe from navigating to a blocked protocol');
             event.preventDefault();
         };
     };
@@ -250,6 +273,7 @@ export class WebContentsEventManager {
                         }
                     });
                     popup.webContents.on('will-navigate', this.generateWillNavigate(popup.webContents.id));
+                    popup.webContents.on('will-frame-navigate', this.generateWillFrameNavigate(popup.webContents.id));
                     popup.webContents.setWindowOpenHandler(this.denyNewWindow);
                     popup.once('closed', () => {
                         if (this.popupWindow?.contextMenu) {
@@ -305,7 +329,9 @@ export class WebContentsEventManager {
         }
 
         const willNavigate = this.generateWillNavigate(contents.id);
+        const willFrameNavigate = this.generateWillFrameNavigate(contents.id);
         contents.on('will-navigate', willNavigate);
+        contents.on('will-frame-navigate', willFrameNavigate);
 
         const spellcheck = Config.useSpellChecker;
         const newWindow = this.generateNewWindowListener(contents.id, spellcheck);
@@ -323,6 +349,7 @@ export class WebContentsEventManager {
         const removeWebContentsListeners = () => {
             try {
                 contents.removeListener('will-navigate', willNavigate);
+                contents.removeListener('will-frame-navigate', willFrameNavigate);
                 contents.removeListener('console-message', consoleMessage);
                 removeListeners?.(contents);
             } catch (e) {
