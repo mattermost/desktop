@@ -250,6 +250,7 @@ export class ExternalBrowserManager {
             KNOWN_LINUX_BROWSERS.map(async (browser) => {
                 for (const command of browser.commands) {
                     try {
+                        // Try aliases sequentially and stop at the first match.
                         // eslint-disable-next-line no-await-in-loop
                         const {stdout} = await execFile('which', [command], {timeout: 3000});
                         const executable = stdout.split('\n').map((line) => line.trim()).find(Boolean);
