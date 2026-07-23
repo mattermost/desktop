@@ -63,6 +63,18 @@ export class PreAuthManager {
         return false;
     };
 
+    injectPreAuthSecret = (
+        details: Electron.OnBeforeSendHeadersListenerDetails,
+    ): Record<string, string | string[]> => {
+        const server = ServerManager.lookupServerByURL(details.url);
+        if (server?.preAuthSecret && !('X-Mattermost-Preauth-Secret' in details.requestHeaders)) {
+            return {
+                'X-Mattermost-Preauth-Secret': server.preAuthSecret,
+            };
+        }
+        return {};
+    };
+
     loadPreAuthSecretForServer = async (serverId: string) => {
         const server = ServerManager.getServer(serverId);
         if (!server) {

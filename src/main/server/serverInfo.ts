@@ -5,6 +5,7 @@ import type {MattermostServer} from 'common/servers/MattermostServer';
 import {parseURL} from 'common/utils/url';
 
 import type {ClientConfig, RemoteInfo} from 'types/server';
+import type {SAField} from 'types/sessionAttributes';
 
 import {getServerAPI} from './serverAPI';
 
@@ -43,6 +44,12 @@ export class ServerInfo {
             this.onGetLicense,
             parseURL(`${this.server.url}/api/v4/license/client?format=old`),
         );
+        if (this.remoteInfo.sessionAttributesEnabled) {
+            await this.getRemoteInfo<SAField[]>(
+                this.onGetSessionAttributesManifest,
+                parseURL(`${this.server.url}/api/v4/users/sessions/attributes/manifest`),
+            );
+        }
 
         return this.remoteInfo;
     };
@@ -78,6 +85,7 @@ export class ServerInfo {
 
     private onGetConfig = (data: ClientConfig) => {
         this.remoteInfo.serverVersion = data.Version;
+        this.remoteInfo.sessionAttributesEnabled = data.FeatureFlagSessionAttributes === 'true';
         this.remoteInfo.siteURL = data.SiteURL;
         this.remoteInfo.siteName = data.SiteName;
         this.remoteInfo.hasFocalboard = this.remoteInfo.hasFocalboard || data.BuildBoards === 'true';
@@ -93,5 +101,9 @@ export class ServerInfo {
         this.remoteInfo.hasFocalboard = this.remoteInfo.hasFocalboard || data.some((plugin) => plugin.id === 'focalboard');
         this.remoteInfo.hasPlaybooks = data.some((plugin) => plugin.id === 'playbooks');
         this.remoteInfo.hasUserSurvey = data.some((plugin) => plugin.id === 'com.mattermost.nps');
+    };
+
+    private onGetSessionAttributesManifest = (data: SAField[]) => {
+        this.remoteInfo.sessionAttributesManifest = data;
     };
 }

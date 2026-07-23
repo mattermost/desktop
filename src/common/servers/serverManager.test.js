@@ -473,4 +473,45 @@ describe('common/servers/serverManager', () => {
             expect(names).toEqual(['Predefined', 'Predefined 2']);
         });
     });
+
+    describe('setLoggedIn', () => {
+        let serverManager;
+
+        beforeEach(() => {
+            Config.predefinedServers = [];
+            Config.localServers = [
+                {name: 'Local Server 1', url: 'http://local-1.com', order: 0},
+            ];
+            Config.enableServerManagement = true;
+            Config.lastActiveServer = 0;
+            parseURL.mockImplementation((url) => new URL(url));
+
+            serverManager = new ServerManager();
+            serverManager.init();
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should emit SERVER_LOGGED_IN_CHANGED when login state changes', () => {
+            const server = serverManager.getOrderedServers()[0];
+            const emitSpy = jest.spyOn(serverManager, 'emit');
+
+            serverManager.setLoggedIn(server.id, true);
+
+            expect(serverManager.getServer(server.id).isLoggedIn).toBe(true);
+            expect(emitSpy).toHaveBeenCalledWith('server-logged-in-changed', server.id, true);
+        });
+
+        it('should not emit when login state is unchanged', () => {
+            const server = serverManager.getOrderedServers()[0];
+            serverManager.setLoggedIn(server.id, true);
+            const emitSpy = jest.spyOn(serverManager, 'emit');
+
+            serverManager.setLoggedIn(server.id, true);
+
+            expect(emitSpy).not.toHaveBeenCalled();
+        });
+    });
 });

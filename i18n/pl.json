@@ -311,6 +311,8 @@
   "renderer.components.settingsPage.enableMetrics.description": "Wysyła dane o użytkowaniu aplikacji i jej wydajności do skonfigurowanych serwerów, które je akceptują.",
   "renderer.components.settingsPage.enableSentry": "Wysyłaj raporty o błędach, aby uzyskać pomoc w ulepszaniu aplikacji",
   "renderer.components.settingsPage.enableSentry.description": "Jeśli opcja ta jest włączona, wysyłane będą raporty o błędach i informacje o awariach w celu udzielenia pomocy w identyfikacji i naprawie problemów w aplikacji. Ustawienie zacznie obowiązywać po ponownym uruchomieniu aplikacji.",
+  "renderer.components.settingsPage.enableSessionAttributes": "Włącz atrybuty sesji",
+  "renderer.components.settingsPage.enableSessionAttributes.description": "Przesyła informacje o urządzeniu i sieci do skonfigurowanych serwerów w celu wykorzystania ich w politykach uprawnień. Jeśli to ustawienie jest wyłączone, niektóre zasoby mogą być niedostępne.",
   "renderer.components.settingsPage.flashWindow": "Migająca ikona na pasku zadań po otrzymaniu nowej wiadomości",
   "renderer.components.settingsPage.flashWindow.description": "Jeśli jest włączona, ikona paska zadań będzie migać przez kilka sekund po otrzymaniu nowej wiadomości.",
   "renderer.components.settingsPage.flashWindow.description.linuxFunctionality": "Ta funkcjonalność może nie działać ze wszystkimi menedżerami okien systemu Linux.",

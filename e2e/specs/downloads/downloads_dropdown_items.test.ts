@@ -7,7 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig} from '../../helpers/config';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {closeElectronAppFast} from '../../helpers/electronApp';
 
 const file1 = {
     addedAt: Date.UTC(2022, 7, 8, 10), // Aug 08, 2022 10:00AM UTC
@@ -83,7 +83,7 @@ async function openDownloadsDropdown(app: Awaited<ReturnType<typeof import('play
 }
 
 test.describe('downloads/downloads_dropdown_items', () => {
-    test('MM-22239 should display the file correctly (downloaded)', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
+    test('MM-T6134 should display the file correctly (downloaded)', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
         const userDataDir = path.join(testInfo.outputDir, 'userdata');
         const downloadsLocation = path.join(userDataDir, 'Downloads');
         const downloads = {
@@ -113,13 +113,12 @@ test.describe('downloads/downloads_dropdown_items', () => {
             const thumbnailBackgroundImage = await fileThumbnailLocator.evaluate((node) => window.getComputedStyle(node).getPropertyValue('background-image'));
             expect(thumbnailBackgroundImage).toContain('text.svg');
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronAppFast(app, userDataDir);
             fs.rmSync(downloadsLocation, {recursive: true, force: true});
         }
     });
 
-    test('MM-22239 should display the file correctly (deleted)', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
+    test('MM-T6135 should display the file correctly (deleted)', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
         const userDataDir = path.join(testInfo.outputDir, 'userdata');
         const downloadsLocation = path.join(userDataDir, 'Downloads');
         const downloads = {
@@ -149,13 +148,12 @@ test.describe('downloads/downloads_dropdown_items', () => {
             const thumbnailBackgroundImage = await fileThumbnailLocator.evaluate((node) => window.getComputedStyle(node).getPropertyValue('background-image'));
             expect(thumbnailBackgroundImage).toContain('text.svg');
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronAppFast(app, userDataDir);
             fs.rmSync(downloadsLocation, {recursive: true, force: true});
         }
     });
 
-    test('MM-22239 should display the file correctly (cancelled)', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
+    test('MM-T6136 should display the file correctly (cancelled)', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
         const userDataDir = path.join(testInfo.outputDir, 'userdata');
         const downloadsLocation = path.join(userDataDir, 'Downloads');
         const cancelledFile = {
@@ -189,13 +187,12 @@ test.describe('downloads/downloads_dropdown_items', () => {
             const thumbnailBackgroundImage = await fileThumbnailLocator.evaluate((node) => window.getComputedStyle(node).getPropertyValue('background-image'));
             expect(thumbnailBackgroundImage).toContain('text.svg');
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronAppFast(app, userDataDir);
             fs.rmSync(downloadsLocation, {recursive: true, force: true});
         }
     });
 
-    test('MM-22239 should display the files in correct order', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
+    test('MM-T6137 should display the files in correct order', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
         const userDataDir = path.join(testInfo.outputDir, 'userdata');
         const downloadsLocation = path.join(userDataDir, 'Downloads');
         const downloads = {
@@ -223,8 +220,7 @@ test.describe('downloads/downloads_dropdown_items', () => {
             const file2InnerText = await secondItemLocator.innerText();
             expect(file2InnerText).toBe(file1.filename);
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronAppFast(app, userDataDir);
             fs.rmSync(downloadsLocation, {recursive: true, force: true});
         }
     });

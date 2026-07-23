@@ -1,0 +1,54 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-action.json
+name: Cancel E2E workflow runs
+description: >-
+  Cancel active Electron Playwright Tests runs and mark E2E commit statuses as
+  cancelled so PR checks do not show a green "No tests ran" result.
+
+inputs:
+  pr_number:
+    description: Pull request number whose head SHA receives updated commit statuses
+    required: true
+  reason:
+    description: Commit status description when cancelling
+    required: false
+    default: E2E cancelled — tests skipped
+  cancel_workflow_runs:
+    description: When false, only update commit statuses (runs already stopped)
+    required: false
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      env:
+        PR_NUMBER: ${{ inputs.pr_number }}
+        REASON: ${{ inputs.reason }}
+        CANCEL_WORKFLOW_RUNS: ${{ inputs.cancel_workflow_runs }}
+      with:
+        script: |
+          const {markE2EStatusesCancelled, cancelActiveE2ERuns} = require('./e2e/utils/github-actions.js');
+          const prNumber = parseInt(process.env.PR_NUMBER, 10);
+          if (!Number.isFinite(prNumber)) {
+            throw new Error(`Invalid pr_number: ${process.env.PR_NUMBER}`);
+          }
+
+          const reason = process.env.REASON || 'E2E cancelled — tests skipped';
+          const shouldCancelRuns = process.env.CANCEL_WORKFLOW_RUNS !== 'false';
+
+          if (shouldCancelRuns) {
+            await cancelActiveE2ERuns({github, context, prNumber});
+          }
+
+          const {data: pr} = await github.rest.pulls.get({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: prNumber,
+          });
+
+          await markE2EStatusesCancelled({
+            github,
+            context,
+            sha: pr.head.sha,
+            reason,
+          });

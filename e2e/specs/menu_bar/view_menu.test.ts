@@ -6,17 +6,25 @@ import * as os from 'os';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
-import {waitForAppReady} from '../../helpers/appReadiness';
-import {appDir, demoMattermostConfig, electronBinaryPath, writeConfigFile} from '../../helpers/config';
-import {waitForWindow, closeElectronApp} from '../../helpers/electronApp';
+import {demoMattermostConfig} from '../../helpers/config';
+import {launchDirectTestApp} from '../../helpers/directLaunch';
+import {waitForWindow, closeElectronAppFast} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
+import {closeDownloadsDropdownIfOpen} from '../../helpers/downloadsDropdown';
 import {clickApplicationMenuItem} from '../../helpers/menu';
+import {
+    activateServerView,
+    openServerSearch,
+    SEARCH_INPUT,
+    waitForSearchBarFocused,
+} from '../../helpers/serverContext';
 import {buildServerMap} from '../../helpers/serverMap';
+import {evaluateInMainProcessWithArg} from '../../helpers/testRefs';
 
 type ElectronApplication = Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>;
 type ElectronPage = import('playwright').Page;
 
-let electronApp: ElectronApplication;
+let electronApp!: ElectronApplication;
 let mainWindow: ElectronPage;
 let userDataDir: string;
 
@@ -52,48 +60,67 @@ async function clickViewMenuItemByAccelerator(
     );
 }
 
-/**
- * Focus the server WebContentsView so that Electron's built-in zoom roles
- * target it (on macOS, zoom roles use the focused webContents).
- */
-async function focusServerView(
-    electronApp: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>,
-    webContentsId: number,
-) {
-    await electronApp.evaluate(({webContents}, id) => {
-        const refs = (global as any).__e2eTestRefs;
-        const view = refs?.WebContentsManager?.getViewByWebContentsId?.(id);
-        const wc = webContents.fromId(id);
-        if (!view || !wc) {
-            return;
-        }
-        wc.focus();
-        refs.WebContentsManager.focusedWebContentsView = view.id;
-    }, webContentsId);
-}
-
 async function waitForServerReload(
     electronApp: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>,
     webContentsId: number,
     trigger: () => Promise<void>,
 ) {
-    const reloadPromise = electronApp.evaluate(({webContents}, id) => {
-        return new Promise<boolean>((resolve) => {
-            const wc = webContents.fromId(id);
-            if (!wc) {
-                resolve(false);
-                return;
-            }
-            const timeout = setTimeout(() => resolve(false), 30_000);
-            wc.once('did-finish-load', () => {
-                clearTimeout(timeout);
-                resolve(true);
-            });
-        });
-    }, webContentsId);
+    await activateServerView(electronApp, webContentsId);
+    await closeDownloadsDropdownIfOpen(electronApp);
 
+    const serverMap = await buildServerMap(electronApp);
+    const serverWin = serverMap[demoMattermostConfig.servers[0].name][0].win;
+
+    await evaluateInMainProcessWithArg(
+        electronApp,
+        ({webContents}, id) => {
+            const refs = (global as any).__e2eTestRefs;
+            const mmView = refs?.WebContentsManager.getViewByWebContentsId(id);
+            const wc = webContents.fromId(id);
+            if (!mmView || !wc || wc.isDestroyed()) {
+                throw new Error(`No server view registered for webContentsId ${id}`);
+            }
+
+            const previous = (global as any).__e2eReloadWatchers?.[id];
+            if (previous) {
+                mmView.off('reload_view', previous.onReload);
+                wc.removeListener('did-finish-load', previous.onFinishLoad);
+            }
+
+            (global as any).__e2eReloadWatchers ??= {};
+            (global as any).__e2eReloadWatchers[id] = {
+                detected: false,
+                onReload: () => {
+                    (global as any).__e2eReloadWatchers[id].detected = true;
+                },
+                onFinishLoad: () => {
+                    (global as any).__e2eReloadWatchers[id].detected = true;
+                },
+            };
+
+            const watcher = (global as any).__e2eReloadWatchers[id];
+            mmView.on('reload_view', watcher.onReload);
+            wc.on('did-finish-load', watcher.onFinishLoad);
+            return true;
+        },
+        webContentsId,
+    );
+
+    await activateServerView(electronApp, webContentsId);
     await trigger();
-    return reloadPromise;
+
+    const reloaded = await expect.poll(async () => electronApp.evaluate((_, id) => {
+        return Boolean((global as any).__e2eReloadWatchers?.[id]?.detected);
+    }, webContentsId), {
+        timeout: 30_000,
+        message: 'Server view reload must be detected after menu reload',
+    }).toBe(true).then(() => true).catch(() => false);
+
+    await activateServerView(electronApp, webContentsId);
+    await closeDownloadsDropdownIfOpen(electronApp);
+    await serverWin.keyboard.press('Escape').catch(() => {});
+
+    return reloaded;
 }
 
 async function getServerContext() {
@@ -106,7 +133,7 @@ async function getServerContext() {
     await firstServer.waitForURL((url) => url.pathname.includes('/channels/'), {timeout: 30_000});
     await firstServer.waitForSelector('#post_textbox', {timeout: 30_000});
     await mainWindow.bringToFront().catch(() => {});
-    await focusServerView(electronApp, firstServerId);
+    await activateServerView(electronApp, serverEntry.webContentsId);
 
     return {browserWindow, firstServer, firstServerId};
 }
@@ -117,39 +144,8 @@ test.describe('menu/view', () => {
 
     test.beforeAll(async () => {
         userDataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'mm-view-menu-e2e-'));
-        writeConfigFile(userDataDir, demoMattermostConfig);
+        electronApp = await launchDirectTestApp(userDataDir, demoMattermostConfig);
 
-        const {_electron: electron} = await import('playwright');
-        electronApp = await electron.launch({
-            executablePath: electronBinaryPath,
-            args: [
-                appDir,
-                `--user-data-dir=${userDataDir}`,
-                '--no-sandbox',
-                '--disable-gpu',
-                '--disable-gpu-sandbox',
-                '--disable-dev-shm-usage',
-                '--no-zygote',
-                '--disable-software-rasterizer',
-                '--disable-breakpad',
-                '--disable-features=SpareRendererForSitePerProcess',
-                '--disable-features=CrossOriginOpenerPolicy',
-                '--disable-renderer-backgrounding',
-                '--force-color-profile=srgb',
-                '--mute-audio',
-            ],
-            env: {
-                ...process.env,
-                NODE_ENV: 'test',
-                RESOURCES_PATH: appDir,
-                ELECTRON_DISABLE_SECURITY_WARNINGS: 'true',
-                ELECTRON_NO_ATTACH_CONSOLE: 'true',
-                NODE_OPTIONS: '--no-warnings',
-            },
-            timeout: 90_000,
-        });
-
-        await waitForAppReady(electronApp);
         mainWindow = await waitForWindow(electronApp, 'index');
         const serverMap = await buildServerMap(electronApp);
         const firstServer = serverMap[demoMattermostConfig.servers[0].name][0].win;
@@ -163,28 +159,19 @@ test.describe('menu/view', () => {
     });
 
     test.afterAll(async () => {
-        await closeElectronApp(electronApp, userDataDir);
+        if (electronApp && userDataDir) {
+            await closeElectronAppFast(electronApp, userDataDir);
+        } else if (electronApp) {
+            await electronApp.close().catch(() => {});
+        }
     });
 
     test('MM-T813 Control+F should focus the search bar in Mattermost', {tag: ['@P2', '@all']}, async () => {
         const {firstServer, firstServerId} = await getServerContext();
 
-        // On macOS, Cmd+F sent directly to the web content focuses the search bar.
-        // On other platforms, trigger via menu item which calls openFind() → Ctrl+Shift+F.
-        if (process.platform === 'darwin') {
-            await firstServer.keyboard.press('Meta+f');
-        } else {
-            await clickApplicationMenuItem(electronApp, 'view', {accelerator: 'CmdOrCtrl+F'}, {webContentsId: firstServerId});
-        }
-
-        // The search bar opens asynchronously — wait for it to become the active element.
-        await firstServer.waitForFunction(
-            () => document.querySelector('input.search-bar.form-control') === document.activeElement,
-            {timeout: 15_000},
-        );
-        const isFocused = await firstServer.$eval('input.search-bar.form-control', (el) => el === document.activeElement);
-        expect(isFocused).toBe(true);
-        const text = await firstServer.inputValue('input.search-bar.form-control');
+        await openServerSearch(electronApp, firstServerId);
+        await waitForSearchBarFocused(firstServer);
+        const text = await firstServer.inputValue(SEARCH_INPUT);
         expect(text).toContain('in:');
     });
 
@@ -244,7 +231,7 @@ test.describe('menu/view', () => {
     test.describe('Reload', () => {
         test('MM-T814 should reload page when pressing Ctrl+R', {tag: ['@P2', '@all']}, async () => {
             const {firstServerId: webContentsId} = await getServerContext();
-            await focusServerView(electronApp, webContentsId);
+            await activateServerView(electronApp, webContentsId);
 
             const result = await waitForServerReload(electronApp, webContentsId, async () => {
                 await clickViewMenuItemByAccelerator(electronApp, webContentsId, 'CmdOrCtrl+R');
@@ -254,7 +241,7 @@ test.describe('menu/view', () => {
 
         test('MM-T815 should reload page when pressing Ctrl+Shift+R', {tag: ['@P2', '@all']}, async () => {
             const {firstServerId: webContentsId} = await getServerContext();
-            await focusServerView(electronApp, webContentsId);
+            await activateServerView(electronApp, webContentsId);
 
             const result = await waitForServerReload(electronApp, webContentsId, async () => {
                 await clickViewMenuItemByAccelerator(electronApp, webContentsId, 'Shift+CmdOrCtrl+R');
@@ -264,11 +251,6 @@ test.describe('menu/view', () => {
     });
 
     test('MM-T820 should open Developer Tools For Application Wrapper for main window', {tag: ['@P2', '@darwin', '@win32']}, async () => {
-        if (process.platform === 'linux') {
-            test.skip(true, 'Linux not supported');
-            return;
-        }
-
         const browserWindow = await electronApp.browserWindow(mainWindow);
 
         let isDevToolsOpen = await browserWindow.evaluate((window) => {

@@ -2,10 +2,18 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../../fixtures/index';
+import {SHOW_SETTINGS_WINDOW} from '../../helpers/ipcChannels';
 
-const SHOW_SETTINGS_WINDOW = 'show-settings-window';
 type ElectronApplication = Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>;
 
+/**
+ * Callers must also depend on the `mainWindow` fixture before calling this,
+ * even though it isn't used directly here. `electronApp` alone launches the
+ * app without waiting for it to become ready (see fixtures/index.ts) — if
+ * MainWindow.get() isn't populated yet, handleShowSettingsModal() silently
+ * no-ops on a missing main window, and the waitForEvent('window') below
+ * times out 15s later waiting for a window that was never created.
+ */
 async function openSettingsWindow(electronApp: ElectronApplication) {
     const existingWindow = electronApp.windows().find((window) => window.url().includes('settings'));
     if (existingWindow) {
@@ -39,69 +47,69 @@ async function openSettingsWindow(electronApp: ElectronApplication) {
 }
 
 test.describe('permissions/ipc', () => {
-    test('E2E-P01: should return a valid media access status via GET_MEDIA_ACCESS_STATUS IPC', {tag: ['@P2', '@all']}, async ({electronApp}) => {
-        if (process.platform === 'linux') {
-            test.skip(true, 'systemPreferences.getMediaAccessStatus is not available on Linux');
-            return;
-        }
+    test(
+        'MM-T6163 should return a valid media access status via GET_MEDIA_ACCESS_STATUS IPC',
+        {tag: ['@P2', '@darwin', '@win32']},
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars -- see openSettingsWindow's doc comment
+        async ({electronApp, mainWindow: _mainWindow}) => {
+            const settingsWindow = await openSettingsWindow(electronApp);
 
-        const settingsWindow = await openSettingsWindow(electronApp);
+            const status = await settingsWindow.evaluate(
+                () => (window as any).desktop.getMediaAccessStatus('microphone'),
+            );
+            expect(['granted', 'denied', 'not-determined', 'restricted', 'unknown']).toContain(status);
+        },
+    );
 
-        const status = await settingsWindow.evaluate(
-            () => (window as any).desktop.getMediaAccessStatus('microphone'),
-        );
-        expect(['granted', 'denied', 'not-determined', 'restricted', 'unknown']).toContain(status);
-    });
+    test(
+        'MM-T6164 should open ms-settings:privacy-webcam for camera preferences (Windows only)',
+        {tag: ['@P2', '@win32']},
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars -- see openSettingsWindow's doc comment
+        async ({electronApp, mainWindow: _mainWindow}) => {
+            const settingsWindow = await openSettingsWindow(electronApp);
 
-    test('E2E-P02: should open ms-settings:privacy-webcam for camera preferences (Windows only)', {tag: ['@P2', '@all', '@win32']}, async ({electronApp}) => {
-        if (process.platform !== 'win32') {
-            test.skip(true, 'Windows only');
-            return;
-        }
+            await electronApp.evaluate(({shell}) => {
+                (global as any).__testCapturedExternalURL = null;
+                shell.openExternal = (url: string) => {
+                    (global as any).__testCapturedExternalURL = url;
+                    return Promise.resolve();
+                };
+            });
 
-        const settingsWindow = await openSettingsWindow(electronApp);
+            await settingsWindow.evaluate(
+                () => (window as any).desktop.openWindowsCameraPreferences(),
+            );
 
-        await electronApp.evaluate(({shell}) => {
-            (global as any).__testCapturedExternalURL = null;
-            shell.openExternal = (url: string) => {
-                (global as any).__testCapturedExternalURL = url;
-                return Promise.resolve();
-            };
-        });
+            const capturedURL = await electronApp.evaluate(
+                () => (global as any).__testCapturedExternalURL,
+            );
+            expect(capturedURL).toBe('ms-settings:privacy-webcam');
+        },
+    );
 
-        await settingsWindow.evaluate(
-            () => (window as any).desktop.openWindowsCameraPreferences(),
-        );
+    test(
+        'MM-T6165 should open ms-settings:privacy-microphone for microphone preferences (Windows only)',
+        {tag: ['@P2', '@win32']},
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars -- see openSettingsWindow's doc comment
+        async ({electronApp, mainWindow: _mainWindow}) => {
+            const settingsWindow = await openSettingsWindow(electronApp);
 
-        const capturedURL = await electronApp.evaluate(
-            () => (global as any).__testCapturedExternalURL,
-        );
-        expect(capturedURL).toBe('ms-settings:privacy-webcam');
-    });
+            await electronApp.evaluate(({shell}) => {
+                (global as any).__testCapturedExternalURL = null;
+                shell.openExternal = (url: string) => {
+                    (global as any).__testCapturedExternalURL = url;
+                    return Promise.resolve();
+                };
+            });
 
-    test('E2E-P03: should open ms-settings:privacy-microphone for microphone preferences (Windows only)', {tag: ['@P2', '@all', '@win32']}, async ({electronApp}) => {
-        if (process.platform !== 'win32') {
-            test.skip(true, 'Windows only');
-            return;
-        }
+            await settingsWindow.evaluate(
+                () => (window as any).desktop.openWindowsMicrophonePreferences(),
+            );
 
-        const settingsWindow = await openSettingsWindow(electronApp);
-
-        await electronApp.evaluate(({shell}) => {
-            (global as any).__testCapturedExternalURL = null;
-            shell.openExternal = (url: string) => {
-                (global as any).__testCapturedExternalURL = url;
-                return Promise.resolve();
-            };
-        });
-
-        await settingsWindow.evaluate(
-            () => (window as any).desktop.openWindowsMicrophonePreferences(),
-        );
-
-        const capturedURL = await electronApp.evaluate(
-            () => (global as any).__testCapturedExternalURL,
-        );
-        expect(capturedURL).toBe('ms-settings:privacy-microphone');
-    });
+            const capturedURL = await electronApp.evaluate(
+                () => (global as any).__testCapturedExternalURL,
+            );
+            expect(capturedURL).toBe('ms-settings:privacy-microphone');
+        },
+    );
 });

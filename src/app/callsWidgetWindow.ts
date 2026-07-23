@@ -615,8 +615,13 @@ export class CallsWidgetWindow {
         return promise;
     };
 
-    private handleCallsLeave = () => {
+    private handleCallsLeave = (event: IpcMainEvent) => {
         log.debug('handleCallsLeave');
+
+        if (!this.isCallsWidget(event.sender.id) && this.mainView?.webContentsId !== event.sender.id) {
+            log.debug('handleCallsLeave', 'blocked on wrong webContentsId');
+            return;
+        }
 
         this.close();
     };

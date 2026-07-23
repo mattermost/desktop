@@ -125,6 +125,9 @@ jest.mock('main/app/config', () => ({
     handleConfigUpdate: jest.fn(),
     handleUpdateTheme: jest.fn(),
 }));
+jest.mock('main/e2e/appReady', () => ({
+    registerMainWindowE2EReadiness: jest.fn(),
+}));
 jest.mock('main/app/intercom', () => ({
     handleMainWindowIsShown: jest.fn(),
 }));
@@ -148,6 +151,8 @@ jest.mock('main/AutoLauncher', () => ({
 jest.mock('main/updateNotifier', () => ({}));
 jest.mock('app/system/badge', () => ({
     setupBadge: jest.fn(),
+    setBadgeTestRecorder: jest.fn(),
+    setUnreadBadgeSetting: jest.fn(),
 }));
 jest.mock('main/CriticalErrorHandler', () => ({
     init: jest.fn(),
@@ -197,6 +202,11 @@ jest.mock('app/tabs/tabManager', () => ({
     on: jest.fn(),
 }));
 
+jest.mock('app/windows/popoutManager', () => ({
+    __esModule: true,
+    default: {},
+}));
+
 jest.mock('main/developerMode', () => ({
     on: jest.fn(),
     switchOff: jest.fn(),
@@ -216,11 +226,20 @@ jest.mock('common/views/viewManager', () => ({
 jest.mock('app/menus', () => ({
     refreshMenu: jest.fn(),
 }));
+jest.mock('app/menus/tray', () => ({
+    __esModule: true,
+    default: jest.fn(() => ({items: []})),
+}));
 
 jest.mock('main/security/preAuthManager', () => ({
     handlePreAuthSecret: jest.fn(),
+    injectPreAuthSecret: jest.fn(() => ({})),
+    loadPreAuthSecretForServer: jest.fn(),
+    preAuthHeaderOnHeadersReceivedHander: jest.fn(),
 }));
-
+jest.mock('main/sessionAttributes/sessionAttributesManager', () => ({
+    injectHeader: jest.fn(() => ({})),
+}));
 jest.mock('main/sentryHandler', () => ({
     init: jest.fn(),
 }));

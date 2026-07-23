@@ -1,29 +1,34 @@
 name: CMT Provisioner
 
-# This is a stub workflow. Its only purpose is to fire a workflow_run webhook
-# to Matterwick, which provisions cloud servers for each server version and
-# then dispatches compatibility-matrix-testing.yml with the CMT_MATRIX input.
+# Lightweight trigger workflow for Compatibility Matrix Testing (CMT).
 #
-# Usage: Go to Actions → CMT Provisioner → Run workflow
-#   server_versions: comma-separated Mattermost server versions
-#   Example: "v11.1.0, v11.2.0, v12.0.0"
+# Matterwick listens for this workflow's workflow_run:requested event, then provisions one
+# Mattermost cloud instance per version in its CMT version set (auto-derived from Mattermost
+# releases, with `CMTServerVersions` in matterwick config as a manual override) and dispatches
+# compatibility-matrix-testing.yml with the CMT_MATRIX input. When that test workflow completes,
+# Matterwick destroys the provisioned instances (cleanup is keyed off the completed
+# workflow_run, matched by commit SHA).
+#
+# Triggers: an RC tag cut (e.g. `v6.2.0-rc.1`), or a manual run from the Actions tab. The tag
+# glob filters out GA tags (`v6.2.0`) and non-RC pre-releases at the GitHub layer; matterwick
+# re-validates with a strict regex (`shouldTriggerCMT` / `isRCTag`) as defense-in-depth.
 
 on:
-  workflow_dispatch:
-    inputs:
-      server_versions:
-        description: "Comma-separated Mattermost server versions (e.g. v11.1.0, v11.2.0)"
-        required: true
-        type: string
+  # RC tag cut. Glob matches the `vX.Y.Z-rc.N` convention; matterwick re-validates strictly.
+  push:
+    tags:
+      - "v[0-9]*.[0-9]*.[0-9]*-rc.[0-9]*"
+  # Manual runs from the Actions tab (any ref).
+  workflow_dispatch: {}
+
+permissions: {}
 
 jobs:
-  notify:
-    runs-on: ubuntu-22.04
+  trigger-matterwick:
+    runs-on: ubuntu-24.04
     steps:
-      - name: Log CMT request
-        env:
-          SERVER_VERSIONS: ${{ inputs.server_versions }}
+      - name: Signal Matterwick to provision CMT servers
         run: |
-          echo "CMT Provisioner triggered"
-          echo "Server versions: ${SERVER_VERSIONS}"
-          echo "Matterwick will provision cloud instances and dispatch compatibility-matrix-testing.yml"
+          echo "CMT trigger started for ref: ${GITHUB_REF}"
+          echo "Matterwick provisions one server per configured version and then"
+          echo "dispatches compatibility-matrix-testing.yml automatically."

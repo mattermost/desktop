@@ -2,20 +2,71 @@
 // See LICENSE.txt for license information.
 
 import {expect} from '@playwright/test';
-import type {ElectronApplication} from 'playwright';
+import type {ElectronApplication, Page} from 'playwright';
+
+const MAIN_WINDOW_POLL_MS = 200;
+
+export function findMainWindow(app: ElectronApplication): Page | undefined {
+    return app.windows().find((window) => {
+        try {
+            return window.url().includes('index');
+        } catch {
+            return false;
+        }
+    });
+}
+
+/** Resolve the internal main window (index.html wrapper). */
+export async function waitForMainWindow(
+    app: ElectronApplication,
+    options?: {timeout?: number},
+): Promise<Page> {
+    const timeout = options?.timeout ?? 30_000;
+    let mainWindow: Page | undefined;
+
+    await expect.poll(async () => {
+        mainWindow = findMainWindow(app);
+        return mainWindow;
+    }, {
+        timeout,
+        intervals: [MAIN_WINDOW_POLL_MS, 500, 1000],
+        message: 'Main window (index.html) must appear',
+    }).not.toBeUndefined();
+
+    if (!mainWindow) {
+        throw new Error(
+            'Main window was not available.\n' +
+            `Available: ${app.windows().map((window) => window.url()).join(', ')}`,
+        );
+    }
+
+    return mainWindow;
+}
 
 /**
- * Wait until the main process has set global.__e2eAppReady = true.
- *
- * This flag is set in src/main/app/initialize.ts after handleMainWindowIsShown()
- * when NODE_ENV === 'test'. It fires once per app launch, after all views are
- * initialized and the main window is shown.
- *
- * IMPORTANT: app.evaluate() runs in the MAIN process context.
- * ipcRenderer does NOT exist there — only main-process Electron APIs do.
- * We read the global directly, not via IPC.
+ * Wait until main-window chrome needed for server management is rendered.
+ * Used when config already lists servers — catches broken wrapper UI that
+ * __e2eAppReady alone would miss.
  */
+export async function waitForMainWindowChrome(
+    app: ElectronApplication,
+    options?: {requireServerDropdown?: boolean; timeout?: number},
+): Promise<Page> {
+    const timeout = options?.timeout ?? 30_000;
+    const deadline = Date.now() + timeout;
+    const mainWindow = await waitForMainWindow(app, {timeout});
+
+    if (options?.requireServerDropdown) {
+        const remaining = Math.max(0, deadline - Date.now());
+        await mainWindow.waitForSelector('.ServerDropdownButton', {timeout: remaining});
+    }
+
+    return mainWindow;
+}
+
 export async function waitForAppReady(app: ElectronApplication): Promise<void> {
+    const timeout = process.platform === 'linux' ? 30_000 : 60_000;
+
     await expect.poll(
         async () => {
             try {
@@ -32,8 +83,8 @@ export async function waitForAppReady(app: ElectronApplication): Promise<void> {
             }
         },
         {
-            message: 'Timed out waiting for __e2eAppReady. Check that initialize.ts sets it after handleMainWindowIsShown().',
-            timeout: 30_000,
+            message: `Timed out waiting for __e2eAppReady (${timeout}ms)`,
+            timeout,
             intervals: [200, 500, 1000, 2000],
         },
     ).toBe(true);

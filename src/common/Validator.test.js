@@ -219,7 +219,14 @@ describe('common/Validator', () => {
             themeSyncing: true,
             enableMetrics: true,
             enableSentry: true,
+            enableSessionAttributes: true,
             useNativeTitleBar: false,
+            trustedEmbeddedMediaOrigins: [
+                {
+                    serverOrigin: 'https://chat.example.com',
+                    embeddedOrigin: 'https://meet.example.com',
+                },
+            ],
         };
 
         it('should validate v4 config data', () => {
@@ -232,6 +239,19 @@ describe('common/Validator', () => {
                 spellCheckerURL: 'a-bad>url',
             };
             expect(Validator.validateV4ConfigData(modifiedConfig)).not.toHaveProperty('spellCheckerURL');
+        });
+
+        it('should reject trusted embedded media values that are not origins', () => {
+            const modifiedConfig = {
+                ...config,
+                trustedEmbeddedMediaOrigins: [
+                    {
+                        serverOrigin: 'https://chat.example.com/path',
+                        embeddedOrigin: 'https://meet.example.com',
+                    },
+                ],
+            };
+            expect(Validator.validateV4ConfigData(modifiedConfig)).toBeNull();
         });
     });
 
@@ -320,6 +340,31 @@ describe('common/Validator', () => {
 
             expect(wrapped(event, 'anything', 1n)).toBe('ok');
             expect(handler).toHaveBeenCalledWith(event, 'anything', 1n);
+        });
+
+        it('accepts empty strings when schema uses .allow("")', () => {
+            const handler = jest.fn().mockReturnValue('ok');
+            const wrapped = Validator.ipcValidate(handler, [Joi.string().allow('').required()]);
+
+            expect(wrapped(event, '')).toBe('ok');
+            expect(handler).toHaveBeenCalledWith(event, '');
+        });
+
+        it('accepts empty strings for all NOTIFY_MENTION-style args', () => {
+            const handler = jest.fn().mockReturnValue('ok');
+            const mentionSchema = [
+                Joi.string().allow('').required(),
+                Joi.string().allow('').required(),
+                Joi.string().allow('').required(),
+                Joi.string().allow('').required(),
+                Joi.string().allow('').required(),
+                Joi.boolean().required(),
+                Joi.string().allow('').required(),
+            ];
+            const wrapped = Validator.ipcValidate(handler, mentionSchema);
+
+            expect(wrapped(event, 'Title', 'Body', '', '', '', false, '')).toBe('ok');
+            expect(handler).toHaveBeenCalledWith(event, 'Title', 'Body', '', '', '', false, '');
         });
     });
 });

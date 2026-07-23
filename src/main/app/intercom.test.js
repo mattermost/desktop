@@ -18,6 +18,8 @@ import {
 jest.mock('electron', () => ({
     app: {
         setSecureKeyboardEntryEnabled: jest.fn(),
+        once: jest.fn(),
+        removeListener: jest.fn(),
     },
 }));
 jest.mock('main/secureStorage', () => ({
@@ -52,6 +54,8 @@ jest.mock('app/mainWindow/modals/modalManager', () => ({
 }));
 jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
+    once: jest.fn(),
+    on: jest.fn(),
 }));
 
 jest.mock('./app', () => ({}));
@@ -79,6 +83,7 @@ describe('main/app/intercom', () => {
             getLocalPreload.mockReturnValue('/some/preload.js');
             MainWindow.get.mockReturnValue({
                 isVisible: () => true,
+                once: jest.fn(),
             });
             ServerManager.hasServers.mockReturnValue(true);
 

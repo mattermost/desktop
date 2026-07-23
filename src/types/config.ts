@@ -6,6 +6,11 @@ export type Server = {
     url: string;
 }
 
+export type TrustedEmbeddedMediaOrigin = {
+    serverOrigin: string;
+    embeddedOrigin: string;
+}
+
 export type ConfigServer = Server & {
     order: number;
     isPredefined?: boolean;
@@ -57,10 +62,12 @@ export type ConfigV4 = {
     appLanguage?: string;
     enableMetrics?: boolean;
     enableSentry?: boolean;
+    enableSessionAttributes?: boolean;
     viewLimit?: number;
     themeSyncing?: boolean;
     skippedVersions?: string[];
     useNativeTitleBar?: boolean;
+    trustedEmbeddedMediaOrigins?: TrustedEmbeddedMediaOrigin[];
 }
 
 export type ConfigV3 = Omit<ConfigV4,
@@ -136,12 +143,14 @@ export type BuildConfig = {
     linuxGitHubReleaseURL: string;
     managedResources: string[];
     allowedProtocols: string[];
+    trustedEmbeddedMediaOrigins?: TrustedEmbeddedMediaOrigin[];
 }
 
 export type RegistryConfig = {
     servers: Server[];
     enableServerManagement: boolean;
     enableUpdateNotifications: boolean;
+    trustedEmbeddedMediaOrigins: TrustedEmbeddedMediaOrigin[];
 }
 
 export type CombinedConfig = Omit<CurrentConfig, 'servers'> & Omit<BuildConfig, 'defaultServers'> & {

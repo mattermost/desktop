@@ -1,38 +1,72 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {execSync} from 'child_process';
+import {execFileSync} from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
-const E2E_PROCESS_REGISTRY = path.join(os.tmpdir(), 'mattermost-desktop-e2e-main-pids.txt');
+import {ensureElectronBinary} from './helpers/config';
+import {clearAllRegistryFiles} from './helpers/electronApp';
 
-/**
- * Disable macOS window-restoration (Resume) for the Electron binary used in tests.
- *
- * When Electron is killed by a signal (SIGTERM from fixture teardown or SIGKILL from
- * Playwright's worker timeout), macOS marks the process as having "quit unexpectedly"
- * and shows a "Do you want to reopen its windows?" dialog on the next launch.
- * That dialog blocks the app UI, so __e2eAppReady is never set, waitForAppReady times
- * out, and fixture teardown hangs — causing more kills, more dialogs, and so on.
- *
- * NSQuitAlwaysKeepsWindows = false  — don't offer to restore windows after unexpected quit
- * ApplePersistenceIgnoreState = YES — skip saved-state restoration on every launch
- */
-export default async function globalSetup() {
+const MACOS_DEFAULTS_SNAPSHOT = path.join(os.tmpdir(), 'mattermost-desktop-e2e-macos-defaults-snapshot.json');
+
+function readMacOsDefault(domain: string, key: string): string | null {
     try {
-        fs.rmSync(E2E_PROCESS_REGISTRY, {force: true});
+        return execFileSync('defaults', ['read', domain, key], {encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe']}).trim();
+    } catch {
+        return null;
+    }
+}
+
+export default async function globalSetup() {
+    ensureElectronBinary();
+
+    // Clear stale per-worker PID shards (and any legacy shared file) from a
+    // prior crashed run. We only delete files here, never signal pids, because
+    // pids may have been reused by unrelated processes since that run.
+    try {
+        clearAllRegistryFiles();
     } catch {
         // ignore stale registry cleanup failures
     }
 
     if (process.platform === 'darwin') {
+        const bundleIDs = ['com.github.Electron'];
+
+        for (const bundleID of bundleIDs) {
+            try {
+                execFileSync('defaults', ['write', bundleID, 'NSQuitAlwaysKeepsWindows', '-bool', 'false'], {stdio: 'pipe'});
+            } catch {
+                // non-fatal
+            }
+            try {
+                execFileSync('defaults', ['write', bundleID, 'ApplePersistenceIgnoreState', '-bool', 'YES'], {stdio: 'pipe'});
+            } catch {
+                // non-fatal
+            }
+        }
+
         try {
-            execSync('defaults write com.github.Electron NSQuitAlwaysKeepsWindows -bool false', {stdio: 'ignore'});
-            execSync('defaults write com.github.Electron ApplePersistenceIgnoreState -bool YES', {stdio: 'ignore'});
+            const snapshot = {
+                LSQuarantine: readMacOsDefault('com.apple.LaunchServices', 'LSQuarantine'),
+                DialogType: readMacOsDefault('com.apple.CrashReporter', 'DialogType'),
+            };
+            fs.writeFileSync(MACOS_DEFAULTS_SNAPSHOT, JSON.stringify(snapshot), 'utf8');
         } catch {
-            // Non-fatal — tests still run, just potentially with the Resume dialog
+            // non-fatal
+        }
+
+        try {
+            execFileSync('defaults', ['write', 'com.apple.LaunchServices', 'LSQuarantine', '-bool', 'false'], {stdio: 'pipe'});
+        } catch {
+            // non-fatal
+        }
+
+        try {
+            execFileSync('defaults', ['write', 'com.apple.CrashReporter', 'DialogType', 'none'], {stdio: 'pipe'});
+        } catch {
+            // non-fatal
         }
     }
 }

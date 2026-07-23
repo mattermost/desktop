@@ -282,3 +282,8 @@ Open Settings (`Ctrl/Cmd+,`) → switch logging to **Debug** → reproduce → *
 3. **Restart** app (and computer if needed).
 4. **Reset data** — **View → Clear All Data**, or delete the config directory.
 5. **Collect debug logs and heap snapshots**.
+
+
+## Cursor Cloud specific instructions
+
+These can be found in .cursor/SETUP.md.

@@ -15,7 +15,6 @@ import MenuManager from 'app/menus';
 import NavigationManager from 'app/navigationManager';
 import {setupBadge} from 'app/system/badge';
 import Tray from 'app/system/tray/tray';
-import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
 import {
     QUIT,
@@ -32,7 +31,6 @@ import {
     DOUBLE_CLICK_ON_WINDOW,
     TOGGLE_SECURE_INPUT,
     GET_APP_INFO,
-    SHOW_SETTINGS_WINDOW,
     DEVELOPER_MODE_UPDATED,
     SERVER_ADDED,
     GET_FULL_SCREEN_STATUS,
@@ -44,15 +42,14 @@ import {MATTERMOST_PROTOCOL} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
-import {setTestField} from 'common/utils/util';
 import {ipcValidate} from 'common/Validator';
-import ViewManager from 'common/views/viewManager';
 import AppVersionManager from 'main/AppVersionManager';
 import AutoLauncher from 'main/AutoLauncher';
 import {configPath, updatePaths} from 'main/constants';
 import CriticalErrorHandler from 'main/CriticalErrorHandler';
 import DeveloperMode from 'main/developerMode';
 import downloadsManager from 'main/downloadsManager';
+import {maybeRegisterE2eHooks} from 'main/e2e/register';
 import ExternalBrowserManager from 'main/externalBrowserManager';
 import i18nManager from 'main/i18nManager';
 import NonceManager from 'main/nonceManager';
@@ -64,6 +61,7 @@ import AllowProtocolDialog from 'main/security/allowProtocolDialog';
 import PermissionsManager from 'main/security/permissionsManager';
 import PreAuthManager from 'main/security/preAuthManager';
 import sentryHandler from 'main/sentryHandler';
+import SessionAttributesManager from 'main/sessionAttributes/sessionAttributesManager';
 import updateNotifier from 'main/updateNotifier';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 
@@ -93,7 +91,6 @@ import {
     handleQuit,
     handlePingDomain,
     handleToggleSecureInput,
-    handleShowSettingsModal,
 } from './intercom';
 import {
     clearAppCache,
@@ -252,9 +249,9 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.handle(NOTIFY_MENTION, ipcValidate(handleMentionNotification, [
         Joi.string().allow('').required(),
         Joi.string().allow('').required(),
-        Joi.string().min(1).required(),
-        Joi.string().min(1).required(),
-        Joi.string().min(1).required(),
+        Joi.string().allow('').required(),
+        Joi.string().allow('').required(),
+        Joi.string().allow('').required(),
         Joi.boolean().required(),
         Joi.string().allow('').required(),
     ]));
@@ -278,23 +275,13 @@ function initializeInterCommunicationEventListeners() {
 
     ipcMain.on(TOGGLE_SECURE_INPUT, handleToggleSecureInput);
 
-    if (process.env.NODE_ENV === 'test') {
-        ipcMain.on(SHOW_SETTINGS_WINDOW, handleShowSettingsModal);
-    }
-
     ipcMain.handle(GET_FULL_SCREEN_STATUS, (event: IpcMainInvokeEvent) => {
         return BrowserWindow.fromWebContents(event.sender)?.isFullScreen();
     });
 }
 
 async function initializeAfterAppReady() {
-    setTestField('__e2eTestRefs', {
-        MainWindow,
-        ServerManager,
-        TabManager,
-        ViewManager,
-        WebContentsManager,
-    });
+    maybeRegisterE2eHooks();
 
     // Block all NTLM/Negotiate requests by default
     session.defaultSession.allowNTLMCredentialsForDomains('');
@@ -366,30 +353,19 @@ async function initializeAfterAppReady() {
         downloadsManager.webRequestOnHeadersReceivedHandler(details, callback);
     });
 
-    // Inject X-Mattermost-Preauth-Secret header for all server requests
     defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
         try {
-            const server = ServerManager.lookupServerByURL(details.url);
-
-            if (server && server.preAuthSecret) {
-                const secret = server.preAuthSecret;
-
-                if (!('X-Mattermost-Preauth-Secret' in details.requestHeaders)) {
-                    const requestHeaders = {
-                        ...details.requestHeaders,
-                        'X-Mattermost-Preauth-Secret': secret,
-                    };
-
-                    callback({requestHeaders});
-                    return;
-                }
-            }
+            callback({
+                requestHeaders: {
+                    ...details.requestHeaders,
+                    ...PreAuthManager.injectPreAuthSecret(details),
+                    ...SessionAttributesManager.injectHeader(details),
+                },
+            });
         } catch (error) {
-            log.debug('Error injecting preauth secret header:', {error});
+            log.debug('Header injector error', {error});
+            callback({requestHeaders: details.requestHeaders});
         }
-
-        // If no secret found or error occurred, proceed with original headers
-        callback({requestHeaders: details.requestHeaders});
     });
 
     if (process.platform !== 'darwin') {

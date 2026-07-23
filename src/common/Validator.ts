@@ -22,6 +22,19 @@ const defaultWindowHeight = 700;
 const minWindowWidth = 400;
 const minWindowHeight = 240;
 
+const originOnlyStringSchema = Joi.string().custom((value, helpers) => {
+    try {
+        const url = new URL(value);
+        if (url.origin !== value) {
+            return helpers.error('string.uri');
+        }
+
+        return value;
+    } catch {
+        return helpers.error('string.uri');
+    }
+});
+
 const argsSchema = Joi.object<Args>({
     hidden: Joi.boolean(),
     disableDevMode: Joi.boolean(),
@@ -185,10 +198,15 @@ const configDataSchemaV4 = Joi.object<ConfigV4>({
     appLanguage: Joi.string().allow(''),
     enableMetrics: Joi.boolean().default(true),
     enableSentry: Joi.boolean().default(true),
+    enableSessionAttributes: Joi.boolean().default(true),
     viewLimit: Joi.number().integer().min(1),
     themeSyncing: Joi.boolean().default(true),
     skippedVersions: Joi.array().items(Joi.string()).default([]),
     useNativeTitleBar: Joi.boolean().default(false),
+    trustedEmbeddedMediaOrigins: Joi.array().items(Joi.object({
+        serverOrigin: originOnlyStringSchema.required(),
+        embeddedOrigin: originOnlyStringSchema.required(),
+    })).default([]),
 });
 
 // eg. data['community.mattermost.com'] = { data: 'certificate data', issuerName: 'COMODO RSA Domain Validation Secure Server CA'};
@@ -369,30 +387,30 @@ export function ipcValidate<E, A extends unknown[], R>(
     };
 }
 export const themeSchema = Joi.object({
-    sidebarBg: Joi.string(),
-    sidebarText: Joi.string(),
-    sidebarUnreadText: Joi.string(),
-    sidebarTextHoverBg: Joi.string(),
-    sidebarTextActiveBorder: Joi.string(),
-    sidebarTextActiveColor: Joi.string(),
-    sidebarHeaderBg: Joi.string(),
-    sidebarTeamBarBg: Joi.string(),
-    sidebarHeaderTextColor: Joi.string(),
-    onlineIndicator: Joi.string(),
-    awayIndicator: Joi.string(),
-    dndIndicator: Joi.string(),
-    mentionBg: Joi.string(),
-    mentionColor: Joi.string(),
+    sidebarBg: Joi.string().allow(''),
+    sidebarText: Joi.string().allow(''),
+    sidebarUnreadText: Joi.string().allow(''),
+    sidebarTextHoverBg: Joi.string().allow(''),
+    sidebarTextActiveBorder: Joi.string().allow(''),
+    sidebarTextActiveColor: Joi.string().allow(''),
+    sidebarHeaderBg: Joi.string().allow(''),
+    sidebarTeamBarBg: Joi.string().allow(''),
+    sidebarHeaderTextColor: Joi.string().allow(''),
+    onlineIndicator: Joi.string().allow(''),
+    awayIndicator: Joi.string().allow(''),
+    dndIndicator: Joi.string().allow(''),
+    mentionBg: Joi.string().allow(''),
+    mentionColor: Joi.string().allow(''),
     centerChannelBg: Joi.string(),
-    centerChannelColor: Joi.string(),
-    newMessageSeparator: Joi.string(),
-    linkColor: Joi.string(),
-    buttonBg: Joi.string(),
-    buttonColor: Joi.string(),
-    errorTextColor: Joi.string(),
-    mentionHighlightBg: Joi.string(),
-    mentionHighlightLink: Joi.string(),
-    codeTheme: Joi.string(),
+    centerChannelColor: Joi.string().allow(''),
+    newMessageSeparator: Joi.string().allow(''),
+    linkColor: Joi.string().allow(''),
+    buttonBg: Joi.string().allow(''),
+    buttonColor: Joi.string().allow(''),
+    errorTextColor: Joi.string().allow(''),
+    mentionHighlightBg: Joi.string().allow(''),
+    mentionHighlightLink: Joi.string().allow(''),
+    codeTheme: Joi.string().allow(''),
     isUsingSystemTheme: Joi.boolean(),
 }).unknown(true);
 
@@ -417,3 +435,14 @@ export const desktopSourcesOptsSchema = Joi.object({
     }),
     fetchWindowIcons: Joi.boolean(),
 });
+
+export const sessionAttributeFieldSchema = Joi.object({
+    name: Joi.string().required(),
+    type: Joi.string().required(),
+    attrs: Joi.object({
+        enabled: Joi.boolean().required(),
+        ttl_seconds: Joi.number().required(),
+        grace_period_seconds: Joi.number().required(),
+        platforms: Joi.array().items(Joi.string()).required(),
+    }).unknown(true).required(),
+}).unknown(true);

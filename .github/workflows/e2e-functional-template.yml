@@ -24,11 +24,6 @@ on:
         type: string
         description: "The E2E tests underlying OS"
         required: true
-      nightly:
-        type: boolean
-        description: "True if this is nightly build"
-        required: false
-        default: false
       cmt:
         type: boolean
         description: "True if this is Compatibility Matrix Testing"
@@ -36,41 +31,20 @@ on:
         default: false
       TYPE:
         type: string
-        description: "e.g. PR, NIGHTLY, RELEASE or CMT (Compatibility Matrix Testing)"
+        description: "e.g. PR, MASTER, or CMT (Compatibility Matrix Testing)"
         required: false
         default: "PR"
       MM_SERVER_VERSION:
         type: string
         required: true
-    outputs:
-      NEW_FAILURES_LINUX:
-        description: "The output to comment"
-        value: ${{ jobs.e2e.outputs.NEW_FAILURES_LINUX }}
-      NEW_FAILURES_MACOS:
-        description: "The output to comment"
-        value: ${{ jobs.e2e.outputs.NEW_FAILURES_MACOS }}
-      NEW_FAILURES_WINDOWS:
-        description: "The output to comment"
-        value: ${{ jobs.e2e.outputs.NEW_FAILURES_WINDOWS }}
-      REPORT_LINK_LINUX:
-        description: "Link to Linux report"
-        value: ${{ jobs.e2e.outputs.REPORT_LINK_LINUX }}
-      REPORT_LINK_MACOS:
-        description: "Link to MacOS report"
-        value: ${{ jobs.e2e.outputs.REPORT_LINK_MACOS }}
-      REPORT_LINK_WINDOWS:
-        description: "Link to Windows report"
-        value: ${{ jobs.e2e.outputs.REPORT_LINK_WINDOWS }}
-      STATUS_LINUX:
-        description: "The status of the linux test"
-        value: ${{ jobs.e2e.outputs.STATUS_LINUX }}
-      STATUS_MACOS:
-        description: "The status of the macOS test"
-        value: ${{ jobs.e2e.outputs.STATUS_MACOS }}
-      STATUS_WINDOWS:
-        description: "The status of the windows test"
-        value: ${{ jobs.e2e.outputs.STATUS_WINDOWS }}
-
+      # Packed as one JSON input, not two, because workflow_call caps reusable
+      # workflows at 10 inputs total — this file was already at 8.
+      # Shape: {"composite_identity": {...}, "total_reports_expected": "N"}
+      tsio-config:
+        description: "TSIO reporting config: {composite_identity, total_reports_expected}. Empty disables TSIO reporting for this leg."
+        required: false
+        type: string
+        default: ""
   workflow_dispatch:
     inputs:
       MM_TEST_SERVER_URL:
@@ -95,11 +69,6 @@ on:
         description: "The E2E tests underlying OS"
         required: true
         default: "ubuntu-24.04"
-      nightly:
-        type: boolean
-        description: "True if this is nightly build"
-        required: false
-        default: false
       cmt:
         type: boolean
         description: "True if this is Compatibility Matrix Testing"
@@ -113,6 +82,11 @@ on:
       MM_SERVER_VERSION:
         type: string
         required: true
+      tsio-config:
+        description: "TSIO reporting config: {composite_identity, total_reports_expected}. Empty disables TSIO reporting for this leg."
+        required: false
+        type: string
+        default: ""
 
 env:
   BRANCH: ${{ github.head_ref || github.ref_name }}
@@ -128,33 +102,30 @@ env:
 
 jobs:
   e2e:
-    name: e2e-on-${{ inputs.runs-on }}
+    # Includes MM_SERVER_VERSION, not just runs-on: CMT tests multiple server
+    # versions against the same runner (e.g. macos-13 x 9.6.1 and macos-13 x
+    # 9.5.2)
+    name: e2e-on-${{ inputs.runs-on }}-${{ inputs.MM_SERVER_VERSION }}
     runs-on: ${{ inputs.runs-on }}
     permissions:
       contents: read
+      id-token: write
+      actions: read
     defaults:
       run:
         shell: bash
-    outputs:
-      NEW_FAILURES_LINUX: ${{ steps.analyze-flaky-tests.outputs.NEW_FAILURES_LINUX }}
-      NEW_FAILURES_MACOS: ${{ steps.analyze-flaky-tests.outputs.NEW_FAILURES_MACOS }}
-      NEW_FAILURES_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.NEW_FAILURES_WINDOWS }}
-      REPORT_LINK_LINUX: ${{ steps.analyze-flaky-tests.outputs.REPORT_LINK_LINUX }}
-      REPORT_LINK_MACOS: ${{ steps.analyze-flaky-tests.outputs.REPORT_LINK_MACOS }}
-      REPORT_LINK_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.REPORT_LINK_WINDOWS }}
-      STATUS_LINUX: ${{ steps.analyze-flaky-tests.outputs.STATUS_LINUX }}
-      STATUS_WINDOWS: ${{ steps.analyze-flaky-tests.outputs.STATUS_WINDOWS }}
-      STATUS_MACOS: ${{ steps.analyze-flaky-tests.outputs.STATUS_MACOS }}
     steps:
       - name: e2e/set-required-variables
         id: variables
         run: |
           RUNNER_OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
           echo "RUNNER_OS=${RUNNER_OS}" >> $GITHUB_ENV
-          echo "CI_ENVIRONMENT_NAME=@${RUNNER_OS}" >> $GITHUB_ENV
+          # Report-only tag for Playwright blob/HTML output (@ci-* avoids colliding with
+          # platform selection grep tokens @linux/@darwin/@win32 in playwright.config.ts).
+          echo "CI_ENVIRONMENT_NAME=@ci-${RUNNER_OS}" >> $GITHUB_ENV
           
           # Define build type and suffix
-          # inputs.TYPE takes precedence when provided by the caller (e.g. RELEASE, MASTER, PR).
+          # inputs.TYPE takes precedence when provided by the caller (PR, MASTER, CMT).
           INPUT_TYPE="${{ inputs.TYPE }}"
           case "${{ github.event_name }}" in
             "pull_request")
@@ -163,61 +134,85 @@ jobs:
               ;;
             "workflow_dispatch")
               if ${{ inputs.cmt }}; then
-                echo "BUILD_SUFFIX=desktop-release-${RUNNER_OS}" >> $GITHUB_OUTPUT
+                echo "BUILD_SUFFIX=desktop-cmt-${RUNNER_OS}" >> $GITHUB_OUTPUT
                 echo "TYPE=${INPUT_TYPE:-CMT}" >> $GITHUB_ENV
                 echo "ZEPHYR_ENABLE=true" >> $GITHUB_ENV
-                echo "ZEPHYR_FOLDER_${RUNNER_OS^^}_REPORT=${{
+                # Use tr, not ${var^^} — macOS runners ship Bash 3.2 which rejects ^^.
+                RUNNER_OS_UPPER=$(echo "${RUNNER_OS}" | tr '[:lower:]' '[:upper:]')
+                echo "ZEPHYR_FOLDER_${RUNNER_OS_UPPER}_REPORT=${{
                   runner.os == 'Linux' && '12358649' ||
                   runner.os == 'macOS' && '12358650' ||
                   '12358651'
                 }}" >> $GITHUB_ENV
               else
-                echo "BUILD_SUFFIX=desktop-manual-trigger-${RUNNER_OS}" >> $GITHUB_OUTPUT
-                echo "TYPE=${INPUT_TYPE:-MANUAL}" >> $GITHUB_ENV
+                # Matterwick PR / master dispatches land here (workflow_call → this template
+                # still sees workflow_dispatch as the root event on the caller).
+                TYPE_VALUE="${INPUT_TYPE:-PR}"
+                TYPE_LOWER=$(echo "${TYPE_VALUE}" | tr '[:upper:]' '[:lower:]')
+                echo "BUILD_SUFFIX=desktop-${TYPE_LOWER}-${RUNNER_OS}" >> $GITHUB_OUTPUT
+                echo "TYPE=${TYPE_VALUE}" >> $GITHUB_ENV
               fi
               ;;
             "push")
-              echo "BUILD_SUFFIX=desktop-push-${RUNNER_OS}" >> $GITHUB_OUTPUT
+              echo "BUILD_SUFFIX=desktop-master-${RUNNER_OS}" >> $GITHUB_OUTPUT
+              echo "TYPE=${INPUT_TYPE:-MASTER}" >> $GITHUB_ENV
               ;;
           esac
-
-          if ${{ inputs.nightly }}; then
-            echo "BUILD_SUFFIX=desktop-nightly-${RUNNER_OS}" >> $GITHUB_OUTPUT
-            echo "TYPE=NIGHTLY" >> $GITHUB_ENV
-          fi
 
       - name: e2e/set-build-id
         run: echo "BUILD_ID=${{ github.run_id }}-${{ steps.variables.outputs.BUILD_SUFFIX }}" >> $GITHUB_ENV
 
       - name: e2e/checkout-repo
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ inputs.DESKTOP_VERSION }}
 
       - name: e2e/setup-node
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '22.x'
-          cache: "npm"
-          cache-dependency-path: package-lock.json
+          package-manager-cache: false
+          # node_modules is cached in e2e/cache-node-modules; disable setup-node's
+          # npm cache so actions/cache v5 does not hit legacy entries.
+
+      - name: e2e/use-gnu-tar-macos
+        if: runner.os == 'macOS'
+        run: echo "/opt/homebrew/opt/gnu-tar/libexec/gnubin" >> $GITHUB_PATH
 
       - name: e2e/cache-node-modules
         id: cache-node-modules
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             node_modules
-            C:\Users\runneradmin\.electron-gyp
-          key: ${{ runner.os }}-build-node-modules-${{ hashFiles('**/package-lock.json') }}
+            e2e/node_modules
+          enableCrossOsArchive: false
+          # v7: exact restore only — avoids probing legacy v6 blobs that warn on macOS
+          key: ${{ runner.os }}-build-node-modules-v7-${{ hashFiles('**/package-lock.json') }}
+
+      - name: e2e/cache-electron-gyp-windows
+        if: runner.os == 'Windows'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: C:\Users\runneradmin\.electron-gyp
+          enableCrossOsArchive: false
+          key: ${{ runner.os }}-electron-gyp-v7-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-build-node-modules
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
+            ${{ runner.os }}-electron-gyp-v7-${{ hashFiles('**/package-lock.json') }}
 
       - name: e2e/setup-python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        env:
+          # Bypass pip's on-disk HTTP cache entirely so a stale/corrupt entry on the
+          # runner image cannot trigger deserialization warnings (actions/setup-python#1317).
+          PIP_NO_CACHE_DIR: "1"
         with:
-          python-version: "3.10"
+          # Use a version pre-installed on macOS-26 (3.13 is in its toolcache), so
+          # setup-python doesn't install a mismatched interpreter whose pip can't
+          # deserialize the image's pre-baked cache. PIP_NO_CACHE_DIR above is the
+          # remaining guard for non-macOS runners.
+          python-version: "3.13"
+          # Omit `cache` — setup-python only accepts pip/pipenv/poetry, not `false`.
 
       - name: e2e/install-os-dependencies
         uses: ./.github/actions/install-os-dependencies
@@ -229,6 +224,22 @@ jobs:
           npm ci
           cd e2e && npm ci
 
+      - name: e2e/enable-public-links
+        if: env.MM_TEST_SERVER_URL != ''
+        run: cd e2e && npm run enable-public-links
+
+      - name: e2e/suppress-macos-dialogs
+        if: runner.os == 'macOS'
+        run: |
+          # Suppress the "Reopen windows" dialog that blocks Electron startup
+          # when a previous test instance was killed by SIGTERM/SIGKILL.
+          # The global-setup.ts also does this, but running it here as well ensures
+          # the setting is applied even if the Playwright globalSetup step is skipped.
+          defaults write com.github.Electron NSQuitAlwaysKeepsWindows -bool false || true
+          defaults write com.github.Electron ApplePersistenceIgnoreState -bool YES || true
+          defaults write com.apple.LaunchServices LSQuarantine -bool false || true
+          defaults write com.apple.CrashReporter DialogType none || true
+
       - name: e2e/run-playwright-tests-linux
         if: runner.os == 'Linux'
         run: |
@@ -238,7 +249,7 @@ jobs:
           cd e2e
           export PW_CHROMIUM_ARGS="--disable-gpu --no-sandbox --disable-dev-shm-usage"
           set +e
-          xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' npm test
+          xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' npm test -- --project=linux
           echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
@@ -254,7 +265,7 @@ jobs:
           echo "Running E2E tests…"
           cd e2e
           set +e
-          npm test
+          npm test -- --project=darwin
           echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
@@ -267,59 +278,54 @@ jobs:
           npm run build-test
           cd e2e
           set +e
-          npm test
+          npm test -- --project=win32
           echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
           CI_ENVIRONMENT_NAME: ${{ env.CI_ENVIRONMENT_NAME }}
 
-      - name: e2e/analyze-flaky-tests
-        id: analyze-flaky-tests
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        with:
-          script: |
-            process.chdir('./e2e');
-            const { analyzeFlakyTests } = require('./utils/analyze-flaky-test.js');
-            const { failureCount, os } = analyzeFlakyTests();
-            const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
-            const testStatus = failureCount > 0 || Number(process.env.PLAYWRIGHT_EXIT_CODE || 0) !== 0 ? 'failure' : 'success';
-            switch (os) {
-              case 'linux':
-                core.setOutput('NEW_FAILURES_LINUX', String(failureCount));
-                core.setOutput('REPORT_LINK_LINUX', runUrl);
-                core.setOutput('STATUS_LINUX', testStatus);
-                break;
-              case 'darwin':
-                core.setOutput('NEW_FAILURES_MACOS', String(failureCount));
-                core.setOutput('REPORT_LINK_MACOS', runUrl);
-                core.setOutput('STATUS_MACOS', testStatus);
-                break;
-              case 'win32':
-                core.setOutput('NEW_FAILURES_WINDOWS', String(failureCount));
-                core.setOutput('REPORT_LINK_WINDOWS', runUrl);
-                core.setOutput('STATUS_WINDOWS', testStatus);
-                break;
-              default:
-                throw new Error(`Unsupported OS: ${os}`);
-            }
+      - name: e2e/write-tsio-failure-stub
+        if: ${{ always() && inputs.tsio-config != '' && hashFiles('e2e/test-results/results.json') == '' && (failure() || cancelled() || (env.PLAYWRIGHT_EXIT_CODE != '0' && env.PLAYWRIGHT_EXIT_CODE != '')) }}
+        run: node e2e/utils/write-tsio-failure-stub.mjs
+        env:
+          TSIO_GH_JOB_NAME: e2e-on-${{ inputs.runs-on }}-${{ inputs.MM_SERVER_VERSION }}
+          PLAYWRIGHT_EXIT_CODE: ${{ env.PLAYWRIGHT_EXIT_CODE }}
 
-      - name: Upload Playwright blob report
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: blob-report-${{ env.RUNNER_OS }}
-          path: |
-            e2e/blob-report
-          if-no-files-found: ignore
-          retention-days: 7
+      # report-upload walks every png/jpg under screenshots-dir; Electron userdata
+      # under e2e/test-results includes cache icons, so collect failure shots only.
+      - name: e2e/collect-tsio-screenshots
+        if: ${{ always() && inputs.tsio-config != '' && hashFiles('e2e/test-results/results.json') != '' }}
+        run: node e2e/utils/collect-tsio-screenshots.mjs
 
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      # Reporting only — a TSIO/upload flake (e.g. screenshot 504) must not fail
+      # the job when Playwright already passed. Commit status still comes from TSIO summary.
+      - name: e2e/upload-report-to-tsio
+        if: ${{ always() && inputs.tsio-config != '' && hashFiles('e2e/test-results/results.json') != '' }}
+        continue-on-error: true
+        uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@45fb048848edc392f398144f45e2f3e30f43aeaa # release-0.12.0 / main@45fb048 (#81 Maestro FilePath + Detox paths, #82 background finalize)
         with:
-          name: test-results-${{ env.RUNNER_OS }}
-          path: |
-            e2e/test-results
-          if-no-files-found: ignore
-          retention-days: 7
+          composite-identity: ${{ toJSON(fromJSON(inputs.tsio-config).composite_identity) }}
+          total-reports-expected: ${{ fromJSON(inputs.tsio-config).total_reports_expected }}
+          framework: playwright
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # MUST match this job's `name:` field above.
+          gh-job-name: e2e-on-${{ inputs.runs-on }}-${{ inputs.MM_SERVER_VERSION }}
+          json-path: e2e/test-results/results.json
+          screenshots-dir: e2e/test-results/tsio-screenshots
+
+      - name: e2e/handle-nonzero-playwright-exit
+        if: always()
+        run: |
+          if [ "${PLAYWRIGHT_EXIT_CODE:-1}" = "0" ]; then
+            exit 0
+          fi
+          if [ -n "${TSIO_CONFIG}" ]; then
+            echo "::warning::Playwright exited with code ${PLAYWRIGHT_EXIT_CODE:-unset} — not failing the job on this alone, see TSIO report for actual test results"
+          else
+            echo "Playwright exited with code ${PLAYWRIGHT_EXIT_CODE:-unset} and no TSIO config is set for this run — failing the job since there is no other failure signal" >&2
+            exit 1
+          fi
+        env:
+          TSIO_CONFIG: ${{ inputs.tsio-config }}
+

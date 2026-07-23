@@ -41,6 +41,7 @@ import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH} from 'common/utils/constant
 import * as Validator from 'common/Validator';
 import ViewManager from 'common/views/viewManager';
 import {boundsInfoPath} from 'main/constants';
+import {registerMainWindowE2EReadiness} from 'main/e2e/appReady';
 import {localizeMessage} from 'main/i18nManager';
 import performanceMonitor from 'main/performanceMonitor';
 import ThemeManager from 'main/themeManager';
@@ -89,6 +90,8 @@ export class MainWindow extends EventEmitter {
         if (!this.win) {
             throw new Error('unable to create main window');
         }
+
+        registerMainWindowE2EReadiness(this.win.browserWindow);
 
         this.win.browserWindow.webContents.once('did-finish-load', () => {
             if (!this.win || this.win.browserWindow.isDestroyed()) {

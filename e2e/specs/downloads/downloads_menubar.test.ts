@@ -7,7 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig} from '../../helpers/config';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {closeElectronAppFast} from '../../helpers/electronApp';
 
 const file1 = {
     addedAt: Date.UTC(2022, 8, 8, 10), // Sep 08, 2022 10:00AM UTC
@@ -73,7 +73,7 @@ async function launchApp(userDataDir: string, downloadsData: Record<string, unkn
 
 test.describe('downloads/downloads_menubar', () => {
     test.describe('The download list is empty', () => {
-        test('MM-22239 should not show the downloads dropdown and the menu item should be disabled', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
+        test('MM-T6139 should not show the downloads dropdown and the menu item should be disabled', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
             const userDataDir = path.join(testInfo.outputDir, 'userdata');
             const app = await launchApp(userDataDir, {});
 
@@ -96,14 +96,13 @@ test.describe('downloads/downloads_menubar', () => {
 
                 expect(saveMenuItem).toHaveProperty('enabled', false);
             } finally {
-                await app.close();
-                await waitForLockFileRelease(userDataDir);
+                await closeElectronAppFast(app, userDataDir);
             }
         });
     });
 
     test.describe('The download list has one file', () => {
-        test('MM-22239 should show the downloads dropdown button and the menu item should be enabled', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
+        test('MM-T6140 should show the downloads dropdown button and the menu item should be enabled', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
             const userDataDir = path.join(testInfo.outputDir, 'userdata');
             const downloadsLocation = path.join(userDataDir, 'Downloads');
             createDownloadedFile(downloadsLocation);
@@ -128,13 +127,12 @@ test.describe('downloads/downloads_menubar', () => {
 
                 expect(saveMenuItem).toHaveProperty('enabled', true);
             } finally {
-                await app.close();
-                await waitForLockFileRelease(userDataDir);
+                await closeElectronAppFast(app, userDataDir);
                 fs.rmSync(downloadsLocation, {recursive: true, force: true});
             }
         });
 
-        test('MM-22239 should open the downloads dropdown when clicking the download button in the menubar', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
+        test('MM-T6141 should open the downloads dropdown when clicking the download button in the menubar', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
             const userDataDir = path.join(testInfo.outputDir, 'userdata');
             const downloadsLocation = path.join(userDataDir, 'Downloads');
             createDownloadedFile(downloadsLocation);
@@ -156,13 +154,12 @@ test.describe('downloads/downloads_menubar', () => {
                 const isVisible = await downloadsWindow.isVisible('.DownloadsDropdown');
                 expect(isVisible).toBe(true);
             } finally {
-                await app.close();
-                await waitForLockFileRelease(userDataDir);
+                await closeElectronAppFast(app, userDataDir);
                 fs.rmSync(downloadsLocation, {recursive: true, force: true});
             }
         });
 
-        test('MM-22239 should open the downloads dropdown from the app menu', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
+        test('MM-T6142 should open the downloads dropdown from the app menu', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
             const userDataDir = path.join(testInfo.outputDir, 'userdata');
             const downloadsLocation = path.join(userDataDir, 'Downloads');
             createDownloadedFile(downloadsLocation);
@@ -186,8 +183,7 @@ test.describe('downloads/downloads_menubar', () => {
                 const isVisible = await downloadsWindow.isVisible('.DownloadsDropdown');
                 expect(isVisible).toBe(true);
             } finally {
-                await app.close();
-                await waitForLockFileRelease(userDataDir);
+                await closeElectronAppFast(app, userDataDir);
                 fs.rmSync(downloadsLocation, {recursive: true, force: true});
             }
         });

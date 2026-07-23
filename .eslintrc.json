@@ -94,7 +94,8 @@
         {
             "files": [
                 "e2e/**/*",
-                "src/**/*.test.js"
+                "src/**/*.test.js",
+                "src/**/*.test.ts"
             ],
             "env": {
                 "jest": true
