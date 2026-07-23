@@ -50,6 +50,7 @@ import CriticalErrorHandler from 'main/CriticalErrorHandler';
 import DeveloperMode from 'main/developerMode';
 import downloadsManager from 'main/downloadsManager';
 import {maybeRegisterE2eHooks} from 'main/e2e/register';
+import ExternalBrowserManager from 'main/externalBrowserManager';
 import i18nManager from 'main/i18nManager';
 import NonceManager from 'main/nonceManager';
 import {getDoNotDisturb} from 'main/notifications';
@@ -314,6 +315,7 @@ async function initializeAfterAppReady() {
         handleUpdateTheme();
     }
 
+    ExternalBrowserManager.init();
     MainWindow.show();
 
     const updateServerInfo = (serverId: string) => {
