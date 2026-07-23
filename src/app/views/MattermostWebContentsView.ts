@@ -22,6 +22,7 @@ import {
     SERVER_URL_CHANGED,
     BROWSER_HISTORY_PUSH,
     RELOAD_VIEW,
+    UPDATE_SHORTCUT_MENU,
 } from 'common/communication';
 import type {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -95,6 +96,8 @@ export class MattermostWebContentsView extends EventEmitter {
         });
         this.webContentsView.webContents.on('did-navigate-in-page', () => this.handlePageTitleUpdated(this.webContentsView.webContents.getTitle()));
         this.webContentsView.webContents.on('page-title-updated', (_, newTitle) => this.handlePageTitleUpdated(newTitle));
+        this.webContentsView.webContents.on('devtools-focused', this.emitShortcutMenuUpdate);
+        this.webContentsView.webContents.on('devtools-closed', this.emitShortcutMenuUpdate);
 
         if (!DeveloperMode.get('disableContextMenu')) {
             this.contextMenu = new ContextMenu(this.generateContextMenu(), this.webContentsView.webContents);
@@ -454,6 +457,8 @@ export class MattermostWebContentsView extends EventEmitter {
     /**
      * WebContents event handlers
      */
+
+    private emitShortcutMenuUpdate = () => ipcMain.emit(UPDATE_SHORTCUT_MENU);
 
     private handleUpdateTarget = (e: Event, url: string) => {
         this.log.silly('handleUpdateTarget');

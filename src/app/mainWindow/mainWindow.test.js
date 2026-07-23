@@ -4,9 +4,9 @@
 import fs from 'fs';
 import path from 'path';
 
-import {BrowserWindow, screen, app, dialog} from 'electron';
+import {BrowserWindow, screen, app, dialog, ipcMain} from 'electron';
 
-import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB} from 'common/communication';
+import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, UPDATE_SHORTCUT_MENU} from 'common/communication';
 import Config from 'common/config';
 import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH} from 'common/utils/constants';
 import * as Validator from 'common/Validator';
@@ -36,6 +36,7 @@ jest.mock('electron', () => ({
     ipcMain: {
         handle: jest.fn(),
         on: jest.fn(),
+        emit: jest.fn(),
     },
     screen: {
         getDisplayMatching: jest.fn(),
@@ -541,6 +542,38 @@ describe('main/windows/mainWindow', () => {
             });
             expect(window.webContents.send).toHaveBeenCalledWith(SELECT_NEXT_TAB);
             expect(window.webContents.send).toHaveBeenCalledWith(SELECT_PREVIOUS_TAB);
+        });
+
+        it('should register devtools-focused listener in init', () => {
+            const mainWindow = new MainWindow();
+            mainWindow.init();
+            const onCalls = baseWindow.webContents.on.mock.calls;
+            expect(onCalls.some(([e]) => e === 'devtools-focused')).toBe(true);
+        });
+
+        it('should register devtools-closed listener in init', () => {
+            const mainWindow = new MainWindow();
+            mainWindow.init();
+            const onCalls = baseWindow.webContents.on.mock.calls;
+            expect(onCalls.some(([e]) => e === 'devtools-closed')).toBe(true);
+        });
+
+        it('should emit UPDATE_SHORTCUT_MENU when devtools-focused fires', () => {
+            const mainWindow = new MainWindow();
+            mainWindow.init();
+            const devToolsFocusedCall = baseWindow.webContents.on.mock.calls.find(([e]) => e === 'devtools-focused');
+            expect(devToolsFocusedCall).toBeDefined();
+            devToolsFocusedCall[1]();
+            expect(ipcMain.emit).toHaveBeenCalledWith(UPDATE_SHORTCUT_MENU);
+        });
+
+        it('should emit UPDATE_SHORTCUT_MENU when devtools-closed fires', () => {
+            const mainWindow = new MainWindow();
+            mainWindow.init();
+            const devToolsClosedCall = baseWindow.webContents.on.mock.calls.find(([e]) => e === 'devtools-closed');
+            expect(devToolsClosedCall).toBeDefined();
+            devToolsClosedCall[1]();
+            expect(ipcMain.emit).toHaveBeenCalledWith(UPDATE_SHORTCUT_MENU);
         });
     });
 
