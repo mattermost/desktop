@@ -9,8 +9,10 @@ import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {getFilePublicLink, isPublicLinkEnabled} from '../../helpers/server_api/publicLinks';
 import type {ServerView} from '../../helpers/serverView';
 
-// 64x64 PNG — above Mattermost's 48px inline-image minimum so thumbnails render visibly.
-const PREVIEW_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAf0lEQVR4nNXOQREAIAzAsFJJ8y8FMYjgsWsU5NwZyiRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4iRO4twO/HqSogHAzFmDswAAAABJRU5ErkJggg==';
+// Valid 128x128 PNG. The previous fixture was rejected by the server decoder
+// ("png: invalid format: too much pixel data"), so no preview was generated and
+// SizeAwareImage (MM-69174 / 11.10+) ignored clicks until load forever.
+const PREVIEW_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAACx0lEQVR4nO3dsVEbQRhH8ZWHOuyAHogcEVAClTgmcGpX4hIIlNgRPRC4EjnYmRuNYARrab/3P/R+kQMh43333Z1kFm12u10b8eXnn6HH//321ec/4tPQo3V2BoAZAGYAmAFgBoAZAGYAmAFgBoAZAGYAmAFgBoAZAHaV9v74pT2/EwAzAMwAMAPADAAzAMwAMAPADAAzAMwAMAPADAAzAMwAsM3q9gdsf30//oDrp8dTnv/A7P8/uBp6NOXNRd/3fHO3/Pl4jATRAYbW/VVLjNgSoQFOX/oDvURghrgAZ1/6fc83d9vWbu8f5v0Vo7LugvZP3/NMbTwqZQJqln7RGySMQsQEFK/+ImEU+ADU6nd4AzgAu/od24AMkLD6HdgAC5Cz+h3VgAmQtvod0gAIkLn6XX0D/i7owlUHSD78u+Ih2Hz+8XvoC055fxy/6X6/5W079wd8cHUBVnT4t8JTpRMAKwqwrsO/qxkCJwBmAFhFgDWef7qCs5ATADMAzACw6QHWewHoZn//TgDMADADwAwAm74/YO0X4Tb4I71+fsDKGABmAJgBYAaATQ8QuCtoyOzv3wmAGQBmAFhFgPVeBgo2kTkBMAPAigKs8SxUs4nVCYDVBVjXEJTt4S79/IDt0Feiln/mh9ofkPCrAd6jclirrwH5DYpPlV6EYUCA5CGov1NgJiCzAXKfhp2C0hpQd8nkNSCnAfgaBb4IJzRgXyHyd0FsA/z1OR+gcQ3w1W85v7SvNyj7OcaEpe8iJmBRMwo5q9/SArTWrp8e5y3Q7f1D1Oq3nFPQgb5MZ9wlmnC79arQAN1ytP53idh1X/j5AW/w8wMOHRzUowuUJu4ifGkMADMAzAAwA8AMADMAzAAwA8AMADMAzAAwA8AMACvdH+Dzv+QEwAwAMwDMADADwAwAMwDMADADwAwAMwDMADADwAwAMwDsH5fw4xGXqkx/AAAAAElFTkSuQmCC';
 
 const PREVIEW_MODAL_SELECTOR = [
     '.file-preview-modal',
