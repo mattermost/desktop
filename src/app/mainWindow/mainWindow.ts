@@ -142,20 +142,21 @@ export class MainWindow extends EventEmitter {
     }
 
     show = () => {
-        if (this.win && this.isReady) {
+        const browserWindow = this.get();
+        if (browserWindow && this.isReady) {
             // There's a bug on Windows in Electron where if the window is snapped, it will unsnap when you call show()
             // See here: https://github.com/electron/electron/issues/25359
             // So to make sure we always show the window on macOS/Linux (need for workspace switching)
             // We make an exception here
             if (process.platform === 'win32') {
-                if (this.win.browserWindow.isVisible()) {
-                    this.win.browserWindow.focus();
+                if (browserWindow.isVisible()) {
+                    browserWindow.focus();
                 } else {
-                    this.win.browserWindow.show();
+                    browserWindow.show();
                 }
             } else {
                 log.info('showing main window');
-                this.win.browserWindow.show();
+                browserWindow.show();
             }
         } else {
             this.init();
@@ -270,11 +271,12 @@ export class MainWindow extends EventEmitter {
     };
 
     private onBlur = () => {
-        if (!this.win) {
+        const browserWindow = this.get();
+        if (!browserWindow) {
             return;
         }
 
-        this.emit(MAIN_WINDOW_RESIZED, this.win?.browserWindow.getContentBounds());
+        this.emit(MAIN_WINDOW_RESIZED, browserWindow.getContentBounds());
         ipcMain.emit(TOGGLE_SECURE_INPUT, null, false);
 
         // App should save bounds when a window is closed.
@@ -282,7 +284,7 @@ export class MainWindow extends EventEmitter {
         // because main process is killed in such situations.
         // 'blur' event was effective in order to avoid this.
         // Ideally, app should detect that OS is shutting down.
-        this.saveWindowState(boundsInfoPath, this.win.browserWindow);
+        this.saveWindowState(boundsInfoPath, browserWindow);
     };
 
     private onClose = (event: Event) => {
