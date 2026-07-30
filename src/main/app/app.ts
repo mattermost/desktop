@@ -38,6 +38,15 @@ export function handleAppSecondInstance(event: Event, argv: string[]) {
     }
 }
 
+export function handleAppActivate() {
+    if (app.isReady()) {
+        MainWindow.show();
+    } else {
+        // On macOS 'activate' can fire before 'ready' (e.g. clicking the dock icon while still launching).
+        app.once('ready', () => MainWindow.show());
+    }
+}
+
 export function handleAppWindowAllClosed() {
     log.debug('handleAppWindowAllClosed');
 

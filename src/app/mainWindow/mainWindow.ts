@@ -131,7 +131,10 @@ export class MainWindow extends EventEmitter {
     }
 
     get = () => {
-        return this.win?.browserWindow;
+        if (!this.win || this.win.browserWindow.isDestroyed()) {
+            return undefined;
+        }
+        return this.win.browserWindow;
     };
 
     get window() {
@@ -164,7 +167,7 @@ export class MainWindow extends EventEmitter {
     };
 
     getBounds = () => {
-        return this.win?.browserWindow.getContentBounds();
+        return this.get()?.getContentBounds();
     };
 
     private shouldStartFullScreen = () => {
@@ -217,6 +220,10 @@ export class MainWindow extends EventEmitter {
     };
 
     private saveWindowState = (file: string, window: BrowserWindow) => {
+        if (window.isDestroyed()) {
+            return;
+        }
+
         const windowState: SavedWindowState = {
             ...window.getBounds(),
             maximized: window.isMaximized(),
