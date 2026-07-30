@@ -65,6 +65,7 @@ import updateNotifier from 'main/updateNotifier';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 
 import {
+    handleAppActivate,
     handleAppBeforeQuit,
     handleAppBrowserWindowCreated,
     handleAppCertificateError,
@@ -187,7 +188,7 @@ function initializeAppEventListeners() {
     app.on('second-instance', handleAppSecondInstance);
     app.on('window-all-closed', handleAppWindowAllClosed);
     app.on('browser-window-created', handleAppBrowserWindowCreated);
-    app.on('activate', () => MainWindow.show());
+    app.on('activate', handleAppActivate);
     app.on('before-quit', handleAppBeforeQuit);
     app.on('certificate-error', handleAppCertificateError);
     app.on('child-process-gone', handleChildProcessGone);

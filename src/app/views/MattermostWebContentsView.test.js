@@ -124,7 +124,7 @@ const view = new MattermostView(server, ViewType.TAB);
 
 describe('main/views/MattermostWebContentsView', () => {
     describe('load', () => {
-        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
         const mattermostView = new MattermostWebContentsView(view, {}, window);
 
         beforeEach(() => {
@@ -190,7 +190,7 @@ describe('main/views/MattermostWebContentsView', () => {
     });
 
     describe('retry', () => {
-        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
         const mattermostView = new MattermostWebContentsView(view, {}, window);
         const retryInBackgroundFn = jest.fn();
 
@@ -254,7 +254,7 @@ describe('main/views/MattermostWebContentsView', () => {
     });
 
     describe('retryInBackground', () => {
-        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
         const mattermostView = new MattermostWebContentsView(view, {}, window);
         mattermostView.reload = jest.fn();
 
@@ -272,7 +272,7 @@ describe('main/views/MattermostWebContentsView', () => {
     });
 
     describe('goToOffset', () => {
-        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
         const mattermostView = new MattermostWebContentsView(view, {}, window);
         mattermostView.reload = jest.fn();
 
@@ -302,7 +302,7 @@ describe('main/views/MattermostWebContentsView', () => {
     });
 
     describe('loadSuccess', () => {
-        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
         const mattermostView = new MattermostWebContentsView(view, {}, window);
 
         beforeEach(() => {
@@ -331,7 +331,7 @@ describe('main/views/MattermostWebContentsView', () => {
     });
 
     describe('updateHistoryButton', () => {
-        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
         const mattermostView = new MattermostWebContentsView(view, {}, window);
 
         beforeEach(() => {
@@ -463,7 +463,7 @@ describe('main/views/MattermostWebContentsView', () => {
     });
 
     describe('handleUpdateTarget', () => {
-        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
         const mattermostView = new MattermostWebContentsView(view, {}, window);
 
         beforeEach(() => {
@@ -495,7 +495,7 @@ describe('main/views/MattermostWebContentsView', () => {
     });
 
     describe('handlePageTitleUpdated', () => {
-        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
         const mattermostView = new MattermostWebContentsView(view, {}, window);
 
         beforeEach(() => {
@@ -556,7 +556,7 @@ describe('main/views/MattermostWebContentsView', () => {
     });
 
     describe('useLastPath', () => {
-        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
         let mattermostView;
 
         beforeEach(() => {
@@ -632,21 +632,21 @@ describe('main/views/MattermostWebContentsView', () => {
         });
 
         it('should register devtools-focused listener permanently', () => {
-            const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+            const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
             const mattermostView = new MattermostWebContentsView(view, {}, window);
             const onCalls = mattermostView.webContentsView.webContents.on.mock.calls;
             expect(onCalls.some(([e]) => e === 'devtools-focused')).toBe(true);
         });
 
         it('should register devtools-closed listener permanently', () => {
-            const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+            const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
             const mattermostView = new MattermostWebContentsView(view, {}, window);
             const onCalls = mattermostView.webContentsView.webContents.on.mock.calls;
             expect(onCalls.some(([e]) => e === 'devtools-closed')).toBe(true);
         });
 
         it('should emit UPDATE_SHORTCUT_MENU when devtools-focused fires', () => {
-            const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+            const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
             const mattermostView = new MattermostWebContentsView(view, {}, window);
             const onCall = mattermostView.webContentsView.webContents.on.mock.calls.find(([e]) => e === 'devtools-focused');
             expect(onCall).toBeDefined();
@@ -655,7 +655,7 @@ describe('main/views/MattermostWebContentsView', () => {
         });
 
         it('should emit UPDATE_SHORTCUT_MENU when devtools-closed fires', () => {
-            const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+            const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
             const mattermostView = new MattermostWebContentsView(view, {}, window);
             const onCall = mattermostView.webContentsView.webContents.on.mock.calls.find(([e]) => e === 'devtools-closed');
             expect(onCall).toBeDefined();
@@ -665,7 +665,7 @@ describe('main/views/MattermostWebContentsView', () => {
     });
 
     describe('openDevTools', () => {
-        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
         let mattermostView;
 
         beforeEach(() => {

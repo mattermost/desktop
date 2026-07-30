@@ -586,6 +586,7 @@ describe('main/windows/mainWindow', () => {
                 isVisible: jest.fn(() => mainWindow.win.browserWindow.visible),
                 show: jest.fn(),
                 focus: jest.fn(),
+                isDestroyed: jest.fn(() => false),
             },
         };
         mainWindow.init = jest.fn();
