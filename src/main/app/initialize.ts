@@ -334,11 +334,7 @@ async function initializeAfterAppReady() {
     const defaultSession = session.defaultSession;
     defaultSession.webRequest.onBeforeRequest(async (details, callback) => {
         try {
-            const shouldCancel = await shouldCancelLocalNetworkRequest(
-                details,
-                ServerManager.getAllServers().map((server) => server.url),
-                (webContentsId) => Boolean(WebContentsManager.getViewByWebContentsId(webContentsId)),
-            );
+            const shouldCancel = await shouldCancelLocalNetworkRequest(details);
 
             if (shouldCancel) {
                 log.warn('Blocked server content from accessing local or private network URL', {

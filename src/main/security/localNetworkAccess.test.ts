@@ -7,11 +7,23 @@ import {
     shouldBlockLocalNetworkRequest,
 } from './localNetworkAccess';
 
+jest.mock('app/views/webContentsManager', () => ({
+    getViewByWebContentsId: jest.fn(),
+}));
+
+jest.mock('common/servers/serverManager', () => ({
+    getAllServers: jest.fn(),
+}));
+
 describe('main/security/localNetworkAccess', () => {
     const emptyLookup = jest.fn().mockResolvedValue([]);
+    const WebContentsManager = jest.requireMock('app/views/webContentsManager');
+    const ServerManager = jest.requireMock('common/servers/serverManager');
 
     beforeEach(() => {
         emptyLookup.mockClear();
+        WebContentsManager.getViewByWebContentsId.mockImplementation((webContentsId: number) => (webContentsId === 1 ? {id: 1} : undefined));
+        ServerManager.getAllServers.mockReturnValue([{url: new URL('http://127.0.0.1:8065')}]);
     });
 
     describe('isLocalOrPrivateIPAddress', () => {
@@ -91,16 +103,12 @@ describe('main/security/localNetworkAccess', () => {
     });
 
     describe('shouldCancelLocalNetworkRequest', () => {
-        const isServerWebContents = (webContentsId: number) => webContentsId === 1;
-
         it('blocks server view requests using webContentsId', async () => {
             await expect(shouldCancelLocalNetworkRequest(
                 {
                     url: 'http://127.0.0.1:7777/secret',
                     webContentsId: 1,
                 },
-                [new URL('http://127.0.0.1:8065')],
-                isServerWebContents,
                 emptyLookup,
             )).resolves.toBe(true);
         });
@@ -111,8 +119,6 @@ describe('main/security/localNetworkAccess', () => {
                     url: 'http://127.0.0.1:8065/api/v4/system/ping',
                     webContentsId: 1,
                 },
-                [new URL('http://127.0.0.1:8065')],
-                isServerWebContents,
                 emptyLookup,
             )).resolves.toBe(false);
         });
@@ -123,8 +129,6 @@ describe('main/security/localNetworkAccess', () => {
                     url: 'http://127.0.0.1:7777/secret',
                     webContentsId: 2,
                 },
-                [new URL('http://127.0.0.1:8065')],
-                isServerWebContents,
                 emptyLookup,
             )).resolves.toBe(false);
         });
@@ -134,8 +138,6 @@ describe('main/security/localNetworkAccess', () => {
                 {
                     url: 'http://127.0.0.1:7777/secret',
                 },
-                [new URL('http://127.0.0.1:8065')],
-                isServerWebContents,
                 emptyLookup,
             )).resolves.toBe(true);
         });
@@ -145,8 +147,6 @@ describe('main/security/localNetworkAccess', () => {
                 {
                     url: 'http://127.0.0.1:8065/api/v4/websocket',
                 },
-                [new URL('http://127.0.0.1:8065')],
-                isServerWebContents,
                 emptyLookup,
             )).resolves.toBe(false);
         });
@@ -157,8 +157,6 @@ describe('main/security/localNetworkAccess', () => {
                 {
                     url: 'https://mattermost.com',
                 },
-                [new URL('http://127.0.0.1:8065')],
-                isServerWebContents,
                 lookup,
             )).resolves.toBe(false);
         });

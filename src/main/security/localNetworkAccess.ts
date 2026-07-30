@@ -4,6 +4,8 @@
 import dns from 'dns/promises';
 import {BlockList, isIP} from 'net';
 
+import WebContentsManager from 'app/views/webContentsManager';
+import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
 
 type LookupAddress = {
@@ -17,10 +19,9 @@ export type LocalNetworkRequestDetails = {
     webContentsId?: number;
 }
 
-type IsServerWebContents = (webContentsId: number) => boolean;
-
 const defaultLookup: LookupFunction = (hostname: string) => dns.lookup(hostname, {all: true, verbatim: true});
 
+// Address ranges handled by the request policy.
 const LOCAL_NETWORK_BLOCKLIST = new BlockList();
 
 LOCAL_NETWORK_BLOCKLIST.addSubnet('0.0.0.0', 8, 'ipv4');
@@ -36,14 +37,13 @@ LOCAL_NETWORK_BLOCKLIST.addSubnet('fe80::', 10, 'ipv6');
 
 export async function shouldCancelLocalNetworkRequest(
     details: LocalNetworkRequestDetails,
-    serverURLs: URL[],
-    isServerWebContents: IsServerWebContents,
     lookup: LookupFunction = defaultLookup,
 ): Promise<boolean> {
-    if (details.webContentsId && !isServerWebContents(details.webContentsId)) {
+    if (details.webContentsId && !WebContentsManager.getViewByWebContentsId(details.webContentsId)) {
         return false;
     }
 
+    const serverURLs = ServerManager.getAllServers().map((server) => server.url);
     return shouldBlockLocalNetworkRequest(details.url, serverURLs, lookup);
 }
 
