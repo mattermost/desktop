@@ -1,0 +1,1470 @@
+{
+  "app.menus.contextMenu.copyEmailAddress": {
+    "defaultMessage": "Copy Email Address",
+    "description": "Right-click context menu item shown on mailto: links; copies the email address to the clipboard."
+  },
+  "app.menus.contextMenu.openInNewTab": {
+    "defaultMessage": "Open in new tab",
+    "description": "Right-click context menu item shown on internal Mattermost links inside a server view; opens the link in a new tab."
+  },
+  "app.menus.contextMenu.openInNewWindow": {
+    "defaultMessage": "Open in new window",
+    "description": "Right-click context menu item shown on internal Mattermost links inside a server view; opens the link in a new separate window."
+  },
+  "app.navigationManager.invalidLinkDescription": {
+    "defaultMessage": "The link you clicked appears to be malformed and cannot be opened. Please check the URL for errors before trying again.",
+    "description": "Body of a native error dialog shown when a clicked link has a malformed URL and cannot be opened."
+  },
+  "app.navigationManager.invalidLinkTitle": {
+    "defaultMessage": "Invalid Link",
+    "description": "Title of the native error dialog shown when a clicked link has a malformed URL; keep short."
+  },
+  "app.navigationManager.serverManagementDisabledDescription": {
+    "defaultMessage": "Your organization's settings don't allow adding new servers, so this link couldn't be opened. Contact your system administrator for more information.",
+    "description": "Body of a native error dialog shown when a link to a new server cannot be opened because organization policy disables adding servers; addressed to end users."
+  },
+  "app.navigationManager.serverManagementDisabledTitle": {
+    "defaultMessage": "Unable to add server",
+    "description": "Title of the error dialog shown when adding a new server is blocked by organization policy; 'server' means a Mattermost server connection."
+  },
+  "app.navigationManager.viewLimitReached": {
+    "defaultMessage": "View limit reached",
+    "description": "Title of a native error dialog shown when the user has hit the maximum number of open windows and tabs for a server; 'view' refers to a window or tab."
+  },
+  "app.navigationManager.viewLimitReached.description": {
+    "defaultMessage": "You have reached the maximum number of open windows and tabs for this server. Please close an existing window or tab, or adjust the view limit in the Settings modal.",
+    "description": "Body text of a native error dialog shown when opening another tab or window would exceed the configured per-server view limit."
+  },
+  "callsWidgetWindow.cannotStartCall.message": {
+    "defaultMessage": "There is an in-progress call on another server that must be ended before joining a new call.",
+    "description": "Body of a native error dialog shown when the user tries to join a call while a call is already active on a different Mattermost server."
+  },
+  "callsWidgetWindow.cannotStartCall.title": {
+    "defaultMessage": "Cannot Start Call",
+    "description": "Title of the native error dialog shown when a call cannot be joined because another server's call is in progress."
+  },
+  "label.add": {
+    "defaultMessage": "Add",
+    "description": "Confirm button of the Add Server modal; adds the new server (verb)."
+  },
+  "label.allow": {
+    "defaultMessage": "Allow",
+    "description": "Button in the native permission request dialog that grants the requested permission."
+  },
+  "label.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Cancel button of the remove-server confirmation modal."
+  },
+  "label.change": {
+    "defaultMessage": "Change",
+    "description": "Small button next to a read-only input (download location, dictionary URL) in the Settings modal; clicking it lets the user change the value. 'Change' is a verb."
+  },
+  "label.close": {
+    "defaultMessage": "Close",
+    "description": "Button that dismisses the certificate information modal; 'Close' is a verb."
+  },
+  "label.deny": {
+    "defaultMessage": "Deny",
+    "description": "Button in the native permission request dialog that refuses the requested permission (this time only)."
+  },
+  "label.denyPermanently": {
+    "defaultMessage": "Deny Permanently",
+    "description": "Button in the native permission-request dialog (e.g. microphone, notifications); rejects the permission and remembers the choice so the user is not asked again."
+  },
+  "label.no": {
+    "defaultMessage": "No",
+    "description": "Generic 'No' button label reused in native confirmation dialogs (quit confirmation, unresponsive window, open external protocol)."
+  },
+  "label.ok": {
+    "defaultMessage": "OK",
+    "description": "Generic 'OK' button label reused in native dialogs (crash report dialog, 'you're up to date' dialog)."
+  },
+  "label.remove": {
+    "defaultMessage": "Remove",
+    "description": "Destructive confirm button of the remove-server confirmation modal; 'Remove' is a verb."
+  },
+  "label.save": {
+    "defaultMessage": "Save",
+    "description": "Confirm button used when editing an existing server and when saving the spellchecker setting; 'Save' is a verb."
+  },
+  "label.yes": {
+    "defaultMessage": "Yes",
+    "description": "Generic 'Yes' button label reused in native confirmation dialogs (quit confirmation, unresponsive window, open external protocol)."
+  },
+  "main.allowProtocolDialog.button.saveProtocolAsAllowed": {
+    "defaultMessage": "Yes (Save {protocol} as allowed)",
+    "description": "Dialog button that opens the external link and remembers the protocol as always allowed; {protocol} is a URL scheme such as 'spotify:'."
+  },
+  "main.allowProtocolDialog.detail": {
+    "defaultMessage": "The requested link is {URL}. Do you want to continue?",
+    "description": "Detail text of the dialog asking whether to open a link with a non-http protocol in an external app; {URL} is the full link."
+  },
+  "main.allowProtocolDialog.message": {
+    "defaultMessage": "{protocol} link requires an external application.",
+    "description": "Main message of the dialog asking whether to open an external application for a link; {protocol} is the URL scheme (e.g. 'zoommtg:')."
+  },
+  "main.allowProtocolDialog.title": {
+    "defaultMessage": "Non http(s) protocol",
+    "description": "Title of the native warning dialog shown when a link uses a protocol other than http/https; 'http(s)' is a literal protocol name."
+  },
+  "main.app.app.handleAppCertificateError.certError.button.cancelConnection": {
+    "defaultMessage": "Cancel Connection",
+    "description": "Button in the certificate error dialog; aborts connecting to the server."
+  },
+  "main.app.app.handleAppCertificateError.certError.button.moreDetails": {
+    "defaultMessage": "More Details",
+    "description": "Button in the certificate error dialog; shows a second dialog with more information about the untrusted certificate."
+  },
+  "main.app.app.handleAppCertificateError.certError.dialog.detail": {
+    "defaultMessage": "{extraDetail}origin: {origin}\nError: {error}",
+    "description": "Technical detail block of the certificate error dialog; {extraDetail} is an optional localized sentence (may be empty), {origin} is the server origin URL, {error} is the raw error code. '\\n' is a line break."
+  },
+  "main.app.app.handleAppCertificateError.certError.dialog.message": {
+    "defaultMessage": "There is a problem with the security certificate for this server or for embedded content in a message. Please contact your Mattermost admin or IT department to resolve this issue.",
+    "description": "Body of the native dialog shown when a server's TLS certificate fails validation; addressed to end users who should contact their admin."
+  },
+  "main.app.app.handleAppCertificateError.certError.dialog.title": {
+    "defaultMessage": "Certificate Error",
+    "description": "Title of the native dialog shown when a server's TLS certificate fails validation."
+  },
+  "main.app.app.handleAppCertificateError.certNotTrusted.button.cancelConnection": {
+    "defaultMessage": "Cancel Connection",
+    "description": "Button in the 'certificate not trusted' follow-up dialog; aborts connecting to the server."
+  },
+  "main.app.app.handleAppCertificateError.certNotTrusted.button.trustInsecureCertificate": {
+    "defaultMessage": "Trust Insecure Certificate",
+    "description": "Button in the 'certificate not trusted' dialog; accepts the untrusted TLS certificate anyway (potentially unsafe action)."
+  },
+  "main.app.app.handleAppCertificateError.certNotTrusted.dialog.message": {
+    "defaultMessage": "Certificate from \"{issuerName}\" is not trusted.",
+    "description": "Body of the follow-up dialog with certificate details; {issuerName} is the name of the certificate issuer."
+  },
+  "main.app.app.handleAppCertificateError.certNotTrusted.dialog.title": {
+    "defaultMessage": "Certificate Not Trusted",
+    "description": "Title of the follow-up dialog shown when the server's TLS certificate is untrusted."
+  },
+  "main.app.app.handleAppCertificateError.dialog.extraDetail": {
+    "defaultMessage": "Certificate is different from previous one.\n\n",
+    "description": "Sentence prepended to the certificate error details when the presented certificate differs from a previously stored one; trailing '\\n\\n' separates it from the following text."
+  },
+  "main.app.initialize.downloadBox.allFiles": {
+    "defaultMessage": "All files",
+    "description": "File-type filter name in the native 'save file' dialog for downloads (shown next to specific extensions); means all file types (*.*)."
+  },
+  "main.app.utils.clearAllData.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Cancel button of the confirmation dialog for erasing all app data."
+  },
+  "main.app.utils.clearAllData.confirm": {
+    "defaultMessage": "Clear All Data",
+    "description": "Destructive confirm button of the dialog that erases session, cache, cookie and storage data for all servers; 'Clear' is a verb."
+  },
+  "main.app.utils.clearAllData.message": {
+    "defaultMessage": "This action will erase all session, cache, cookie and storage data for all server. Performing this action will restart the application. Are you sure you want to clear all data?",
+    "description": "Body of the native confirmation dialog before erasing all session, cache, cookie and storage data for every server and restarting the app."
+  },
+  "main.app.utils.clearDataForServer.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Cancel button of the confirmation dialog for erasing one server's data."
+  },
+  "main.app.utils.clearDataForServer.confirm": {
+    "defaultMessage": "Clear Data",
+    "description": "Destructive confirm button of the dialog that erases stored data for a single server; 'Clear' is a verb."
+  },
+  "main.app.utils.clearDataForServer.message": {
+    "defaultMessage": "This action will erase all session, cache, cookie and storage data for the server \"{serverName}\". Are you sure you want to clear data for this server?",
+    "description": "Body of the native confirmation dialog before erasing session, cache, cookie and storage data for one server; {serverName} is that server's display name."
+  },
+  "main.autoUpdater.noUpdate.detail": {
+    "defaultMessage": "You are using the latest version of the {appName} Desktop App (version {version}). You'll be notified when a new version is available to install.",
+    "description": "Detail text in the native dialog shown after a manual update check finds no update; {appName} is the product name, {version} is the current app version."
+  },
+  "main.autoUpdater.noUpdate.message": {
+    "defaultMessage": "You're up to date",
+    "description": "Main message of the native dialog shown after a manual update check finds no new version; means the app is on the latest version."
+  },
+  "main.badge.noUnreads": {
+    "defaultMessage": "You have no unread messages",
+    "description": "Accessibility description of the Windows taskbar overlay badge when there are no unread messages; read by screen readers."
+  },
+  "main.badge.sessionExpired": {
+    "defaultMessage": "Session Expired: Please sign in to continue receiving notifications.",
+    "description": "Accessibility description of the Windows taskbar overlay badge (an '!' icon) when the user's login session has expired; read by screen readers."
+  },
+  "main.badge.unreadChannels": {
+    "defaultMessage": "You have unread channels",
+    "description": "Accessibility description of the Windows taskbar overlay badge (a dot) when there are unread channels; read by screen readers."
+  },
+  "main.badge.unreadMentions": {
+    "defaultMessage": "You have unread mentions ({mentionCount})",
+    "description": "Accessibility description of the Windows taskbar overlay badge when the user has unread mentions; {mentionCount} is the number of mentions."
+  },
+  "main.CriticalErrorHandler.uncaughtException.button.reopen": {
+    "defaultMessage": "Reopen",
+    "description": "Button in the crash dialog that relaunches the application; 'Reopen' is a verb."
+  },
+  "main.CriticalErrorHandler.uncaughtException.button.showDetails": {
+    "defaultMessage": "Show Details",
+    "description": "Button in the crash dialog that opens the saved error report file."
+  },
+  "main.CriticalErrorHandler.uncaughtException.dialog.message": {
+    "defaultMessage": "The {appName} app quit unexpectedly. Click \"{showDetails}\" to learn more or \"{reopen}\" to open the application again.\n\nInternal error: {err}",
+    "description": "Body of the native dialog shown after the app crashes; {appName} is the product name, {showDetails} and {reopen} are the localized button labels quoted in the text, {err} is the internal error message."
+  },
+  "main.CriticalErrorHandler.unresponsive.dialog.message": {
+    "defaultMessage": "The window is no longer responsive.\nDo you want to wait until the window becomes responsive again?",
+    "description": "Body of a native warning dialog shown when an app window stops responding; the user answers with Yes/No whether to keep waiting. '\\n' is a line break."
+  },
+  "main.downloadsManager.resetDownloadsFolder": {
+    "defaultMessage": "Please reset the folder where files will download",
+    "description": "Message in a native folder-picker dialog asking the user to pick a new downloads folder because the saved one is no longer writable (Mac App Store builds)."
+  },
+  "main.downloadsManager.specifyDownloadsFolder": {
+    "defaultMessage": "Specify the folder where files will download",
+    "description": "Message in the native folder-picker dialog when the user chooses the default folder for downloaded files."
+  },
+  "main.menus.app.edit": {
+    "defaultMessage": "&Edit",
+    "description": "Title of the top-level Edit menu in the application menu bar; '&' marks the Windows/Linux keyboard access key (Alt mnemonic) and should precede the mnemonic letter in translation."
+  },
+  "main.menus.app.edit.copy": {
+    "defaultMessage": "Copy",
+    "description": "'Copy' item in the native Edit menu; standard clipboard action."
+  },
+  "main.menus.app.edit.cut": {
+    "defaultMessage": "Cut",
+    "description": "'Cut' item in the native Edit menu; standard clipboard action."
+  },
+  "main.menus.app.edit.paste": {
+    "defaultMessage": "Paste",
+    "description": "'Paste' item in the native Edit menu; standard clipboard action."
+  },
+  "main.menus.app.edit.pasteAndMatchStyle": {
+    "defaultMessage": "Paste and Match Style",
+    "description": "Item in the native Edit menu; pastes clipboard text while adopting the destination's formatting. Use the OS-standard wording."
+  },
+  "main.menus.app.edit.redo": {
+    "defaultMessage": "Redo",
+    "description": "'Redo' item in the native Edit menu; re-applies the last undone action."
+  },
+  "main.menus.app.edit.selectAll": {
+    "defaultMessage": "Select All",
+    "description": "'Select All' item in the native Edit menu; selects all content in the focused field."
+  },
+  "main.menus.app.edit.undo": {
+    "defaultMessage": "Undo",
+    "description": "'Undo' item in the native Edit menu; reverts the last action."
+  },
+  "main.menus.app.file": {
+    "defaultMessage": "&File",
+    "description": "Title of the top-level File menu in the application menu bar; '&' marks the Windows/Linux keyboard access key (Alt mnemonic)."
+  },
+  "main.menus.app.file.about": {
+    "defaultMessage": "About {appName}",
+    "description": "'About' item in the macOS application menu that opens the app info panel; {appName} is the application name (e.g. Mattermost)."
+  },
+  "main.menus.app.file.exit": {
+    "defaultMessage": "Exit",
+    "description": "File menu item on Windows/Linux that quits the application."
+  },
+  "main.menus.app.file.hide": {
+    "defaultMessage": "Hide {appName}",
+    "description": "macOS application menu item that hides the app's windows; {appName} is the application name."
+  },
+  "main.menus.app.file.hideOthers": {
+    "defaultMessage": "Hide Others",
+    "description": "macOS application menu item that hides all other applications' windows; standard macOS wording."
+  },
+  "main.menus.app.file.preferences": {
+    "defaultMessage": "Preferences...",
+    "description": "macOS application menu item that opens the desktop app Settings modal; ends with an ellipsis per macOS convention."
+  },
+  "main.menus.app.file.quit": {
+    "defaultMessage": "Quit {appName}",
+    "description": "macOS application menu item that quits the app; {appName} is the application name."
+  },
+  "main.menus.app.file.settings": {
+    "defaultMessage": "Settings...",
+    "description": "File menu item on Windows/Linux that opens the desktop app Settings modal; ends with an ellipsis."
+  },
+  "main.menus.app.file.signInToAnotherServer": {
+    "defaultMessage": "Sign in to Another Server",
+    "description": "File/application menu item that opens the modal for adding a connection to an additional Mattermost server."
+  },
+  "main.menus.app.file.unhide": {
+    "defaultMessage": "Show All",
+    "description": "macOS application menu item that re-shows all hidden windows; standard macOS 'Show All' wording."
+  },
+  "main.menus.app.help": {
+    "defaultMessage": "Hel&p",
+    "description": "Title of the top-level Help menu in the application menu bar; '&' marks the Windows/Linux keyboard access key (Alt mnemonic, here on the letter p)."
+  },
+  "main.menus.app.help.academy": {
+    "defaultMessage": "Mattermost Academy",
+    "description": "Help menu item linking to the Mattermost Academy training website; 'Mattermost Academy' is a product name."
+  },
+  "main.menus.app.help.checkForUpdates": {
+    "defaultMessage": "Check for Updates",
+    "description": "Help menu item that manually checks whether a new app version is available."
+  },
+  "main.menus.app.help.commitString": {
+    "defaultMessage": " commit: {hashVersion}",
+    "description": "Fragment appended to the desktop version line in the Help menu; {hashVersion} is a git commit hash. Note the leading space, as it is concatenated after the version number."
+  },
+  "main.menus.app.help.reportProblem": {
+    "defaultMessage": "Report a problem",
+    "description": "Help menu item linking to the page where users can report an issue; 'problem' is a noun."
+  },
+  "main.menus.app.help.RunDiagnostics": {
+    "defaultMessage": "Run diagnostics",
+    "description": "Help menu item that runs the app's built-in diagnostics checks; 'Run' is a verb."
+  },
+  "main.menus.app.help.ShowLogs": {
+    "defaultMessage": "Show logs",
+    "description": "Help menu item that reveals the app's log file in the system file manager."
+  },
+  "main.menus.app.help.userGuide": {
+    "defaultMessage": "User guide",
+    "description": "Help menu item linking to the Mattermost user documentation website."
+  },
+  "main.menus.app.help.versionString.desktop": {
+    "defaultMessage": "Desktop App Version {version}{commit}",
+    "description": "Read-only Help menu entry showing the desktop app version; {version} is the version number and {commit} is an optional ' commit: <hash>' suffix."
+  },
+  "main.menus.app.help.versionString.server": {
+    "defaultMessage": "Server Version {version}",
+    "description": "Read-only Help menu entry showing a connected server's version; {version} is the server version number or 'Unavailable'."
+  },
+  "main.menus.app.help.versionString.server.unavailable": {
+    "defaultMessage": "Unavailable",
+    "description": "Substituted for the version number in the Help menu's 'Server Version {version}' line when the server's version could not be determined."
+  },
+  "main.menus.app.history": {
+    "defaultMessage": "&History",
+    "description": "Title of the top-level History menu (back/forward navigation) in the application menu bar; '&' marks the Windows/Linux keyboard access key (Alt mnemonic)."
+  },
+  "main.menus.app.history.back": {
+    "defaultMessage": "Back",
+    "description": "History menu item that navigates the current server view back one page, like a browser back button."
+  },
+  "main.menus.app.history.forward": {
+    "defaultMessage": "Forward",
+    "description": "History menu item that navigates the current server view forward one page, like a browser forward button."
+  },
+  "main.menus.app.view": {
+    "defaultMessage": "&View",
+    "description": "Title of the top-level View menu in the application menu bar; '&' marks the Windows/Linux keyboard access key (Alt mnemonic)."
+  },
+  "main.menus.app.view.actualSize": {
+    "defaultMessage": "Actual Size",
+    "description": "View menu item that resets the zoom level to 100%."
+  },
+  "main.menus.app.view.clearAllData": {
+    "defaultMessage": "Clear All Data",
+    "description": "View menu item that wipes all locally stored data (cache, storage, settings) for every server and restarts the app."
+  },
+  "main.menus.app.view.clearCacheAndReload": {
+    "defaultMessage": "Clear Cache and Reload",
+    "description": "View menu item that clears the current view's cache and reloads it."
+  },
+  "main.menus.app.view.clearDataForServer": {
+    "defaultMessage": "Clear Data for Current Server",
+    "description": "View menu item that wipes locally stored data only for the currently active server."
+  },
+  "main.menus.app.view.developerModeBrowserOnly": {
+    "defaultMessage": "Browser Only Mode",
+    "description": "Checkbox item in the Developer Tools submenu (developer mode only); toggles a mode where desktop-specific APIs are disabled so the app behaves like a plain browser."
+  },
+  "main.menus.app.view.developerModeDisableContextMenu": {
+    "defaultMessage": "Disable Context Menu",
+    "description": "Checkbox item in the Developer Tools submenu (developer mode only); disables the right-click context menu."
+  },
+  "main.menus.app.view.developerModeDisableDevTools": {
+    "defaultMessage": "Disable React/Redux Dev Tools",
+    "description": "Checkbox item in the Developer Tools submenu (developer mode only); disables the React/Redux developer tools extensions. 'React' and 'Redux' are technology names."
+  },
+  "main.menus.app.view.developerModeDisableNotificationStorage": {
+    "defaultMessage": "Disable Notification Storage",
+    "description": "Checkbox item in the Developer Tools submenu (developer mode only); disables persisting notification data to disk."
+  },
+  "main.menus.app.view.developerModeDisableUserActivityMonitor": {
+    "defaultMessage": "Disable User Activity Monitor",
+    "description": "Checkbox item in the Developer Tools submenu (developer mode only); disables the component that tracks user activity/idle state."
+  },
+  "main.menus.app.view.devToolsCurrentCallWidget": {
+    "defaultMessage": "Developer Tools for Call Widget",
+    "description": "Item in the View > Developer Tools submenu; opens Chromium developer tools for the floating Calls widget window."
+  },
+  "main.menus.app.view.devToolsCurrentCallWidgetPopout": {
+    "defaultMessage": "Developer Tools for Call Widget Popout",
+    "description": "Item in the View > Developer Tools submenu; opens developer tools for the Calls widget's popout window."
+  },
+  "main.menus.app.view.devToolsCurrentTab": {
+    "defaultMessage": "Developer Tools for Current Tab",
+    "description": "Item in the View > Developer Tools submenu; opens developer tools for the currently active server tab."
+  },
+  "main.menus.app.view.devToolsMainWindow": {
+    "defaultMessage": "Developer Tools for Main Window",
+    "description": "Item in the View > Developer Tools submenu; opens developer tools for the app's main window UI."
+  },
+  "main.menus.app.view.devToolsSubMenu": {
+    "defaultMessage": "Developer Tools",
+    "description": "Label of the Developer Tools submenu inside the View menu; refers to Chromium developer tools."
+  },
+  "main.menus.app.view.downloads": {
+    "defaultMessage": "Downloads",
+    "description": "View menu item that opens the downloads dropdown listing downloaded files; plural noun."
+  },
+  "main.menus.app.view.find": {
+    "defaultMessage": "Find..",
+    "description": "View menu item that opens the in-page text search bar; 'Find' is a verb, ends with an ellipsis."
+  },
+  "main.menus.app.view.fullscreen": {
+    "defaultMessage": "Toggle Full Screen",
+    "description": "View menu item that toggles the window in and out of full-screen mode."
+  },
+  "main.menus.app.view.reload": {
+    "defaultMessage": "Reload",
+    "description": "View menu item that reloads the current server view; 'Reload' is a verb."
+  },
+  "main.menus.app.view.toggleDarkMode": {
+    "defaultMessage": "Toggle Dark Mode",
+    "description": "View menu item (Linux only) that switches the app between light and dark theme."
+  },
+  "main.menus.app.view.zoomIn": {
+    "defaultMessage": "Zoom In",
+    "description": "View menu item that increases the zoom level of the current view."
+  },
+  "main.menus.app.view.zoomOut": {
+    "defaultMessage": "Zoom Out",
+    "description": "View menu item that decreases the zoom level of the current view."
+  },
+  "main.menus.app.window": {
+    "defaultMessage": "&Window",
+    "description": "Title of the top-level Window menu in the application menu bar; '&' marks the Windows/Linux keyboard access key (Alt mnemonic)."
+  },
+  "main.menus.app.window.bringAllToFront": {
+    "defaultMessage": "Bring All to Front",
+    "description": "macOS Window menu item that brings all of the app's windows in front of other applications; standard macOS wording."
+  },
+  "main.menus.app.window.closeTab": {
+    "defaultMessage": "Close Tab",
+    "description": "File menu item that closes the currently active tab."
+  },
+  "main.menus.app.window.closeWindow": {
+    "defaultMessage": "Close Window",
+    "description": "File menu item that closes the currently focused window."
+  },
+  "main.menus.app.window.minimize": {
+    "defaultMessage": "Minimize",
+    "description": "Window menu item that minimizes the current window; standard OS wording."
+  },
+  "main.menus.app.window.newTab": {
+    "defaultMessage": "New Tab",
+    "description": "File menu item that opens a new tab for the current server."
+  },
+  "main.menus.app.window.newWindow": {
+    "defaultMessage": "New Window",
+    "description": "File menu item that opens the current server in a new separate window."
+  },
+  "main.menus.app.window.selectNextTab": {
+    "defaultMessage": "Select Next Tab",
+    "description": "Window menu item that switches focus to the next tab in the tab bar."
+  },
+  "main.menus.app.window.selectPreviousTab": {
+    "defaultMessage": "Select Previous Tab",
+    "description": "Window menu item that switches focus to the previous tab in the tab bar."
+  },
+  "main.menus.app.window.showServers": {
+    "defaultMessage": "Show Servers",
+    "description": "Window menu item that opens the servers dropdown listing all configured servers."
+  },
+  "main.menus.app.window.zoom": {
+    "defaultMessage": "Zoom",
+    "description": "macOS Window menu item with the standard 'zoom' role that resizes the window to fit content; use Apple's standard translation, not zoom as in magnification."
+  },
+  "main.menus.popoutMenu.closeTab": {
+    "defaultMessage": "Close tab",
+    "description": "Context menu item for a server tab (shown in the popout menu); closes that tab."
+  },
+  "main.menus.popoutMenu.closeWindow": {
+    "defaultMessage": "Close window",
+    "description": "Context menu item for a popout (detached) window; closes that window."
+  },
+  "main.menus.popoutMenu.copyLink": {
+    "defaultMessage": "Copy Link",
+    "description": "Context menu item in the popout window/tab menu; copies the current page URL to the clipboard."
+  },
+  "main.menus.popoutMenu.developerTools": {
+    "defaultMessage": "Developer Tools",
+    "description": "Label of a submenu in the popout window context menu containing developer tools options; developer-facing."
+  },
+  "main.menus.popoutMenu.developerToolsApplicationWrapper": {
+    "defaultMessage": "Developer Tools for Application Wrapper",
+    "description": "Item in a popout window's context menu Developer Tools submenu; opens developer tools for the window's own wrapper UI rather than the server content."
+  },
+  "main.menus.popoutMenu.developerToolsCurrentView": {
+    "defaultMessage": "Developer Tools for Current View",
+    "description": "Item in a popout window's context menu Developer Tools submenu; opens developer tools for the server content shown in that window."
+  },
+  "main.menus.popoutMenu.moveToMainWindow": {
+    "defaultMessage": "Move to main window",
+    "description": "Context menu item on a popout window; converts it back into a tab inside the main application window."
+  },
+  "main.menus.popoutMenu.moveToNewWindow": {
+    "defaultMessage": "Move to new window",
+    "description": "Context menu item on a tab; detaches it into its own separate (popout) window."
+  },
+  "main.menus.popoutMenu.title": {
+    "defaultMessage": "Popout Menu",
+    "description": "Label of the single top-level native menu shown in a popout window when the user presses Alt; contains the popout window actions."
+  },
+  "main.menus.tray.preferences": {
+    "defaultMessage": "Preferences...",
+    "description": "System tray context menu item that opens the app settings window; this wording is used on macOS (macOS 'Preferences…' convention, with trailing ellipsis)."
+  },
+  "main.menus.tray.settings": {
+    "defaultMessage": "Settings...",
+    "description": "System tray context menu item that opens the app settings window; this wording is used on Windows and Linux."
+  },
+  "main.notifications.download.complete.body": {
+    "defaultMessage": "Download Complete \n {fileName}",
+    "description": "Body of the system notification shown when a file download finishes; {fileName} is the downloaded file's name and '\\n' is a line break."
+  },
+  "main.notifications.download.complete.title": {
+    "defaultMessage": "Download Complete",
+    "description": "Title of the system notification shown when a file download finishes (used on Linux and older Windows)."
+  },
+  "main.notifications.mention.title": {
+    "defaultMessage": "Someone mentioned you",
+    "description": "Default title of the system notification shown when someone mentions the user and no other title is provided."
+  },
+  "main.notifications.upgrade.newVersion.body": {
+    "defaultMessage": "A new version is available for you to download now.",
+    "description": "Body of the system notification announcing that a new app version can be downloaded."
+  },
+  "main.notifications.upgrade.newVersion.title": {
+    "defaultMessage": "New desktop version available",
+    "description": "Title of the system notification announcing that a new desktop app version is available; 'desktop' refers to the desktop app (vs. web/mobile)."
+  },
+  "main.notifications.upgrade.readyToInstall.body": {
+    "defaultMessage": "A new desktop version is ready to install now.",
+    "description": "Body of the system notification shown when an app update has been downloaded and is ready to install."
+  },
+  "main.notifications.upgrade.readyToInstall.title": {
+    "defaultMessage": "Click to restart and install update",
+    "description": "Title of the system notification shown when an update is downloaded; clicking the notification restarts the app and installs it."
+  },
+  "main.permissionsManager.checkPermission.dialog.detail.geolocation": {
+    "defaultMessage": "{appName} will use the location for setting up your timezone. You can always change this later in your computer's settings.",
+    "description": "Explanatory detail text in the permission dialog when a server requests location access; {appName} is the product name."
+  },
+  "main.permissionsManager.checkPermission.dialog.detail.media": {
+    "defaultMessage": "{appName} will use the microphone and camera for calls and voice messages. You can always change this later in your computer's settings.",
+    "description": "Explanatory detail text in the permission dialog when a server requests microphone/camera access; {appName} is the product name."
+  },
+  "main.permissionsManager.checkPermission.dialog.detail.notifications": {
+    "defaultMessage": "{appName} will send you notifications for messages and calls. You can configure your notification preferences in Settings.",
+    "description": "Explanatory detail text in the permission dialog when a server requests permission to show notifications; {appName} is the product name."
+  },
+  "main.permissionsManager.checkPermission.dialog.detail.openExternal": {
+    "defaultMessage": "{appName} will open the requested link in an external application. If you do not trust this link, or do not recognize it, click Deny. You can always change this later in your computer's settings.",
+    "description": "Explanatory detail text in the permission dialog when a link would open in an external application; 'Deny' refers to the localized Deny button label; {appName} is the product name."
+  },
+  "main.permissionsManager.checkPermission.dialog.detail.screenShare": {
+    "defaultMessage": "{appName} will use this permission to share your screen for calls. You can always change this later in your computer's settings.",
+    "description": "Explanatory detail text in the permission dialog when a server requests screen-sharing access; {appName} is the product name."
+  },
+  "main.permissionsManager.checkPermission.dialog.message.geolocation": {
+    "defaultMessage": "{appName} ({url}) would like to access your location.",
+    "description": "Main message of the permission dialog for location access; {appName} is the product name, {url} is the requesting server's origin."
+  },
+  "main.permissionsManager.checkPermission.dialog.message.media": {
+    "defaultMessage": "{appName} ({url}) would like to access the microphone and camera.",
+    "description": "Main message of the permission dialog for microphone and camera access; {appName} is the product name, {url} is the requesting server's origin."
+  },
+  "main.permissionsManager.checkPermission.dialog.message.notifications": {
+    "defaultMessage": "{appName} ({url}) would like to send you notifications.",
+    "description": "Main message of the permission dialog for showing notifications; {appName} is the product name, {url} is the requesting server's origin."
+  },
+  "main.permissionsManager.checkPermission.dialog.message.openExternal": {
+    "defaultMessage": "{appName} ({url}) would like permission to open the following URL: {externalURL}",
+    "description": "Main message of the permission dialog for opening a link in an external application; {appName} is the product name, {url} is the requesting server's origin, {externalURL} is the link to be opened."
+  },
+  "main.permissionsManager.checkPermission.dialog.message.screenShare": {
+    "defaultMessage": "{appName} ({url}) would like to be able to view your screen.",
+    "description": "Main message of the permission dialog for viewing/sharing the screen; {appName} is the product name, {url} is the requesting server's origin."
+  },
+  "main.permissionsManager.checkPermission.dialog.title": {
+    "defaultMessage": "Permission Requested",
+    "description": "Title of the native dialog asking the user to allow or deny a permission requested by a server."
+  },
+  "main.tray.tray.expired": {
+    "defaultMessage": "Session Expired: Please sign in to continue receiving notifications.",
+    "description": "Tooltip on the system tray icon when the user's login session has expired."
+  },
+  "main.tray.tray.mention": {
+    "defaultMessage": "You have been mentioned",
+    "description": "Tooltip on the system tray icon when the user has unread mentions."
+  },
+  "main.tray.tray.unread": {
+    "defaultMessage": "You have unread channels",
+    "description": "Tooltip on the system tray icon when there are unread channels."
+  },
+  "main.webContentEvents.invalidLinkDescription": {
+    "defaultMessage": "The link you clicked appears to be malformed and cannot be opened. Please check the URL for errors before trying again.",
+    "description": "Body of a native error dialog shown when a link that would open a new window has a malformed URL."
+  },
+  "main.webContentEvents.invalidLinkTitle": {
+    "defaultMessage": "Invalid Link",
+    "description": "Title of the native error dialog shown when a link that would open a new window has a malformed URL; keep short."
+  },
+  "main.windows.mainWindow.closeApp.dialog.checkboxLabel": {
+    "defaultMessage": "Don't ask again",
+    "description": "Checkbox label in the quit confirmation dialog; when checked, the app remembers the choice and stops asking."
+  },
+  "main.windows.mainWindow.closeApp.dialog.detail": {
+    "defaultMessage": "You will no longer receive notifications for messages. If you want to leave {appName} running in the system tray, you can enable this in Settings.",
+    "description": "Explanatory text below the quit confirmation question in a native dialog; {appName} is the product name (e.g. Mattermost)."
+  },
+  "main.windows.mainWindow.closeApp.dialog.message": {
+    "defaultMessage": "Are you sure you want to quit?",
+    "description": "Main question of a native confirmation dialog shown when the user closes the app window on Windows/Linux; answered with Yes/No buttons."
+  },
+  "main.windows.mainWindow.closeApp.dialog.title": {
+    "defaultMessage": "Close Application",
+    "description": "Title of the native confirmation dialog shown when the user closes the app window; here 'Close' is a verb (closing the application)."
+  },
+  "main.windows.mainWindow.minimizeToTray.dialog.checkboxLabel": {
+    "defaultMessage": "Don't show again",
+    "description": "Checkbox label in the minimize-to-tray info dialog; when checked, the dialog is not shown again."
+  },
+  "main.windows.mainWindow.minimizeToTray.dialog.message": {
+    "defaultMessage": "{appName} will continue to run in the system tray. This can be disabled in Settings.",
+    "description": "Body of a native info dialog shown the first time the app window is closed to the system tray on Windows/Linux; {appName} is the product name."
+  },
+  "main.windows.mainWindow.minimizeToTray.dialog.title": {
+    "defaultMessage": "Minimize to Tray",
+    "description": "Title of the native info dialog explaining that closing the window minimizes the app to the system tray."
+  },
+  "modal.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Default label of the cancel button in the app's internal modals (e.g. the certificate selection modal) when no specific label is provided."
+  },
+  "modal.confirm": {
+    "defaultMessage": "Confirm",
+    "description": "Default label of the confirm/accept button in the app's internal modals (e.g. the certificate selection modal) when no specific label is provided."
+  },
+  "renderer.components.configureServer.cardtitle": {
+    "defaultMessage": "Enter your server details",
+    "description": "Heading of the form card on the onboarding screen where the user enters the URL and name of their first server."
+  },
+  "renderer.components.configureServer.connect.default": {
+    "defaultMessage": "Connect",
+    "description": "Submit button label on the onboarding 'connect to server' form; 'Connect' is a verb."
+  },
+  "renderer.components.configureServer.connect.saving": {
+    "defaultMessage": "Connecting…",
+    "description": "Submit button label while the connection to the server is being established; ends with an ellipsis character (…)."
+  },
+  "renderer.components.configureServer.error.basicAuthRequired": {
+    "defaultMessage": "This server requires basic authentication. You will be prompted to enter your username and password when you connect to the server.",
+    "description": "Validation notice shown under the server URL field when the entered server requires HTTP basic authentication."
+  },
+  "renderer.components.configureServer.error.clientCertRequired": {
+    "defaultMessage": "This server requires that you select a certificate. You will be prompted to select a certificate when you connect to the server.",
+    "description": "Validation notice shown under the server URL field when the entered server requires a client TLS certificate."
+  },
+  "renderer.components.configureServer.error.preAuthRequired": {
+    "defaultMessage": "This server requires an authentication secret. You will be prompted to enter it when you connect to the server.",
+    "description": "Validation notice shown under the server URL field when the entered server requires a pre-authentication secret."
+  },
+  "renderer.components.configureServer.name.info": {
+    "defaultMessage": "The name that will be displayed in your server list",
+    "description": "Helper text under the server display name field on the onboarding screen, explaining what the name is used for."
+  },
+  "renderer.components.configureServer.name.placeholder": {
+    "defaultMessage": "Server display name",
+    "description": "Placeholder/floating label of the server display name input on the onboarding screen."
+  },
+  "renderer.components.configureServer.subtitle": {
+    "defaultMessage": "A server is your team's communication hub accessed using a unique URL",
+    "description": "Subtitle under the main heading of the onboarding 'connect to server' screen; 'server' means a Mattermost workspace."
+  },
+  "renderer.components.configureServer.title": {
+    "defaultMessage": "Connect to your server",
+    "description": "Main heading of the onboarding screen where the user connects to their first Mattermost server."
+  },
+  "renderer.components.configureServer.url.info": {
+    "defaultMessage": "The URL of your Mattermost server",
+    "description": "Helper text under the server URL field on the onboarding screen."
+  },
+  "renderer.components.configureServer.url.insecure": {
+    "defaultMessage": "Your server URL is potentially insecure. For best results, use a URL with the HTTPS protocol.",
+    "description": "Warning shown under the server URL field when the URL uses http instead of https; 'HTTPS' is a literal protocol name."
+  },
+  "renderer.components.configureServer.url.notMattermost": {
+    "defaultMessage": "The server URL provided does not appear to point to a valid Mattermost server. Please verify the URL and check your connection.",
+    "description": "Warning shown under the server URL field when the URL does not respond like a Mattermost server."
+  },
+  "renderer.components.configureServer.url.ok": {
+    "defaultMessage": "Server URL is valid. Server version: {serverVersion}",
+    "description": "Success message under the server URL field after validation passes; {serverVersion} is the detected Mattermost server version number."
+  },
+  "renderer.components.configureServer.url.placeholder": {
+    "defaultMessage": "Server URL",
+    "description": "Placeholder/floating label of the server URL input on the onboarding screen; compact."
+  },
+  "renderer.components.configureServer.url.urlNotMatched": {
+    "defaultMessage": "The server URL provided does not match the configured Site URL on your Mattermost server. Server version: {serverVersion}",
+    "description": "Warning under the server URL field when the entered URL differs from the server's configured Site URL; {serverVersion} is the server version number."
+  },
+  "renderer.components.configureServer.url.urlUpdated": {
+    "defaultMessage": "The server URL provided has been updated to match the configured Site URL on your Mattermost server. Server version: {serverVersion}",
+    "description": "Info message under the server URL field when the app auto-corrected the URL to the server's configured Site URL; {serverVersion} is the server version number."
+  },
+  "renderer.components.configureServer.url.validating": {
+    "defaultMessage": "Validating...",
+    "description": "Status text shown under the server URL field while the URL is being checked; ends with an ellipsis."
+  },
+  "renderer.components.developerModeIndicator.tooltip": {
+    "defaultMessage": "Developer mode is enabled. You should only have this enabled if a Mattermost developer has instructed you to.",
+    "description": "Tooltip on the developer-mode indicator icon in the app's top bar, warning end users that developer mode should normally be off."
+  },
+  "renderer.components.errorView.cannotConnectToThisServer": {
+    "defaultMessage": "Couldn't connect to this server",
+    "description": "Header of the full-page error screen shown when the app cannot reach a Mattermost server."
+  },
+  "renderer.components.errorView.contactAdmin": {
+    "defaultMessage": "If the issue persists, please contact your admin.",
+    "description": "Closing line of the connection/incompatibility error screens; 'admin' means the Mattermost system administrator."
+  },
+  "renderer.components.errorView.contactAdminUpgrade": {
+    "defaultMessage": "If the issue persists, contact your {appName} Administrator or IT department to upgrade this {appName} Server.",
+    "description": "Final paragraph on the error screen shown when the connected server version is too old for the desktop app; {appName} is the application name (e.g. Mattermost) and appears twice."
+  },
+  "renderer.components.errorView.havingTroubleConnecting": {
+    "defaultMessage": "We're having trouble connecting to this {appName} server. We'll keep trying to establish a connection.",
+    "description": "Subheader of the connection error screen; {appName} is the product name (e.g. Mattermost) used as an adjective before 'server'."
+  },
+  "renderer.components.errorView.incompatibleServerVersion": {
+    "defaultMessage": "Incompatible server version",
+    "description": "Header of the full-page error screen shown when the server version is too old for this desktop app."
+  },
+  "renderer.components.errorView.serverVersionIsIncompatible": {
+    "defaultMessage": "The {appName} Server you are accessing is incompatible with this version of the {appName} Desktop App. To connect to this server, please try the following:",
+    "description": "Subheader of the incompatible-server error screen; {appName} is the product name, used before both 'Server' and 'Desktop App'."
+  },
+  "renderer.components.errorView.troubleshooting.clearCacheAndReload": {
+    "defaultMessage": "Try to <link>clear the cache and reload</link>. This may fix the issue.",
+    "description": "Troubleshooting bullet on the connection error screen; the <link></link> tags wrap the clickable text that triggers a cache clear and reload."
+  },
+  "renderer.components.errorView.troubleshooting.downgradeApp": {
+    "defaultMessage": "<link>Downgrade your {appName} Desktop App</link> to version v5.10 or earlier.",
+    "description": "Troubleshooting bullet on the incompatible-server error screen; the <link></link> tags wrap the clickable text, {appName} is the product name, 'v5.10' is a literal version number."
+  },
+  "renderer.components.errorView.troubleshooting.ensureComputerIsConnected": {
+    "defaultMessage": "Ensure your computer is connected to your network.",
+    "description": "Troubleshooting bullet on the connection error screen asking the user to check their network connection."
+  },
+  "renderer.components.errorView.troubleshooting.urlIsCorrect.appNameIsCorrect": {
+    "defaultMessage": "Verify that the URL <link>{url}</link> is correct.",
+    "description": "Troubleshooting bullet on the connection error screen; {url} is the server URL and the <link></link> tags make it clickable."
+  },
+  "renderer.components.errorView.troubleshooting.webContentsView.canReachFromBrowserWindow": {
+    "defaultMessage": "Try opening <link>{url}</link> in a browser window.",
+    "description": "Troubleshooting bullet on the server error screen suggesting to test the URL in a web browser; {url} is the server URL and <link></link> makes it clickable."
+  },
+  "renderer.components.errorView.tryTheseSteps": {
+    "defaultMessage": "Please try the following steps if this issue persists:",
+    "description": "Sentence introducing the troubleshooting bullet list on the connection error screen."
+  },
+  "renderer.components.input.required": {
+    "defaultMessage": "This field is required",
+    "description": "Validation error shown under a required text input that was left empty; generic, used by the shared input component."
+  },
+  "renderer.components.mainPage.contextMenu.ariaLabel": {
+    "defaultMessage": "Context menu",
+    "description": "Accessibility (aria) label for the three-dot menu button in the app's top bar that opens the application menu; read by screen readers only."
+  },
+  "renderer.components.newServerModal.error.nameRequired": {
+    "defaultMessage": "Name is required.",
+    "description": "Validation error under the server display name field when it is left empty (onboarding screen and add/edit server modal)."
+  },
+  "renderer.components.newServerModal.error.serverUrlExists": {
+    "defaultMessage": "A server with the same URL already exists.",
+    "description": "Validation warning under the server URL field in the Add Server modal when another configured server already uses that URL."
+  },
+  "renderer.components.newServerModal.error.urlIncorrectFormatting": {
+    "defaultMessage": "URL is not formatted correctly.",
+    "description": "Validation error under the server URL field when the entered text is not a well-formed URL."
+  },
+  "renderer.components.newServerModal.error.urlRequired": {
+    "defaultMessage": "URL is required.",
+    "description": "Validation error under the server URL field when it is left empty."
+  },
+  "renderer.components.newServerModal.permissions.geolocation": {
+    "defaultMessage": "Location",
+    "description": "Label of the location-access permission toggle in the Edit Server modal's Permissions section."
+  },
+  "renderer.components.newServerModal.permissions.microphoneAndCamera": {
+    "defaultMessage": "Microphone and Camera",
+    "description": "Label of the microphone and camera permission toggle in the Edit Server modal's Permissions section."
+  },
+  "renderer.components.newServerModal.permissions.microphoneAndCamera.windowsCameraPermissions": {
+    "defaultMessage": "Camera is disabled in Windows Settings. Click <link>here</link> to open the Camera Settings.",
+    "description": "Warning under the microphone/camera permission toggle in the server edit modal on Windows; <link></link> wraps the word that opens Windows camera settings."
+  },
+  "renderer.components.newServerModal.permissions.microphoneAndCamera.windowsMicrophoneaPermissions": {
+    "defaultMessage": "Microphone is disabled in Windows Settings. Click <link>here</link> to open the Microphone Settings.",
+    "description": "Warning under the microphone/camera permission toggle in the server edit modal on Windows; <link></link> wraps the word that opens Windows microphone settings."
+  },
+  "renderer.components.newServerModal.permissions.notifications": {
+    "defaultMessage": "Notifications",
+    "description": "Label of the notifications permission toggle in the Edit Server modal's Permissions section."
+  },
+  "renderer.components.newServerModal.permissions.notifications.mac": {
+    "defaultMessage": "You may also need to enable notifications in macOS for Mattermost. Click <link>here</link> to open the System Preferences.",
+    "description": "Hint under the notifications permission toggle in the server edit modal on macOS; <link></link> wraps the word that opens the macOS System Preferences."
+  },
+  "renderer.components.newServerModal.permissions.notifications.windows": {
+    "defaultMessage": "You may also need to enable notifications in Windows for Mattermost. Click <link>here</link> to open the Notification Settings.",
+    "description": "Hint under the notifications permission toggle in the server edit modal on Windows; <link></link> wraps the word that opens the Windows notification settings."
+  },
+  "renderer.components.newServerModal.permissions.screenShare": {
+    "defaultMessage": "Screen Share",
+    "description": "Label of the screen sharing permission toggle in the Edit Server modal's Permissions section; noun phrase."
+  },
+  "renderer.components.newServerModal.permissions.title": {
+    "defaultMessage": "Permissions",
+    "description": "Section heading in the Edit Server modal above the per-server permission toggles."
+  },
+  "renderer.components.newServerModal.secureSecret.error": {
+    "defaultMessage": "The provided authentication secret is incorrect.",
+    "description": "Error message under the secret input in the pre-authentication modal when the entered shared secret was rejected by the server."
+  },
+  "renderer.components.newServerModal.secureSecret.info": {
+    "defaultMessage": "The authentication secret shared by the administrator.",
+    "description": "Info helper text under the secret input in the pre-authentication modal, explaining where the secret value comes from (the server administrator)."
+  },
+  "renderer.components.newServerModal.serverDisplayName": {
+    "defaultMessage": "Server Display Name",
+    "description": "Placeholder/floating label of the server display name input in the Add/Edit Server modal."
+  },
+  "renderer.components.newServerModal.serverDisplayName.description": {
+    "defaultMessage": "The name of the server displayed on your desktop app tab bar.",
+    "description": "Info helper text under the server display name input in the add/edit server modal, explaining where that name is shown."
+  },
+  "renderer.components.newServerModal.serverURL": {
+    "defaultMessage": "Server URL",
+    "description": "Placeholder/floating label of the server URL input in the Add/Edit Server modal; compact."
+  },
+  "renderer.components.newServerModal.serverURL.description": {
+    "defaultMessage": "The URL of your Mattermost server. Must start with http:// or https://.",
+    "description": "Info helper text under the server URL input in the add/edit server modal; 'http://' and 'https://' are literal URL schemes and must not be translated."
+  },
+  "renderer.components.newServerModal.success.ok": {
+    "defaultMessage": "Server URL is valid. Server version: {serverVersion}",
+    "description": "Success message under the server URL field in the Add/Edit Server modal after validation passes; {serverVersion} is the detected server version number."
+  },
+  "renderer.components.newServerModal.title.add": {
+    "defaultMessage": "Add Server",
+    "description": "Title of the modal for adding a new Mattermost server connection."
+  },
+  "renderer.components.newServerModal.title.edit": {
+    "defaultMessage": "Edit Server",
+    "description": "Title of the same modal when editing an existing server's details."
+  },
+  "renderer.components.newServerModal.validating": {
+    "defaultMessage": "Validating...",
+    "description": "Status text under the server URL field in the Add/Edit Server modal while the URL is being checked; ends with an ellipsis."
+  },
+  "renderer.components.newServerModal.warning.insecure": {
+    "defaultMessage": "Your server URL is potentially insecure. For best results, use a URL with the HTTPS protocol.",
+    "description": "Warning under the server URL field in the Add/Edit Server modal when the URL uses http instead of https; 'HTTPS' is a literal protocol name."
+  },
+  "renderer.components.newServerModal.warning.notMattermost": {
+    "defaultMessage": "The server URL provided does not appear to point to a valid Mattermost server. Please verify the URL and check your connection.",
+    "description": "Warning under the server URL field in the Add/Edit Server modal when the URL does not respond like a Mattermost server."
+  },
+  "renderer.components.newServerModal.warning.urlNotMatched": {
+    "defaultMessage": "The server URL does not match the configured Site URL on your Mattermost server. Server version: {serverVersion}",
+    "description": "Warning under the server URL field when the entered URL differs from the server's configured Site URL; {serverVersion} is the server version number."
+  },
+  "renderer.components.newServerModal.warning.urlUpdated": {
+    "defaultMessage": "The server URL provided has been updated to match the configured Site URL on your Mattermost server. Server version: {serverVersion}",
+    "description": "Info message under the server URL field when the app auto-corrected the URL to the server's configured Site URL; {serverVersion} is the server version number."
+  },
+  "renderer.components.removeServerModal.body": {
+    "defaultMessage": "This will remove the server from your Desktop App but will not delete any of its data - you can add the server back at any time.",
+    "description": "Body text of the confirmation modal for removing a server from the app; reassures that server data is not deleted."
+  },
+  "renderer.components.removeServerModal.confirm": {
+    "defaultMessage": "Are you sure you wish to remove the server?",
+    "description": "Confirmation question shown below the body text in the remove-server modal."
+  },
+  "renderer.components.removeServerModal.title": {
+    "defaultMessage": "Remove Server",
+    "description": "Title of the confirmation modal for removing a server from the desktop app's server list."
+  },
+  "renderer.components.saveButton.save": {
+    "defaultMessage": "Save",
+    "description": "Default label of the shared save button component; 'Save' is a verb."
+  },
+  "renderer.components.saveButton.saving": {
+    "defaultMessage": "Saving",
+    "description": "Label of the shared save button while the save is in progress; shown next to a loading spinner."
+  },
+  "renderer.components.serverDropdownButton.noServersConfigured": {
+    "defaultMessage": "No servers configured",
+    "description": "Label on the server dropdown button in the app's top bar, shown in place of a server name when the user has not added any servers yet."
+  },
+  "renderer.components.settingsPage.advanced": {
+    "defaultMessage": "Advanced",
+    "description": "Sidebar category name in the desktop app Settings modal, grouping advanced options like logging and hardware acceleration."
+  },
+  "renderer.components.settingsPage.afterRestart": {
+    "defaultMessage": "Setting takes effect after restarting the app.",
+    "description": "Note appended after several setting descriptions in the Settings modal; warns that the change only applies after an app restart. Displayed concatenated after another sentence."
+  },
+  "renderer.components.settingsPage.appLanguage": {
+    "defaultMessage": "App Language",
+    "description": "Label for the dropdown in Settings > Language that selects the desktop app's UI language."
+  },
+  "renderer.components.settingsPage.appLanguage.description": {
+    "defaultMessage": "The language that the Desktop App will use for menu items and popups. Still in beta, some languages will be missing translation strings.",
+    "description": "Help text under the App Language dropdown in Settings > Language, explaining what the chosen language affects and noting the feature is in beta."
+  },
+  "renderer.components.settingsPage.appLanguage.placeholder": {
+    "defaultMessage": "Use system default",
+    "description": "Placeholder shown in the App Language dropdown when no language is chosen; means the app follows the operating system language."
+  },
+  "renderer.components.settingsPage.bounceIcon.never": {
+    "defaultMessage": "Never",
+    "description": "Radio option (macOS) for how the Dock icon bounces on notifications; the icon never bounces."
+  },
+  "renderer.components.settingsPage.bounceIcon.once": {
+    "defaultMessage": "Once",
+    "description": "Radio option (macOS) for how the Dock icon bounces on notifications; the icon bounces a single time."
+  },
+  "renderer.components.settingsPage.bounceIcon.untilOpenApp": {
+    "defaultMessage": "Until I open the app",
+    "description": "Radio option (macOS) for how the Dock icon bounces on notifications; it keeps bouncing until the user opens the app."
+  },
+  "renderer.components.settingsPage.bounceIconType": {
+    "defaultMessage": "Bounce the Dock icon...",
+    "description": "Label for the radio group in Settings > Notifications on macOS; ends with an ellipsis because the options (Once / Until I open the app / Never) complete the sentence. 'Bounce' refers to the macOS Dock icon animation."
+  },
+  "renderer.components.settingsPage.changesSaved": {
+    "defaultMessage": "Changes saved",
+    "description": "Status indicator shown briefly in the Settings modal header after a setting change has been saved."
+  },
+  "renderer.components.settingsPage.checkSpelling": {
+    "defaultMessage": "Check spelling",
+    "description": "Checkbox label in Settings > Language that enables spell checking in message input; 'Check' is a verb."
+  },
+  "renderer.components.settingsPage.checkSpelling.description": {
+    "defaultMessage": "Highlight misspelled words in your messages based on your system language or language preference.",
+    "description": "Help text under the 'Check spelling' checkbox in Settings > Language."
+  },
+  "renderer.components.settingsPage.checkSpelling.editSpellcheckUrl": {
+    "defaultMessage": "Use an alternative dictionary URL",
+    "description": "Sub-heading in the spell checker settings for providing a custom URL from which spelling dictionaries are downloaded."
+  },
+  "renderer.components.settingsPage.checkSpelling.preferredLanguages": {
+    "defaultMessage": "Select preferred language(s)",
+    "description": "Placeholder of the multi-select where the user picks one or more spell check languages."
+  },
+  "renderer.components.settingsPage.checkSpelling.specifyURL": {
+    "defaultMessage": "Specify the url where dictionary definitions can be retrieved",
+    "description": "Help text above the input for the alternative dictionary URL; 'url' means a web address serving dictionary files."
+  },
+  "renderer.components.settingsPage.downloadLocation": {
+    "defaultMessage": "Download Location",
+    "description": "Section heading in Settings > General for the folder where downloaded files are saved."
+  },
+  "renderer.components.settingsPage.downloadLocation.description": {
+    "defaultMessage": "Specify the folder where files will download.",
+    "description": "Help text under the Download Location heading in Settings > General, describing the folder where files are saved."
+  },
+  "renderer.components.settingsPage.enableHardwareAcceleration": {
+    "defaultMessage": "Use GPU hardware acceleration",
+    "description": "Checkbox label in Settings > Advanced that toggles GPU hardware acceleration for rendering the app."
+  },
+  "renderer.components.settingsPage.enableHardwareAcceleration.description": {
+    "defaultMessage": "If enabled, {appName} UI is rendered more efficiently but can lead to decreased stability for some systems.",
+    "description": "Help text under the GPU hardware acceleration checkbox in Settings > Advanced; {appName} is the application name."
+  },
+  "renderer.components.settingsPage.enableMetrics": {
+    "defaultMessage": "Send anonymous usage data to your configured servers",
+    "description": "Checkbox label in Settings > Advanced that toggles sending anonymous usage metrics to the user's Mattermost servers."
+  },
+  "renderer.components.settingsPage.enableMetrics.description": {
+    "defaultMessage": "Sends usage data about the application and its performance to your configured servers that accept it.",
+    "description": "Help text under the anonymous usage data checkbox in Settings > Advanced."
+  },
+  "renderer.components.settingsPage.enableSentry": {
+    "defaultMessage": "Send error reports to help improve the app",
+    "description": "Checkbox label in Settings > Advanced that toggles sending crash/error reports to the developers."
+  },
+  "renderer.components.settingsPage.enableSentry.description": {
+    "defaultMessage": "If enabled, error reports and crash information will be sent to help identify and fix issues in the application. Setting takes effect after restarting the app.",
+    "description": "Help text under the error-reports checkbox in Settings > Advanced, explaining what crash reporting does and that a restart is required."
+  },
+  "renderer.components.settingsPage.enableSessionAttributes": {
+    "defaultMessage": "Enable session attributes",
+    "description": "Checkbox label in Settings > Advanced; 'session attributes' means device and network information sent to servers for permission policies."
+  },
+  "renderer.components.settingsPage.enableSessionAttributes.description": {
+    "defaultMessage": "Sends device and network information to your configured servers for use in permission policies. Some resources may be inaccessible if this setting is disabled.",
+    "description": "Help text under the session attributes checkbox in Settings > Advanced, explaining that device/network info is sent to servers for permission policies."
+  },
+  "renderer.components.settingsPage.flashWindow": {
+    "defaultMessage": "Flash taskbar icon when a new message is received",
+    "description": "Checkbox label in Settings > Notifications on Windows/Linux; toggles flashing the taskbar icon when a message arrives."
+  },
+  "renderer.components.settingsPage.flashWindow.description": {
+    "defaultMessage": "If enabled, the taskbar icon will flash for a few seconds when a new message is received.",
+    "description": "Help text under the 'flash taskbar icon' checkbox in Settings > Notifications on Windows/Linux."
+  },
+  "renderer.components.settingsPage.flashWindow.description.linuxFunctionality": {
+    "defaultMessage": "This functionality may not work with all Linux window managers.",
+    "description": "Caveat sentence after the taskbar-flash description on Linux, displayed right after the bolded 'NOTE:' prefix."
+  },
+  "renderer.components.settingsPage.flashWindow.description.note": {
+    "defaultMessage": "NOTE: ",
+    "description": "Bold 'NOTE:' prefix rendered immediately before the Linux caveat about window managers; keep the trailing space since the next sentence is concatenated after it."
+  },
+  "renderer.components.settingsPage.fullscreen": {
+    "defaultMessage": "Open app in full screen",
+    "description": "Checkbox label in Settings > General that makes the app always open in full-screen mode."
+  },
+  "renderer.components.settingsPage.fullscreen.description": {
+    "defaultMessage": "If enabled, the {appName} application will always open in full screen",
+    "description": "Help text under the 'Open app in full screen' checkbox in Settings > General; {appName} is the application name."
+  },
+  "renderer.components.settingsPage.general": {
+    "defaultMessage": "General",
+    "description": "Sidebar category name in the desktop app Settings modal for general options (updates, download location, startup behavior)."
+  },
+  "renderer.components.settingsPage.header": {
+    "defaultMessage": "Desktop App Settings",
+    "description": "Title of the desktop app's Settings modal."
+  },
+  "renderer.components.settingsPage.language": {
+    "defaultMessage": "Language",
+    "description": "Sidebar category name in the desktop app Settings modal, grouping app language and spell checker options; 'Language' is a noun."
+  },
+  "renderer.components.settingsPage.launchAppMinimized": {
+    "defaultMessage": "Launch app minimized",
+    "description": "Checkbox label in Settings > General (Windows/Linux); when enabled the app starts hidden in the system tray instead of showing its window."
+  },
+  "renderer.components.settingsPage.launchAppMinimized.description": {
+    "defaultMessage": "If enabled, the app will start in system tray, and will not show the window on launch.",
+    "description": "Help text under the 'Launch app minimized' checkbox in Settings > General; 'system tray' is the OS notification area."
+  },
+  "renderer.components.settingsPage.loggingLevel": {
+    "defaultMessage": "Logging level",
+    "description": "Label for the dropdown in Settings > Advanced that selects how verbose the app's log output is."
+  },
+  "renderer.components.settingsPage.loggingLevel.description": {
+    "defaultMessage": "Logging is helpful for developers and support to isolate issues you may be encountering with the desktop app.",
+    "description": "Help text under the logging level dropdown in Settings > Advanced."
+  },
+  "renderer.components.settingsPage.loggingLevel.level.debug": {
+    "defaultMessage": "Debug (debug)",
+    "description": "Dropdown option for the logging level; the parenthesized 'debug' is the technical log level name and should stay in English."
+  },
+  "renderer.components.settingsPage.loggingLevel.level.error": {
+    "defaultMessage": "Errors (error)",
+    "description": "Dropdown option for the logging level; the parenthesized 'error' is the technical log level name and should stay in English."
+  },
+  "renderer.components.settingsPage.loggingLevel.level.info": {
+    "defaultMessage": "Info (info)",
+    "description": "Dropdown option for the logging level; the parenthesized 'info' is the technical log level name and should stay in English."
+  },
+  "renderer.components.settingsPage.loggingLevel.level.silly": {
+    "defaultMessage": "Finest (silly)",
+    "description": "Dropdown option for the most verbose logging level; the parenthesized 'silly' is the technical log level name and should stay in English."
+  },
+  "renderer.components.settingsPage.loggingLevel.level.verbose": {
+    "defaultMessage": "Verbose (verbose)",
+    "description": "Dropdown option for the logging level; the parenthesized 'verbose' is the technical log level name and should stay in English."
+  },
+  "renderer.components.settingsPage.loggingLevel.level.warn": {
+    "defaultMessage": "Errors and Warnings (warn)",
+    "description": "Dropdown option for the logging level covering errors and warnings; the parenthesized 'warn' is the technical log level name and should stay in English."
+  },
+  "renderer.components.settingsPage.minimizeToTray": {
+    "defaultMessage": "Leave app running in notification area when application window is closed",
+    "description": "Checkbox label in Settings > General (Windows/Linux); when enabled, closing the window keeps the app running in the system tray / notification area."
+  },
+  "renderer.components.settingsPage.minimizeToTray.description": {
+    "defaultMessage": "If enabled, the app stays running in the notification area after app window is closed.",
+    "description": "Help text under the 'Leave app running in notification area' checkbox in Settings > General on Windows/Linux."
+  },
+  "renderer.components.settingsPage.notifications": {
+    "defaultMessage": "Notifications",
+    "description": "Sidebar category name in the desktop app Settings modal for notification options; plural noun."
+  },
+  "renderer.components.settingsPage.saving": {
+    "defaultMessage": "Saving...",
+    "description": "Status indicator with a spinner shown in the Settings modal header while a setting change is being saved."
+  },
+  "renderer.components.settingsPage.servers": {
+    "defaultMessage": "Servers",
+    "description": "Sidebar category name in the desktop app Settings modal for managing configured Mattermost servers; plural noun."
+  },
+  "renderer.components.settingsPage.serverSetting.addAServer": {
+    "defaultMessage": "Add a server",
+    "description": "Button in Settings > Servers that opens the modal for adding a new Mattermost server connection."
+  },
+  "renderer.components.settingsPage.serverSetting.noServers": {
+    "defaultMessage": "No servers added",
+    "description": "Empty-state title in Settings > Servers when the user has not added any server connections."
+  },
+  "renderer.components.settingsPage.serverSetting.noServers.description": {
+    "defaultMessage": "Add a server to connect to your team's communication hub",
+    "description": "Empty-state subtext in Settings > Servers, shown under 'No servers added' and inviting the user to add one."
+  },
+  "renderer.components.settingsPage.serverSetting.title": {
+    "defaultMessage": "Servers",
+    "description": "Heading of the server list section in Settings > Servers; plural noun for Mattermost server connections."
+  },
+  "renderer.components.settingsPage.showUnreadBadge.description.dock": {
+    "defaultMessage": "Regardless of this setting, mentions are always indicated with a red badge and item count on the Dock icon.",
+    "description": "Help text under the unread badge checkbox in Settings > Notifications on macOS; 'Dock' is the macOS Dock."
+  },
+  "renderer.components.settingsPage.showUnreadBadge.description.taskbar": {
+    "defaultMessage": "Regardless of this setting, mentions are always indicated with a red badge and item count on the taskbar icon.",
+    "description": "Help text under the unread badge checkbox in Settings > Notifications on Windows; 'taskbar' is the Windows taskbar."
+  },
+  "renderer.components.settingsPage.showUnreadBadge.dock": {
+    "defaultMessage": "Show red badge on Dock icon to indicate unread messages",
+    "description": "Checkbox label in Settings > Notifications on macOS; toggles the red unread-messages badge on the app's Dock icon."
+  },
+  "renderer.components.settingsPage.showUnreadBadge.heading": {
+    "defaultMessage": "Unread Badge",
+    "description": "Section heading in Settings > Notifications above the unread badge checkbox; refers to the red dot shown on the app icon for unread messages."
+  },
+  "renderer.components.settingsPage.showUnreadBadge.taskbar": {
+    "defaultMessage": "Show red badge on taskbar icon to indicate unread messages",
+    "description": "Checkbox label in Settings > Notifications on Windows; toggles the red unread-messages badge on the app's taskbar icon."
+  },
+  "renderer.components.settingsPage.spellChecker": {
+    "defaultMessage": "Spell Checker",
+    "description": "Section heading in Settings > Language for the spell checking options."
+  },
+  "renderer.components.settingsPage.spellCheckerSetting.language": {
+    "defaultMessage": "Spell Checker Languages",
+    "description": "Label for the multi-select in the spell checker settings where the user picks which languages to spell check against."
+  },
+  "renderer.components.settingsPage.startAppOnLogin": {
+    "defaultMessage": "Start app on login",
+    "description": "Checkbox label in Settings > General (Windows/Linux) that makes the app launch automatically when the user logs in to their computer."
+  },
+  "renderer.components.settingsPage.startAppOnLogin.description": {
+    "defaultMessage": "If enabled, the app starts automatically when you log in to your machine.",
+    "description": "Help text under the 'Start app on login' checkbox in Settings > General."
+  },
+  "renderer.components.settingsPage.themeSyncing": {
+    "defaultMessage": "Synchronize Desktop App theme with server",
+    "description": "Checkbox label in Settings > General that syncs the desktop app's light/dark theme with the connected server's theme."
+  },
+  "renderer.components.settingsPage.themeSyncing.description": {
+    "defaultMessage": "If enabled, the Desktop App theme will be synchronized with the server theme. For older server versions, a refresh of the server may be required to update the theme.",
+    "description": "Help text under the theme-synchronization checkbox in Settings > General, explaining the desktop theme follows the server theme."
+  },
+  "renderer.components.settingsPage.trayIcon.color": {
+    "defaultMessage": "Icon color: ",
+    "description": "Label preceding the radio options (system default / light / dark) that pick the system tray icon color in Settings > General; ends with a colon and space because options follow it."
+  },
+  "renderer.components.settingsPage.trayIcon.show": {
+    "defaultMessage": "Show icon in the notification area",
+    "description": "Checkbox label in Settings > General (macOS/Linux) that shows the app icon in the system tray / notification area."
+  },
+  "renderer.components.settingsPage.trayIcon.theme.dark": {
+    "defaultMessage": "Dark",
+    "description": "Radio option for the tray icon color setting; selects the dark-colored icon variant."
+  },
+  "renderer.components.settingsPage.trayIcon.theme.light": {
+    "defaultMessage": "Light",
+    "description": "Radio option for the tray icon color setting; selects the light-colored icon variant."
+  },
+  "renderer.components.settingsPage.trayIcon.theme.systemDefault": {
+    "defaultMessage": "Use system default",
+    "description": "Radio option for the tray icon color setting; icon color follows the operating system's theme."
+  },
+  "renderer.components.settingsPage.updates.automatic": {
+    "defaultMessage": "Automatically check for updates",
+    "description": "Checkbox label in Settings > General that enables automatic checks for new app versions."
+  },
+  "renderer.components.settingsPage.updates.automatic.newDescription": {
+    "defaultMessage": "If enabled, you will be automatically notified when a new update is available.",
+    "description": "Help text under the 'Automatically check for updates' checkbox in Settings > General."
+  },
+  "renderer.components.settingsPage.updates.checkNow": {
+    "defaultMessage": "Check for Updates Now",
+    "description": "Button in Settings > General that immediately checks whether a new app version is available."
+  },
+  "renderer.components.settingsPage.useNativeTitleBar": {
+    "defaultMessage": "Use native title bar",
+    "description": "Checkbox label in Settings > General (Linux only); switches from the app's custom title bar to the operating system's native window title bar."
+  },
+  "renderer.components.settingsPage.useNativeTitleBar.description": {
+    "defaultMessage": "If enabled, the app will use the native title bar",
+    "description": "Help text under the 'Use native title bar' checkbox in Settings > General on Linux."
+  },
+  "renderer.components.settingsPage.viewLimit": {
+    "defaultMessage": "Maximum number of open views",
+    "description": "Label for a number input in Settings > General that caps how many tabs and windows can be open per server; 'views' means tabs and windows."
+  },
+  "renderer.components.settingsPage.viewLimit.description": {
+    "defaultMessage": "The maximum number of tabs and windows combined that can be open simultaneously in the application per server. Set to blank for no limit.",
+    "description": "Help text under the 'Maximum number of open views' number input in Settings > General; 'blank' means leaving the field empty."
+  },
+  "renderer.components.showCertificateModal.algorithm": {
+    "defaultMessage": "Algorithm",
+    "description": "Field label in the certificate information modal for the certificate's public key algorithm."
+  },
+  "renderer.components.showCertificateModal.commonName": {
+    "defaultMessage": "Common Name",
+    "description": "Field label in the certificate information modal; used under both the Subject Name and Issuer Name sections (X.509 'Common Name' attribute)."
+  },
+  "renderer.components.showCertificateModal.issuerName": {
+    "defaultMessage": "Issuer Name",
+    "description": "Section heading in the certificate information modal for the certificate issuer's details."
+  },
+  "renderer.components.showCertificateModal.notValidAfter": {
+    "defaultMessage": "Not Valid After",
+    "description": "Field label in the certificate information modal for the certificate's expiration date (X.509 'Not Valid After')."
+  },
+  "renderer.components.showCertificateModal.notValidBefore": {
+    "defaultMessage": "Not Valid Before",
+    "description": "Field label in the certificate information modal for the certificate's start-of-validity date (X.509 'Not Valid Before')."
+  },
+  "renderer.components.showCertificateModal.publicKeyInfo": {
+    "defaultMessage": "Public Key Info",
+    "description": "Section heading in the certificate information modal for public key details."
+  },
+  "renderer.components.showCertificateModal.serialNumber": {
+    "defaultMessage": "Serial Number",
+    "description": "Field label in the certificate information modal for the certificate's serial number."
+  },
+  "renderer.components.showCertificateModal.subjectName": {
+    "defaultMessage": "Subject Name",
+    "description": "Section heading in the certificate information modal for the certificate subject's details."
+  },
+  "renderer.components.showCertificateModal.title": {
+    "defaultMessage": "Certificate information",
+    "description": "Title of the modal showing details of a TLS certificate."
+  },
+  "renderer.components.tabBar.newTab.tooltip": {
+    "defaultMessage": "New tab",
+    "description": "Tooltip on the '+' button at the end of the tab bar; clicking it opens a new tab for the current server."
+  },
+  "renderer.components.welcomeScreen.button.getStarted": {
+    "defaultMessage": "Get started",
+    "description": "Primary button on the first-run welcome/onboarding screen; proceeds to adding a server."
+  },
+  "renderer.components.welcomeScreen.slides.calls.subtitle": {
+    "defaultMessage": "Seamlessly move from chat to audio calls and screen sharing without switching tools or losing context.",
+    "description": "Subtitle text of the 'calls' slide in the first-run welcome carousel, describing the audio calls and screen sharing feature."
+  },
+  "renderer.components.welcomeScreen.slides.calls.title": {
+    "defaultMessage": "Start secure calls instantly",
+    "description": "Title of the 'calls' slide in the first-run welcome carousel, promoting the voice calls feature."
+  },
+  "renderer.components.welcomeScreen.slides.collaborate.subtitle": {
+    "defaultMessage": "Coordinate across teams with persistent mission channels, secure file sharing, and automated workflows.",
+    "description": "Subtitle text of the collaboration slide in the first-run welcome carousel; 'channels' are Mattermost chat channels."
+  },
+  "renderer.components.welcomeScreen.slides.collaborate.title": {
+    "defaultMessage": "Collaborate in real time",
+    "description": "Title of the collaboration slide in the first-run welcome carousel."
+  },
+  "renderer.components.welcomeScreen.slides.integrate.subtitle": {
+    "defaultMessage": "Centralize data feeds, automate alerts, and integrate custom tooling directly into your operational hub.",
+    "description": "Subtitle text of the integrations slide in the first-run welcome carousel, describing integrating external tools and data feeds."
+  },
+  "renderer.components.welcomeScreen.slides.integrate.title": {
+    "defaultMessage": "Integrate with your systems",
+    "description": "Title of the integrations slide in the first-run welcome carousel; 'Integrate' is an imperative verb addressed to the user."
+  },
+  "renderer.components.welcomeScreen.slides.welcome.subtitle": {
+    "defaultMessage": "Mattermost is a sovereign collaboration platform built for operational environments and uncompromising security.",
+    "description": "Subtitle text of the first slide in the first-run welcome carousel, a marketing description of the Mattermost platform."
+  },
+  "renderer.components.welcomeScreen.slides.welcome.title": {
+    "defaultMessage": "Welcome",
+    "description": "Title of the first slide of the first-run welcome carousel greeting new users."
+  },
+  "renderer.downloadsDropdown.ClearAll": {
+    "defaultMessage": "Clear All",
+    "description": "Button in the header of the downloads dropdown panel; removes all entries from the download list (does not delete the files)."
+  },
+  "renderer.downloadsDropdown.Downloads": {
+    "defaultMessage": "Downloads",
+    "description": "Header title of the downloads dropdown panel listing downloaded files; compact space."
+  },
+  "renderer.downloadsDropdown.remaining": {
+    "defaultMessage": "remaining",
+    "description": "Word appended after a time estimate for an in-progress download, e.g. '5 mins remaining'; concatenated after the number and unit."
+  },
+  "renderer.downloadsDropdown.Update.ANewVersionIsAvailableToInstall": {
+    "defaultMessage": "{appName} Desktop App version {version} is available to install.",
+    "description": "Description text of the update banner in the downloads dropdown; {appName} is the product name, {version} is the new version number."
+  },
+  "renderer.downloadsDropdown.Update.DownloadManually": {
+    "defaultMessage": "Download installer",
+    "description": "Secondary link under the update banner on Windows; downloads the installer file directly instead of using the store; 'installer' is the setup program."
+  },
+  "renderer.downloadsDropdown.Update.DownloadUpdate": {
+    "defaultMessage": "Download update",
+    "description": "Main button of the update banner in the downloads dropdown; starts downloading the app update. 'Download' is a verb."
+  },
+  "renderer.downloadsDropdown.Update.MattermostVersionX": {
+    "defaultMessage": "{appName} version {version}",
+    "description": "Name shown for the app-update entry in the downloads dropdown list; {appName} is the product name, {version} is the update's version number."
+  },
+  "renderer.downloadsDropdown.Update.NewDesktopVersionAvailable": {
+    "defaultMessage": "New version available",
+    "description": "Title of the update banner in the downloads dropdown announcing a new app version; compact space."
+  },
+  "renderer.downloadsDropdown.Update.OpenMacAppStore": {
+    "defaultMessage": "Open Mac App Store",
+    "description": "Main button of the update banner for Mac App Store builds; opens the Mac App Store to update; 'Mac App Store' is a product name."
+  },
+  "renderer.downloadsDropdown.Update.OpenWindowsStore": {
+    "defaultMessage": "Open Windows Store",
+    "description": "Main button of the update banner on Windows Store builds; opens the Microsoft/Windows Store to update; 'Windows Store' is a product name."
+  },
+  "renderer.downloadsDropdown.Update.SkipThisVersion": {
+    "defaultMessage": "Skip this version",
+    "description": "Menu item in the three-dot menu of the app-update entry in the downloads dropdown; suppresses notifications about this specific version."
+  },
+  "renderer.downloadsDropdown.Update.ViewChangelog": {
+    "defaultMessage": "View changelog",
+    "description": "Menu item in the three-dot menu of the app-update entry in the downloads dropdown; opens the release changelog in a browser."
+  },
+  "renderer.downloadsDropdown.Update.ViewDownloadOptions": {
+    "defaultMessage": "View download options",
+    "description": "Main button of the update banner on Linux; opens a page listing the available download options for the new version."
+  },
+  "renderer.downloadsDropdown.Update.ViewInstallGuide": {
+    "defaultMessage": "View install guide",
+    "description": "Secondary link under the update banner on Linux; opens the installation guide documentation."
+  },
+  "renderer.downloadsDropdownMenu.CancelDownload": {
+    "defaultMessage": "Cancel Download",
+    "description": "Context menu item for a download in progress; stops the download."
+  },
+  "renderer.downloadsDropdownMenu.Clear": {
+    "defaultMessage": "Clear",
+    "description": "Context menu item for a download entry; removes it from the download list (verb, does not delete the file)."
+  },
+  "renderer.downloadsDropdownMenu.Open": {
+    "defaultMessage": "Open",
+    "description": "Context menu item for a downloaded file; opens the file (verb)."
+  },
+  "renderer.downloadsDropdownMenu.ShowInFileExplorer": {
+    "defaultMessage": "Show in File Explorer",
+    "description": "Context menu item that reveals the downloaded file in the OS file browser; this variant is shown on Windows ('File Explorer' is the Windows file browser)."
+  },
+  "renderer.downloadsDropdownMenu.ShowInFileManager": {
+    "defaultMessage": "Show in File Manager",
+    "description": "Context menu item that reveals the downloaded file in the OS file browser; this variant is shown on Linux."
+  },
+  "renderer.downloadsDropdownMenu.ShowInFinder": {
+    "defaultMessage": "Show in Finder",
+    "description": "Context menu item that reveals the downloaded file in the OS file browser; this variant is shown on macOS ('Finder' is the macOS file browser)."
+  },
+  "renderer.downloadsDropdownMenu.ShowInFolder": {
+    "defaultMessage": "Show in Folder",
+    "description": "Context menu item that reveals the downloaded file in its containing folder; generic fallback wording for unknown platforms."
+  },
+  "renderer.dropdown.addAServer": {
+    "defaultMessage": "Add a server",
+    "description": "Button at the bottom of the server list dropdown; opens the dialog to add a new Mattermost server connection."
+  },
+  "renderer.dropdown.servers": {
+    "defaultMessage": "Servers",
+    "description": "Header of the dropdown listing the user's configured Mattermost servers; shown next to a keyboard shortcut."
+  },
+  "renderer.modals.certificate.certificateModal.certInfoButton": {
+    "defaultMessage": "Certificate Information",
+    "description": "Footer button in the client-certificate selection modal; opens details of the selected certificate."
+  },
+  "renderer.modals.certificate.certificateModal.issuer": {
+    "defaultMessage": "Issuer",
+    "description": "Column header in the client-certificate selection table; the authority that issued the certificate. Compact space."
+  },
+  "renderer.modals.certificate.certificateModal.noCertsAvailable": {
+    "defaultMessage": "No certificates available",
+    "description": "Empty-state row in the client-certificate selection table when the system has no certificates to offer."
+  },
+  "renderer.modals.certificate.certificateModal.serial": {
+    "defaultMessage": "Serial",
+    "description": "Column header in the client-certificate selection table; the certificate's serial number. Compact space."
+  },
+  "renderer.modals.certificate.certificateModal.subject": {
+    "defaultMessage": "Subject",
+    "description": "Column header in the client-certificate selection table; the entity the certificate was issued to. Compact space."
+  },
+  "renderer.modals.certificate.certificateModal.subtitle": {
+    "defaultMessage": "Select a certificate to authenticate yourself to {url}",
+    "description": "Subheader of the client-certificate selection modal; {url} is the server address requesting the certificate."
+  },
+  "renderer.modals.certificate.certificateModal.title": {
+    "defaultMessage": "Select a certificate",
+    "description": "Title of the modal where the user picks a TLS client certificate to authenticate to a server; 'Select' is an imperative verb."
+  },
+  "renderer.modals.login.loginModal.password": {
+    "defaultMessage": "Password",
+    "description": "Placeholder text of the password input in the basic-auth login popup shown when a server or proxy requests credentials."
+  },
+  "renderer.modals.login.loginModal.username": {
+    "defaultMessage": "User Name",
+    "description": "Placeholder text of the username input in the basic-auth login popup shown when a server or proxy requests credentials."
+  },
+  "renderer.modals.preAuth.message": {
+    "defaultMessage": "The server at {url} requires additional authentication before you can proceed.",
+    "description": "Subheader of the modal asking for a pre-authentication shared secret; {url} is the server address."
+  },
+  "renderer.modals.preAuth.proxyMessage": {
+    "defaultMessage": "The proxy at {url} requires additional authentication before you can proceed.",
+    "description": "Subheader of the credentials popup when an HTTP proxy demands authentication; {url} is the proxy address."
+  },
+  "renderer.modals.preAuth.proxyTitle": {
+    "defaultMessage": "Proxy authentication required",
+    "description": "Title of the credentials popup when an HTTP proxy demands authentication before the app can connect."
+  },
+  "renderer.modals.preAuth.secret": {
+    "defaultMessage": "Authentication Secret",
+    "description": "Placeholder text of the input where the user types the pre-authentication shared secret; noun phrase."
+  },
+  "renderer.modals.preAuth.serverMessage": {
+    "defaultMessage": "The server at {url} requires additional authentication before you can proceed.",
+    "description": "Subheader of the credentials popup when a server demands basic authentication; {url} is the server address."
+  },
+  "renderer.modals.preAuth.serverTitle": {
+    "defaultMessage": "Server authentication required",
+    "description": "Title of the credentials popup when a server demands basic authentication before the app can connect."
+  },
+  "renderer.modals.preAuth.title": {
+    "defaultMessage": "Server authentication required",
+    "description": "Title of the modal asking the user for a pre-authentication shared secret before connecting to a server."
+  },
+  "renderer.time.hours": {
+    "defaultMessage": "hours",
+    "description": "Time unit shown after a number in a download's estimated time remaining (e.g. '2 hours remaining'); compact."
+  },
+  "renderer.time.mins": {
+    "defaultMessage": "mins",
+    "description": "Abbreviated time unit ('minutes') shown after a number in a download's estimated time remaining (e.g. '5 mins remaining'); compact."
+  },
+  "renderer.time.sec": {
+    "defaultMessage": "sec",
+    "description": "Abbreviated time unit ('seconds') shown after a number in a download's estimated time remaining (e.g. '30 sec remaining'); compact."
+  }
+}
