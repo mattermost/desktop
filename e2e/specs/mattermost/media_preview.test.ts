@@ -27,25 +27,36 @@ const LOADED_IMAGE_SELECTOR = [
     'img[src*="/api/v4/files/"]:not(.image-loading__placeholder)',
 ].join(', ');
 
-const POSTED_IMAGE_SELECTOR = [
-    '.file-preview__button',
-    '.post-image .small-image__container',
-    '.post-image .image-loaded-container',
-    '.post-image__image',
-    LOADED_IMAGE_SELECTOR,
-    '.file-viewer-touch',
-    '.file-attachment',
-].join(', ');
+const PREVIEW_FILE_NAME = 'e2e-preview.png';
 
 // Shared helpers injected into renderer scripts (same pattern as DOM_UTILS in serverView.ts).
 const PREVIEW_IMAGE_UTILS = `
 const LOADED_IMAGE_SELECTOR = ${JSON.stringify(LOADED_IMAGE_SELECTOR)};
+const PREVIEW_FILE_NAME = ${JSON.stringify(PREVIEW_FILE_NAME)};
 const isPreviewControlVisible = (el) => el instanceof HTMLElement && window.getComputedStyle(el).display !== 'none';
 const isLoadedPreviewImage = (el) => el instanceof HTMLImageElement &&
     !el.classList.contains('image-loading__placeholder') &&
     el.complete &&
     el.naturalWidth > 0 &&
     isPreviewControlVisible(el);
+const postHasPreviewFixture = (post) => {
+    if (post.querySelector('[aria-label*="' + PREVIEW_FILE_NAME + '" i]')) {
+        return true;
+    }
+    // Filename can also appear in attachment headers before the image aria-label mounts.
+    const attachment = post.querySelector('.post-image, .post--attachment, .file-attachment, .file-preview__button');
+    return Boolean(attachment && (attachment.textContent || '').toLowerCase().includes(PREVIEW_FILE_NAME));
+};
+const findPreviewFixturePost = () => {
+    const posts = Array.from(document.querySelectorAll('.post'));
+    for (let index = posts.length - 1; index >= 0; index--) {
+        const post = posts[index];
+        if (postHasPreviewFixture(post)) {
+            return post;
+        }
+    }
+    return null;
+};
 const findVisibleLoadedPreviewButton = (root) => {
     for (const button of root.querySelectorAll('.file-preview__button')) {
         if (!isPreviewControlVisible(button)) {
@@ -68,26 +79,27 @@ const findVisibleLoadedPreviewButton = (root) => {
 async function waitForLoadedImagePreviewControl(serverWin: ServerView): Promise<void> {
     await expect.poll(async () => serverWin.runInRenderer<boolean>(`
         ${PREVIEW_IMAGE_UTILS}
-        const posts = Array.from(document.querySelectorAll('.post'));
-        for (let index = posts.length - 1; index >= 0; index--) {
-            const post = posts[index];
-            const previewButton = findVisibleLoadedPreviewButton(post);
-            if (previewButton) {
-                previewButton.scrollIntoView({block: 'center'});
-                return true;
-            }
+        const post = findPreviewFixturePost();
+        if (!post) {
+            return false;
+        }
 
-            // Legacy servers without .file-preview__button
-            const legacyImg = post.querySelector(LOADED_IMAGE_SELECTOR);
-            if (isLoadedPreviewImage(legacyImg)) {
-                legacyImg.scrollIntoView({block: 'center'});
-                return true;
-            }
+        const previewButton = findVisibleLoadedPreviewButton(post);
+        if (previewButton) {
+            previewButton.scrollIntoView({block: 'center'});
+            return true;
+        }
+
+        // Legacy servers without .file-preview__button
+        const legacyImg = post.querySelector(LOADED_IMAGE_SELECTOR);
+        if (isLoadedPreviewImage(legacyImg)) {
+            legacyImg.scrollIntoView({block: 'center'});
+            return true;
         }
         return false;
     `, true), {
         timeout: 60_000,
-        message: 'Uploaded image must finish loading into a visible file-preview control before it can be opened',
+        message: 'Uploaded e2e-preview.png must finish loading into a visible file-preview control before it can be opened',
     }).toBe(true);
 }
 
@@ -110,24 +122,20 @@ async function submitComposerPost(serverWin: ServerView): Promise<void> {
 
 async function waitForPostedAttachment(serverWin: ServerView): Promise<void> {
     await expect.poll(async () => serverWin.runInRenderer<boolean>(`
-        const attachmentSelector = ${JSON.stringify(POSTED_IMAGE_SELECTOR)};
+        ${PREVIEW_IMAGE_UTILS}
         const composer = document.querySelector('#post-create, .AdvancedTextEditor, .post-create, [data-testid="post-create"]');
         const draftAttachment = composer?.querySelector('.file-preview, .file-preview__container, .attachment-preview');
         if (draftAttachment) {
             return false;
         }
 
-        const posts = Array.from(document.querySelectorAll('.post'));
-        for (let index = posts.length - 1; index >= 0; index--) {
-            const post = posts[index];
-            if (post.querySelector(attachmentSelector) ||
-                post.querySelector('[aria-label*="e2e-preview.png" i], [aria-label*="file thumbnail" i]')) {
-                post.scrollIntoView({block: 'center'});
-                return true;
-            }
+        const post = findPreviewFixturePost();
+        if (!post) {
+            return false;
         }
-        return false;
-    `, true), {timeout: 60_000, message: 'Uploaded image must appear in the channel post list'}).toBe(true);
+        post.scrollIntoView({block: 'center'});
+        return true;
+    `, true), {timeout: 60_000, message: 'Uploaded e2e-preview.png must appear in the channel post list'}).toBe(true);
 }
 
 async function uploadAndPostPng(serverWin: ServerView): Promise<void> {
@@ -138,7 +146,7 @@ async function uploadAndPostPng(serverWin: ServerView): Promise<void> {
         for (let i = 0; i < binary.length; i++) {
             bytes[i] = binary.charCodeAt(i);
         }
-        const file = new File([bytes], 'e2e-preview.png', {type: 'image/png'});
+        const file = new File([bytes], ${JSON.stringify(PREVIEW_FILE_NAME)}, {type: 'image/png'});
 
         const input = document.querySelector('#fileUploadInput, input[type="file"]');
         if (!(input instanceof HTMLInputElement)) {
@@ -189,16 +197,7 @@ async function isImagePreviewOpen(serverWin: ServerView): Promise<boolean> {
 async function openImagePreview(serverWin: ServerView): Promise<boolean> {
     return serverWin.runInRenderer<boolean>(`
         ${PREVIEW_IMAGE_UTILS}
-        const posts = Array.from(document.querySelectorAll('.post'));
-        let root = null;
-        for (let index = posts.length - 1; index >= 0; index--) {
-            const post = posts[index];
-            if (post.querySelector('.file-preview__button, .post-image, .post--attachment, .file-attachment') ||
-                post.querySelector('[aria-label*="e2e-preview.png" i], [aria-label*="file thumbnail" i]')) {
-                root = post;
-                break;
-            }
-        }
+        const root = findPreviewFixturePost();
         if (!root) {
             return false;
         }
@@ -213,8 +212,7 @@ async function openImagePreview(serverWin: ServerView): Promise<boolean> {
         }
 
         const clickTargets = [
-            ...Array.from(root.querySelectorAll('[aria-label*="e2e-preview.png" i]')),
-            ...Array.from(root.querySelectorAll('[aria-label*="file thumbnail" i]')),
+            ...Array.from(root.querySelectorAll('[aria-label*="' + PREVIEW_FILE_NAME + '" i]')),
             ...Array.from(root.querySelectorAll(LOADED_IMAGE_SELECTOR)),
             root.querySelector('.post-image .image-loaded-container'),
             root.querySelector('.post-image .small-image__container'),
