@@ -1,0 +1,102 @@
+{
+  "server": {
+    "target": "サーバー",
+    "note": "Existing: サーバーを追加する (Add Server), サーバーを削除する (Remove Server)."
+  },
+  "tab": {
+    "target": "タブ",
+    "note": "新しいタブ (New Tab), タブを閉じる (Close Tab)."
+  },
+  "view": {
+    "target": "ビュー",
+    "note": "Existing: ビュー数の上限に達しました (View limit reached). Distinct from the View menu (表示 in context, though the menu label itself is untranslated '&View')."
+  },
+  "main window": {
+    "target": "メインウィンドウ"
+  },
+  "popout window": {
+    "target": "ポップアウトウィンドウ",
+    "note": "Existing related strings: ポップアウトメニュー (Popout Menu); verb 'pop out' → ポップアウトする."
+  },
+  "system tray": {
+    "target": "システムトレイ",
+    "note": "Short form 'Tray' in menu items: トレイ (e.g. トレイに最小化)."
+  },
+  "notification area": {
+    "target": "通知領域"
+  },
+  "minimize to tray": {
+    "target": "トレイに最小化する"
+  },
+  "Dock": {
+    "target": "Dock",
+    "note": "macOS keeps 'Dock' untranslated in Japanese; existing strings use Dockアイコン."
+  },
+  "taskbar": {
+    "target": "タスクバー"
+  },
+  "badge": {
+    "target": "バッジ",
+    "note": "Unread badge: 未読バッジ."
+  },
+  "bounce": {
+    "target": "バウンスする",
+    "note": "Existing: Dockアイコンのバウンス (noun form)."
+  },
+  "flash": {
+    "target": "点滅する",
+    "note": "Existing: タスクバーアイコンを点滅する."
+  },
+  "start app on login": {
+    "target": "ログイン時にアプリを起動する",
+    "note": "Related: 最小化してアプリを開始する (Launch app minimized)."
+  },
+  "check for updates": {
+    "target": "更新を確認する",
+    "note": "'Update' is rendered 更新, not アップデート, in existing desktop strings."
+  },
+  "downloads": {
+    "target": "ダウンロード"
+  },
+  "developer tools": {
+    "target": "デベロッパーツール",
+    "note": "Existing convention is デベロッパーツール (not 開発者ツール)."
+  },
+  "spell checker": {
+    "target": "スペルチェッカー",
+    "note": "Action 'Check spelling': スペルチェック."
+  },
+  "certificate": {
+    "target": "証明書"
+  },
+  "authentication secret": {
+    "target": "認証シークレット"
+  },
+  "hardware acceleration": {
+    "target": "ハードウェアアクセラレーション",
+    "note": "Existing: GPUハードウェアアクセラレーションを使用する."
+  },
+  "dark mode": {
+    "target": "ダークモード"
+  },
+  "title bar": {
+    "target": "タイトルバー",
+    "note": "Native title bar: ネイティブタイトルバー."
+  },
+  "zoom": {
+    "target": "ズーム",
+    "note": "Zoom In: ズームイン; Zoom Out: ズームアウト."
+  },
+  "full screen": {
+    "target": "フルスクリーン",
+    "note": "Existing: フルスクリーンにする (Toggle Full Screen), フルスクリーンでアプリを開く."
+  },
+  "clear data": {
+    "target": "データをクリアする",
+    "note": "Existing: すべてのデータをクリア (Clear All Data), データクリア (Clear Data). Uses クリア, not 削除."
+  },
+  "logging level": {
+    "target": "ログレベル",
+    "note": "Related: ログを表示 (Show logs)."
+  }
+}

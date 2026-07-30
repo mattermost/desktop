@@ -1,0 +1,84 @@
+{
+  "server": {
+    "target": "server"
+  },
+  "tab": {
+    "target": "tab"
+  },
+  "view": {
+    "target": "view"
+  },
+  "main window": {
+    "target": "main window"
+  },
+  "popout window": {
+    "target": "popout window"
+  },
+  "system tray": {
+    "target": "system tray"
+  },
+  "notification area": {
+    "target": "notification area"
+  },
+  "minimize to tray": {
+    "target": "minimise to tray",
+    "note": "AU spelling: minimise."
+  },
+  "Dock": {
+    "target": "Dock"
+  },
+  "taskbar": {
+    "target": "taskbar"
+  },
+  "badge": {
+    "target": "badge"
+  },
+  "bounce": {
+    "target": "bounce"
+  },
+  "flash": {
+    "target": "flash"
+  },
+  "start app on login": {
+    "target": "start app on login"
+  },
+  "check for updates": {
+    "target": "check for updates"
+  },
+  "downloads": {
+    "target": "downloads"
+  },
+  "developer tools": {
+    "target": "developer tools"
+  },
+  "spell checker": {
+    "target": "spell checker"
+  },
+  "certificate": {
+    "target": "certificate"
+  },
+  "authentication secret": {
+    "target": "authentication secret"
+  },
+  "hardware acceleration": {
+    "target": "hardware acceleration"
+  },
+  "dark mode": {
+    "target": "dark mode"
+  },
+  "title bar": {
+    "target": "title bar"
+  },
+  "zoom": {
+    "target": "zoom"
+  },
+  "full screen": {
+    "target": "full screen"
+  },
+  "clear data": {
+    "target": "clear data"
+  },
+  "logging level": {
+    "target": "logging level"
+  }
+}

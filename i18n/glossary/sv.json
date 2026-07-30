@@ -1,0 +1,108 @@
+{
+  "server": {
+    "target": "server",
+    "note": "en server, servern, servrar. Add Server = 'Lägg till server', Remove Server = 'Ta bort server'."
+  },
+  "tab": {
+    "target": "flik",
+    "note": "en flik, fliken, flikar. New Tab = 'Ny flik', Close Tab = 'Stäng flik'."
+  },
+  "view": {
+    "target": "vy",
+    "note": "en vy, vyer. Existing renders 'view limit' as 'visningsgräns' ('Visningsgränsen nådd') — keep that phrase for the limit message."
+  },
+  "main window": {
+    "target": "huvudfönster",
+    "note": "ett huvudfönster, huvudfönstret."
+  },
+  "popout window": {
+    "target": "popout-fönster",
+    "note": "Existing translates 'Popout Menu' as 'Popup-meny', which conflates popup and popout. Prefer 'popout-fönster'; 'eget fönster' works in running text ('öppna i eget fönster')."
+  },
+  "system tray": {
+    "target": "systemfält",
+    "note": "Existing consistently uses 'systemfältet' (definite form)."
+  },
+  "notification area": {
+    "target": "meddelandefält",
+    "note": "Official Windows Swedish term is 'meddelandefältet'; existing desktop strings render both 'notification area' and 'system tray' as 'systemfältet'. Use 'meddelandefält' only when mirroring Windows settings wording, otherwise follow 'systemfältet'."
+  },
+  "minimize to tray": {
+    "target": "minimera till systemfältet"
+  },
+  "Dock": {
+    "target": "Dock",
+    "note": "macOS Swedish keeps 'Dock' (capital D): 'Dock-ikonen'."
+  },
+  "taskbar": {
+    "target": "aktivitetsfält",
+    "note": "Official Windows Swedish term: 'aktivitetsfältet'. Existing has a typo 'aktivitetesfält' once — use 'aktivitetsfält'."
+  },
+  "badge": {
+    "target": "märke",
+    "note": "Inconsistent today: heading 'Oläst märke' but body text 'en röd markering'. Use 'märke' for the badge itself; 'markering' acceptable in descriptive text."
+  },
+  "bounce": {
+    "target": "studsa",
+    "note": "Existing: Dock-ikonen 'studsar'."
+  },
+  "flash": {
+    "target": "blinka",
+    "note": "Existing: aktivitetsfältsikonen 'blinkar'."
+  },
+  "start app on login": {
+    "target": "starta appen vid inloggning",
+    "note": "Launch app minimized = 'Starta appen minimerad'."
+  },
+  "check for updates": {
+    "target": "sök efter uppdateringar"
+  },
+  "downloads": {
+    "target": "nedladdningar",
+    "note": "Menu item: 'Nedladdningar'. Download Location = 'plats för nedladdningar'; running text sometimes uses 'hämtade filer'."
+  },
+  "developer tools": {
+    "target": "utvecklarverktyg",
+    "note": "ett utvecklarverktyg; menu 'Utvecklarverktyg för …'."
+  },
+  "spell checker": {
+    "target": "stavningskontroll",
+    "note": "Check spelling = 'kontrollera stavning'."
+  },
+  "certificate": {
+    "target": "certifikat",
+    "note": "ett certifikat, certifikatet, certifikat (pl.)."
+  },
+  "authentication secret": {
+    "target": "autentiseringshemlighet",
+    "note": "Existing: 'Den här servern kräver en autentiseringshemlighet.'"
+  },
+  "hardware acceleration": {
+    "target": "hårdvaruacceleration",
+    "note": "Existing rendering; Microsoft style would be 'maskinvaruacceleration' but keep 'hårdvaruacceleration' for consistency."
+  },
+  "dark mode": {
+    "target": "mörkt läge",
+    "note": "Toggle Dark Mode = 'Växla mörkt läge'."
+  },
+  "title bar": {
+    "target": "titelfält",
+    "note": "Existing: 'det inbyggda titelfältet' (native title bar). Windows official term is 'namnlist', but keep 'titelfält' for consistency."
+  },
+  "zoom": {
+    "target": "zooma",
+    "note": "Verb: 'zooma'; Zoom In = 'Zooma in', Zoom Out = 'Zooma ut', Actual Size = 'Verklig storlek'."
+  },
+  "full screen": {
+    "target": "helskärm",
+    "note": "Toggle Full Screen = 'Växla helskärm'; adjective 'helskärmsläge'."
+  },
+  "clear data": {
+    "target": "rensa data",
+    "note": "Clear All Data = 'Rensa all data'; Clear Cache and Reload = 'Rensa cache och ladda om'."
+  },
+  "logging level": {
+    "target": "loggnivå",
+    "note": "Existing writes 'Logg-nivå'; prefer the solid compound 'loggnivå'. Show logs = 'Visa loggar'."
+  }
+}

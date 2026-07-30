@@ -1,0 +1,109 @@
+{
+  "server": {
+    "target": "Server",
+    "note": "Masculine: der Server. 'Add Server' = 'Server hinzufügen', 'Remove Server' = 'Server entfernen'."
+  },
+  "tab": {
+    "target": "Tab",
+    "note": "Existing strings are inconsistent between 'Tab' and 'Registerkarte'; majority and shorter form is 'Tab' (masculine: der Tab). 'New Tab' = 'Neuer Tab', 'Close Tab' = 'Tab schließen'."
+  },
+  "view": {
+    "target": "Ansicht",
+    "note": "Existing 'View limit reached' = 'Anzeigelimit erreicht'; use 'Ansicht' for the open-page sense and 'Anzeigelimit' for the limit setting."
+  },
+  "main window": {
+    "target": "Hauptfenster"
+  },
+  "popout window": {
+    "target": "Popout-Fenster",
+    "note": "Existing strings keep 'Popout' English ('Popout Menu', 'Call Widget Popout'); attach German 'Fenster' when the window itself is meant."
+  },
+  "system tray": {
+    "target": "Systemablage",
+    "note": "Existing rendering; note that Windows itself calls this area 'Infobereich' — keep 'Systemablage' for consistency with current strings."
+  },
+  "notification area": {
+    "target": "Benachrichtigungsbereich",
+    "note": "Majority existing rendering; one string uses 'Nachrichtenbereich' (inconsistent, avoid)."
+  },
+  "minimize to tray": {
+    "target": "in die Ablage minimieren",
+    "note": "Existing dialog title: 'In Ablage minimieren'. Keep 'Ablage' consistent with 'Systemablage'."
+  },
+  "Dock": {
+    "target": "Dock",
+    "note": "macOS platform term, kept as 'Dock' in German macOS ('das Dock-Symbol')."
+  },
+  "taskbar": {
+    "target": "Taskleiste",
+    "note": "Windows platform term; taskbar icon = Taskleisten-Symbol (existing rendering)."
+  },
+  "badge": {
+    "target": "Markierung",
+    "note": "Existing strings mostly use 'rote Markierung' for the unread badge (one uses 'Abzeichen' — avoid). Unread badge = 'Markierung für ungelesene Nachrichten'."
+  },
+  "bounce": {
+    "target": "hüpfen",
+    "note": "Existing rendering: 'Lass das Dock-Symbol hüpfen'; formal register would be 'Dock-Symbol hüpfen lassen'."
+  },
+  "flash": {
+    "target": "blinken",
+    "note": "'Flash taskbar icon' = 'Taskleisten-Symbol blinken lassen'."
+  },
+  "start app on login": {
+    "target": "App bei der Anmeldung starten",
+    "note": "Existing: 'Starte Anwendung bei der Anmeldung'; 'Launch app minimized' = 'App minimiert starten'. App/Anwendung both occur; keep one per surface."
+  },
+  "check for updates": {
+    "target": "auf Aktualisierungen prüfen",
+    "note": "Existing menu item: 'Prüfe auf Aktualisierungen'; settings: 'Automatisch auf Aktualisierungen prüfen'."
+  },
+  "downloads": {
+    "target": "Downloads",
+    "note": "Kept English per Weblate glossary ('Download'); 'Download Location' = 'Speicherort für Downloads'."
+  },
+  "developer tools": {
+    "target": "Entwickler-Tools",
+    "note": "Consistent existing rendering ('Entwickler-Tools für …')."
+  },
+  "spell checker": {
+    "target": "Rechtschreibprüfung",
+    "note": "Per Weblate glossary; 'Check spelling' = 'Rechtschreibung prüfen'."
+  },
+  "certificate": {
+    "target": "Zertifikat",
+    "note": "Per Weblate glossary; certificate error = Zertifikatsfehler."
+  },
+  "authentication secret": {
+    "target": "Authentifizierungsgeheimnis",
+    "note": "Consistent existing rendering in the pre-auth flow."
+  },
+  "hardware acceleration": {
+    "target": "Hardwarebeschleunigung",
+    "note": "Existing string has unjoined 'GPU Hardware Beschleunigung'; correct German is 'GPU-Hardwarebeschleunigung' (community rules require compounding)."
+  },
+  "dark mode": {
+    "target": "Dunkler Modus",
+    "note": "'Toggle Dark Mode' = 'Dunklen Modus umschalten' (existing rendering)."
+  },
+  "title bar": {
+    "target": "Titelleiste",
+    "note": "'Use native title bar' = 'Native Titelleiste verwenden'."
+  },
+  "zoom": {
+    "target": "Zoom",
+    "note": "'Zoom In' = Vergrößern, 'Zoom Out' = Verkleinern, 'Actual Size' = 'Tatsächliche Größe' (existing renderings)."
+  },
+  "full screen": {
+    "target": "Vollbild",
+    "note": "Per Weblate glossary; full screen mode = Vollbildmodus, 'Toggle Full Screen' = 'Vollbild umschalten'."
+  },
+  "clear data": {
+    "target": "Daten löschen",
+    "note": "'Clear All Data' = 'Alle Daten löschen'; 'Clear Cache and Reload' = 'Cache leeren und neu laden' (clear = leeren for caches, per Weblate glossary)."
+  },
+  "logging level": {
+    "target": "Protokollierungsstufe",
+    "note": "'Show logs' = 'Protokolle anzeigen'."
+  }
+}

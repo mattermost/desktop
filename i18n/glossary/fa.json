@@ -1,0 +1,108 @@
+{
+  "server": {
+    "target": "سرور",
+    "note": "Plural: سرورها (existing)."
+  },
+  "tab": {
+    "target": "زبانه",
+    "note": "Existing desktop fa uses لبه (edge), which is a mistranslation; زبانه is the standard Persian UI term (Firefox convention)."
+  },
+  "view": {
+    "target": "نما",
+    "note": "The &View menu label is نمایش (existing); for the server-page sense (view limit) use نما."
+  },
+  "main window": {
+    "target": "پنجره اصلی"
+  },
+  "popout window": {
+    "target": "پنجره جدا",
+    "note": "No existing fa; a window split off from the main window."
+  },
+  "system tray": {
+    "target": "سینی سیستم",
+    "note": "Existing rendering."
+  },
+  "notification area": {
+    "target": "قسمت اعلان‌ها",
+    "note": "Existing rendering, used in Windows settings wording."
+  },
+  "minimize to tray": {
+    "target": "فرستادن به سینی",
+    "note": "Existing rendering; literal کمینه کردن به سینی is not used."
+  },
+  "Dock": {
+    "target": "Dock",
+    "note": "macOS is not localized in Persian; keep the English platform term."
+  },
+  "taskbar": {
+    "target": "نوار وظیفه",
+    "note": "Existing rendering, matching Windows Persian."
+  },
+  "badge": {
+    "target": "نشان",
+    "note": "No existing fa; the unread counter on the app icon (نشان خوانده‌نشده)."
+  },
+  "bounce": {
+    "target": "پرش",
+    "note": "Verb: پریدن. The macOS Dock icon animation."
+  },
+  "flash": {
+    "target": "چشمک زدن",
+    "note": "Existing rendering (چشمک‌زدن تصویرک نوار وظیفه)."
+  },
+  "start app on login": {
+    "target": "اجرای خودکار برنامه هنگام ورود",
+    "note": "Existing rendering appends به محیط‌کار (into the desktop session); Launch app minimized: بازکردن برنامه در پایین (existing) — بازکردن برنامه به‌صورت کمینه is clearer."
+  },
+  "check for updates": {
+    "target": "بررسی به‌روزرسانی‌ها",
+    "note": "Existing uses both بررسی به‌روزرسانی and بررسی خودکار برای به‌روزرسانی‌ها."
+  },
+  "downloads": {
+    "target": "بارگیری‌ها",
+    "note": "Existing rendering; بارگیری (not دانلود) is the desktop convention. Download Location: محل‌ذخیره بارگیری‌ها."
+  },
+  "developer tools": {
+    "target": "ابزارهای توسعه‌دهنده",
+    "note": "No existing fa; standard Chromium/Firefox Persian term."
+  },
+  "spell checker": {
+    "target": "بررسی املا",
+    "note": "Existing: Check spelling = بررسی املایی. As a noun feature name use بررسی املا or غلط‌یاب املایی."
+  },
+  "certificate": {
+    "target": "گواهینامه",
+    "note": "Existing mixes گواهینامه and گواهی‌نامه; use the closed form گواهینامه."
+  },
+  "authentication secret": {
+    "target": "رمز محرمانه احراز هویت",
+    "note": "No existing fa; the shared pre-authentication secret provided by an admin."
+  },
+  "hardware acceleration": {
+    "target": "شتاب‌دهی سخت‌افزاری",
+    "note": "Existing string: استفاده از شتابدهنده گرافیک سخت‌افزاری."
+  },
+  "dark mode": {
+    "target": "حالت تیره",
+    "note": "Existing uses سبک تیره once; حالت تیره is the standard Persian UI term (Android/Windows convention)."
+  },
+  "title bar": {
+    "target": "نوار عنوان"
+  },
+  "zoom": {
+    "target": "بزرگنمایی",
+    "note": "Zoom In: بزرگنمایی، Zoom Out: کوچک‌نمایی، Actual Size: اندازه واقعی (all existing)."
+  },
+  "full screen": {
+    "target": "تمام‌صفحه",
+    "note": "Toggle Full Screen: تغییرحالت تمام‌صفحه (existing)."
+  },
+  "clear data": {
+    "target": "پاک کردن داده‌ها",
+    "note": "Existing: Clear Cache and Reload = پاکسازی کش و بارگذاری مجدد; use پاک کردن داده‌ها for the data-reset actions."
+  },
+  "logging level": {
+    "target": "سطح ثبت ردپا",
+    "note": "Existing desktop fa renders logs as ردپا (Show logs = نمایش ردپاها); گزارش/لاگ would be more standard but keep ردپا for desktop consistency."
+  }
+}

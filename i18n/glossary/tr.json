@@ -1,0 +1,104 @@
+{
+  "server": {
+    "target": "sunucu",
+    "note": "'Add a server' = 'Bir sunucu ekle'; 'Remove Server' = 'Sunucuyu kaldır'."
+  },
+  "tab": {
+    "target": "sekme",
+    "note": "'New Tab' = 'Yeni sekme'; 'Close Tab' = 'Sekmeyi kapat'."
+  },
+  "view": {
+    "target": "görünüm",
+    "note": "'View limit reached' = 'Görünüm sayısı sınırına ulaşıldı'. Same word as the View menu ('&Görünüm'); context disambiguates."
+  },
+  "main window": {
+    "target": "ana pencere"
+  },
+  "popout window": {
+    "target": "açılan pencere",
+    "note": "Existing strings: 'Call Widget Popout' = 'açılan penceresi', 'Popout Menu' = 'Dışa açılan menü'. Use 'açılan pencere' for the window; 'ayrı pencerede aç' works for the pop-out action."
+  },
+  "system tray": {
+    "target": "sistem tepsisi"
+  },
+  "notification area": {
+    "target": "bildirim alanı"
+  },
+  "minimize to tray": {
+    "target": "sistem tepsisine küçült"
+  },
+  "Dock": {
+    "target": "Dock",
+    "note": "macOS Turkish keeps 'Dock' untranslated; repo follows this ('Dock simgesi')."
+  },
+  "taskbar": {
+    "target": "görev çubuğu",
+    "note": "Matches Windows Turkish localization."
+  },
+  "badge": {
+    "target": "etiket",
+    "note": "Repo renders the unread badge as 'etiket' ('kırmızı etiket', 'Okunmamış etiketi'). OS localizations often use 'rozet'; keep 'etiket' for consistency with existing strings."
+  },
+  "bounce": {
+    "target": "zıplat",
+    "note": "'Bounce the Dock icon' = 'Dock simgesi zıplatılsın' (passive-optative form typical of settings labels)."
+  },
+  "flash": {
+    "target": "yanıp sön",
+    "note": "'Flash taskbar icon' = 'görev çubuğu simgesi yanıp sönsün'."
+  },
+  "start app on login": {
+    "target": "oturum açıldığında uygulama başlatılsın",
+    "note": "'Launch app minimized' = 'Uygulama simge durumuna küçültülmüş olarak başlatılsın'. Settings checkboxes use the -sın/-sin optative, not imperatives."
+  },
+  "check for updates": {
+    "target": "güncellemeleri denetle",
+    "note": "Menu item 'Check for Updates' rendered as 'Güncelleme denetimi'; 'Check for Updates Now' = 'Güncellemeleri denetle'. Use 'denetle' (not 'kontrol et') per repo vocabulary."
+  },
+  "downloads": {
+    "target": "indirmeler",
+    "note": "'Download Location' = 'İndirme konumu'."
+  },
+  "developer tools": {
+    "target": "geliştirici araçları"
+  },
+  "spell checker": {
+    "target": "yazım denetleyici",
+    "note": "'Check spelling' = 'Yazım denetlensin'."
+  },
+  "certificate": {
+    "target": "sertifika"
+  },
+  "authentication secret": {
+    "target": "kimlik doğrulama parolası",
+    "note": "Repo renders 'secret' as 'parola' in this feature; do not use 'gizli anahtar' here."
+  },
+  "hardware acceleration": {
+    "target": "donanımsal hızlandırma",
+    "note": "'Use GPU hardware acceleration' = 'Donanımsal GPU hızlandırması kullanılsın'."
+  },
+  "dark mode": {
+    "target": "koyu kip",
+    "note": "Repo uses 'kip' for 'mode' ('Koyu kipi aç/kapat'); do not use 'karanlık mod'."
+  },
+  "title bar": {
+    "target": "başlık çubuğu",
+    "note": "'native title bar' = 'doğal başlık çubuğu'."
+  },
+  "zoom": {
+    "target": "yakınlaştır",
+    "note": "Inconsistent today: desktop menu uses 'Büyült'/'Küçült' for Zoom In/Out while webapp uses 'Yakınlaştır'/'Uzaklaştır'. Prefer 'yakınlaştır'/'uzaklaştır' (webapp majority); noun form 'yakınlaştırma'."
+  },
+  "full screen": {
+    "target": "tam ekran",
+    "note": "'Toggle Full Screen' = 'Tam ekranı aç/kapat'."
+  },
+  "clear data": {
+    "target": "verileri temizle",
+    "note": "'Clear All Data' = 'Tüm verileri temizle'; 'Clear Cache and Reload' = 'Ön belleği temizle ve yeniden yükle' ('cache' = 'ön bellek', two words)."
+  },
+  "logging level": {
+    "target": "günlük tutma düzeyi",
+    "note": "'Show logs' = 'günlükleri görüntüle'; 'log' = 'günlük'."
+  }
+}

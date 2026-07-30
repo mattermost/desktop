@@ -1,0 +1,110 @@
+{
+  "server": {
+    "target": "сервер",
+    "note": "'Add Server' = 'Додати сервер', 'Remove Server' = 'Видалити сервер'."
+  },
+  "tab": {
+    "target": "вкладка",
+    "note": "Feminine. 'New Tab' = 'Нова вкладка', 'Close Tab' = 'Закрити вкладку' (avoid mid-sentence capitalization seen in some existing strings)."
+  },
+  "view": {
+    "target": "перегляд",
+    "note": "Grounded: 'поточного перегляду', 'обмеження перегляду' ('View limit' = 'обмеження переглядів')."
+  },
+  "main window": {
+    "target": "головне вікно",
+    "note": "Grounded: 'Перейти до головного вікна'."
+  },
+  "popout window": {
+    "target": "окреме вікно",
+    "note": "Existing strings render 'pop out'/'popout' loosely as 'спливаюче вікно' (popup); 'окреме вікно' is clearer for a detached window. Note the inconsistency when translating."
+  },
+  "system tray": {
+    "target": "системний трей",
+    "note": "Existing desktop strings avoid the word, using 'область сповіщень' or 'фоновий режим'; use 'системний трей' when the tray itself is named."
+  },
+  "notification area": {
+    "target": "область сповіщень",
+    "note": "Grounded; matches the localized Windows term."
+  },
+  "minimize to tray": {
+    "target": "згорнути в трей",
+    "note": "Existing string uses 'Згорнути у фоновий режим'; 'згорнути в трей' is more precise — keep whichever is used consistently in the target file."
+  },
+  "Dock": {
+    "target": "Dock",
+    "note": "Kept in Latin script per the Ukrainian macOS localization: 'піктограма в Dock'."
+  },
+  "taskbar": {
+    "target": "панель завдань",
+    "note": "Grounded; matches the localized Windows term."
+  },
+  "badge": {
+    "target": "значок",
+    "note": "Existing strings mix 'значок' and 'мітка' ('червону мітку'); prefer 'значок' ('значок непрочитаних')."
+  },
+  "bounce": {
+    "target": "підстрибувати",
+    "note": "Grounded: 'Підстрибування піктограми Dock'."
+  },
+  "flash": {
+    "target": "мигати",
+    "note": "Grounded: 'Мигання піктограми на панелі завдань'; 'блимати' is an acceptable synonym but keep 'мигати' for consistency."
+  },
+  "start app on login": {
+    "target": "запускати програму під час входу в систему",
+    "note": "Grounded phrasing: 'програма запускається автоматично, коли ви входите в систему'."
+  },
+  "check for updates": {
+    "target": "перевірити наявність оновлень",
+    "note": "Grounded: 'Перевірте наявність оновлень', 'Автоматично перевіряти оновлення'."
+  },
+  "downloads": {
+    "target": "завантаження",
+    "note": "Neuter. 'Download Location' is rendered 'Шлях для збереження' in existing strings."
+  },
+  "developer tools": {
+    "target": "інструменти розробника",
+    "note": "Consistent in existing translations."
+  },
+  "spell checker": {
+    "target": "перевірка правопису",
+    "note": "Majority rendering; 'перевірка орфографії' appears once — prefer 'перевірка правопису'."
+  },
+  "certificate": {
+    "target": "сертифікат",
+    "note": "Masculine. Genitive 'сертифіката'."
+  },
+  "authentication secret": {
+    "target": "секрет автентифікації",
+    "note": "Existing strings mix 'секрет автентифікації', 'секретний код аутентифікації' and 'секрет аутентифікації'; standardize on 'секрет автентифікації' (modern orthography 'автентифікація')."
+  },
+  "hardware acceleration": {
+    "target": "апаратне прискорення",
+    "note": "Grounded: 'апаратне прискорення GPU'."
+  },
+  "dark mode": {
+    "target": "темний режим",
+    "note": "Grounded: 'Увімкнути темний режим'."
+  },
+  "title bar": {
+    "target": "заголовок вікна",
+    "note": "Grounded: 'вбудований заголовок вікна' for 'native title bar'."
+  },
+  "zoom": {
+    "target": "масштаб (ім.) / масштабувати (дієсл.)",
+    "note": "'Zoom In' = 'Збільшити', 'Zoom Out' = 'Зменшити', 'Actual Size' = 'Фактичний розмір'."
+  },
+  "full screen": {
+    "target": "повноекранний режим",
+    "note": "'Toggle Full Screen' = 'Перемкнути повноекранний режим'."
+  },
+  "clear data": {
+    "target": "очистити дані",
+    "note": "'Clear All Data' = 'Очистити всі дані' (grounded)."
+  },
+  "logging level": {
+    "target": "рівень журналювання",
+    "note": "Grounded; 'logs' = 'журнали' ('Show logs' = 'Показати журнали')."
+  }
+}

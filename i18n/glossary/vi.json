@@ -1,0 +1,109 @@
+{
+  "server": {
+    "target": "máy chủ",
+    "note": "Established in desktop vi.json ('danh sách máy chủ', 'Thêm máy chủ')."
+  },
+  "tab": {
+    "target": "tab",
+    "note": "Kept in English throughout desktop vi.json ('Đóng tab', 'tab mới'); do not translate as 'thẻ'."
+  },
+  "view": {
+    "target": "trang xem",
+    "note": "desktop vi.json renders 'View limit' as 'giới hạn xem'. Menu '&View' = '&Xem'. Use 'trang xem' for the open-server-page noun to avoid confusion with the verb."
+  },
+  "main window": {
+    "target": "cửa sổ chính",
+    "note": "Established in desktop vi.json."
+  },
+  "popout window": {
+    "target": "cửa sổ bật ra",
+    "note": "Aligns with Calls vi.json 'Pop out' = 'Bật ra'."
+  },
+  "system tray": {
+    "target": "khay hệ thống",
+    "note": "Standard Windows Vietnamese term. desktop vi.json has legacy 'Thu nhỏ xuống đáy' for tray — do not follow it."
+  },
+  "notification area": {
+    "target": "khu vực thông báo",
+    "note": "Established in desktop vi.json."
+  },
+  "minimize to tray": {
+    "target": "thu nhỏ xuống khay hệ thống",
+    "note": "desktop vi.json has 'Thu nhỏ xuống đáy', which mistranslates 'tray'; prefer 'khay hệ thống'."
+  },
+  "Dock": {
+    "target": "Dock",
+    "note": "Apple keeps 'Dock' untranslated in macOS Vietnamese localization."
+  },
+  "taskbar": {
+    "target": "thanh tác vụ",
+    "note": "Established in desktop vi.json; matches Windows Vietnamese localization."
+  },
+  "badge": {
+    "target": "huy hiệu",
+    "note": "No existing vi rendering; follows Windows/Android Vietnamese localization for icon badges. Unread badge = 'huy hiệu chưa đọc'."
+  },
+  "bounce": {
+    "target": "nảy",
+    "note": "macOS Dock icon animation; 'nhún nhảy' also seen but 'nảy' matches Apple's Vietnamese wording."
+  },
+  "flash": {
+    "target": "nhấp nháy",
+    "note": "Established in desktop vi.json ('Nhấp nháy biểu tượng trên thanh tác vụ')."
+  },
+  "start app on login": {
+    "target": "khởi động ứng dụng khi đăng nhập",
+    "note": "desktop vi.json has 'Bắt đầu ứng dụng khi đăng nhập'; 'khởi động' is the natural verb for launching an app."
+  },
+  "check for updates": {
+    "target": "kiểm tra cập nhật",
+    "note": "Established in desktop vi.json."
+  },
+  "downloads": {
+    "target": "tải xuống",
+    "note": "Established; download location = 'thư mục tải xuống'."
+  },
+  "developer tools": {
+    "target": "công cụ phát triển",
+    "note": "Established in desktop vi.json (one string has typo 'phét triển' — use 'phát triển')."
+  },
+  "spell checker": {
+    "target": "trình kiểm tra chính tả",
+    "note": "Verb form 'Check spelling' = 'Kiểm tra chính tả' (established)."
+  },
+  "certificate": {
+    "target": "chứng chỉ",
+    "note": "Established in desktop vi.json."
+  },
+  "authentication secret": {
+    "target": "khóa bí mật xác thực",
+    "note": "No existing vi rendering; 'khóa bí mật' is the standard rendering for a shared secret."
+  },
+  "hardware acceleration": {
+    "target": "tăng tốc phần cứng",
+    "note": "Established in desktop vi.json ('tăng tốc phần cứng GPU')."
+  },
+  "dark mode": {
+    "target": "chế độ tối",
+    "note": "desktop vi.json has legacy 'chế độ ban đêm'; 'chế độ tối' is the established Vietnamese term across major platforms."
+  },
+  "title bar": {
+    "target": "thanh tiêu đề"
+  },
+  "zoom": {
+    "target": "thu phóng",
+    "note": "Zoom In = 'Phóng to', Zoom Out = 'Thu nhỏ' (both established); 'thu phóng' for the general noun. Caution: 'Thu nhỏ' also renders 'Minimize'."
+  },
+  "full screen": {
+    "target": "toàn màn hình",
+    "note": "Established in desktop vi.json."
+  },
+  "clear data": {
+    "target": "xóa dữ liệu",
+    "note": "Established ('Xoá dữ liệu', 'Xoá hết dữ liệu'); vi.json mixes 'xoá/xóa' spellings — prefer modern 'xóa'."
+  },
+  "logging level": {
+    "target": "cấp độ ghi log",
+    "note": "Established in desktop vi.json; 'log' kept in English ('Xem log')."
+  }
+}

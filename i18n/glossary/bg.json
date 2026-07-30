@@ -1,0 +1,106 @@
+{
+  "server": {
+    "target": "сървър",
+    "note": "Add Server = 'Добавяне на сървър'; Remove Server = 'Премахване на сървъра'. Desktop bg.json is empty, so follow webapp conventions."
+  },
+  "tab": {
+    "target": "раздел",
+    "note": "Standard Bulgarian browser term (Chrome/Edge use 'раздел'). New Tab = 'Нов раздел', Close Tab = 'Затваряне на раздела'."
+  },
+  "view": {
+    "target": "изглед",
+    "note": "View limit = 'ограничение на изгледите'."
+  },
+  "main window": {
+    "target": "основен прозорец"
+  },
+  "popout window": {
+    "target": "отделен прозорец",
+    "note": "Pop out (verb) = 'отваряне в отделен прозорец'."
+  },
+  "system tray": {
+    "target": "системна област",
+    "note": "Windows Bulgarian officially calls this 'област за уведомяване'; 'системна област' is the compact glossary form for tray."
+  },
+  "notification area": {
+    "target": "област за уведомяване",
+    "note": "Official Windows Bulgarian term."
+  },
+  "minimize to tray": {
+    "target": "минимизиране в системната област"
+  },
+  "Dock": {
+    "target": "Dock",
+    "note": "macOS has no Bulgarian localization, so keep the English platform term."
+  },
+  "taskbar": {
+    "target": "лента на задачите",
+    "note": "Official Windows Bulgarian term."
+  },
+  "badge": {
+    "target": "значка",
+    "note": "Unread badge = 'значка за непрочетени'."
+  },
+  "bounce": {
+    "target": "подскачане",
+    "note": "macOS Dock icon animation."
+  },
+  "flash": {
+    "target": "мигане",
+    "note": "Flash taskbar icon = 'мигане на иконата в лентата на задачите'."
+  },
+  "start app on login": {
+    "target": "стартиране на приложението при влизане",
+    "note": "Launch app minimized = 'стартиране на приложението минимизирано'."
+  },
+  "check for updates": {
+    "target": "проверка за актуализации",
+    "note": "Standard Windows Bulgarian wording; update = 'актуализация' matches existing webapp usage."
+  },
+  "downloads": {
+    "target": "изтегляния",
+    "note": "Download Location = 'място за изтегляне'."
+  },
+  "developer tools": {
+    "target": "инструменти за разработчици"
+  },
+  "spell checker": {
+    "target": "проверка на правописа",
+    "note": "Check spelling = 'проверявай правописа'."
+  },
+  "certificate": {
+    "target": "сертификат",
+    "note": "Established in webapp bg.json ('клиентски сертификат')."
+  },
+  "authentication secret": {
+    "target": "тайна за удостоверяване",
+    "note": "No existing bg rendering; 'удостоверяване' is the established word for authentication in bg.json."
+  },
+  "hardware acceleration": {
+    "target": "хардуерно ускорение"
+  },
+  "dark mode": {
+    "target": "тъмен режим",
+    "note": "Toggle Dark Mode = 'Превключване на тъмен режим'."
+  },
+  "title bar": {
+    "target": "заглавна лента",
+    "note": "Official Windows Bulgarian term; 'заглавка' is reserved for channel header in webapp."
+  },
+  "zoom": {
+    "target": "мащабиране",
+    "note": "Zoom In = 'Увеличаване', Zoom Out = 'Намаляване', Actual Size = 'Действителен размер'."
+  },
+  "full screen": {
+    "target": "цял екран",
+    "note": "Toggle Full Screen = 'Превключване на цял екран'."
+  },
+  "clear data": {
+    "target": "изчистване на данните",
+    "note": "Clear All Data = 'Изчистване на всички данни'; Clear Cache and Reload = 'Изчистване на кеша и презареждане'."
+  },
+  "logging level": {
+    "target": "ниво на записване в дневника",
+    "note": "Logs = 'Дневници' established in webapp bg.json; Show logs = 'Показване на дневниците'."
+  }
+}

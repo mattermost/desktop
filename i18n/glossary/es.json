@@ -1,0 +1,105 @@
+{
+  "server": {
+    "target": "servidor",
+    "note": "Add Server: 'Agregar servidor'; Remove Server: 'Eliminar servidor'."
+  },
+  "tab": {
+    "target": "pestaña",
+    "note": "New Tab: 'Nueva Pestaña'; Close Tab: 'Cerrar Pestaña' per existing menus."
+  },
+  "view": {
+    "target": "vista",
+    "note": "Existing 'View limit reached' → 'ver límite alcanzado' is a mistranslation; should be 'Límite de vistas alcanzado'."
+  },
+  "main window": {
+    "target": "ventana principal"
+  },
+  "popout window": {
+    "target": "ventana emergente",
+    "note": "Existing rendering (e.g. 'Ventana Emergente de Widget'); refers to a separated window, not a browser popup."
+  },
+  "system tray": {
+    "target": "bandeja del sistema",
+    "note": "Existing: 'Minimizar a la bandeja'."
+  },
+  "notification area": {
+    "target": "área de notificación",
+    "note": "Matches Windows es terminology."
+  },
+  "minimize to tray": {
+    "target": "minimizar a la bandeja"
+  },
+  "Dock": {
+    "target": "Dock",
+    "note": "macOS in Spanish keeps 'Dock' untranslated; masculine ('el Dock')."
+  },
+  "taskbar": {
+    "target": "barra de tareas",
+    "note": "Matches Windows es terminology."
+  },
+  "badge": {
+    "target": "insignia",
+    "note": "Existing: 'Insignia de No Leído' (unread badge)."
+  },
+  "bounce": {
+    "target": "rebotar",
+    "note": "Existing: 'Hacer rebotar el ícono del Dock'."
+  },
+  "flash": {
+    "target": "iluminar",
+    "note": "Existing rendering ('Iluminar el ícono de la barra de tareas'); 'parpadear' is the more literal alternative."
+  },
+  "start app on login": {
+    "target": "abrir la aplicación al iniciar sesión",
+    "note": "Existing setting label: 'Abrir la aplicación al arrancar el sistema'."
+  },
+  "check for updates": {
+    "target": "comprobar si hay actualizaciones",
+    "note": "Existing menu item rendering."
+  },
+  "downloads": {
+    "target": "descargas",
+    "note": "Download Location: 'Ubicación de descarga'."
+  },
+  "developer tools": {
+    "target": "herramientas de desarrollador",
+    "note": "Existing rendering; capitalize as 'Herramientas de Desarrollador' in menu items."
+  },
+  "spell checker": {
+    "target": "corrector ortográfico"
+  },
+  "certificate": {
+    "target": "certificado"
+  },
+  "authentication secret": {
+    "target": "secreto de autenticación",
+    "note": "Existing rendering."
+  },
+  "hardware acceleration": {
+    "target": "aceleración por hardware",
+    "note": "Existing: 'Usar aceleración por hardware (GPU)'."
+  },
+  "dark mode": {
+    "target": "modo oscuro",
+    "note": "Toggle Dark Mode: existing 'Activar Modo Oscuro'; 'Alternar modo oscuro' would be more accurate for a toggle."
+  },
+  "title bar": {
+    "target": "barra de título"
+  },
+  "zoom": {
+    "target": "zoom",
+    "note": "Existing menu verbs: Zoom In → 'Acercar', Zoom Out → 'Alejar'; Actual Size → 'Tamaño real'."
+  },
+  "full screen": {
+    "target": "pantalla completa",
+    "note": "Toggle Full Screen: 'Cambiar a pantalla completa' per existing menu."
+  },
+  "clear data": {
+    "target": "limpiar datos",
+    "note": "Existing: 'Limpiar todos los datos', 'Limpiar caché y recargar'; 'borrar' is the alternative but 'limpiar' is established."
+  },
+  "logging level": {
+    "target": "nivel de registros",
+    "note": "Existing rendering; Show logs: 'Mostrar registros'."
+  }
+}

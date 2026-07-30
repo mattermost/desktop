@@ -1,0 +1,109 @@
+{
+  "server": {
+    "target": "сервер",
+    "note": "Menu items per existing strings: 'Добавить сервер', 'Удалить сервер'."
+  },
+  "tab": {
+    "target": "вкладка",
+    "note": "Existing: 'Новая вкладка', 'Закрыть вкладку'."
+  },
+  "view": {
+    "target": "вид",
+    "note": "Existing uses 'вид' ('для текущего вида'); one string mistranslates 'View limit reached' as 'предел просмотров' — use 'достигнут лимит видов' instead. Note the View menu itself is also 'Вид'."
+  },
+  "main window": {
+    "target": "главное окно",
+    "note": "Existing rendering ('Инструменты разработчика для главного окна')."
+  },
+  "popout window": {
+    "target": "отдельное окно",
+    "note": "Existing usage is inconsistent ('Выпадающее меню' for Popout Menu, 'всплывающий' for Calls popout). Prefer 'отдельное окно' / 'открыть в отдельном окне', matching Calls 'pop out'."
+  },
+  "system tray": {
+    "target": "системный трей",
+    "note": "Existing rendering; bare 'tray' is 'трей' ('Свернуть в трей')."
+  },
+  "notification area": {
+    "target": "область уведомлений",
+    "note": "Official Windows term; consistent in existing translations."
+  },
+  "minimize to tray": {
+    "target": "свернуть в трей",
+    "note": "Existing rendering."
+  },
+  "Dock": {
+    "target": "Dock",
+    "note": "macOS Russian UI keeps 'Dock' untranslated; existing strings agree ('значок Dock')."
+  },
+  "taskbar": {
+    "target": "панель задач",
+    "note": "Official Windows term; consistent in existing translations."
+  },
+  "badge": {
+    "target": "значок",
+    "note": "Existing rendering ('красный значок'); note 'значок' also translates 'icon' — disambiguate as 'значок с счётчиком' or 'красный значок' where needed."
+  },
+  "bounce": {
+    "target": "подпрыгивание",
+    "note": "macOS Russian UI convention ('значок подпрыгивает'). The one existing string uses 'отскок значка Dock'; 'подпрыгивание' is preferred."
+  },
+  "flash": {
+    "target": "мигать",
+    "note": "Existing rendering ('значок на панели задач будет мигать')."
+  },
+  "start app on login": {
+    "target": "запускать приложение при входе в систему",
+    "note": "Existing rendering. 'Launch app minimized' = 'запускать приложение свёрнутым'."
+  },
+  "check for updates": {
+    "target": "проверить обновления",
+    "note": "Existing menu item 'Проверить обновления'; setting 'Автоматическая проверка наличия обновлений'."
+  },
+  "downloads": {
+    "target": "загрузки",
+    "note": "Download location: 'папка загрузок' / 'расположение загрузок'."
+  },
+  "developer tools": {
+    "target": "инструменты разработчика",
+    "note": "Consistent in existing translations."
+  },
+  "spell checker": {
+    "target": "проверка орфографии",
+    "note": "Existing rendering ('Языки для проверки орфографии')."
+  },
+  "certificate": {
+    "target": "сертификат"
+  },
+  "authentication secret": {
+    "target": "пароль аутентификации",
+    "note": "Existing rendering is consistent; do not translate literally as 'секрет'."
+  },
+  "hardware acceleration": {
+    "target": "аппаратное ускорение",
+    "note": "Existing: 'Использовать аппаратное ускорение GPU'."
+  },
+  "dark mode": {
+    "target": "тёмный режим",
+    "note": "Existing writes it without ё ('темный режим')."
+  },
+  "title bar": {
+    "target": "строка заголовка",
+    "note": "Native title bar: 'системная строка заголовка' (existing uses 'родная строка заголовка'; 'системная' is the cleaner Windows convention)."
+  },
+  "zoom": {
+    "target": "масштаб",
+    "note": "Existing: 'Увеличить масштаб' (Zoom In), 'Уменьшить масштаб' (Zoom Out); Actual Size = 'Фактический размер'."
+  },
+  "full screen": {
+    "target": "полноэкранный режим",
+    "note": "Existing: 'полноэкранный режим' in settings; menu toggle 'Переключить на полный экран'."
+  },
+  "clear data": {
+    "target": "очистить данные",
+    "note": "Existing: 'Очистить все данные' (Clear All Data)."
+  },
+  "logging level": {
+    "target": "уровень журналирования",
+    "note": "Existing rendering; 'Show logs' = 'Показать журналы'."
+  }
+}

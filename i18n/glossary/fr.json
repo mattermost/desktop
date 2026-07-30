@@ -1,0 +1,109 @@
+{
+  "server": {
+    "target": "serveur",
+    "note": "Add Server: 'Ajouter un serveur'; Remove Server: 'Retirer le serveur' (existing) — 'retirer' since the server is removed from the list, not deleted."
+  },
+  "tab": {
+    "target": "onglet",
+    "note": "Masculine. New Tab: 'Nouvel onglet'; Close Tab: 'Fermer l'onglet'."
+  },
+  "view": {
+    "target": "vue",
+    "note": "Feminine. View limit: 'limite de vues'. New strings, not yet translated in fr.json. Distinct from the View menu, which is 'Voir' in the existing menu bar."
+  },
+  "main window": {
+    "target": "fenêtre principale"
+  },
+  "popout window": {
+    "target": "fenêtre détachée",
+    "note": "Not yet translated in desktop fr.json. Verb 'pop out': 'détacher'. The Calls fr.json uses 'Sortir', which is ambiguous — avoid."
+  },
+  "system tray": {
+    "target": "zone de notification",
+    "note": "Existing settings strings use 'zone de notification'; some dialogs use 'barre d'état' or 'barre des tâches' — prefer 'zone de notification' for the tray itself."
+  },
+  "notification area": {
+    "target": "zone de notification",
+    "note": "Same rendering as system tray; matches Windows French terminology."
+  },
+  "minimize to tray": {
+    "target": "réduire dans la zone de notification",
+    "note": "Existing dialog title says 'Réduire dans la barre des tâches', inconsistent with the settings wording — prefer 'zone de notification'."
+  },
+  "Dock": {
+    "target": "Dock",
+    "note": "Apple keeps 'Dock' (masculine) in French macOS; existing: 'Faire rebondir l'icône du Dock'."
+  },
+  "taskbar": {
+    "target": "barre des tâches",
+    "note": "Standard Windows French term."
+  },
+  "badge": {
+    "target": "badge",
+    "note": "Masculine; existing: 'badge rouge' for the unread badge."
+  },
+  "bounce": {
+    "target": "rebondir",
+    "note": "Causative: 'faire rebondir l'icône'."
+  },
+  "flash": {
+    "target": "clignoter",
+    "note": "Existing: 'icône de la barre des tâches clignotante'."
+  },
+  "start app on login": {
+    "target": "lancer l'application à la connexion",
+    "note": "Existing setting label. Launch minimized: 'Lancer l'application en mode réduit'."
+  },
+  "check for updates": {
+    "target": "vérifier les mises à jour",
+    "note": "'mise à jour' is reserved for app updates per community rules ('modifier' is used for editing)."
+  },
+  "downloads": {
+    "target": "téléchargements",
+    "note": "Download Location: 'Emplacement des téléchargements' (existing)."
+  },
+  "developer tools": {
+    "target": "outils de développement",
+    "note": "Existing menu wording; matches Chromium French."
+  },
+  "spell checker": {
+    "target": "vérification de l'orthographe",
+    "note": "Setting label in existing fr.json: 'Vérifier l'orthographe'."
+  },
+  "certificate": {
+    "target": "certificat",
+    "note": "Masculine."
+  },
+  "authentication secret": {
+    "target": "secret d'authentification",
+    "note": "New strings, not yet translated in fr.json; 'secret' (m.) is standard French security vocabulary."
+  },
+  "hardware acceleration": {
+    "target": "accélération matérielle",
+    "note": "Existing: 'accélération matérielle du GPU'."
+  },
+  "dark mode": {
+    "target": "mode sombre",
+    "note": "Existing: 'Basculer en mode sombre'."
+  },
+  "title bar": {
+    "target": "barre de titre",
+    "note": "Native title bar: 'barre de titre native'."
+  },
+  "zoom": {
+    "target": "zoom",
+    "note": "Zoom In/Out in existing menus: 'Zoomer' / 'Dézoomer'; Actual Size: 'Taille réelle'."
+  },
+  "full screen": {
+    "target": "plein écran",
+    "note": "Toggle Full Screen: 'Basculer en plein écran' (existing)."
+  },
+  "clear data": {
+    "target": "effacer les données",
+    "note": "Clear All Data: 'Effacer toutes les données'; Clear Cache and Reload: 'Effacer le cache et recharger' (existing)."
+  },
+  "logging level": {
+    "target": "niveau de journalisation",
+    "note": "Existing setting label. Show logs: 'Afficher les logs' in existing menu — 'journaux' is the more French alternative."
+  }
+}

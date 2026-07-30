@@ -1,0 +1,227 @@
+{
+  "server": {
+    "definition": "A Mattermost server connection configured in the desktop app; each server appears in the server list and opens in its own view.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Server",
+      "Servers",
+      "Add Server",
+      "Remove Server"
+    ]
+  },
+  "tab": {
+    "definition": "A tab inside the app window showing a view of a server; users can open, close, and switch tabs.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Tab",
+      "New Tab",
+      "Close Tab"
+    ]
+  },
+  "view": {
+    "definition": "An open server page inside the app; the number of simultaneously open views is limited.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "views",
+      "View limit"
+    ]
+  },
+  "main window": {
+    "definition": "The app's primary window containing the server tabs, as opposed to popout windows.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Main Window"
+    ]
+  },
+  "popout window": {
+    "definition": "A separate window split off from the main window to show a tab or view on its own.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Popout Menu",
+      "pop out"
+    ]
+  },
+  "system tray": {
+    "definition": "The OS status area (Windows/Linux) where the app can show its icon and keep running when closed.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "tray",
+      "Tray"
+    ]
+  },
+  "notification area": {
+    "definition": "The area of the OS taskbar where the tray icon is displayed; used in Windows settings wording.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false
+  },
+  "minimize to tray": {
+    "definition": "To hide the app window into the system tray instead of closing it.",
+    "partOfSpeech": "verb",
+    "doNotTranslate": false,
+    "aliases": [
+      "Minimize to Tray"
+    ]
+  },
+  "Dock": {
+    "definition": "The macOS application bar where the app icon can bounce and show a badge; use the platform's localized macOS term.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false
+  },
+  "taskbar": {
+    "definition": "The Windows bar with running apps, where the app icon can flash and show a badge; use the platform's localized Windows term.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false
+  },
+  "badge": {
+    "definition": "The small counter or dot on the app icon indicating unread messages or mentions.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Unread Badge",
+      "unread badge"
+    ]
+  },
+  "bounce": {
+    "definition": "The macOS Dock icon animation used to draw attention when a notification arrives.",
+    "partOfSpeech": "verb",
+    "doNotTranslate": false,
+    "aliases": [
+      "Bounce"
+    ]
+  },
+  "flash": {
+    "definition": "Making the Windows taskbar icon blink when a new message is received.",
+    "partOfSpeech": "verb",
+    "doNotTranslate": false,
+    "aliases": [
+      "Flash"
+    ]
+  },
+  "start app on login": {
+    "definition": "Setting that launches the desktop app automatically when the user signs in to the OS.",
+    "partOfSpeech": "verb",
+    "doNotTranslate": false,
+    "aliases": [
+      "Launch app minimized"
+    ]
+  },
+  "check for updates": {
+    "definition": "To query for a newer desktop app version; can run automatically or on demand.",
+    "partOfSpeech": "verb",
+    "doNotTranslate": false,
+    "aliases": [
+      "Check for Updates"
+    ]
+  },
+  "downloads": {
+    "definition": "The app's list of downloaded files and app updates, opened from the downloads dropdown.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Downloads",
+      "Download Location"
+    ]
+  },
+  "developer tools": {
+    "definition": "Chromium debugging tools that can be opened for the app wrapper, a server view, or the Calls widget.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Developer Tools"
+    ]
+  },
+  "spell checker": {
+    "definition": "The built-in spelling check for typed text, with selectable languages and an optional custom dictionary URL.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Spell Checker",
+      "Check spelling"
+    ]
+  },
+  "certificate": {
+    "definition": "A TLS or client certificate the app validates or presents when connecting to a server.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Certificate",
+      "certificates"
+    ]
+  },
+  "authentication secret": {
+    "definition": "A shared secret an administrator provides so the app can pass server pre-authentication.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Authentication Secret",
+      "secure secret"
+    ]
+  },
+  "hardware acceleration": {
+    "definition": "Setting that uses the GPU for rendering; can be disabled to work around graphics issues.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "GPU hardware acceleration"
+    ]
+  },
+  "dark mode": {
+    "definition": "The dark UI theme of the app window, toggleable from the View menu.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Toggle Dark Mode"
+    ]
+  },
+  "title bar": {
+    "definition": "The bar at the top of the window; the app can use the OS-native title bar or its own.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "native title bar"
+    ]
+  },
+  "zoom": {
+    "definition": "Changing the display scale of the app content (Zoom In, Zoom Out, Actual Size).",
+    "partOfSpeech": "noun/verb",
+    "doNotTranslate": false,
+    "aliases": [
+      "Zoom In",
+      "Zoom Out"
+    ]
+  },
+  "full screen": {
+    "definition": "Window mode where the app fills the entire screen, toggleable from the View menu.",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Full Screen",
+      "Toggle Full Screen"
+    ]
+  },
+  "clear data": {
+    "definition": "To delete locally cached app data, either for one server or for the whole app.",
+    "partOfSpeech": "verb",
+    "doNotTranslate": false,
+    "aliases": [
+      "Clear All Data",
+      "Clear Data for Current Server",
+      "Clear Cache and Reload"
+    ]
+  },
+  "logging level": {
+    "definition": "The verbosity setting for the app's diagnostic logs (error, info, debug, etc.).",
+    "partOfSpeech": "noun",
+    "doNotTranslate": false,
+    "aliases": [
+      "Logging level",
+      "Show logs"
+    ]
+  }
+}

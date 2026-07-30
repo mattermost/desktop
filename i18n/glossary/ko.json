@@ -1,0 +1,101 @@
+{
+  "server": {
+    "target": "서버"
+  },
+  "tab": {
+    "target": "탭",
+    "note": "New Tab = 새 탭, Close Tab = 탭 닫기 (existing)."
+  },
+  "view": {
+    "target": "보기",
+    "note": "Existing mixes 보기 and 뷰; prefer 보기 (View limit = 보기 제한)."
+  },
+  "main window": {
+    "target": "메인 윈도우",
+    "note": "Existing strings use 메인 윈도우, while generic 'window' is 창 (창 닫기, 새 창) — keep both as-is."
+  },
+  "popout window": {
+    "target": "팝아웃 창",
+    "note": "Existing uses 팝아웃 for popout; pop out (verb) = 팝아웃하다."
+  },
+  "system tray": {
+    "target": "시스템 트레이"
+  },
+  "notification area": {
+    "target": "알림 영역"
+  },
+  "minimize to tray": {
+    "target": "트레이로 최소화"
+  },
+  "Dock": {
+    "target": "Dock",
+    "note": "Existing strings keep the English macOS term, matching Apple's Korean UI."
+  },
+  "taskbar": {
+    "target": "작업 표시줄",
+    "note": "Matches the Windows Korean term."
+  },
+  "badge": {
+    "target": "배지",
+    "note": "Unread badge = 읽지 않은 메시지 배지 (existing)."
+  },
+  "bounce": {
+    "target": "떨림",
+    "note": "Existing: Dock 아이콘 떨림 주기. Apple's Korean term is 튀어 오르기 — genuinely better if the string is reworked, but keep 떨림 for consistency."
+  },
+  "flash": {
+    "target": "깜박임",
+    "note": "Verb: 깜박이다 (existing: 작업 표시줄 아이콘 깜박임)."
+  },
+  "start app on login": {
+    "target": "로그인 시 앱 시작",
+    "note": "Launch app minimized = 최소화된 상태로 앱 실행 (existing label: 최소화된 앱 실행)."
+  },
+  "check for updates": {
+    "target": "업데이트 확인"
+  },
+  "downloads": {
+    "target": "다운로드",
+    "note": "Download Location = 다운로드 위치."
+  },
+  "developer tools": {
+    "target": "개발자 도구",
+    "note": "Write with a space (개발자 도구); some legacy strings join it as 개발자도구."
+  },
+  "spell checker": {
+    "target": "맞춤법 검사기"
+  },
+  "certificate": {
+    "target": "인증서"
+  },
+  "authentication secret": {
+    "target": "인증 비밀번호",
+    "note": "Existing rendering. 인증 시크릿 is more literal, but keep 인증 비밀번호 for consistency."
+  },
+  "hardware acceleration": {
+    "target": "하드웨어 가속"
+  },
+  "dark mode": {
+    "target": "다크 모드",
+    "note": "Existing string omits the space (다크모드); standard spacing is 다크 모드."
+  },
+  "title bar": {
+    "target": "제목 표시줄",
+    "note": "No existing translation; matches the Windows Korean term."
+  },
+  "zoom": {
+    "target": "확대/축소",
+    "note": "Zoom In = 확대, Zoom Out = 축소, Actual Size = 실제 크기. The macOS Window-menu Zoom is 비율 in one legacy string — avoid."
+  },
+  "full screen": {
+    "target": "전체 화면",
+    "note": "Toggle Full Screen = 전체 화면 전환."
+  },
+  "clear data": {
+    "target": "데이터 초기화",
+    "note": "Existing: Clear All Data = 모든 데이터 초기화; Clear Cache and Reload = 캐시 삭제 및 재시작."
+  },
+  "logging level": {
+    "target": "로깅 수준"
+  }
+}

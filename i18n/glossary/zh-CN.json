@@ -1,0 +1,102 @@
+{
+  "server": {
+    "target": "服务器",
+    "note": "Add Server = 添加服务器, Remove Server = 移除服务器."
+  },
+  "tab": {
+    "target": "标签页",
+    "note": "New Tab = 新标签页, Close Tab = 关闭标签页."
+  },
+  "view": {
+    "target": "视图",
+    "note": "View limit = 视图上限/视图数上限; also the View menu = 视图."
+  },
+  "main window": {
+    "target": "主窗口"
+  },
+  "popout window": {
+    "target": "弹出窗口",
+    "note": "Popout Menu = 弹出窗口菜单; pop out (verb) = 弹出."
+  },
+  "system tray": {
+    "target": "系统托盘"
+  },
+  "notification area": {
+    "target": "通知区域",
+    "note": "Some settings strings render it as 系统托盘 instead; 通知区域 matches the Windows term."
+  },
+  "minimize to tray": {
+    "target": "最小化到托盘"
+  },
+  "Dock": {
+    "target": "程序坞",
+    "note": "Apple's official macOS zh-CN term; existing strings use 程序坞图标."
+  },
+  "taskbar": {
+    "target": "任务栏",
+    "note": "Microsoft's official Windows zh-CN term."
+  },
+  "badge": {
+    "target": "角标",
+    "note": "unread badge = 未读角标; existing strings use 红色角标 for the red badge."
+  },
+  "bounce": {
+    "target": "弹跳",
+    "note": "Bounce the Dock icon = 弹跳程序坞图标."
+  },
+  "flash": {
+    "target": "闪烁",
+    "note": "Flash taskbar icon = 闪烁任务栏图标."
+  },
+  "start app on login": {
+    "target": "登录时启动应用",
+    "note": "Launch app minimized = 以最小化方式启动应用."
+  },
+  "check for updates": {
+    "target": "检查更新"
+  },
+  "downloads": {
+    "target": "下载",
+    "note": "Download Location = 下载位置."
+  },
+  "developer tools": {
+    "target": "开发者工具"
+  },
+  "spell checker": {
+    "target": "拼写检查器",
+    "note": "Check spelling (action) = 检查拼写."
+  },
+  "certificate": {
+    "target": "证书"
+  },
+  "authentication secret": {
+    "target": "认证密钥"
+  },
+  "hardware acceleration": {
+    "target": "硬件加速",
+    "note": "GPU hardware acceleration = GPU 硬件加速."
+  },
+  "dark mode": {
+    "target": "深色模式",
+    "note": "Toggle Dark Mode = 切换深色模式."
+  },
+  "title bar": {
+    "target": "标题栏",
+    "note": "native title bar = 原生标题栏."
+  },
+  "zoom": {
+    "target": "缩放",
+    "note": "Zoom In = 放大, Zoom Out = 缩小, Actual Size = 实际大小."
+  },
+  "full screen": {
+    "target": "全屏"
+  },
+  "clear data": {
+    "target": "清除数据",
+    "note": "Clear All Data = 清除所有数据; Clear Cache and Reload = 清除缓存并重新加载."
+  },
+  "logging level": {
+    "target": "日志级别",
+    "note": "Show logs = 显示日志."
+  }
+}

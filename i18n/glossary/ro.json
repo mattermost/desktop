@@ -1,0 +1,105 @@
+{
+  "server": {
+    "target": "server",
+    "note": "Plural: 'servere'. 'Add Server' = 'Adăugați un server'; 'Remove Server' = 'Eliminați serverul'. Desktop ro.json is currently empty — follow webapp conventions."
+  },
+  "tab": {
+    "target": "filă",
+    "note": "Plural: 'file'. 'New Tab' = 'Filă nouă'; 'Close Tab' = 'Închideți fila' (browser Romanian convention)."
+  },
+  "view": {
+    "target": "vizualizare",
+    "note": "Plural: 'vizualizări'. 'View limit' = 'limita de vizualizări'."
+  },
+  "main window": {
+    "target": "fereastra principală"
+  },
+  "popout window": {
+    "target": "fereastră separată",
+    "note": "'Pop out' verb: 'a deschide într-o fereastră separată'."
+  },
+  "system tray": {
+    "target": "bara de sistem",
+    "note": "Keep distinct from 'notification area' ('zona de notificare'), which is the official Windows Romanian term for the same area."
+  },
+  "notification area": {
+    "target": "zonă de notificare",
+    "note": "Official Windows Romanian term."
+  },
+  "minimize to tray": {
+    "target": "a minimiza în bara de sistem"
+  },
+  "Dock": {
+    "target": "Dock",
+    "note": "macOS Romanian keeps 'Dock' untranslated."
+  },
+  "taskbar": {
+    "target": "bară de activități",
+    "note": "Official Windows Romanian term ('bara de activități')."
+  },
+  "badge": {
+    "target": "insignă",
+    "note": "Windows Romanian term for icon badges; 'unread badge' = 'insignă pentru necitite'."
+  },
+  "bounce": {
+    "target": "a sălta",
+    "note": "macOS Dock icon animation ('pictograma saltă în Dock')."
+  },
+  "flash": {
+    "target": "a clipi",
+    "note": "Taskbar icon flashing ('pictograma clipește în bara de activități')."
+  },
+  "start app on login": {
+    "target": "pornirea aplicației la conectare",
+    "note": "Setting phrasing: 'Porniți aplicația la conectare'; 'Launch app minimized' = 'Porniți aplicația minimizată'."
+  },
+  "check for updates": {
+    "target": "a căuta actualizări",
+    "note": "Menu item: 'Căutați actualizări' (Windows Romanian convention)."
+  },
+  "downloads": {
+    "target": "descărcări",
+    "note": "'Download Location' = 'Locația descărcărilor'."
+  },
+  "developer tools": {
+    "target": "instrumente pentru dezvoltatori",
+    "note": "Chrome/Edge Romanian convention."
+  },
+  "spell checker": {
+    "target": "verificare ortografică",
+    "note": "'Check spelling' = 'Verificați ortografia' (Chrome Romanian convention)."
+  },
+  "certificate": {
+    "target": "certificat",
+    "note": "Plural: 'certificate' (established in webapp)."
+  },
+  "authentication secret": {
+    "target": "secret de autentificare"
+  },
+  "hardware acceleration": {
+    "target": "accelerare hardware"
+  },
+  "dark mode": {
+    "target": "mod întunecat",
+    "note": "'Toggle Dark Mode' = 'Comutați modul întunecat'."
+  },
+  "title bar": {
+    "target": "bară de titlu"
+  },
+  "zoom": {
+    "target": "zoom",
+    "note": "Noun kept as loanword; 'Zoom In' = 'Mărire', 'Zoom Out' = 'Micșorare' (matches webapp shortcut strings)."
+  },
+  "full screen": {
+    "target": "ecran complet",
+    "note": "'Toggle Full Screen' = 'Comutați ecranul complet'."
+  },
+  "clear data": {
+    "target": "a șterge datele",
+    "note": "'Clear All Data' = 'Ștergeți toate datele'; 'Clear Cache and Reload' = 'Ștergeți memoria cache și reîncărcați'."
+  },
+  "logging level": {
+    "target": "nivel de jurnalizare",
+    "note": "'Show logs' = 'Afișați jurnalele'."
+  }
+}

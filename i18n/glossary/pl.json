@@ -1,0 +1,110 @@
+{
+  "server": {
+    "target": "serwer",
+    "note": "'Add Server' → 'Dodaj serwer'; 'Remove Server' → 'Usuń serwer'. Plural 'serwery'."
+  },
+  "tab": {
+    "target": "karta",
+    "note": "Established: 'Otwórz w nowej karcie', 'Zamknij kartę'. Feminine; plural 'karty'."
+  },
+  "view": {
+    "target": "widok",
+    "note": "An open server page. 'View limit' → 'limit widoków' (one existing string mistranslates it as 'limit wyświetleń' — avoid). Distinct from the View menu ('Widok')."
+  },
+  "main window": {
+    "target": "okno główne",
+    "note": "Established: 'Przejdź do okna głównego'."
+  },
+  "popout window": {
+    "target": "okno wyskakujące",
+    "note": "Existing renderings are inconsistent ('Menu podręczne' for Popout Menu, 'wyskakujący widżet'). Prefer 'okno wyskakujące'; verb 'pop out' → 'otwórz w osobnym oknie'."
+  },
+  "system tray": {
+    "target": "zasobnik systemowy",
+    "note": "Established: 'uruchomiona w zasobniku systemowym'. Standard Windows Polish term."
+  },
+  "notification area": {
+    "target": "obszar powiadomień",
+    "note": "Established: 'Pokaż ikonę w obszarze powiadomień'."
+  },
+  "minimize to tray": {
+    "target": "minimalizować do zasobnika systemowego",
+    "note": "Dialog title 'Minimalizuj do zasobnika systemowego' (established)."
+  },
+  "Dock": {
+    "target": "Dock",
+    "note": "macOS platform term, kept in Polish macOS UI; declined as masculine ('ikona Docka')."
+  },
+  "taskbar": {
+    "target": "pasek zadań",
+    "note": "Standard Windows Polish term; 'na pasku zadań'."
+  },
+  "badge": {
+    "target": "plakietka",
+    "note": "Majority rendering ('czerwona plakietka na ikonie'); one string uses 'odznaka' — prefer 'plakietka'. 'Unread badge' → 'plakietka nieprzeczytanych'."
+  },
+  "bounce": {
+    "target": "odbijać",
+    "note": "Established: 'Odbijanie ikony Docka' (Bounce the Dock icon)."
+  },
+  "flash": {
+    "target": "migać",
+    "note": "Established: 'ikona paska zadań będzie migać'."
+  },
+  "start app on login": {
+    "target": "uruchamiaj aplikację po zalogowaniu",
+    "note": "Existing label: 'Uruchomienie aplikacji po zalogowaniu'. 'Launch app minimized' → 'Uruchamiaj aplikację zminimalizowaną'."
+  },
+  "check for updates": {
+    "target": "sprawdź aktualizacje",
+    "note": "Established: 'Sprawdź aktualizacje' (menu), 'Automatycznie sprawdzaj aktualizacje' (setting)."
+  },
+  "downloads": {
+    "target": "do pobrania",
+    "note": "Established label for the downloads dropdown ('Do pobrania'). 'Download location' → 'lokalizacja pobierania'; the act of downloading → 'pobieranie'."
+  },
+  "developer tools": {
+    "target": "narzędzia deweloperskie",
+    "note": "Existing usage mixes 'narzędzia deweloperskie' and 'narzędzia dewelopera'; prefer 'narzędzia deweloperskie'."
+  },
+  "spell checker": {
+    "target": "sprawdzanie pisowni",
+    "note": "Established: 'Sprawdzanie pisowni', 'Języki sprawdzania pisowni'."
+  },
+  "certificate": {
+    "target": "certyfikat",
+    "note": "Masculine. 'Certificate error' → 'Błąd certyfikatu'."
+  },
+  "authentication secret": {
+    "target": "sekret uwierzytelniania",
+    "note": "Majority rendering; one string uses 'hasło uwierzytelniające' — prefer 'sekret uwierzytelniania'."
+  },
+  "hardware acceleration": {
+    "target": "akceleracja sprzętowa",
+    "note": "Setting label: 'Użyj sprzętowej akceleracji GPU' (established)."
+  },
+  "dark mode": {
+    "target": "tryb ciemny",
+    "note": "'Toggle Dark Mode' → 'Przełącz tryb ciemny'."
+  },
+  "title bar": {
+    "target": "pasek tytułu",
+    "note": "'native title bar' → 'natywny pasek tytułu' (established)."
+  },
+  "zoom": {
+    "target": "powiększenie",
+    "note": "'Zoom In' → 'Powiększ', 'Zoom Out' → 'Pomniejsz', 'Actual Size' → 'Rzeczywisty rozmiar'. Existing menu uses noun forms ('Powiększenie'/'Pomniejszenie'); imperative verb forms are preferred for actions."
+  },
+  "full screen": {
+    "target": "pełny ekran",
+    "note": "'Toggle Full Screen' → 'Przełącz pełny ekran'; 'na pełnym ekranie' (in full screen)."
+  },
+  "clear data": {
+    "target": "wyczyść dane",
+    "note": "'Clear All Data' → 'Wyczyść wszystkie dane'; 'Clear Data for Current Server' → 'Wyczyść dane dla bieżącego serwera' (established)."
+  },
+  "logging level": {
+    "target": "poziom logowania",
+    "note": "Established. Note ambiguity with 'logowanie' (signing in); context disambiguates. 'Show logs' → 'Pokaż logi'."
+  }
+}

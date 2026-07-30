@@ -1,0 +1,98 @@
+{
+  "server": {
+    "target": "伺服器"
+  },
+  "tab": {
+    "target": "分頁",
+    "note": "Per existing menu strings (選取下一個分頁)."
+  },
+  "view": {
+    "target": "檢視畫面",
+    "note": "The View menu itself is 檢視; use 檢視畫面 when referring to an open server view as a countable noun."
+  },
+  "main window": {
+    "target": "主視窗"
+  },
+  "popout window": {
+    "target": "彈出視窗",
+    "note": "pop out (verb) → 彈出, matching Calls zh_Hant."
+  },
+  "system tray": {
+    "target": "系統匣",
+    "note": "Per existing strings (最小化到系統匣)."
+  },
+  "notification area": {
+    "target": "通知區域"
+  },
+  "minimize to tray": {
+    "target": "最小化到系統匣"
+  },
+  "Dock": {
+    "target": "Dock",
+    "note": "macOS zh-TW keeps 'Dock' untranslated."
+  },
+  "taskbar": {
+    "target": "工作列",
+    "note": "Windows zh-TW platform term."
+  },
+  "badge": {
+    "target": "標記",
+    "note": "Follows Apple zh-TW notification-badge terminology; 未讀標記 for 'unread badge'."
+  },
+  "bounce": {
+    "target": "彈跳"
+  },
+  "flash": {
+    "target": "閃爍",
+    "note": "Per existing: 在收到新訊息時閃爍工作列圖示."
+  },
+  "start app on login": {
+    "target": "在登入時啟動應用程式",
+    "note": "Launch app minimized → 以最小化模式啟動應用程式 (existing)."
+  },
+  "check for updates": {
+    "target": "檢查更新"
+  },
+  "downloads": {
+    "target": "下載",
+    "note": "Download Location → 下載位置."
+  },
+  "developer tools": {
+    "target": "開發者工具"
+  },
+  "spell checker": {
+    "target": "拼字檢查"
+  },
+  "certificate": {
+    "target": "憑證"
+  },
+  "authentication secret": {
+    "target": "驗證密鑰",
+    "note": "Not yet translated; 密鑰 for 'secret' distinguishes it from 密碼 (password) and 金鑰 (key)."
+  },
+  "hardware acceleration": {
+    "target": "硬體加速"
+  },
+  "dark mode": {
+    "target": "暗色模式",
+    "note": "Existing menu string uses 暗色模式; OS-level convention is 深色模式 — keep 暗色模式 for consistency."
+  },
+  "title bar": {
+    "target": "標題列"
+  },
+  "zoom": {
+    "target": "縮放",
+    "note": "Zoom In → 放大, Zoom Out → 縮小 (existing: 放大畫面/縮小畫面)."
+  },
+  "full screen": {
+    "target": "全螢幕"
+  },
+  "clear data": {
+    "target": "清除資料",
+    "note": "Clear All Data → 清除所有資料; Clear Cache and Reload → 清除快取並重新載入 (existing)."
+  },
+  "logging level": {
+    "target": "紀錄檔層級",
+    "note": "Show logs → 顯示紀錄 (existing)."
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "server": {
+    "target": "server",
+    "note": "Kept in English; masculine, invariable. Existing: 'Aggiungi server' (Add Server), 'Rimuovi server' (Remove Server). Avoid legacy plural 'Servers' in Italian text."
+  },
+  "tab": {
+    "target": "scheda",
+    "note": "Existing usage is split between 'scheda' ('Apri in una nuova scheda') and kept 'Tab' ('Seleziona Prossimo Tab'); prefer 'scheda', the standard Italian browser term. Feminine; plural 'schede'."
+  },
+  "view": {
+    "target": "vista",
+    "note": "Existing renders 'View limit reached' as 'Limite di visualizzazione raggiunto'; the &View menu is '&Vista'. Use 'vista' for the countable server view."
+  },
+  "main window": {
+    "target": "finestra principale"
+  },
+  "popout window": {
+    "target": "finestra separata",
+    "note": "Verb 'pop out' = 'aprire in una finestra separata'. No established existing rendering."
+  },
+  "system tray": {
+    "target": "area di notifica",
+    "note": "Official Windows Italian term; existing string uses the variant 'area notifiche' — prefer 'area di notifica'."
+  },
+  "notification area": {
+    "target": "area di notifica",
+    "note": "Same term as system tray, matching Windows Italian; existing: 'Mostra l'icona nell'area notifiche'."
+  },
+  "minimize to tray": {
+    "target": "ridurre a icona nell'area di notifica",
+    "note": "Existing menu item is just 'Riduci ad Icona'; add 'nell'area di notifica' when the distinction from normal minimize matters."
+  },
+  "Dock": {
+    "target": "Dock",
+    "note": "macOS Italian keeps 'Dock' (masculine: 'il Dock')."
+  },
+  "taskbar": {
+    "target": "barra delle applicazioni",
+    "note": "Official Windows Italian term; existing usage matches."
+  },
+  "badge": {
+    "target": "badge",
+    "note": "Kept in English, as in Apple/Microsoft Italian UI; masculine, invariable. Unread badge = 'badge dei non letti'."
+  },
+  "bounce": {
+    "target": "far rimbalzare",
+    "note": "macOS Dock icon animation; Apple Italian uses 'rimbalzare' ('l'icona rimbalza nel Dock')."
+  },
+  "flash": {
+    "target": "far lampeggiare",
+    "note": "Existing string uses 'Evidenzia l'icona' — 'lampeggiare' is the accurate Windows term for taskbar flashing; noted as an intentional improvement."
+  },
+  "start app on login": {
+    "target": "avviare l'app al login",
+    "note": "Existing: 'Avvia l'app al login', 'Avvia l'app minimizzata' (Launch app minimized)."
+  },
+  "check for updates": {
+    "target": "controllare gli aggiornamenti",
+    "note": "Existing menu item: 'Controlla Aggiornamenti'; settings: 'Controlla automaticamente gli aggiornamenti'."
+  },
+  "downloads": {
+    "target": "download",
+    "note": "Kept in English, masculine invariable, as in Chrome/Firefox Italian; existing usage is split ('Scaricamenti', 'Posizione di Download', 'Annulla Scaricamento') — prefer 'download'."
+  },
+  "developer tools": {
+    "target": "strumenti di sviluppo",
+    "note": "Existing: 'Strumenti di Sviluppo'. Chrome Italian uses 'Strumenti per sviluppatori', but keep the established in-app form."
+  },
+  "spell checker": {
+    "target": "controllo ortografico",
+    "note": "Existing: 'Controllo ortografico' (Check spelling)."
+  },
+  "certificate": {
+    "target": "certificato",
+    "note": "Existing consistent: 'Errore di Certificato', 'Seleziona un certificato'."
+  },
+  "authentication secret": {
+    "target": "segreto di autenticazione",
+    "note": "No existing rendering; 'segreto' is the standard Italian term for shared secrets."
+  },
+  "hardware acceleration": {
+    "target": "accelerazione hardware",
+    "note": "Existing: 'Usa l'accelerazione hardware della GPU'."
+  },
+  "dark mode": {
+    "target": "modalità scura",
+    "note": "Existing: 'Passa alla Modalità Scura' (Toggle Dark Mode)."
+  },
+  "title bar": {
+    "target": "barra del titolo",
+    "note": "Standard Windows Italian term."
+  },
+  "zoom": {
+    "target": "zoom",
+    "note": "Kept in English (masculine). Existing: 'Aumenta lo zoom' (Zoom In), 'Diminuisci lo zoom' (Zoom Out)."
+  },
+  "full screen": {
+    "target": "schermo intero",
+    "note": "Existing: 'Passa a Schermo Intero' (Toggle Full Screen), 'a pieno schermo' also appears — prefer 'schermo intero'."
+  },
+  "clear data": {
+    "target": "cancellare i dati",
+    "note": "Existing related items: 'Svuota Cache e Ricarica' (Clear Cache and Reload). Clear All Data = 'Cancella tutti i dati'."
+  },
+  "logging level": {
+    "target": "livello di log",
+    "note": "'log' kept in English, masculine invariable; Show logs = 'Mostra i log'."
+  }
+}

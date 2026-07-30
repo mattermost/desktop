@@ -1,0 +1,110 @@
+{
+  "server": {
+    "target": "server",
+    "note": "'Add Server' = 'Server toevoegen', 'Remove Server' = 'Server verwijderen'; existing UI mixes 'Een server toevoegen' and 'Voeg een server toe' — prefer the infinitive-last form 'Server toevoegen'."
+  },
+  "tab": {
+    "target": "tabblad",
+    "note": "'New Tab' = 'Nieuw tabblad', 'Close Tab' = 'Tabblad sluiten'; plural 'tabbladen'."
+  },
+  "view": {
+    "target": "weergave",
+    "note": "As in 'Developer Tools for Current View' = 'Ontwikkelaarstools voor huidige weergave'; 'View limit' = 'weergavelimiet'."
+  },
+  "main window": {
+    "target": "hoofdvenster",
+    "note": "Existing rendering."
+  },
+  "popout window": {
+    "target": "popout-venster",
+    "note": "Existing strings keep 'popout' ('Popout menu', 'Calls widget popout'); combine as 'popout-venster' when the full term is needed."
+  },
+  "system tray": {
+    "target": "systeemvak",
+    "note": "Existing and Windows-NL platform term."
+  },
+  "notification area": {
+    "target": "systeemvak",
+    "note": "Windows-NL platform term for the notification area; existing strings inconsistently use 'meldingsvenster'/'meldingenvenster' — prefer 'systeemvak' to match the OS."
+  },
+  "minimize to tray": {
+    "target": "minimaliseren naar systeemvak",
+    "note": "Existing rendering."
+  },
+  "Dock": {
+    "target": "Dock",
+    "note": "macOS-NL keeps 'Dock'; 'Dock icon' = 'Dock-pictogram' (existing)."
+  },
+  "taskbar": {
+    "target": "taakbalk",
+    "note": "Windows-NL platform term; 'taskbar icon' = 'taakbalkpictogram' (majority; one legacy string uses 'taskbar-icoon')."
+  },
+  "badge": {
+    "target": "badge",
+    "note": "Kept in English (existing: 'Ongelezen badge', 'rode badge')."
+  },
+  "bounce": {
+    "target": "stuiteren",
+    "note": "Existing: 'Het Dock-pictogram laten stuiteren'."
+  },
+  "flash": {
+    "target": "knipperen",
+    "note": "Existing: 'Taakbalkpictogram laten knipperen'."
+  },
+  "start app on login": {
+    "target": "app starten bij aanmelden",
+    "note": "'Launch app minimized' = 'App geminimaliseerd starten'."
+  },
+  "check for updates": {
+    "target": "controleren op updates",
+    "note": "Existing rendering; per dutch-rules.md 'update' stays untranslated in app-update contexts."
+  },
+  "downloads": {
+    "target": "downloads",
+    "note": "'Download Location' = 'Downloadlocatie'."
+  },
+  "developer tools": {
+    "target": "ontwikkelaarstools",
+    "note": "Majority rendering; existing also has 'Ontwikkelaartools' and 'Gereedschap voor ontwikkelaars' — standardize on 'ontwikkelaarstools'."
+  },
+  "spell checker": {
+    "target": "spellingcontrole",
+    "note": "Existing rendering and Weblate glossary; 'Check spelling' = 'Spelling controleren'."
+  },
+  "certificate": {
+    "target": "certificaat",
+    "note": "Plural 'certificaten'; 'Certificate Error' = 'Certificaatfout' (existing)."
+  },
+  "authentication secret": {
+    "target": "authenticatiegeheim",
+    "note": "Existing rendering ('Het authenticatiegeheim gedeeld door de beheerder')."
+  },
+  "hardware acceleration": {
+    "target": "hardwareversnelling",
+    "note": "'GPU hardware acceleration' = 'GPU-hardwareversnelling' (existing)."
+  },
+  "dark mode": {
+    "target": "donkere modus",
+    "note": "'Toggle Dark Mode' = 'Donkere modus aan/uit' (existing)."
+  },
+  "title bar": {
+    "target": "titelbalk",
+    "note": "'Native title bar' = 'oorspronkelijke titelbalk' in existing strings; 'systeemeigen titelbalk' is a clearer alternative."
+  },
+  "zoom": {
+    "target": "zoomen",
+    "note": "'Zoom In' = 'Inzoomen', 'Zoom Out' = 'Uitzoomen', 'Actual Size' = 'Werkelijke grootte'."
+  },
+  "full screen": {
+    "target": "volledig scherm",
+    "note": "Per Weblate glossary; existing menu item 'Toggle Full Screen' is rendered 'Schermvullende interface aan/uit' — prefer 'Volledig scherm aan/uit'."
+  },
+  "clear data": {
+    "target": "gegevens wissen",
+    "note": "'Clear All Data' = 'Alle gegevens wissen', 'Clear Cache and Reload' = 'Cache wissen en opnieuw laden' (existing); files are 'gewist' per dutch-rules.md."
+  },
+  "logging level": {
+    "target": "logniveau",
+    "note": "Existing settings label reads 'Niveau van logging'; 'logniveau' is the compact glossary form. 'Show logs' = 'Logs tonen'."
+  }
+}

@@ -1,0 +1,103 @@
+{
+  "server": {
+    "target": "servidor",
+    "note": "'Adicionar Servidor' (Add Server), 'Editar Servidor' (Edit Server), 'URL do servidor' (Server URL) per existing desktop strings."
+  },
+  "tab": {
+    "target": "guia",
+    "note": "Existing desktop strings use 'guia' (matches Windows/Chrome pt-BR); avoid 'aba'."
+  },
+  "view": {
+    "target": "visualização"
+  },
+  "main window": {
+    "target": "janela principal"
+  },
+  "popout window": {
+    "target": "janela separada",
+    "note": "Existing strings are inconsistent ('janela pop-up' in webapp shortcuts, untranslated 'popout' in desktop menus); prefer 'janela separada'. Verb 'pop out' = 'abrir em janela separada'."
+  },
+  "system tray": {
+    "target": "bandeja do sistema",
+    "note": "Established in existing desktop strings."
+  },
+  "notification area": {
+    "target": "área de notificação",
+    "note": "Matches the localized Windows term and existing desktop strings."
+  },
+  "minimize to tray": {
+    "target": "minimizar para a bandeja do sistema"
+  },
+  "Dock": {
+    "target": "Dock",
+    "note": "Apple keeps 'Dock' (masculine: 'o Dock') in macOS pt-BR. Existing desktop strings mistranslate it as 'barra de tarefas' (taskbar) — do not follow that."
+  },
+  "taskbar": {
+    "target": "barra de tarefas",
+    "note": "Localized Windows term; established in existing strings."
+  },
+  "badge": {
+    "target": "emblema",
+    "note": "Existing majority ('emblema vermelho no ícone'). The heading 'Unread Badge' is rendered descriptively as 'Indicador de Mensagens Não Lidas'."
+  },
+  "bounce": {
+    "target": "pular",
+    "note": "macOS pt-BR convention: the Dock icon 'pula'. The existing string paraphrases ('Tipo de animação do ícone...')."
+  },
+  "flash": {
+    "target": "piscar",
+    "note": "'Piscar o ícone na barra de tarefas' per existing strings."
+  },
+  "start app on login": {
+    "target": "iniciar o aplicativo ao fazer login",
+    "note": "'Launch app minimized' = 'Iniciar o aplicativo minimizado'."
+  },
+  "check for updates": {
+    "target": "verificar atualizações",
+    "note": "Existing strings mix 'Verificar' and 'Checar'; prefer 'verificar'."
+  },
+  "downloads": {
+    "target": "downloads",
+    "note": "Standard pt-BR loanword; 'Localização do download' for Download Location."
+  },
+  "developer tools": {
+    "target": "ferramentas de desenvolvedor",
+    "note": "Existing strings mix 'Ferramentas de Desenvolvimento' and 'Ferramentas de Desenvolvedor'; standardize on the latter (matches Chrome pt-BR)."
+  },
+  "spell checker": {
+    "target": "corretor ortográfico",
+    "note": "'Verificar a ortografia' for the 'Check spelling' toggle."
+  },
+  "certificate": {
+    "target": "certificado"
+  },
+  "authentication secret": {
+    "target": "segredo de autenticação",
+    "note": "Matches Calls' 'Segredo de autenticação estática TURN'. Some webapp strings use 'chave secreta' for 'secret'; keep 'segredo de autenticação' for this feature."
+  },
+  "hardware acceleration": {
+    "target": "aceleração de hardware",
+    "note": "'Usar aceleração de hardware da GPU' per existing string."
+  },
+  "dark mode": {
+    "target": "modo escuro"
+  },
+  "title bar": {
+    "target": "barra de título"
+  },
+  "zoom": {
+    "target": "zoom",
+    "note": "'Mais zoom' (Zoom In), 'Menos zoom' (Zoom Out) per existing strings; 'Tamanho real' is preferable to the existing 'Tamanho atual' for Actual Size."
+  },
+  "full screen": {
+    "target": "tela cheia"
+  },
+  "clear data": {
+    "target": "limpar dados",
+    "note": "'Limpar Todos os Dados' (Clear All Data), 'Limpar Dados do Servidor Atual', 'Limpar cache e recarregar' per existing strings."
+  },
+  "logging level": {
+    "target": "nível de log",
+    "note": "'Log' stays in English per existing webapp/desktop usage; 'Exibir logs' for Show Logs."
+  }
+}

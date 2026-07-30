@@ -1,0 +1,109 @@
+{
+  "server": {
+    "target": "szerver",
+    "note": "Desktop mixes 'szerver' (majority: 'Belépés másik szerverbe', 'szerverek listája') and 'kiszolgáló'; prefer 'szerver'. Add Server = 'Szerver hozzáadása', Remove Server = 'Szerver eltávolítása'."
+  },
+  "tab": {
+    "target": "fül",
+    "note": "Established ('Megnyitás új fülön', 'Következő fül kiválasztása'). New Tab = 'Új fül', Close Tab = 'Fül bezárása'."
+  },
+  "view": {
+    "target": "nézet",
+    "note": "View limit = 'nézetek korlátja'."
+  },
+  "main window": {
+    "target": "főablak"
+  },
+  "popout window": {
+    "target": "különálló ablak",
+    "note": "Verb 'pop out' = 'megnyitás külön ablakban'."
+  },
+  "system tray": {
+    "target": "tálca",
+    "note": "Repo convention: system tray = 'tálca' ('Minimalizálás a tálcára'), while taskbar = 'feladatsáv'. This differs from Microsoft's official glossary (where 'tálca' = taskbar) but is the established in-app usage — keep it."
+  },
+  "notification area": {
+    "target": "értesítési terület",
+    "note": "Established ('Mutassa az ikont az értesítési területen')."
+  },
+  "minimize to tray": {
+    "target": "minimalizálás a tálcára",
+    "note": "Established menu/settings wording."
+  },
+  "Dock": {
+    "target": "Dock",
+    "note": "macOS Hungarian keeps 'Dock' untranslated."
+  },
+  "taskbar": {
+    "target": "feladatsáv",
+    "note": "Repo uses 'feladatsáv' (and once 'feladatsor'); keep 'feladatsáv' to stay distinct from tray = 'tálca'."
+  },
+  "badge": {
+    "target": "jelvény",
+    "note": "Established in webapp/server; unread badge = 'olvasatlan jelvény'."
+  },
+  "bounce": {
+    "target": "pattogás",
+    "note": "Dock icon animation; verb 'pattog'."
+  },
+  "flash": {
+    "target": "villogás",
+    "note": "Established ('Feladatsáv ikon villogása'); verb 'villog'."
+  },
+  "start app on login": {
+    "target": "alkalmazás indítása bejelentkezéskor",
+    "note": "Launch app minimized = 'alkalmazás indítása kis méretben'."
+  },
+  "check for updates": {
+    "target": "frissítések ellenőrzése",
+    "note": "Majority ('Frissítések ellenőrzése', 'Frissítések automatikus ellenőrzése'); 'Frissítések keresése most' appears once."
+  },
+  "downloads": {
+    "target": "letöltések",
+    "note": "Download Location = 'Letöltés helye' (established)."
+  },
+  "developer tools": {
+    "target": "fejlesztői eszközök",
+    "note": "Established."
+  },
+  "spell checker": {
+    "target": "helyesírás-ellenőrző",
+    "note": "Check spelling = 'Helyesírás ellenőrzése' (established)."
+  },
+  "certificate": {
+    "target": "tanúsítvány",
+    "note": "Established across repos."
+  },
+  "authentication secret": {
+    "target": "hitelesítési titok",
+    "note": "No repo signal; 'titok' follows the established 'kliens titok' pattern for secrets."
+  },
+  "hardware acceleration": {
+    "target": "hardveres gyorsítás",
+    "note": "Established ('GPU hardveres gyorsítás használata')."
+  },
+  "dark mode": {
+    "target": "sötét mód",
+    "note": "Established ('Sötét mód váltása')."
+  },
+  "title bar": {
+    "target": "címsor",
+    "note": "Standard Hungarian term for a window title bar."
+  },
+  "zoom": {
+    "target": "nagyítás",
+    "note": "Established: Zoom = 'Nagyítás', Zoom In = 'Nagyítás', Zoom Out = 'Kicsinyítés', Actual Size = 'Eredeti méret' (repo has 'Aktuális méret', but 'Eredeti méret' is the correct convention — note the inconsistency)."
+  },
+  "full screen": {
+    "target": "teljes képernyő",
+    "note": "Established ('Teljes képernyő váltása')."
+  },
+  "clear data": {
+    "target": "adatok törlése",
+    "note": "Clear All Data = 'Minden adat törlése'; Clear Data for Current Server = 'Adatok törlése a jelenlegi szerverhez' (established)."
+  },
+  "logging level": {
+    "target": "naplózási szint",
+    "note": "Repo label is 'Naplózás szintje'; Show logs = 'Naplók megjelenítése'."
+  }
+}
