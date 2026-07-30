@@ -21,17 +21,44 @@ const PREVIEW_MODAL_SELECTOR = [
     '#viewImageModalLabel',
 ].join(', ');
 
+const LOADED_IMAGE_SELECTOR = [
+    '.post-image img:not(.image-loading__placeholder)',
+    '.post--attachment img:not(.image-loading__placeholder)',
+    'img[src*="/api/v4/files/"]:not(.image-loading__placeholder)',
+].join(', ');
+
 const POSTED_IMAGE_SELECTOR = [
     '.file-preview__button',
     '.post-image .small-image__container',
     '.post-image .image-loaded-container',
     '.post-image__image',
-    '.post-image img:not(.image-loading__placeholder)',
+    LOADED_IMAGE_SELECTOR,
     '.file-viewer-touch',
     '.file-attachment',
-    '.post--attachment img:not(.image-loading__placeholder)',
-    'img[src*="/api/v4/files/"]:not(.image-loading__placeholder)',
 ].join(', ');
+
+// Shared helpers injected into renderer scripts (same pattern as DOM_UTILS in serverView.ts).
+const PREVIEW_IMAGE_UTILS = `
+const LOADED_IMAGE_SELECTOR = ${JSON.stringify(LOADED_IMAGE_SELECTOR)};
+const isPreviewControlVisible = (el) => el instanceof HTMLElement && window.getComputedStyle(el).display !== 'none';
+const isLoadedPreviewImage = (el) => el instanceof HTMLImageElement &&
+    !el.classList.contains('image-loading__placeholder') &&
+    el.complete &&
+    el.naturalWidth > 0 &&
+    isPreviewControlVisible(el);
+const findVisibleLoadedPreviewButton = (root) => {
+    for (const button of root.querySelectorAll('.file-preview__button')) {
+        if (!isPreviewControlVisible(button)) {
+            continue;
+        }
+        const loadedImg = button.querySelector('img:not(.image-loading__placeholder)');
+        if (loadedImg instanceof HTMLImageElement && loadedImg.complete && loadedImg.naturalWidth > 0) {
+            return button;
+        }
+    }
+    return null;
+};
+`;
 
 /**
  * Mattermost 11.10+ (MM-69174) SizeAwareImage ignores clicks until the real image has
@@ -40,35 +67,19 @@ const POSTED_IMAGE_SELECTOR = [
  */
 async function waitForLoadedImagePreviewControl(serverWin: ServerView): Promise<void> {
     await expect.poll(async () => serverWin.runInRenderer<boolean>(`
+        ${PREVIEW_IMAGE_UTILS}
         const posts = Array.from(document.querySelectorAll('.post'));
         for (let index = posts.length - 1; index >= 0; index--) {
             const post = posts[index];
-            const buttons = Array.from(post.querySelectorAll('.file-preview__button'));
-            for (const button of buttons) {
-                if (!(button instanceof HTMLElement)) {
-                    continue;
-                }
-                if (window.getComputedStyle(button).display === 'none') {
-                    continue;
-                }
-                const loadedImg = button.querySelector('img:not(.image-loading__placeholder)');
-                if (!(loadedImg instanceof HTMLImageElement)) {
-                    continue;
-                }
-                if (loadedImg.complete && loadedImg.naturalWidth > 0) {
-                    button.scrollIntoView({block: 'center'});
-                    return true;
-                }
+            const previewButton = findVisibleLoadedPreviewButton(post);
+            if (previewButton) {
+                previewButton.scrollIntoView({block: 'center'});
+                return true;
             }
 
             // Legacy servers without .file-preview__button
-            const legacyImg = post.querySelector(
-                '.post-image img:not(.image-loading__placeholder), .post--attachment img:not(.image-loading__placeholder), img[src*="/api/v4/files/"]:not(.image-loading__placeholder)',
-            );
-            if (legacyImg instanceof HTMLImageElement &&
-                legacyImg.complete &&
-                legacyImg.naturalWidth > 0 &&
-                window.getComputedStyle(legacyImg).display !== 'none') {
+            const legacyImg = post.querySelector(LOADED_IMAGE_SELECTOR);
+            if (isLoadedPreviewImage(legacyImg)) {
                 legacyImg.scrollIntoView({block: 'center'});
                 return true;
             }
@@ -177,6 +188,7 @@ async function isImagePreviewOpen(serverWin: ServerView): Promise<boolean> {
 
 async function openImagePreview(serverWin: ServerView): Promise<boolean> {
     return serverWin.runInRenderer<boolean>(`
+        ${PREVIEW_IMAGE_UTILS}
         const posts = Array.from(document.querySelectorAll('.post'));
         let root = null;
         for (let index = posts.length - 1; index >= 0; index--) {
@@ -191,31 +203,19 @@ async function openImagePreview(serverWin: ServerView): Promise<boolean> {
             return false;
         }
 
-        const isVisible = (el) => el instanceof HTMLElement && window.getComputedStyle(el).display !== 'none';
-        const isLoadedImg = (el) => el instanceof HTMLImageElement &&
-            !el.classList.contains('image-loading__placeholder') &&
-            el.complete &&
-            el.naturalWidth > 0 &&
-            isVisible(el);
-
         // Prefer the visible SizeAwareImage control (11.10+/MM-69174); clicks on the
         // placeholder button are intentionally ignored until the real image loads.
-        const previewButtons = Array.from(root.querySelectorAll('.file-preview__button')).filter(isVisible);
-        for (const button of previewButtons) {
-            const loadedImg = button.querySelector('img:not(.image-loading__placeholder)');
-            if (loadedImg instanceof HTMLImageElement && loadedImg.complete && loadedImg.naturalWidth > 0) {
-                button.scrollIntoView({block: 'center', inline: 'center'});
-                button.click();
-                return true;
-            }
+        const previewButton = findVisibleLoadedPreviewButton(root);
+        if (previewButton) {
+            previewButton.scrollIntoView({block: 'center', inline: 'center'});
+            previewButton.click();
+            return true;
         }
 
         const clickTargets = [
             ...Array.from(root.querySelectorAll('[aria-label*="e2e-preview.png" i]')),
             ...Array.from(root.querySelectorAll('[aria-label*="file thumbnail" i]')),
-            ...Array.from(root.querySelectorAll('.post-image img:not(.image-loading__placeholder)')),
-            ...Array.from(root.querySelectorAll('.post--attachment img:not(.image-loading__placeholder)')),
-            ...Array.from(root.querySelectorAll('img[src*="/api/v4/files/"]:not(.image-loading__placeholder)')),
+            ...Array.from(root.querySelectorAll(LOADED_IMAGE_SELECTOR)),
             root.querySelector('.post-image .image-loaded-container'),
             root.querySelector('.post-image .small-image__container'),
             root.querySelector('.post-image__image'),
@@ -225,9 +225,10 @@ async function openImagePreview(serverWin: ServerView): Promise<boolean> {
                 return false;
             }
             if (target instanceof HTMLImageElement) {
-                return isLoadedImg(target);
+                return isLoadedPreviewImage(target);
             }
-            return isVisible(target) && Boolean(target.querySelector?.('img:not(.image-loading__placeholder)'));
+            return isPreviewControlVisible(target) &&
+                Boolean(target.querySelector?.('img:not(.image-loading__placeholder)'));
         });
 
         const target = clickTargets[0];
