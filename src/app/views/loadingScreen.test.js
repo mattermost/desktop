@@ -92,4 +92,58 @@ describe('main/views/loadingScreen', () => {
             expect(mainWindow.contentView.addChildView).not.toHaveBeenCalled();
         });
     });
+
+    describe('fade', () => {
+        const mainWindow = {
+            contentView: {
+                addChildView: jest.fn(),
+                on: jest.fn(),
+            },
+            webContents: {
+                id: 123,
+            },
+            isDestroyed: jest.fn(() => false),
+        };
+        let loadingScreen;
+
+        beforeEach(() => {
+            jest.clearAllMocks();
+            loadingScreen = new LoadingScreen(mainWindow);
+            loadingScreen.view.webContents.isLoading.mockReturnValue(false);
+            loadingScreen.show();
+            loadingScreen.view.webContents.send.mockClear();
+        });
+
+        it('should send the fade event when webContents is alive', () => {
+            loadingScreen.fade();
+
+            expect(loadingScreen.view.webContents.send).toHaveBeenCalledWith(TOGGLE_LOADING_SCREEN_VISIBILITY, false);
+        });
+
+        it('should not send the fade event when webContents is destroyed', () => {
+            loadingScreen.view.webContents.isDestroyed.mockReturnValue(true);
+
+            loadingScreen.fade();
+
+            expect(loadingScreen.view.webContents.send).not.toHaveBeenCalled();
+        });
+
+        it('should not throw when webContents is undefined during teardown', () => {
+            loadingScreen.view.webContents = undefined;
+
+            expect(() => loadingScreen.fade()).not.toThrow();
+        });
+
+        it('should still leave the visible state when webContents is undefined', () => {
+            const webContents = loadingScreen.view.webContents;
+            loadingScreen.view.webContents = undefined;
+            loadingScreen.fade();
+
+            loadingScreen.view.webContents = webContents;
+            loadingScreen.fade();
+
+            // The second fade is only a no-op if the first one advanced out of VISIBLE.
+            expect(webContents.send).not.toHaveBeenCalled();
+        });
+    });
 });
