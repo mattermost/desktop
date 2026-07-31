@@ -103,8 +103,8 @@ env:
 jobs:
   e2e:
     # Includes MM_SERVER_VERSION, not just runs-on: CMT tests multiple server
-    # versions against the same runner (e.g. macos-13 x 9.6.1 and macos-13 x
-    # 9.5.2)
+    # versions against the same runner (e.g. macos-26 x 11.9.0 and macos-26 x
+    # 11.8.4).
     name: e2e-on-${{ inputs.runs-on }}-${{ inputs.MM_SERVER_VERSION }}
     runs-on: ${{ inputs.runs-on }}
     permissions:

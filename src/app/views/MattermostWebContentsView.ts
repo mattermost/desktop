@@ -22,6 +22,7 @@ import {
     SERVER_URL_CHANGED,
     BROWSER_HISTORY_PUSH,
     RELOAD_VIEW,
+    UPDATE_SHORTCUT_MENU,
 } from 'common/communication';
 import type {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -95,6 +96,8 @@ export class MattermostWebContentsView extends EventEmitter {
         });
         this.webContentsView.webContents.on('did-navigate-in-page', () => this.handlePageTitleUpdated(this.webContentsView.webContents.getTitle()));
         this.webContentsView.webContents.on('page-title-updated', (_, newTitle) => this.handlePageTitleUpdated(newTitle));
+        this.webContentsView.webContents.on('devtools-focused', this.emitShortcutMenuUpdate);
+        this.webContentsView.webContents.on('devtools-closed', this.emitShortcutMenuUpdate);
 
         if (!DeveloperMode.get('disableContextMenu')) {
             this.contextMenu = new ContextMenu(this.generateContextMenu(), this.webContentsView.webContents);
@@ -199,7 +202,7 @@ export class MattermostWebContentsView extends EventEmitter {
         const loading = this.webContentsView.webContents.loadURL(loadURL, {userAgent: composeUserAgent(DeveloperMode.get('browserOnly'))});
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
             if (err.code && err.code.startsWith('ERR_CERT')) {
-                this.parentWindow.webContents.send(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
+                this.sendToParentWindow(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
                 this.emit(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
                 this.log.info(`Invalid certificate, stop retrying until the user decides what to do: ${err}.`);
                 this.status = Status.ERROR;
@@ -350,6 +353,12 @@ export class MattermostWebContentsView extends EventEmitter {
         this.webContents?.send(channel, ...args);
     };
 
+    private sendToParentWindow = (channel: string, ...args: any[]) => {
+        if (this.parentWindow && !this.parentWindow.isDestroyed()) {
+            this.parentWindow.webContents.send(channel, ...args);
+        }
+    };
+
     isDestroyed = () => {
         return this.webContentsView?.webContents?.isDestroyed() ?? true;
     };
@@ -379,7 +388,7 @@ export class MattermostWebContentsView extends EventEmitter {
                 if (this.maxRetries-- > 0) {
                     this.loadRetry(loadURL, err);
                 } else {
-                    this.parentWindow.webContents.send(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
+                    this.sendToParentWindow(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
                     this.emit(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
                     this.log.info('Could not establish a connection, will continue to retry in the background', {err});
                     this.status = Status.ERROR;
@@ -423,7 +432,7 @@ export class MattermostWebContentsView extends EventEmitter {
             return;
         }
         this.retryLoad = setTimeout(this.retry(loadURL), RELOAD_INTERVAL);
-        this.parentWindow.webContents.send(LOAD_RETRY, this.id, Date.now() + RELOAD_INTERVAL, err.toString(), loadURL.toString());
+        this.sendToParentWindow(LOAD_RETRY, this.id, Date.now() + RELOAD_INTERVAL, err.toString(), loadURL.toString());
         this.log.info(`failed loading URL: ${err}, retrying in ${RELOAD_INTERVAL / SECOND} seconds`);
     };
 
@@ -435,7 +444,7 @@ export class MattermostWebContentsView extends EventEmitter {
             const serverInfo = ServerManager.getRemoteInfo(this.view.serverId);
             if (!serverInfo?.serverVersion || semver.gte(serverInfo.serverVersion, '9.4.0')) {
                 this.log.verbose('finished loading URL');
-                this.parentWindow.webContents.send(LOAD_SUCCESS, this.id);
+                this.sendToParentWindow(LOAD_SUCCESS, this.id);
                 this.maxRetries = MAX_SERVER_RETRIES;
                 this.status = Status.WAITING_MM;
                 this.removeLoading = setTimeout(this.setInitialized, MAX_LOADING_SCREEN_SECONDS, true);
@@ -444,7 +453,7 @@ export class MattermostWebContentsView extends EventEmitter {
                     this.setBounds(getWindowBoundaries(this.parentWindow));
                 }
             } else {
-                this.parentWindow.webContents.send(LOAD_INCOMPATIBLE_SERVER, this.id, loadURL.toString());
+                this.sendToParentWindow(LOAD_INCOMPATIBLE_SERVER, this.id, loadURL.toString());
                 this.emit(LOAD_FAILED, this.id, 'Incompatible server version', loadURL.toString());
                 this.status = Status.ERROR;
             }
@@ -454,6 +463,8 @@ export class MattermostWebContentsView extends EventEmitter {
     /**
      * WebContents event handlers
      */
+
+    private emitShortcutMenuUpdate = () => ipcMain.emit(UPDATE_SHORTCUT_MENU);
 
     private handleUpdateTarget = (e: Event, url: string) => {
         this.log.silly('handleUpdateTarget');

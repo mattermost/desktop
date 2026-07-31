@@ -518,7 +518,9 @@ describe('main/windows/callsWidgetWindow', () => {
             },
             webContents: {
                 on: (event, listener) => {
-                    redirectListener = listener;
+                    if (event === 'will-redirect') {
+                        redirectListener = listener;
+                    }
                 },
                 once: (event, listener) => {
                     frameFinishedLoadListener = listener;
@@ -571,6 +573,56 @@ describe('main/windows/callsWidgetWindow', () => {
         expect(callsWidgetWindow.win.setVisibleOnAllWorkspaces).toHaveBeenCalledWith(true, {skipTransformProcessType: true, visibleOnFullScreen: true});
         expect(callsWidgetWindow.win.setAlwaysOnTop).toHaveBeenCalledWith(true, 'screen-saver');
         expect(callsWidgetWindow.win.focus).toHaveBeenCalled();
+    });
+
+    describe('onPopOutCreate - devtools listeners', () => {
+        const popOut = {
+            on: jest.fn(),
+            webContents: {
+                on: jest.fn(),
+                once: jest.fn(),
+                id: 'webContentsId',
+                getURL: () => ('http://myurl.com'),
+                removeListener: jest.fn(),
+                isDestroyed: jest.fn(() => false),
+            },
+            off: jest.fn(),
+            loadURL: jest.fn(),
+            isDestroyed: jest.fn(() => false),
+        };
+
+        beforeEach(() => {
+            jest.clearAllMocks();
+            const callsWidgetWindow = new CallsWidgetWindow();
+            callsWidgetWindow.win = {
+                setVisibleOnAllWorkspaces: jest.fn(),
+                setAlwaysOnTop: jest.fn(),
+                focus: jest.fn(),
+            };
+            callsWidgetWindow.onPopOutCreate(popOut);
+        });
+
+        it('should register devtools-focused listener on popout webContents', () => {
+            expect(popOut.webContents.on.mock.calls.some(([e]) => e === 'devtools-focused')).toBe(true);
+        });
+
+        it('should register devtools-closed listener on popout webContents', () => {
+            expect(popOut.webContents.on.mock.calls.some(([e]) => e === 'devtools-closed')).toBe(true);
+        });
+
+        it('should emit UPDATE_SHORTCUT_MENU when devtools-focused fires on popout', () => {
+            const call = popOut.webContents.on.mock.calls.find(([e]) => e === 'devtools-focused');
+            expect(call).toBeDefined();
+            call[1]();
+            expect(ipcMain.emit).toHaveBeenCalledWith(UPDATE_SHORTCUT_MENU);
+        });
+
+        it('should emit UPDATE_SHORTCUT_MENU when devtools-closed fires on popout', () => {
+            const call = popOut.webContents.on.mock.calls.find(([e]) => e === 'devtools-closed');
+            expect(call).toBeDefined();
+            call[1]();
+            expect(ipcMain.emit).toHaveBeenCalledWith(UPDATE_SHORTCUT_MENU);
+        });
     });
 
     it('getViewURL', () => {
@@ -733,6 +785,32 @@ describe('main/windows/callsWidgetWindow', () => {
             callsWidgetWindow.options = {callID: 'test'};
             await callsWidgetWindow.handleCreateCallsWidgetWindow({sender: {id: 2}}, {callID: 'test2'});
             expect(callsWidgetWindow.win).toEqual(window);
+        });
+
+        it('should register devtools-focused listener on widget webContents in init', async () => {
+            await callsWidgetWindow.handleCreateCallsWidgetWindow({sender: {id: 2}}, {callID: 'test'});
+            expect(browserWindow.webContents.on.mock.calls.some(([e]) => e === 'devtools-focused')).toBe(true);
+        });
+
+        it('should register devtools-closed listener on widget webContents in init', async () => {
+            await callsWidgetWindow.handleCreateCallsWidgetWindow({sender: {id: 2}}, {callID: 'test'});
+            expect(browserWindow.webContents.on.mock.calls.some(([e]) => e === 'devtools-closed')).toBe(true);
+        });
+
+        it('should emit UPDATE_SHORTCUT_MENU when devtools-focused fires on widget webContents', async () => {
+            await callsWidgetWindow.handleCreateCallsWidgetWindow({sender: {id: 2}}, {callID: 'test'});
+            const call = browserWindow.webContents.on.mock.calls.find(([e]) => e === 'devtools-focused');
+            expect(call).toBeDefined();
+            call[1]();
+            expect(ipcMain.emit).toHaveBeenCalledWith(UPDATE_SHORTCUT_MENU);
+        });
+
+        it('should emit UPDATE_SHORTCUT_MENU when devtools-closed fires on widget webContents', async () => {
+            await callsWidgetWindow.handleCreateCallsWidgetWindow({sender: {id: 2}}, {callID: 'test'});
+            const call = browserWindow.webContents.on.mock.calls.find(([e]) => e === 'devtools-closed');
+            expect(call).toBeDefined();
+            call[1]();
+            expect(ipcMain.emit).toHaveBeenCalledWith(UPDATE_SHORTCUT_MENU);
         });
     });
 

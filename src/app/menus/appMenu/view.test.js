@@ -78,6 +78,7 @@ describe('app/menus/appMenu/view', () => {
     };
 
     beforeEach(() => {
+        jest.clearAllMocks();
         ServerManager.getCurrentServerId.mockReturnValue(mockServer.id);
         ServerManager.getServer.mockReturnValue(mockServer);
         WebContentsManager.getFocusedView.mockReturnValue(mockView);
@@ -190,6 +191,22 @@ describe('app/menus/appMenu/view', () => {
             const mainWindowDevTools = devToolsSubMenu.submenu.find((item) => item.label === 'Developer Tools for Main Window');
             mainWindowDevTools.click();
             expect(mockWebContents.openDevTools).toHaveBeenCalledWith({mode: 'detach'});
+        });
+
+        it('should not call openDevTools when MainWindow.get() returns null', () => {
+            MainWindow.get.mockReturnValue(null);
+
+            localizeMessage.mockImplementation((id) => {
+                if (id === 'main.menus.app.view.devToolsMainWindow') {
+                    return 'Developer Tools for Main Window';
+                }
+                return id;
+            });
+
+            const menu = createViewMenu();
+            const devToolsSubMenu = menu.submenu.find((item) => item.label === 'main.menus.app.view.devToolsSubMenu');
+            const mainWindowDevTools = devToolsSubMenu.submenu.find((item) => item.label === 'Developer Tools for Main Window');
+            expect(() => mainWindowDevTools.click()).not.toThrow();
         });
 
         it('should call TabManager.getCurrentActiveTabView().openDevTools when current tab dev tools is clicked', () => {

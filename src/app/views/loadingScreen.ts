@@ -89,8 +89,9 @@ export class LoadingScreen {
         if (this.state === LoadingScreenState.VISIBLE) {
             log.debug('fade: fading loading screen');
             this.state = LoadingScreenState.FADING;
-            if (!this.view.webContents.isDestroyed()) {
-                this.view.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, false);
+            const webContents = this.view.webContents;
+            if (webContents && !webContents.isDestroyed()) {
+                webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, false);
             }
         }
     };
