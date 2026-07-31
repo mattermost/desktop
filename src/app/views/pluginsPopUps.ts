@@ -11,7 +11,7 @@ import {shell} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import NavigationManager from 'app/navigationManager';
-import {generateHandleConsoleMessage, isCustomProtocol} from 'app/views/webContentEventsCommon';
+import {generateHandleConsoleMessage, generateWillFrameNavigate, isCustomProtocol} from 'app/views/webContentEventsCommon';
 import WebContentsManager from 'app/views/webContentsManager';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -62,6 +62,7 @@ export class PluginsPopUpsManager {
             log.warn('prevented popup window from navigating');
             ev.preventDefault();
         });
+        win.webContents.on('will-frame-navigate', generateWillFrameNavigate(log));
         win.webContents.on('did-start-navigation', (ev: Event<WebContentsDidStartNavigationEventParams>) => {
             if (ev.url === details.url) {
                 return;

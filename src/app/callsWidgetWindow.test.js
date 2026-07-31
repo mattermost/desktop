@@ -594,6 +594,33 @@ describe('main/windows/callsWidgetWindow', () => {
         expect(ev.preventDefault).toHaveBeenCalledTimes(1);
     });
 
+    it('onRedirect', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.getWidgetURL = () => 'http://localhost:8065';
+
+        const mainFrameEv = {preventDefault: jest.fn(), isMainFrame: true};
+        callsWidgetWindow.onRedirect(mainFrameEv, 'https://www.google.com/');
+        expect(mainFrameEv.preventDefault).toHaveBeenCalled();
+
+        urlUtils.parseURL.mockReturnValue(new URL('https://example.com/embed'));
+        const subFrameEv = {preventDefault: jest.fn(), isMainFrame: false, url: 'https://example.com/embed'};
+        callsWidgetWindow.onRedirect(subFrameEv, subFrameEv.url);
+        expect(subFrameEv.preventDefault).not.toHaveBeenCalled();
+    });
+
+    it('onFrameNavigate', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+
+        const mainFrameEv = {preventDefault: jest.fn(), isMainFrame: true, url: 'custom://payload'};
+        callsWidgetWindow.onFrameNavigate(mainFrameEv);
+        expect(mainFrameEv.preventDefault).not.toHaveBeenCalled();
+
+        urlUtils.parseURL.mockReturnValue(new URL('custom://payload'));
+        const subFrameEv = {preventDefault: jest.fn(), isMainFrame: false, url: 'custom://payload'};
+        callsWidgetWindow.onFrameNavigate(subFrameEv);
+        expect(subFrameEv.preventDefault).toHaveBeenCalled();
+    });
+
     describe('handleCreateCallsWidgetWindow', () => {
         const callsWidgetWindow = new CallsWidgetWindow();
         callsWidgetWindow.close = jest.fn();
