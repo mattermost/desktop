@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 import path from 'path';
 
-import type {Event, WebContentsConsoleMessageEventParams} from 'electron';
+import type {Event, WebContentsConsoleMessageEventParams, WebContentsWillFrameNavigateEventParams} from 'electron';
 
 import {MATTERMOST_PROTOCOL} from 'common/constants';
 import type {Logger} from 'common/log';
@@ -66,3 +66,18 @@ export function isAllowedSubframeNavigation(rawURL?: string): boolean {
 export function isMattermostProtocol(url: URL) {
     return url.protocol === `${MATTERMOST_PROTOCOL}:`;
 }
+
+export const generateWillFrameNavigate = (log: Logger) => (event: Event<WebContentsWillFrameNavigateEventParams>) => {
+    // will-frame-navigate also fires for the main frame; defer that to will-navigate
+    // so the policy (and any protocol dialog) does not run twice.
+    if (event.isMainFrame) {
+        return;
+    }
+
+    if (isAllowedSubframeNavigation(event.url)) {
+        return;
+    }
+
+    log.debug('Prevented subframe from navigating to a blocked protocol');
+    event.preventDefault();
+};
