@@ -7,7 +7,7 @@ import type {Logger} from 'common/log';
 import {getLevel} from 'common/log';
 import {parseURL} from 'common/utils/url';
 
-import {generateHandleConsoleMessage, isCustomProtocol, isMattermostProtocol} from './webContentEventsCommon';
+import {generateHandleConsoleMessage, isAllowedSubframeNavigation, isCustomProtocol, isMattermostProtocol} from './webContentEventsCommon';
 
 // Mock the electron-builder.json protocols
 jest.mock('common/constants', () => ({
@@ -261,6 +261,49 @@ describe('webContentEventsCommon', () => {
 
         it('should handle URLs with different case mattermost protocol', () => {
             expect(isCustomProtocol(new URL('MATTERMOST://server1'))).toBe(false);
+        });
+    });
+
+    describe('isAllowedSubframeNavigation', () => {
+        beforeEach(() => {
+            mockParseURL.mockImplementation((input: string | URL) => {
+                try {
+                    return new URL(input as string);
+                } catch {
+                    return undefined;
+                }
+            });
+        });
+
+        it('allows http and https embeds', () => {
+            expect(isAllowedSubframeNavigation('https://www.youtube.com/embed/abc')).toBe(true);
+            expect(isAllowedSubframeNavigation('http://example.com/widget')).toBe(true);
+        });
+
+        it('allows about:blank and about:srcdoc without parsing', () => {
+            expect(isAllowedSubframeNavigation('about:blank')).toBe(true);
+            expect(isAllowedSubframeNavigation('about:srcdoc')).toBe(true);
+            expect(mockParseURL).not.toHaveBeenCalled();
+        });
+
+        it('allows empty/undefined frame URLs', () => {
+            expect(isAllowedSubframeNavigation(undefined)).toBe(true);
+            expect(isAllowedSubframeNavigation('')).toBe(true);
+        });
+
+        it('blocks non-web protocols including mailto', () => {
+            expect(isAllowedSubframeNavigation('mailto:user@example.com')).toBe(false);
+            expect(isAllowedSubframeNavigation('tel:+15551234')).toBe(false);
+            expect(isAllowedSubframeNavigation('custom://payload')).toBe(false);
+            expect(isAllowedSubframeNavigation('file:///etc/passwd')).toBe(false);
+
+            // eslint-disable-next-line no-script-url
+            expect(isAllowedSubframeNavigation('javascript:alert(1)')).toBe(false);
+        });
+
+        it('blocks unparseable URLs', () => {
+            mockParseURL.mockReturnValue(undefined);
+            expect(isAllowedSubframeNavigation('::::not a url')).toBe(false);
         });
     });
 
