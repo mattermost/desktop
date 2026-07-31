@@ -114,6 +114,16 @@ export const emptyConfig: AppConfig = {
     servers: [],
 };
 
+// Single configured server, used by the local-network policy spec to point at a loopback
+// test server so no live Mattermost is required.
+export function localNetworkConfig(serverUrl: string): AppConfig {
+    return {
+        ...baseConfig,
+        servers: [{name: 'local', url: serverUrl, order: 0}],
+        lastActiveServer: 0,
+    };
+}
+
 // ---- File writer ----
 
 /**
