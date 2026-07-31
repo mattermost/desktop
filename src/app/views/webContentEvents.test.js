@@ -153,6 +153,7 @@ describe('main/views/webContentsEvents', () => {
 
             expect(contents.on).toHaveBeenCalledWith('will-navigate', expect.any(Function));
             expect(contents.on).toHaveBeenCalledWith('will-frame-navigate', expect.any(Function));
+            expect(contents.on).toHaveBeenCalledWith('will-redirect', expect.any(Function));
 
             // Distinct from will-navigate so a main-frame navigation is not processed twice.
             expect(handlers['will-frame-navigate']).not.toBe(handlers['will-navigate']);
@@ -161,6 +162,40 @@ describe('main/views/webContentsEvents', () => {
 
             expect(contents.removeListener).toHaveBeenCalledWith('will-navigate', handlers['will-navigate']);
             expect(contents.removeListener).toHaveBeenCalledWith('will-frame-navigate', handlers['will-frame-navigate']);
+            expect(contents.removeListener).toHaveBeenCalledWith('will-redirect', handlers['will-redirect']);
+        });
+
+        it('redirect guard applies the main-frame policy to main-frame redirects', () => {
+            const webContentsEventManager = new WebContentsEventManager();
+            webContentsEventManager.getServerURLFromWebContentsId = () => new URL('http://server-1.com');
+            const {handlers, contents} = setupContents();
+            webContentsEventManager.addWebContentsEventListeners(contents);
+            const willRedirect = handlers['will-redirect'];
+
+            const internalEvent = {preventDefault: jest.fn(), isMainFrame: true, url: 'http://server-1.com/subpath'};
+            willRedirect(internalEvent, internalEvent.url);
+            expect(internalEvent.preventDefault).not.toHaveBeenCalled();
+
+            const externalEvent = {preventDefault: jest.fn(), isMainFrame: true, url: 'http://someotherurl.com'};
+            willRedirect(externalEvent, externalEvent.url);
+            expect(externalEvent.preventDefault).toHaveBeenCalled();
+        });
+
+        it('redirect guard applies the subframe policy to subframe redirects', () => {
+            const webContentsEventManager = new WebContentsEventManager();
+            webContentsEventManager.getServerURLFromWebContentsId = () => new URL('http://server-1.com');
+            const {handlers, contents} = setupContents();
+            webContentsEventManager.addWebContentsEventListeners(contents);
+            const willRedirect = handlers['will-redirect'];
+
+            // External redirects are how ordinary embeds work, so they stay allowed for subframes.
+            const embedEvent = {preventDefault: jest.fn(), isMainFrame: false, url: 'https://www.youtube.com/embed/abc'};
+            willRedirect(embedEvent, embedEvent.url);
+            expect(embedEvent.preventDefault).not.toHaveBeenCalled();
+
+            const protocolEvent = {preventDefault: jest.fn(), isMainFrame: false, url: 'custom://payload'};
+            willRedirect(protocolEvent, protocolEvent.url);
+            expect(protocolEvent.preventDefault).toHaveBeenCalled();
         });
 
         it('subframe guard ignores main-frame navigations (handled by will-navigate)', () => {
