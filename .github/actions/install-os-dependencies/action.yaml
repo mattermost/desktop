@@ -71,5 +71,23 @@ runs:
       if: inputs.os == 'Windows'
       shell: bash
       run: |
-        choco install yq --version 4.15.1 -y
-        choco install vcredist-all -y
+        # Chocolatey's community feed intermittently returns 503, which used to fail this step
+        # outright. Take yq from its GitHub release (as Linux does) and retry the packages that
+        # are only distributed through Chocolatey.
+        mkdir -p /c/ProgramData/chocolatey/bin
+        curl -fsSL --retry 5 --retry-delay 5 \
+          -o /c/ProgramData/chocolatey/bin/yq.exe \
+          https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_windows_amd64.exe
+        yq --version
+
+        install_with_retry() {
+          for attempt in 1 2 3; do
+            if choco install "$@" -y; then
+              return 0
+            fi
+            echo "choco install $* failed (attempt ${attempt}/3), retrying" >&2
+            sleep $((attempt * 20))
+          done
+          return 1
+        }
+        install_with_retry vcredist-all
