@@ -126,6 +126,26 @@ export class WebContentsEventManager {
         return false;
     };
 
+    /**
+     * The app loads server URLs itself (initial load, deep links). Chromium may upgrade such a
+     * load to https and surface it as a redirect, and cancelling that would cancel our own
+     * navigation — including paths the allowlist deliberately excludes for renderer-initiated
+     * navigation, such as /oauth/. Only the scheme may differ; host, path and query must match
+     * what we asked for, so a server cannot redirect the view anywhere else through this path.
+     */
+    private isHttpsUpgradeOfAppInitiatedLoad = (webContentsId: number, parsedURL: URL) => {
+        const pendingLoadURL = WebContentsManager.getViewByWebContentsId(webContentsId)?.pendingLoadURL;
+        if (!pendingLoadURL) {
+            return false;
+        }
+
+        return pendingLoadURL.protocol === 'http:' &&
+            parsedURL.protocol === 'https:' &&
+            pendingLoadURL.host === parsedURL.host &&
+            pendingLoadURL.pathname === parsedURL.pathname &&
+            pendingLoadURL.search === parsedURL.search;
+    };
+
     private generateWillNavigate = (webContentsId: number) => {
         return (event: Event<WebContentsWillNavigateEventParams>, url?: string) => {
             this.log(webContentsId).debug('will-navigate');
@@ -141,6 +161,10 @@ export class WebContentsEventManager {
             const serverURL = this.getServerURLFromWebContentsId(webContentsId);
 
             if (serverURL && this.isAllowedServerNavigation(serverURL, parsedURL, webContentsId)) {
+                return;
+            }
+
+            if (this.isHttpsUpgradeOfAppInitiatedLoad(webContentsId, parsedURL)) {
                 return;
             }
 

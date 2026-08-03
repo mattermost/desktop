@@ -36,6 +36,14 @@ jest.mock('app/callsWidgetWindow', () => ({}));
 jest.mock('common/views/viewManager', () => ({
     getViewByWebContentsId: jest.fn(),
     handleDeepLink: jest.fn(),
+    getViewLog: jest.fn(() => ({
+        debug: jest.fn(),
+        info: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+        silly: jest.fn(),
+        verbose: jest.fn(),
+    })),
 }));
 
 jest.mock('app/views/pluginsPopUps', () => ({
@@ -89,6 +97,7 @@ describe('main/views/webContentsEvents', () => {
         afterEach(() => {
             event.preventDefault.mockClear();
             popupWindowSpy.mockReset();
+            WebContentsManager.getViewByWebContentsId.mockReset();
             webContentsEventManager.customLogins = {};
             webContentsEventManager.popupWindow = undefined;
         });
@@ -132,6 +141,37 @@ describe('main/views/webContentsEvents', () => {
         it('should allow HTTP to HTTPS upgrade for the configured server host', () => {
             willNavigate(event, 'https://server-1.com/subpath');
             expect(event.preventDefault).not.toBeCalled();
+        });
+
+        it('should allow the HTTPS upgrade of a URL the app itself asked to load', () => {
+            // /oauth/ is excluded from the team-URL allowlist, so deep links to it only survive
+            // Chromium's upgrade because the app initiated the load.
+            WebContentsManager.getViewByWebContentsId.mockReturnValue({
+                pendingLoadURL: new URL('http://server-1.com/oauth/authorize?client_id=desktop'),
+            });
+            willNavigate(event, 'https://server-1.com/oauth/authorize?client_id=desktop');
+            expect(event.preventDefault).not.toBeCalled();
+        });
+
+        it('should block a redirect to a different path than the app asked to load', () => {
+            WebContentsManager.getViewByWebContentsId.mockReturnValue({
+                pendingLoadURL: new URL('http://server-1.com/oauth/authorize?client_id=desktop'),
+            });
+            willNavigate(event, 'https://server-1.com/oauth/elsewhere?client_id=desktop');
+            expect(event.preventDefault).toBeCalled();
+        });
+
+        it('should block a redirect to a different host than the app asked to load', () => {
+            WebContentsManager.getViewByWebContentsId.mockReturnValue({
+                pendingLoadURL: new URL('http://server-1.com/oauth/authorize?client_id=desktop'),
+            });
+            willNavigate(event, 'https://evil.com/oauth/authorize?client_id=desktop');
+            expect(event.preventDefault).toBeCalled();
+        });
+
+        it('should block an oauth path when the app did not initiate the load', () => {
+            willNavigate(event, 'https://server-1.com/oauth/authorize?client_id=desktop');
+            expect(event.preventDefault).toBeCalled();
         });
 
         it('should still block HTTPS to HTTP downgrade for the configured server host', () => {

@@ -63,6 +63,7 @@ export class MattermostWebContentsView extends EventEmitter {
     private maxRetries: number;
     private altPressStatus: boolean;
     private lastPath?: string;
+    private appInitiatedLoadURL?: URL;
 
     constructor(view: MattermostView, options: WebContentsViewConstructorOptions, parentWindow: BrowserWindow) {
         super();
@@ -126,6 +127,11 @@ export class MattermostWebContentsView extends EventEmitter {
     get currentURL() {
         const url = this.webContents?.getURL();
         return url ? parseURL(url) : undefined;
+    }
+
+    /** URL the app itself asked this view to load, while that load is still in flight. */
+    get pendingLoadURL() {
+        return this.appInitiatedLoadURL;
     }
     get webContentsId() {
         // Cached at construction so it remains valid during and after teardown, when
@@ -199,6 +205,7 @@ export class MattermostWebContentsView extends EventEmitter {
         }
         this.log.verbose('Loading URL');
         performanceMonitor.registerServerView(`Server ${this.webContentsView.webContents.id}`, this.webContentsView.webContents, this.view.serverId);
+        this.appInitiatedLoadURL = parseURL(loadURL);
         const loading = this.webContentsView.webContents.loadURL(loadURL, {userAgent: composeUserAgent(DeveloperMode.get('browserOnly'))});
         loading.then(this.loadSuccess(loadURL)).catch((err) => {
             if (err.code && err.code.startsWith('ERR_CERT')) {
@@ -383,6 +390,7 @@ export class MattermostWebContentsView extends EventEmitter {
             if (this.isDestroyed()) {
                 return;
             }
+            this.appInitiatedLoadURL = parseURL(loadURL);
             const loading = this.webContentsView.webContents.loadURL(loadURL, {userAgent: composeUserAgent(DeveloperMode.get('browserOnly'))});
             loading.then(this.loadSuccess(loadURL)).catch((err) => {
                 if (this.maxRetries-- > 0) {
@@ -438,6 +446,7 @@ export class MattermostWebContentsView extends EventEmitter {
 
     private loadSuccess = (loadURL: string) => {
         return () => {
+            this.appInitiatedLoadURL = undefined;
             if (this.isDestroyed()) {
                 return;
             }
