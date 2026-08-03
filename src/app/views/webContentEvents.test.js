@@ -161,6 +161,14 @@ describe('main/views/webContentsEvents', () => {
             expect(event.preventDefault).not.toBeCalled();
         });
 
+        it('should allow apex to www canonicalization during an app-initiated load', () => {
+            WebContentsManager.getViewByWebContentsId.mockReturnValue({
+                pendingLoadURL: new URL('https://server-1.com/'),
+            });
+            willNavigate(event, 'https://www.server-1.com/');
+            expect(event.preventDefault).not.toBeCalled();
+        });
+
         it('should block a redirect that downgrades an app-initiated load to http', () => {
             const httpsManager = new WebContentsEventManager();
             httpsManager.getServerURLFromWebContentsId = () => new URL('https://server-1.com');

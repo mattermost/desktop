@@ -26,7 +26,7 @@ const config = {
         ...demoMattermostConfig.servers,
         {
             name: 'google',
-            url: 'https://www.google.com/',
+            url: 'https://google.com/',
             order: 2,
         },
     ],

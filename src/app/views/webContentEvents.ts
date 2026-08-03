@@ -132,8 +132,9 @@ export class WebContentsEventManager {
      * deployments redirect to another port or to a path the team-URL allowlist excludes, such
      * as /oauth/. Those arrive as main-frame redirects, so cancelling them cancels our own
      * navigation and leaves the view retrying forever. Only redirects that stay on the hostname
-     * we asked for are allowed, only while that load is in flight, and never downgrading to
-     * http — a server still cannot send the view to another host this way.
+     * we asked for (including its common apex ↔ www canonicalization) are allowed, only while
+     * that load is in flight, and never downgrading to http — a server still cannot send the
+     * view to an unrelated host this way.
      */
     private isAppInitiatedLoadRedirect = (webContentsId: number, parsedURL: URL) => {
         const pendingLoadURL = WebContentsManager.getViewByWebContentsId(webContentsId)?.pendingLoadURL;
@@ -141,7 +142,8 @@ export class WebContentsEventManager {
             return false;
         }
 
-        if (pendingLoadURL.hostname !== parsedURL.hostname) {
+        const canonicalHostname = (hostname: string) => hostname.replace(/^www\./, '');
+        if (canonicalHostname(pendingLoadURL.hostname) !== canonicalHostname(parsedURL.hostname)) {
             return false;
         }
 
