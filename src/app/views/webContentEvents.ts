@@ -127,23 +127,26 @@ export class WebContentsEventManager {
     };
 
     /**
-     * The app loads server URLs itself (initial load, deep links). Chromium may upgrade such a
-     * load to https and surface it as a redirect, and cancelling that would cancel our own
-     * navigation — including paths the allowlist deliberately excludes for renderer-initiated
-     * navigation, such as /oauth/. Only the scheme may differ; host, path and query must match
-     * what we asked for, so a server cannot redirect the view anywhere else through this path.
+     * The app loads server URLs itself (initial load, deep links) and a server routinely
+     * canonicalizes its own address while answering: Chromium upgrades http to https, and
+     * deployments redirect to another port or to a path the team-URL allowlist excludes, such
+     * as /oauth/. Those arrive as main-frame redirects, so cancelling them cancels our own
+     * navigation and leaves the view retrying forever. Only redirects that stay on the hostname
+     * we asked for are allowed, only while that load is in flight, and never downgrading to
+     * http — a server still cannot send the view to another host this way.
      */
-    private isHttpsUpgradeOfAppInitiatedLoad = (webContentsId: number, parsedURL: URL) => {
+    private isAppInitiatedLoadRedirect = (webContentsId: number, parsedURL: URL) => {
         const pendingLoadURL = WebContentsManager.getViewByWebContentsId(webContentsId)?.pendingLoadURL;
         if (!pendingLoadURL) {
             return false;
         }
 
-        return pendingLoadURL.protocol === 'http:' &&
-            parsedURL.protocol === 'https:' &&
-            pendingLoadURL.host === parsedURL.host &&
-            pendingLoadURL.pathname === parsedURL.pathname &&
-            pendingLoadURL.search === parsedURL.search;
+        if (pendingLoadURL.hostname !== parsedURL.hostname) {
+            return false;
+        }
+
+        return pendingLoadURL.protocol === parsedURL.protocol ||
+            (pendingLoadURL.protocol === 'http:' && parsedURL.protocol === 'https:');
     };
 
     private generateWillNavigate = (webContentsId: number) => {
@@ -164,7 +167,7 @@ export class WebContentsEventManager {
                 return;
             }
 
-            if (this.isHttpsUpgradeOfAppInitiatedLoad(webContentsId, parsedURL)) {
+            if (this.isAppInitiatedLoadRedirect(webContentsId, parsedURL)) {
                 return;
             }
 

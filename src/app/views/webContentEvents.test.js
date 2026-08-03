@@ -153,11 +153,21 @@ describe('main/views/webContentsEvents', () => {
             expect(event.preventDefault).not.toBeCalled();
         });
 
-        it('should block a redirect to a different path than the app asked to load', () => {
+        it('should allow a server redirecting its own load to another port', () => {
             WebContentsManager.getViewByWebContentsId.mockReturnValue({
-                pendingLoadURL: new URL('http://server-1.com/oauth/authorize?client_id=desktop'),
+                pendingLoadURL: new URL('https://server-1.com/'),
             });
-            willNavigate(event, 'https://server-1.com/oauth/elsewhere?client_id=desktop');
+            willNavigate(event, 'https://server-1.com:1011/');
+            expect(event.preventDefault).not.toBeCalled();
+        });
+
+        it('should block a redirect that downgrades an app-initiated load to http', () => {
+            const httpsManager = new WebContentsEventManager();
+            httpsManager.getServerURLFromWebContentsId = () => new URL('https://server-1.com');
+            WebContentsManager.getViewByWebContentsId.mockReturnValue({
+                pendingLoadURL: new URL('https://server-1.com/'),
+            });
+            httpsManager.generateWillNavigate(1)(event, 'http://server-1.com/');
             expect(event.preventDefault).toBeCalled();
         });
 
