@@ -128,6 +128,19 @@ describe('main/views/webContentsEvents', () => {
             willNavigate(event, 'http://someotherurl.com');
             expect(event.preventDefault).toBeCalled();
         });
+
+        it('should allow HTTP to HTTPS upgrade for the configured server host', () => {
+            willNavigate(event, 'https://server-1.com/subpath');
+            expect(event.preventDefault).not.toBeCalled();
+        });
+
+        it('should still block HTTPS to HTTP downgrade for the configured server host', () => {
+            const httpsManager = new WebContentsEventManager();
+            httpsManager.getServerURLFromWebContentsId = () => new URL('https://server-1.com');
+            const httpsWillNavigate = httpsManager.generateWillNavigate(1);
+            httpsWillNavigate(event, 'http://server-1.com/subpath');
+            expect(event.preventDefault).toBeCalled();
+        });
     });
 
     describe('addWebContentsEventListeners', () => {
@@ -179,6 +192,25 @@ describe('main/views/webContentsEvents', () => {
             const externalEvent = {preventDefault: jest.fn(), isMainFrame: true, url: 'http://someotherurl.com'};
             willRedirect(externalEvent, externalEvent.url);
             expect(externalEvent.preventDefault).toHaveBeenCalled();
+        });
+
+        it('redirect guard allows same-host HTTP to HTTPS upgrades for configured servers', () => {
+            const webContentsEventManager = new WebContentsEventManager();
+            webContentsEventManager.getServerURLFromWebContentsId = () => new URL('http://example.com/');
+            const {handlers, contents} = setupContents();
+            webContentsEventManager.addWebContentsEventListeners(contents);
+            const willRedirect = handlers['will-redirect'];
+
+            // loadURL('http://example.com/') commonly HSTS/redirects to https — must not be blocked.
+            const upgradeEvent = {preventDefault: jest.fn(), isMainFrame: true, url: 'https://example.com/'};
+            willRedirect(upgradeEvent, upgradeEvent.url);
+            expect(upgradeEvent.preventDefault).not.toHaveBeenCalled();
+
+            // HTTPS → HTTP downgrade remains blocked.
+            webContentsEventManager.getServerURLFromWebContentsId = () => new URL('https://example.com/');
+            const downgradeEvent = {preventDefault: jest.fn(), isMainFrame: true, url: 'http://example.com/'};
+            willRedirect(downgradeEvent, downgradeEvent.url);
+            expect(downgradeEvent.preventDefault).toHaveBeenCalled();
         });
 
         it('redirect guard applies the subframe policy to subframe redirects', () => {

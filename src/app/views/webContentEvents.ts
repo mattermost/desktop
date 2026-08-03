@@ -90,6 +90,41 @@ export class WebContentsEventManager {
         return server.url;
     };
 
+    /**
+     * True when destination matches the configured server after an HTTP→HTTPS upgrade
+     * (redirect / HSTS). Downgrades are not allowed.
+     */
+    private getHttpsUpgradedServerURL = (serverURL: URL, parsedURL: URL) => {
+        if (serverURL.protocol !== 'http:' || parsedURL.protocol !== 'https:') {
+            return undefined;
+        }
+        if (!isInternalURL(parsedURL, serverURL, true)) {
+            return undefined;
+        }
+        const upgraded = new URL(serverURL.toString());
+        upgraded.protocol = 'https:';
+        return upgraded;
+    };
+
+    private isAllowedServerNavigation = (serverURL: URL, parsedURL: URL, webContentsId: number) => {
+        const effectiveServerURL = this.getHttpsUpgradedServerURL(serverURL, parsedURL) ?? serverURL;
+
+        if (isTeamUrl(effectiveServerURL, parsedURL) || isAdminUrl(effectiveServerURL, parsedURL) || isLoginUrl(effectiveServerURL, parsedURL) || this.isTrustedPopupWindow(webContentsId)) {
+            return true;
+        }
+
+        if (isChannelExportUrl(effectiveServerURL, parsedURL)) {
+            return true;
+        }
+
+        const callID = CallsWidgetWindow.callID;
+        if (callID && isCallsPopOutURL(effectiveServerURL, parsedURL, callID)) {
+            return true;
+        }
+
+        return false;
+    };
+
     private generateWillNavigate = (webContentsId: number) => {
         return (event: Event<WebContentsWillNavigateEventParams>, url?: string) => {
             this.log(webContentsId).debug('will-navigate');
@@ -104,20 +139,11 @@ export class WebContentsEventManager {
 
             const serverURL = this.getServerURLFromWebContentsId(webContentsId);
 
-            if (serverURL && (isTeamUrl(serverURL, parsedURL) || isAdminUrl(serverURL, parsedURL) || isLoginUrl(serverURL, parsedURL) || this.isTrustedPopupWindow(webContentsId))) {
-                return;
-            }
-
-            if (serverURL && isChannelExportUrl(serverURL, parsedURL)) {
+            if (serverURL && this.isAllowedServerNavigation(serverURL, parsedURL, webContentsId)) {
                 return;
             }
 
             if (parsedURL.protocol === 'mailto:') {
-                return;
-            }
-
-            const callID = CallsWidgetWindow.callID;
-            if (serverURL && callID && isCallsPopOutURL(serverURL, parsedURL, callID)) {
                 return;
             }
 
