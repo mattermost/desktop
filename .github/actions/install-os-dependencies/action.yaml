@@ -14,16 +14,23 @@ runs:
       shell: bash
       run: |
         # Add Wine repository key
-        wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_22.04/Release.key | sudo apt-key add -
+        wget --timeout=30 --tries=5 -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_22.04/Release.key | sudo apt-key add -
 
         # Install yq binary
-        wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
+        wget --timeout=30 --tries=5 -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
+
+        # Do not let a stalled package mirror hang an E2E runner indefinitely.
+        apt_options=(
+          -o Acquire::Retries=5
+          -o Acquire::http::Timeout=30
+          -o Acquire::https::Timeout=30
+        )
 
         # Update package lists
-        sudo apt-get update || true
+        sudo apt-get "${apt_options[@]}" update || true
 
         # Install required packages
-        sudo apt-get install -y \
+        sudo apt-get "${apt_options[@]}" install -y \
           build-essential \
           clang \
           libdbus-1-dev \
