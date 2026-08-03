@@ -91,8 +91,9 @@ export class WebContentsEventManager {
     };
 
     /**
-     * True when destination matches the configured server after an HTTP→HTTPS upgrade
-     * (redirect / HSTS). Downgrades are not allowed.
+     * Chromium upgrades main-frame http:// navigations to https:// (HTTPS-Upgrades/HSTS) and
+     * reports it as a main-frame redirect. Returns the configured server URL with the upgraded
+     * scheme so the destination is still recognized as the server. Downgrades are not allowed.
      */
     private getHttpsUpgradedServerURL = (serverURL: URL, parsedURL: URL) => {
         if (serverURL.protocol !== 'http:' || parsedURL.protocol !== 'https:') {
