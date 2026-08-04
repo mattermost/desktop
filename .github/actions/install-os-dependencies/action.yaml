@@ -14,23 +14,16 @@ runs:
       shell: bash
       run: |
         # Add Wine repository key
-        wget --timeout=30 --tries=5 -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_22.04/Release.key | sudo apt-key add -
+        wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_22.04/Release.key | sudo apt-key add -
 
         # Install yq binary
-        wget --timeout=30 --tries=5 -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
-
-        # Do not let a stalled package mirror hang an E2E runner indefinitely.
-        apt_options=(
-          -o Acquire::Retries=5
-          -o Acquire::http::Timeout=30
-          -o Acquire::https::Timeout=30
-        )
+        wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
 
         # Update package lists
-        sudo apt-get "${apt_options[@]}" update || true
+        sudo apt-get update || true
 
         # Install required packages
-        sudo apt-get "${apt_options[@]}" install -y \
+        sudo apt-get install -y \
           build-essential \
           clang \
           libdbus-1-dev \
@@ -78,27 +71,5 @@ runs:
       if: inputs.os == 'Windows'
       shell: bash
       run: |
-        # Chocolatey's community feed intermittently returns 503, which used to fail this step
-        # outright. Take yq from its GitHub release (as Linux does) and retry the packages that
-        # are only distributed through Chocolatey. The SHA-256 comes from the release's own
-        # `checksums` file, so a tampered or truncated download fails the step.
-        YQ_VERSION=v4.20.1
-        YQ_WINDOWS_SHA256=6e8231e771e36b67ca96ba754fc09bbbba95d08a9149411b36011681e46c4f03
-        mkdir -p /c/ProgramData/chocolatey/bin
-        curl -fsSL --retry 5 --retry-delay 5 \
-          -o /c/ProgramData/chocolatey/bin/yq.exe \
-          "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_windows_amd64.exe"
-        echo "${YQ_WINDOWS_SHA256} */c/ProgramData/chocolatey/bin/yq.exe" | sha256sum -c -
-        yq --version
-
-        install_with_retry() {
-          for attempt in 1 2 3; do
-            if choco install "$@" -y; then
-              return 0
-            fi
-            echo "choco install $* failed (attempt ${attempt}/3), retrying" >&2
-            sleep $((attempt * 20))
-          done
-          return 1
-        }
-        install_with_retry vcredist-all
+        choco install yq --version 4.15.1 -y
+        choco install vcredist-all -y
