@@ -39,7 +39,7 @@ export const appDir = path.join(sourceRootDir, 'e2e/dist');
 
 export const mattermostURL = process.env.MM_TEST_SERVER_URL ?? 'http://localhost:8065/';
 
-export const exampleURL = 'http://example.com/';
+export const exampleURL = 'https://example.com/';
 
 export const cmdOrCtrl = process.platform === 'darwin' ? 'command' : 'control';
 
