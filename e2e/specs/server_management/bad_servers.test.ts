@@ -17,7 +17,7 @@ import {buildServerMap} from '../../helpers/serverMap';
 const UNREACHABLE_SERVER_URL = 'https://jhsgefhjsaeiuofhseifuphoauifdhjauiowijdfcpohuawoiudfjpdhauwodjahwdpojaoiwdhawhdiuawd.com';
 const EXPIRED_CERT_URL = 'https://expired.badssl.com';
 const TLS_1_0_URL = 'https://tls-v1-0.badssl.com:1010';
-const TLS_1_1_URL = 'https://tls-v1-1.badssl.com:1011';
+const TLS_1_1_URL = 'https://tls-v1-1.badssl.com';
 const RC4_CIPHER_URL = 'https://rc4.badssl.com';
 const INSECURE_TLS_ERROR_PATTERN = /ERR_SSL_(VERSION_OR_CIPHER_MISMATCH|PROTOCOL_ERROR|OBSOLETE_CIPHER)|ERR_CONNECTION_RESET|ERR_ABORTED/;
 

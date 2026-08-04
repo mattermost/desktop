@@ -36,14 +36,6 @@ jest.mock('app/callsWidgetWindow', () => ({}));
 jest.mock('common/views/viewManager', () => ({
     getViewByWebContentsId: jest.fn(),
     handleDeepLink: jest.fn(),
-    getViewLog: jest.fn(() => ({
-        debug: jest.fn(),
-        info: jest.fn(),
-        warn: jest.fn(),
-        error: jest.fn(),
-        silly: jest.fn(),
-        verbose: jest.fn(),
-    })),
 }));
 
 jest.mock('app/views/pluginsPopUps', () => ({
@@ -97,7 +89,6 @@ describe('main/views/webContentsEvents', () => {
         afterEach(() => {
             event.preventDefault.mockClear();
             popupWindowSpy.mockReset();
-            WebContentsManager.getViewByWebContentsId.mockReset();
             webContentsEventManager.customLogins = {};
             webContentsEventManager.popupWindow = undefined;
         });
@@ -137,31 +128,9 @@ describe('main/views/webContentsEvents', () => {
             willNavigate(event, 'http://someotherurl.com');
             expect(event.preventDefault).toBeCalled();
         });
-
-        it('should block scheme changes outside the redirect handler', () => {
-            willNavigate(event, 'https://server-1.com/subpath');
-            expect(event.preventDefault).toBeCalled();
-        });
-
-        it('should block an oauth path when the app did not initiate the load', () => {
-            willNavigate(event, 'https://server-1.com/oauth/authorize?client_id=desktop');
-            expect(event.preventDefault).toBeCalled();
-        });
-
-        it('should still block HTTPS to HTTP downgrade for the configured server host', () => {
-            const httpsManager = new WebContentsEventManager();
-            httpsManager.getServerURLFromWebContentsId = () => new URL('https://server-1.com');
-            const httpsWillNavigate = httpsManager.generateWillNavigate(1);
-            httpsWillNavigate(event, 'http://server-1.com/subpath');
-            expect(event.preventDefault).toBeCalled();
-        });
     });
 
     describe('addWebContentsEventListeners', () => {
-        afterEach(() => {
-            WebContentsManager.getViewByWebContentsId.mockReset();
-        });
-
         const setupContents = () => {
             const handlers = {};
             const contents = {
@@ -210,52 +179,6 @@ describe('main/views/webContentsEvents', () => {
             const externalEvent = {preventDefault: jest.fn(), isMainFrame: true, url: 'http://someotherurl.com'};
             willRedirect(externalEvent, externalEvent.url);
             expect(externalEvent.preventDefault).toHaveBeenCalled();
-        });
-
-        it('redirect guard allows only direct HTTP to HTTPS upgrades', () => {
-            const webContentsEventManager = new WebContentsEventManager();
-            webContentsEventManager.getServerURLFromWebContentsId = () => new URL('http://example.com/');
-            const {handlers, contents} = setupContents();
-            webContentsEventManager.addWebContentsEventListeners(contents);
-            const willRedirect = handlers['will-redirect'];
-
-            // loadURL('http://example.com/') commonly HSTS/redirects to https — must not be blocked.
-            const upgradeEvent = {preventDefault: jest.fn(), isMainFrame: true, url: 'https://example.com/'};
-            willRedirect(upgradeEvent, upgradeEvent.url);
-            expect(upgradeEvent.preventDefault).not.toHaveBeenCalled();
-
-            // A changed hostname, port, or path is not a direct upgrade.
-            for (const url of ['https://www.example.com/', 'https://example.com:8443/', 'https://example.com/elsewhere']) {
-                const changedEvent = {preventDefault: jest.fn(), isMainFrame: true, url};
-                willRedirect(changedEvent, changedEvent.url);
-                expect(changedEvent.preventDefault).toHaveBeenCalled();
-            }
-        });
-
-        it('redirect guard allows a direct HTTPS upgrade of an app-initiated deep link', () => {
-            const webContentsEventManager = new WebContentsEventManager();
-            webContentsEventManager.getServerURLFromWebContentsId = () => new URL('http://example.com/');
-            WebContentsManager.getViewByWebContentsId.mockReturnValue({
-                pendingLoadURL: new URL('http://example.com/oauth/authorize?client_id=desktop'),
-            });
-            const {handlers, contents} = setupContents();
-            webContentsEventManager.addWebContentsEventListeners(contents);
-
-            const directUpgradeEvent = {
-                preventDefault: jest.fn(),
-                isMainFrame: true,
-                url: 'https://example.com/oauth/authorize?client_id=desktop',
-            };
-            handlers['will-redirect'](directUpgradeEvent, directUpgradeEvent.url);
-            expect(directUpgradeEvent.preventDefault).not.toHaveBeenCalled();
-
-            const changedPathEvent = {
-                preventDefault: jest.fn(),
-                isMainFrame: true,
-                url: 'https://example.com/oauth/elsewhere?client_id=desktop',
-            };
-            handlers['will-redirect'](changedPathEvent, changedPathEvent.url);
-            expect(changedPathEvent.preventDefault).toHaveBeenCalled();
         });
 
         it('redirect guard applies the subframe policy to subframe redirects', () => {

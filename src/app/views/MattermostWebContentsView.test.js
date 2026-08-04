@@ -146,7 +146,7 @@ describe('main/views/MattermostWebContentsView', () => {
             mattermostView.load('http://server-2.com');
             await promise;
             expect(mattermostView.webContentsView.webContents.loadURL).toBeCalledWith('http://server-2.com/', expect.any(Object));
-            expect(mattermostView.loadSuccess).toBeCalledWith('http://server-2.com/', expect.any(Number));
+            expect(mattermostView.loadSuccess).toBeCalledWith('http://server-2.com/');
         });
 
         it('should load server URL when not provided', async () => {
@@ -155,7 +155,7 @@ describe('main/views/MattermostWebContentsView', () => {
             mattermostView.load();
             await promise;
             expect(mattermostView.webContentsView.webContents.loadURL).toBeCalledWith('http://server-1.com/', expect.any(Object));
-            expect(mattermostView.loadSuccess).toBeCalledWith('http://server-1.com/', expect.any(Number));
+            expect(mattermostView.loadSuccess).toBeCalledWith('http://server-1.com/');
         });
 
         it('should load server URL when bad url provided', async () => {
@@ -164,7 +164,7 @@ describe('main/views/MattermostWebContentsView', () => {
             mattermostView.load('a-bad<url');
             await promise;
             expect(mattermostView.webContentsView.webContents.loadURL).toBeCalledWith('http://server-1.com/', expect.any(Object));
-            expect(mattermostView.loadSuccess).toBeCalledWith('http://server-1.com/', expect.any(Number));
+            expect(mattermostView.loadSuccess).toBeCalledWith('http://server-1.com/');
         });
 
         it('should call retry when failing to load', async () => {
@@ -186,18 +186,6 @@ describe('main/views/MattermostWebContentsView', () => {
             await expect(promise).rejects.toThrow(error);
             expect(mattermostView.webContentsView.webContents.loadURL).toBeCalledWith('http://server-1.com/', expect.any(Object));
             expect(mattermostView.loadRetry).not.toBeCalled();
-            expect(mattermostView.pendingLoadURL).toBeUndefined();
-        });
-
-        it('should clear the pending URL when a load is aborted', async () => {
-            const error = new Error('test');
-            error.code = 'ERR_ABORTED';
-            const promise = Promise.reject(error);
-            mattermostView.webContentsView.webContents.loadURL.mockImplementation(() => promise);
-            mattermostView.load('http://server-1.com/oauth/authorize');
-            expect(mattermostView.pendingLoadURL?.pathname).toBe('/oauth/authorize');
-            await expect(promise).rejects.toThrow(error);
-            expect(mattermostView.pendingLoadURL).toBeUndefined();
         });
     });
 
@@ -235,7 +223,7 @@ describe('main/views/MattermostWebContentsView', () => {
             mattermostView.webContentsView.webContents.loadURL.mockImplementation(() => promise);
             mattermostView.retry('http://server-1.com')();
             await promise;
-            expect(mattermostView.loadSuccess).toBeCalledWith('http://server-1.com', expect.any(Number));
+            expect(mattermostView.loadSuccess).toBeCalledWith('http://server-1.com');
         });
 
         it('should call loadRetry if maxRetries are still remaining', async () => {
@@ -336,21 +324,9 @@ describe('main/views/MattermostWebContentsView', () => {
 
         it('should reset max retries', () => {
             mattermostView.maxRetries = 1;
-            const attemptId = mattermostView.startAppInitiatedLoad('http://server-1.com');
-            mattermostView.loadSuccess('http://server-1.com', attemptId)();
+            mattermostView.loadSuccess('http://server-1.com')();
             jest.runAllTimers();
             expect(mattermostView.maxRetries).toBe(3);
-        });
-
-        it('should not let an older completion clear a newer pending load', () => {
-            const olderAttempt = mattermostView.startAppInitiatedLoad('http://server-1.com/old');
-            const newerAttempt = mattermostView.startAppInitiatedLoad('http://server-1.com/oauth/authorize');
-
-            mattermostView.loadSuccess('http://server-1.com/old', olderAttempt)();
-            expect(mattermostView.pendingLoadURL?.pathname).toBe('/oauth/authorize');
-
-            mattermostView.loadSuccess('http://server-1.com/oauth/authorize', newerAttempt)();
-            expect(mattermostView.pendingLoadURL).toBeUndefined();
         });
     });
 

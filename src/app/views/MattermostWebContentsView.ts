@@ -63,8 +63,6 @@ export class MattermostWebContentsView extends EventEmitter {
     private maxRetries: number;
     private altPressStatus: boolean;
     private lastPath?: string;
-    private appInitiatedLoad?: {id: number; url: URL};
-    private nextLoadAttemptId = 0;
 
     constructor(view: MattermostView, options: WebContentsViewConstructorOptions, parentWindow: BrowserWindow) {
         super();
@@ -129,24 +127,6 @@ export class MattermostWebContentsView extends EventEmitter {
         const url = this.webContents?.getURL();
         return url ? parseURL(url) : undefined;
     }
-
-    /** URL the app itself asked this view to load, while that load is still in flight. */
-    get pendingLoadURL() {
-        return this.appInitiatedLoad?.url;
-    }
-
-    private startAppInitiatedLoad = (loadURL: string) => {
-        const id = ++this.nextLoadAttemptId;
-        const url = parseURL(loadURL);
-        this.appInitiatedLoad = url ? {id, url} : undefined;
-        return id;
-    };
-
-    private finishAppInitiatedLoad = (attemptId: number) => {
-        if (this.appInitiatedLoad?.id === attemptId) {
-            this.appInitiatedLoad = undefined;
-        }
-    };
     get webContentsId() {
         // Cached at construction so it remains valid during and after teardown, when
         // the underlying webContents may already be gone.
@@ -219,10 +199,8 @@ export class MattermostWebContentsView extends EventEmitter {
         }
         this.log.verbose('Loading URL');
         performanceMonitor.registerServerView(`Server ${this.webContentsView.webContents.id}`, this.webContentsView.webContents, this.view.serverId);
-        const attemptId = this.startAppInitiatedLoad(loadURL);
         const loading = this.webContentsView.webContents.loadURL(loadURL, {userAgent: composeUserAgent(DeveloperMode.get('browserOnly'))});
-        loading.then(this.loadSuccess(loadURL, attemptId)).catch((err) => {
-            this.finishAppInitiatedLoad(attemptId);
+        loading.then(this.loadSuccess(loadURL)).catch((err) => {
             if (err.code && err.code.startsWith('ERR_CERT')) {
                 this.sendToParentWindow(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
                 this.emit(LOAD_FAILED, this.id, err.toString(), loadURL.toString());
@@ -405,10 +383,8 @@ export class MattermostWebContentsView extends EventEmitter {
             if (this.isDestroyed()) {
                 return;
             }
-            const attemptId = this.startAppInitiatedLoad(loadURL);
             const loading = this.webContentsView.webContents.loadURL(loadURL, {userAgent: composeUserAgent(DeveloperMode.get('browserOnly'))});
-            loading.then(this.loadSuccess(loadURL, attemptId)).catch((err) => {
-                this.finishAppInitiatedLoad(attemptId);
+            loading.then(this.loadSuccess(loadURL)).catch((err) => {
                 if (this.maxRetries-- > 0) {
                     this.loadRetry(loadURL, err);
                 } else {
@@ -460,9 +436,8 @@ export class MattermostWebContentsView extends EventEmitter {
         this.log.info(`failed loading URL: ${err}, retrying in ${RELOAD_INTERVAL / SECOND} seconds`);
     };
 
-    private loadSuccess = (loadURL: string, attemptId: number) => {
+    private loadSuccess = (loadURL: string) => {
         return () => {
-            this.finishAppInitiatedLoad(attemptId);
             if (this.isDestroyed()) {
                 return;
             }

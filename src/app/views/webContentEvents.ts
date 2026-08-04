@@ -90,33 +90,6 @@ export class WebContentsEventManager {
         return server.url;
     };
 
-    private isAllowedServerNavigation = (serverURL: URL, parsedURL: URL, webContentsId: number) => {
-        if (isTeamUrl(serverURL, parsedURL) || isAdminUrl(serverURL, parsedURL) || isLoginUrl(serverURL, parsedURL) || this.isTrustedPopupWindow(webContentsId)) {
-            return true;
-        }
-
-        if (isChannelExportUrl(serverURL, parsedURL)) {
-            return true;
-        }
-
-        const callID = CallsWidgetWindow.callID;
-        if (callID && isCallsPopOutURL(serverURL, parsedURL, callID)) {
-            return true;
-        }
-
-        return false;
-    };
-
-    private isDirectHttpsUpgrade = (sourceURL: URL | undefined, redirectURL: URL) => {
-        if (!sourceURL || sourceURL.protocol !== 'http:' || redirectURL.protocol !== 'https:') {
-            return false;
-        }
-
-        const upgradedSourceURL = new URL(sourceURL.toString());
-        upgradedSourceURL.protocol = 'https:';
-        return upgradedSourceURL.toString() === redirectURL.toString();
-    };
-
     private generateWillNavigate = (webContentsId: number) => {
         return (event: Event<WebContentsWillNavigateEventParams>, url?: string) => {
             this.log(webContentsId).debug('will-navigate');
@@ -131,11 +104,20 @@ export class WebContentsEventManager {
 
             const serverURL = this.getServerURLFromWebContentsId(webContentsId);
 
-            if (serverURL && this.isAllowedServerNavigation(serverURL, parsedURL, webContentsId)) {
+            if (serverURL && (isTeamUrl(serverURL, parsedURL) || isAdminUrl(serverURL, parsedURL) || isLoginUrl(serverURL, parsedURL) || this.isTrustedPopupWindow(webContentsId))) {
+                return;
+            }
+
+            if (serverURL && isChannelExportUrl(serverURL, parsedURL)) {
                 return;
             }
 
             if (parsedURL.protocol === 'mailto:') {
+                return;
+            }
+
+            const callID = CallsWidgetWindow.callID;
+            if (serverURL && callID && isCallsPopOutURL(serverURL, parsedURL, callID)) {
                 return;
             }
 
@@ -336,16 +318,6 @@ export class WebContentsEventManager {
         // type needs to be evaluated against its own policy.
         const willRedirect = (event: Event<WebContentsWillRedirectEventParams>, url?: string) => {
             if (event.isMainFrame) {
-                const redirectURL = parseURL(url || event.url);
-                const serverURL = this.getServerURLFromWebContentsId(contents.id);
-                const pendingLoadURL = WebContentsManager.getViewByWebContentsId(contents.id)?.pendingLoadURL;
-                if (redirectURL && (
-                    this.isDirectHttpsUpgrade(serverURL, redirectURL) ||
-                    this.isDirectHttpsUpgrade(pendingLoadURL, redirectURL)
-                )) {
-                    this.log(contents.id).debug('Direct HTTPS upgrade detected, allowing redirect');
-                    return;
-                }
                 willNavigate(event, url);
             } else {
                 willFrameNavigate(event);
