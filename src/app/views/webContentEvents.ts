@@ -90,65 +90,31 @@ export class WebContentsEventManager {
         return server.url;
     };
 
-    /**
-     * Chromium upgrades main-frame http:// navigations to https:// (HTTPS-Upgrades/HSTS) and
-     * reports it as a main-frame redirect. Returns the configured server URL with the upgraded
-     * scheme so the destination is still recognized as the server. Downgrades are not allowed.
-     */
-    private getHttpsUpgradedServerURL = (serverURL: URL, parsedURL: URL) => {
-        if (serverURL.protocol !== 'http:' || parsedURL.protocol !== 'https:') {
-            return undefined;
-        }
-        if (!isInternalURL(parsedURL, serverURL, true)) {
-            return undefined;
-        }
-        const upgraded = new URL(serverURL.toString());
-        upgraded.protocol = 'https:';
-        return upgraded;
-    };
-
     private isAllowedServerNavigation = (serverURL: URL, parsedURL: URL, webContentsId: number) => {
-        const effectiveServerURL = this.getHttpsUpgradedServerURL(serverURL, parsedURL) ?? serverURL;
-
-        if (isTeamUrl(effectiveServerURL, parsedURL) || isAdminUrl(effectiveServerURL, parsedURL) || isLoginUrl(effectiveServerURL, parsedURL) || this.isTrustedPopupWindow(webContentsId)) {
+        if (isTeamUrl(serverURL, parsedURL) || isAdminUrl(serverURL, parsedURL) || isLoginUrl(serverURL, parsedURL) || this.isTrustedPopupWindow(webContentsId)) {
             return true;
         }
 
-        if (isChannelExportUrl(effectiveServerURL, parsedURL)) {
+        if (isChannelExportUrl(serverURL, parsedURL)) {
             return true;
         }
 
         const callID = CallsWidgetWindow.callID;
-        if (callID && isCallsPopOutURL(effectiveServerURL, parsedURL, callID)) {
+        if (callID && isCallsPopOutURL(serverURL, parsedURL, callID)) {
             return true;
         }
 
         return false;
     };
 
-    /**
-     * The app loads server URLs itself (initial load, deep links) and a server routinely
-     * canonicalizes its own address while answering: Chromium upgrades http to https, and
-     * deployments redirect to another port or to a path the team-URL allowlist excludes, such
-     * as /oauth/. Those arrive as main-frame redirects, so cancelling them cancels our own
-     * navigation and leaves the view retrying forever. Only redirects that stay on the hostname
-     * we asked for (including its common apex ↔ www canonicalization) are allowed, only while
-     * that load is in flight, and never downgrading to http — a server still cannot send the
-     * view to an unrelated host this way.
-     */
-    private isAppInitiatedLoadRedirect = (webContentsId: number, parsedURL: URL) => {
-        const pendingLoadURL = WebContentsManager.getViewByWebContentsId(webContentsId)?.pendingLoadURL;
-        if (!pendingLoadURL) {
+    private isDirectHttpsUpgrade = (sourceURL: URL | undefined, redirectURL: URL) => {
+        if (!sourceURL || sourceURL.protocol !== 'http:' || redirectURL.protocol !== 'https:') {
             return false;
         }
 
-        const canonicalHostname = (hostname: string) => hostname.replace(/^www\./, '');
-        if (canonicalHostname(pendingLoadURL.hostname) !== canonicalHostname(parsedURL.hostname)) {
-            return false;
-        }
-
-        return pendingLoadURL.protocol === parsedURL.protocol ||
-            (pendingLoadURL.protocol === 'http:' && parsedURL.protocol === 'https:');
+        const upgradedSourceURL = new URL(sourceURL.toString());
+        upgradedSourceURL.protocol = 'https:';
+        return upgradedSourceURL.toString() === redirectURL.toString();
     };
 
     private generateWillNavigate = (webContentsId: number) => {
@@ -166,10 +132,6 @@ export class WebContentsEventManager {
             const serverURL = this.getServerURLFromWebContentsId(webContentsId);
 
             if (serverURL && this.isAllowedServerNavigation(serverURL, parsedURL, webContentsId)) {
-                return;
-            }
-
-            if (this.isAppInitiatedLoadRedirect(webContentsId, parsedURL)) {
                 return;
             }
 
@@ -374,6 +336,16 @@ export class WebContentsEventManager {
         // type needs to be evaluated against its own policy.
         const willRedirect = (event: Event<WebContentsWillRedirectEventParams>, url?: string) => {
             if (event.isMainFrame) {
+                const redirectURL = parseURL(url || event.url);
+                const serverURL = this.getServerURLFromWebContentsId(contents.id);
+                const pendingLoadURL = WebContentsManager.getViewByWebContentsId(contents.id)?.pendingLoadURL;
+                if (redirectURL && (
+                    this.isDirectHttpsUpgrade(serverURL, redirectURL) ||
+                    this.isDirectHttpsUpgrade(pendingLoadURL, redirectURL)
+                )) {
+                    this.log(contents.id).debug('Direct HTTPS upgrade detected, allowing redirect');
+                    return;
+                }
                 willNavigate(event, url);
             } else {
                 willFrameNavigate(event);

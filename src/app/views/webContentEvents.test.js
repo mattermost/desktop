@@ -138,52 +138,8 @@ describe('main/views/webContentsEvents', () => {
             expect(event.preventDefault).toBeCalled();
         });
 
-        it('should allow HTTP to HTTPS upgrade for the configured server host', () => {
+        it('should block scheme changes outside the redirect handler', () => {
             willNavigate(event, 'https://server-1.com/subpath');
-            expect(event.preventDefault).not.toBeCalled();
-        });
-
-        it('should allow the HTTPS upgrade of a URL the app itself asked to load', () => {
-            // /oauth/ is excluded from the team-URL allowlist, so deep links to it only survive
-            // Chromium's upgrade because the app initiated the load.
-            WebContentsManager.getViewByWebContentsId.mockReturnValue({
-                pendingLoadURL: new URL('http://server-1.com/oauth/authorize?client_id=desktop'),
-            });
-            willNavigate(event, 'https://server-1.com/oauth/authorize?client_id=desktop');
-            expect(event.preventDefault).not.toBeCalled();
-        });
-
-        it('should allow a server redirecting its own load to another port', () => {
-            WebContentsManager.getViewByWebContentsId.mockReturnValue({
-                pendingLoadURL: new URL('https://server-1.com/'),
-            });
-            willNavigate(event, 'https://server-1.com:1011/');
-            expect(event.preventDefault).not.toBeCalled();
-        });
-
-        it('should allow apex to www canonicalization during an app-initiated load', () => {
-            WebContentsManager.getViewByWebContentsId.mockReturnValue({
-                pendingLoadURL: new URL('https://server-1.com/'),
-            });
-            willNavigate(event, 'https://www.server-1.com/');
-            expect(event.preventDefault).not.toBeCalled();
-        });
-
-        it('should block a redirect that downgrades an app-initiated load to http', () => {
-            const httpsManager = new WebContentsEventManager();
-            httpsManager.getServerURLFromWebContentsId = () => new URL('https://server-1.com');
-            WebContentsManager.getViewByWebContentsId.mockReturnValue({
-                pendingLoadURL: new URL('https://server-1.com/'),
-            });
-            httpsManager.generateWillNavigate(1)(event, 'http://server-1.com/');
-            expect(event.preventDefault).toBeCalled();
-        });
-
-        it('should block a redirect to a different host than the app asked to load', () => {
-            WebContentsManager.getViewByWebContentsId.mockReturnValue({
-                pendingLoadURL: new URL('http://server-1.com/oauth/authorize?client_id=desktop'),
-            });
-            willNavigate(event, 'https://evil.com/oauth/authorize?client_id=desktop');
             expect(event.preventDefault).toBeCalled();
         });
 
@@ -202,6 +158,10 @@ describe('main/views/webContentsEvents', () => {
     });
 
     describe('addWebContentsEventListeners', () => {
+        afterEach(() => {
+            WebContentsManager.getViewByWebContentsId.mockReset();
+        });
+
         const setupContents = () => {
             const handlers = {};
             const contents = {
@@ -252,7 +212,7 @@ describe('main/views/webContentsEvents', () => {
             expect(externalEvent.preventDefault).toHaveBeenCalled();
         });
 
-        it('redirect guard allows same-host HTTP to HTTPS upgrades for configured servers', () => {
+        it('redirect guard allows only direct HTTP to HTTPS upgrades', () => {
             const webContentsEventManager = new WebContentsEventManager();
             webContentsEventManager.getServerURLFromWebContentsId = () => new URL('http://example.com/');
             const {handlers, contents} = setupContents();
@@ -264,11 +224,38 @@ describe('main/views/webContentsEvents', () => {
             willRedirect(upgradeEvent, upgradeEvent.url);
             expect(upgradeEvent.preventDefault).not.toHaveBeenCalled();
 
-            // HTTPS → HTTP downgrade remains blocked.
-            webContentsEventManager.getServerURLFromWebContentsId = () => new URL('https://example.com/');
-            const downgradeEvent = {preventDefault: jest.fn(), isMainFrame: true, url: 'http://example.com/'};
-            willRedirect(downgradeEvent, downgradeEvent.url);
-            expect(downgradeEvent.preventDefault).toHaveBeenCalled();
+            // A changed hostname, port, or path is not a direct upgrade.
+            for (const url of ['https://www.example.com/', 'https://example.com:8443/', 'https://example.com/elsewhere']) {
+                const changedEvent = {preventDefault: jest.fn(), isMainFrame: true, url};
+                willRedirect(changedEvent, changedEvent.url);
+                expect(changedEvent.preventDefault).toHaveBeenCalled();
+            }
+        });
+
+        it('redirect guard allows a direct HTTPS upgrade of an app-initiated deep link', () => {
+            const webContentsEventManager = new WebContentsEventManager();
+            webContentsEventManager.getServerURLFromWebContentsId = () => new URL('http://example.com/');
+            WebContentsManager.getViewByWebContentsId.mockReturnValue({
+                pendingLoadURL: new URL('http://example.com/oauth/authorize?client_id=desktop'),
+            });
+            const {handlers, contents} = setupContents();
+            webContentsEventManager.addWebContentsEventListeners(contents);
+
+            const directUpgradeEvent = {
+                preventDefault: jest.fn(),
+                isMainFrame: true,
+                url: 'https://example.com/oauth/authorize?client_id=desktop',
+            };
+            handlers['will-redirect'](directUpgradeEvent, directUpgradeEvent.url);
+            expect(directUpgradeEvent.preventDefault).not.toHaveBeenCalled();
+
+            const changedPathEvent = {
+                preventDefault: jest.fn(),
+                isMainFrame: true,
+                url: 'https://example.com/oauth/elsewhere?client_id=desktop',
+            };
+            handlers['will-redirect'](changedPathEvent, changedPathEvent.url);
+            expect(changedPathEvent.preventDefault).toHaveBeenCalled();
         });
 
         it('redirect guard applies the subframe policy to subframe redirects', () => {
