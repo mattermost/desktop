@@ -14,7 +14,7 @@ import {buildServerMap} from '../../helpers/serverMap';
 const UNREACHABLE_SERVER_URL = 'https://jhsgefhjsaeiuofhseifuphoauifdhjauiowijdfcpohuawoiudfjpdhauwodjahwdpojaoiwdhawhdiuawd.com';
 const EXPIRED_CERT_URL = 'https://expired.badssl.com';
 const TLS_1_0_URL = 'https://tls-v1-0.badssl.com:1010';
-const TLS_1_1_URL = 'https://tls-v1-1.badssl.com';
+const TLS_1_1_URL = 'https://tls-v1-1.badssl.com:1011';
 const RC4_CIPHER_URL = 'https://rc4.badssl.com';
 
 async function launchWithConfig(testInfo: {outputDir: string}, config: object) {
