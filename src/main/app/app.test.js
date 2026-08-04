@@ -6,7 +6,7 @@ import {app, dialog} from 'electron';
 import MainWindow from 'app/mainWindow/mainWindow';
 import WebContentsManager from 'app/views/webContentsManager';
 import ServerManager from 'common/servers/serverManager';
-import {handleAppWillFinishLaunching, handleAppCertificateError, certificateErrorCallbacks} from 'main/app/app';
+import {handleAppActivate, handleAppWillFinishLaunching, handleAppCertificateError, certificateErrorCallbacks} from 'main/app/app';
 import {getDeeplinkingURL, openDeepLink} from 'main/app/utils';
 import CertificateStore from 'main/security/certificateStore';
 
@@ -60,6 +60,32 @@ jest.mock('common/views/viewManager', () => ({
 }));
 
 describe('main/app/app', () => {
+    describe('handleAppActivate', () => {
+        afterEach(() => {
+            jest.resetAllMocks();
+        });
+
+        it('should show the main window if app is ready', () => {
+            app.isReady.mockReturnValue(true);
+            handleAppActivate();
+            expect(MainWindow.show).toHaveBeenCalled();
+        });
+
+        it('should wait until app is ready to show the main window', () => {
+            let callback;
+            app.once.mockImplementation((event, cb) => {
+                if (event === 'ready') {
+                    callback = cb;
+                }
+            });
+            app.isReady.mockReturnValue(false);
+            handleAppActivate();
+            expect(MainWindow.show).not.toHaveBeenCalled();
+            callback();
+            expect(MainWindow.show).toHaveBeenCalled();
+        });
+    });
+
     describe('handleAppWillFinishLaunching', () => {
         const deepLinkURL = 'mattermost://server-1.com';
         const testURL = 'http://server-1.com';

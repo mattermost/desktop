@@ -4,6 +4,7 @@
 import {isHttpsUri, isHttpUri, isUri} from 'valid-url';
 
 import buildConfig from 'common/config/buildConfig';
+import {MAX_URL_LENGTH} from 'common/constants';
 import {nonTeamUrlPaths, CALLS_PLUGIN_ID} from 'common/utils/constants';
 
 export const getFormattedPathName = (pn: string) => (pn.endsWith('/') ? pn : `${pn}/`);
@@ -11,8 +12,15 @@ export const parseURL = (inputURL: string | URL) => {
     if (inputURL instanceof URL) {
         return inputURL;
     }
+    const inputURLBytes = new TextEncoder().encode(inputURL).length;
+    if (inputURLBytes > MAX_URL_LENGTH) {
+        return undefined;
+    }
+    if (inputURL.includes('\0') || inputURL.toLowerCase().includes('%00')) {
+        return undefined;
+    }
     try {
-        return new URL(inputURL.replace(/([^:]\/)\/+/g, '$1')); // Regex here to remove extra slashes
+        return new URL(inputURL.replace(/([^:/]\/)\/+/g, '$1'));
     } catch (e) {
         return undefined;
     }
@@ -43,6 +51,10 @@ export function isHttpLink(link: string | undefined): link is string {
 // - currentURL is the current url inside the webview
 export const isInternalURL = (targetURL: URL, currentURL: URL, ignoreScheme?: boolean) => {
     if (targetURL.host !== currentURL.host) {
+        return false;
+    }
+
+    if (!ignoreScheme && targetURL.protocol !== currentURL.protocol) {
         return false;
     }
 
@@ -127,17 +139,4 @@ const equalUrlsIgnoringSubpath = (url1: URL, url2: URL, ignoreScheme?: boolean) 
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#escaping
 const escapeRegExp = (s: string) => {
     return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
-};
-
-/**
- * Normalizes a URL for RFC 3986 validation by encoding characters that are
- * technically invalid but commonly used by applications like MS Teams, SharePoint, and OneNote.
- * - Converts Windows-style backslashes to forward slashes
- * - Encodes curly braces which are used in GUIDs and JSON-like query parameters
- */
-export const normalizeUrlForValidation = (url: string): string => {
-    return url.
-        replace(/\\/g, '/').
-        replace(/\{/g, '%7B').
-        replace(/\}/g, '%7D');
 };

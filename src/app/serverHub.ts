@@ -22,7 +22,9 @@ import {
     GET_LAST_ACTIVE,
     SERVER_SWITCHED,
     GET_CURRENT_SERVER,
+    SERVER_ADDED,
     SERVER_REMOVED,
+    SERVER_URL_CHANGED,
 } from 'common/communication';
 import {ModalConstants} from 'common/constants';
 import {Logger} from 'common/log';
@@ -58,7 +60,15 @@ export class ServerHub {
 
         ServerManager.on(SERVER_SWITCHED, this.handleServerCurrentChanged);
         ServerManager.on(SERVER_REMOVED, this.handleServerCleanup);
+        ServerManager.on(SERVER_URL_CHANGED, this.updateAuthServerAllowlist);
+        ServerManager.on(SERVER_ADDED, this.handleServerAdded);
     }
+
+    private handleServerAdded = () => {
+        ModalManager.removeModal(ModalConstants.WELCOME_SCREEN_MODAL);
+
+        this.updateAuthServerAllowlist();
+    };
 
     // TODO: Move me somewhere else later
     handleServerCurrentChanged = () => {
@@ -195,9 +205,6 @@ export class ServerHub {
     ): Promise<URLValidationResult> => {
         log.verbose('handleServerURLValidation', {currentId});
         let originalURL = originalUrl;
-        if (!originalURL) {
-            originalURL = url;
-        }
 
         // If the URL is missing or null, reject
         if (!url) {
@@ -223,6 +230,10 @@ export class ServerHub {
         if (!parsedURL) {
             log.debug('handleServerURLValidation: URL is invalid');
             return {status: URLValidationStatus.Invalid};
+        }
+
+        if (!originalURL) {
+            originalURL = parsedURL.toString();
         }
 
         // Try and add HTTPS to see if we can get a more secure URL
@@ -363,7 +374,7 @@ export class ServerHub {
             log.debug('handleServerURLValidation: Remote info is missing, returning NotMattermost');
             return {
                 status: URLValidationStatus.NotMattermost,
-                validatedURL: parsedURL.toString().replace(/\/$/, ''),
+                validatedURL: (originalURL ?? parsedURL.toString()).replace(/\/$/, ''),
             };
         }
 
@@ -499,6 +510,14 @@ export class ServerHub {
         session.defaultSession.clearData({
             origins: [server.url.origin],
         });
+        this.updateAuthServerAllowlist();
+    };
+
+    private updateAuthServerAllowlist = () => {
+        const hostnames = ServerManager.getAllServers().
+            map((server) => server.url.hostname).
+            filter(Boolean);
+        session.defaultSession.allowNTLMCredentialsForDomains(hostnames.join(','));
     };
 
     private handleGetLastActive = () => {

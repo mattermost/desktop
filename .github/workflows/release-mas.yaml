@@ -27,11 +27,11 @@ jobs:
       CSC_LINK: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_CSC_LINK }}
     steps:
       - name: release/checkout-repo
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: release/setup-node
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version-file: "package.json"
+          node-version-file: ".nvmrc"
           cache: "npm"
           cache-dependency-path: package-lock.json
       - name: release/install-dependencies
@@ -41,8 +41,6 @@ jobs:
           npm ci
       - name: release/copy-provisioning-profile
         run: echo $MAS_PROFILE | base64 -D > ./mas.provisionprofile
-      - name: release/patch-version-number-for-MAS
-        run: ./scripts/patch_mas_version.sh
       - name: release/test
         uses: ./.github/actions/test
       - name: release/package

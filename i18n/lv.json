@@ -1,4 +1,7 @@
 {
+  "app.menus.contextMenu.openInNewTab": "Atvērt jaunā cilnē",
+  "app.menus.contextMenu.openInNewWindow": "Atvērt jaunā logā",
+  "app.navigationManager.invalidLinkDescription": "saite",
   "common.permissions.canBasicAuth": "Web autentifikācija",
   "common.tabs.TAB_FOCALBOARD": "Boards",
   "common.tabs.TAB_MESSAGING": "Channels",

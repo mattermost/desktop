@@ -79,6 +79,7 @@ declare global {
             onServerSwitched: (listener: (serverId: string) => void) => void;
             onTabAdded: (listener: (serverId: string, tabId: string) => void) => void;
             onTabRemoved: (listener: (serverId: string, tabId: string) => void) => void;
+            onTabOrderUpdated: (listener: (serverId: string, viewIds: string[]) => void) => void;
             validateServerURL: (url: string, currentId?: string) => Promise<URLValidationResult>;
             getUniqueServersWithPermissions: () => Promise<UniqueServerWithPermissions[]>;
             addServer: (server: Server) => void;
@@ -179,7 +180,6 @@ declare global {
                     windowBounds: Rectangle,
                     activeServer?: string,
                     enableServerManagement?: boolean,
-                    hasGPOServers?: boolean,
                     expired?: Map<string, boolean>,
                     mentions?: Map<string, number>,
                     unreads?: Map<string, boolean>,

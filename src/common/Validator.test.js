@@ -3,6 +3,8 @@
 
 'use strict';
 
+import Joi from 'joi';
+
 import * as Validator from './Validator';
 
 describe('common/Validator', () => {
@@ -217,7 +219,14 @@ describe('common/Validator', () => {
             themeSyncing: true,
             enableMetrics: true,
             enableSentry: true,
+            enableSessionAttributes: true,
             useNativeTitleBar: false,
+            trustedEmbeddedMediaOrigins: [
+                {
+                    serverOrigin: 'https://chat.example.com',
+                    embeddedOrigin: 'https://meet.example.com',
+                },
+            ],
         };
 
         it('should validate v4 config data', () => {
@@ -230,6 +239,19 @@ describe('common/Validator', () => {
                 spellCheckerURL: 'a-bad>url',
             };
             expect(Validator.validateV4ConfigData(modifiedConfig)).not.toHaveProperty('spellCheckerURL');
+        });
+
+        it('should reject trusted embedded media values that are not origins', () => {
+            const modifiedConfig = {
+                ...config,
+                trustedEmbeddedMediaOrigins: [
+                    {
+                        serverOrigin: 'https://chat.example.com/path',
+                        embeddedOrigin: 'https://meet.example.com',
+                    },
+                ],
+            };
+            expect(Validator.validateV4ConfigData(modifiedConfig)).toBeNull();
         });
     });
 
@@ -246,6 +268,103 @@ describe('common/Validator', () => {
 
         it('should reject invalid protocols', () => {
             expect(Validator.validateAllowedProtocols([...allowedProtocols, 'not-a-protocol'])).toStrictEqual(null);
+        });
+    });
+
+    describe('ipcValidate', () => {
+        const event = {sender: {id: 1}};
+
+        it('calls the underlying handler when every arg matches its schema', () => {
+            const handler = jest.fn().mockReturnValue('result');
+            const wrapped = Validator.ipcValidate(
+                handler,
+                [Joi.string().required(), Joi.number().required()],
+            );
+
+            expect(wrapped(event, 'hello', 42)).toBe('result');
+            expect(handler).toHaveBeenCalledWith(event, 'hello', 42);
+        });
+
+        it('drops the call and does not invoke the handler when an arg has the wrong type', () => {
+            const handler = jest.fn();
+            const wrapped = Validator.ipcValidate(
+                handler,
+                [Joi.string().required(), Joi.number().required()],
+            );
+
+            wrapped(event, 'hello', 1n);
+            expect(handler).not.toHaveBeenCalled();
+        });
+
+        it('drops the call when a required arg is missing', () => {
+            const handler = jest.fn();
+            const wrapped = Validator.ipcValidate(
+                handler,
+                [Joi.string().required(), Joi.number().required()],
+            );
+
+            wrapped(event, 'hello');
+            expect(handler).not.toHaveBeenCalled();
+        });
+
+        it('drops the call when a required object arg is null', () => {
+            const handler = jest.fn();
+            const wrapped = Validator.ipcValidate(handler, [Joi.object().required()]);
+
+            wrapped(event, null);
+            expect(handler).not.toHaveBeenCalled();
+        });
+
+        it('allows optional trailing args to be omitted', () => {
+            const handler = jest.fn().mockReturnValue('ok');
+            const wrapped = Validator.ipcValidate(
+                handler,
+                [Joi.string().required(), Joi.string(), Joi.string()],
+            );
+
+            expect(wrapped(event, 'hello')).toBe('ok');
+            expect(handler).toHaveBeenCalledWith(event, 'hello');
+        });
+
+        it('passes positional args beyond the schema length through to the handler', () => {
+            const handler = jest.fn().mockReturnValue('ok');
+            const wrapped = Validator.ipcValidate(handler, [Joi.string().required()]);
+
+            expect(wrapped(event, 'channel', 1n, null, {})).toBe('ok');
+            expect(handler).toHaveBeenCalledWith(event, 'channel', 1n, null, {});
+        });
+
+        it('invokes the handler when no schemas are provided', () => {
+            const handler = jest.fn().mockReturnValue('ok');
+            const wrapped = Validator.ipcValidate(handler, []);
+
+            expect(wrapped(event, 'anything', 1n)).toBe('ok');
+            expect(handler).toHaveBeenCalledWith(event, 'anything', 1n);
+        });
+
+        it('accepts empty strings when schema uses .allow("")', () => {
+            const handler = jest.fn().mockReturnValue('ok');
+            const wrapped = Validator.ipcValidate(handler, [Joi.string().allow('').required()]);
+
+            expect(wrapped(event, '')).toBe('ok');
+            expect(handler).toHaveBeenCalledWith(event, '');
+        });
+
+        it('accepts empty strings for all NOTIFY_MENTION-style args', () => {
+            const handler = jest.fn().mockReturnValue('ok');
+            const mentionSchema = [
+                Joi.string().allow('').required(),
+                Joi.string().allow('').required(),
+                Joi.string().allow('').required(),
+                Joi.string().allow('').required(),
+                Joi.string().allow('').required(),
+                Joi.boolean().required(),
+                Joi.string().allow('').required(),
+            ];
+            const wrapped = Validator.ipcValidate(handler, mentionSchema);
+
+            expect(wrapped(event, 'Title', 'Body', '', '', '', false, '')).toBe('ok');
+            expect(handler).toHaveBeenCalledWith(event, 'Title', 'Body', '', '', '', false, '');
         });
     });
 });

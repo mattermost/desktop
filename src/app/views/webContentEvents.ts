@@ -1,7 +1,12 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {WebContents, Event} from 'electron';
+import type {
+    WebContents,
+    Event,
+    WebContentsWillNavigateEventParams,
+    WebContentsWillRedirectEventParams,
+} from 'electron';
 import {BrowserWindow, dialog, shell} from 'electron';
 
 import CallsWidgetWindow from 'app/callsWidgetWindow';
@@ -24,15 +29,13 @@ import {
     isPluginUrl,
     isPublicFilesUrl,
     isTeamUrl,
-    isValidURI,
-    normalizeUrlForValidation,
     parseURL,
 } from 'common/utils/url';
 import ViewManager from 'common/views/viewManager';
 import ContextMenu from 'main/contextMenu';
 import {localizeMessage} from 'main/i18nManager';
 
-import {generateHandleConsoleMessage, isCustomProtocol, isMattermostProtocol} from './webContentEventsCommon';
+import {generateHandleConsoleMessage, generateWillFrameNavigate, isCustomProtocol, isMattermostProtocol} from './webContentEventsCommon';
 
 import allowProtocolDialog from '../../main/security/allowProtocolDialog';
 import {composeUserAgent} from '../../main/utils';
@@ -88,10 +91,17 @@ export class WebContentsEventManager {
     };
 
     private generateWillNavigate = (webContentsId: number) => {
-        return (event: Event, url: string) => {
+        return (event: Event<WebContentsWillNavigateEventParams>, url?: string) => {
             this.log(webContentsId).debug('will-navigate');
 
-            const parsedURL = parseURL(url)!;
+            const navigationURL = url || event.url;
+            const parsedURL = parseURL(navigationURL);
+            if (!parsedURL) {
+                this.log(webContentsId).warn(`Prevented navigation to invalid URL: ${navigationURL}`);
+                event.preventDefault();
+                return;
+            }
+
             const serverURL = this.getServerURLFromWebContentsId(webContentsId);
 
             if (serverURL && (isTeamUrl(serverURL, parsedURL) || isAdminUrl(serverURL, parsedURL) || isLoginUrl(serverURL, parsedURL) || this.isTrustedPopupWindow(webContentsId))) {
@@ -111,6 +121,14 @@ export class WebContentsEventManager {
                 return;
             }
 
+            if (isCustomProtocol(parsedURL)) {
+                allowProtocolDialog.handleDialogEvent(navigationURL).catch((err) => {
+                    this.log(webContentsId).warn('Error handling custom protocol dialog', err);
+                });
+                event.preventDefault();
+                return;
+            }
+
             this.log(webContentsId).info('Prevented desktop from navigating to external URL');
             event.preventDefault();
         };
@@ -127,14 +145,6 @@ export class WebContentsEventManager {
 
             const parsedURL = parseURL(details.url);
             if (!parsedURL) {
-                this.log(webContentsId).warn(`Ignoring non-url: ${details.url}`);
-                return {action: 'deny'};
-            }
-
-            // Normalize URL before validation to handle characters like backslashes and curly braces
-            // that are technically invalid per RFC 3986 but commonly used by apps like MS Teams,
-            // SharePoint, and OneNote
-            if (!isValidURI(normalizeUrlForValidation(details.url))) {
                 this.log(webContentsId).warn(`Ignoring invalid URL: ${details.url}`);
                 dialog.showErrorBox(
                     localizeMessage('main.webContentEvents.invalidLinkTitle', 'Invalid Link'),
@@ -164,33 +174,37 @@ export class WebContentsEventManager {
 
             // Check for other custom protocols
             if (isCustomProtocol(parsedURL)) {
-                allowProtocolDialog.handleDialogEvent(parsedURL.protocol, details.url);
+                allowProtocolDialog.handleDialogEvent(details.url).catch((err) => {
+                    this.log(webContentsId).warn('Error handling custom protocol dialog', err);
+                });
                 return {action: 'deny'};
             }
 
+            const serializedURL = parsedURL.toString();
+
             const serverURL = this.getServerURLFromWebContentsId(webContentsId);
             if (!serverURL) {
-                shell.openExternal(details.url);
+                shell.openExternal(serializedURL);
                 return {action: 'deny'};
             }
 
             // Public download links case
             // we are going to mimic the browser and just pop a new browser window for public links
             if (isPublicFilesUrl(serverURL, parsedURL)) {
-                shell.openExternal(details.url);
+                shell.openExternal(serializedURL);
                 return {action: 'deny'};
             }
 
             // Image proxy case
             if (isImageProxyUrl(serverURL, parsedURL)) {
-                shell.openExternal(details.url);
+                shell.openExternal(serializedURL);
                 return {action: 'deny'};
             }
 
             if (isHelpUrl(serverURL, parsedURL)) {
                 // Help links case
                 // continue to open special case internal urls in default browser
-                shell.openExternal(details.url);
+                shell.openExternal(serializedURL);
                 return {action: 'deny'};
             }
 
@@ -202,7 +216,7 @@ export class WebContentsEventManager {
                 this.log(webContentsId).info('Admin console page detected, preventing new window');
                 return {action: 'deny'};
             }
-            if (this.popupWindow && this.popupWindow.win.webContents.getURL() === details.url) {
+            if (this.popupWindow && this.popupWindow.win.webContents.getURL() === serializedURL) {
                 this.log(webContentsId).info('Popup window already open at provided URL');
                 return {action: 'deny'};
             }
@@ -242,6 +256,7 @@ export class WebContentsEventManager {
                         }
                     });
                     popup.webContents.on('will-navigate', this.generateWillNavigate(popup.webContents.id));
+                    popup.webContents.on('will-frame-navigate', generateWillFrameNavigate(this.log(popup.webContents.id)));
                     popup.webContents.setWindowOpenHandler(this.denyNewWindow);
                     popup.once('closed', () => {
                         if (this.popupWindow?.contextMenu) {
@@ -257,11 +272,11 @@ export class WebContentsEventManager {
                 popup.once('ready-to-show', () => popup.show());
 
                 if (isManagedResource(serverURL, parsedURL)) {
-                    popup.loadURL(details.url);
+                    popup.loadURL(serializedURL);
                 } else {
                     // currently changing the userAgent for popup windows to allow plugins to go through google's oAuth
                     // should be removed once a proper oAuth2 implementation is setup.
-                    popup.loadURL(details.url, {
+                    popup.loadURL(serializedURL, {
                         userAgent: composeUserAgent(),
                     });
                 }
@@ -276,7 +291,7 @@ export class WebContentsEventManager {
             }
 
             // If all else fails, just open externally
-            shell.openExternal(details.url);
+            shell.openExternal(serializedURL);
             return {action: 'deny'};
         };
     };
@@ -297,7 +312,21 @@ export class WebContentsEventManager {
         }
 
         const willNavigate = this.generateWillNavigate(contents.id);
+        const willFrameNavigate = generateWillFrameNavigate(this.log(contents.id));
+
+        // Unlike will-navigate, will-redirect fires for subframes as well, so each frame
+        // type needs to be evaluated against its own policy.
+        const willRedirect = (event: Event<WebContentsWillRedirectEventParams>, url?: string) => {
+            if (event.isMainFrame) {
+                willNavigate(event, url);
+            } else {
+                willFrameNavigate(event);
+            }
+        };
+
         contents.on('will-navigate', willNavigate);
+        contents.on('will-frame-navigate', willFrameNavigate);
+        contents.on('will-redirect', willRedirect);
 
         const spellcheck = Config.useSpellChecker;
         const newWindow = this.generateNewWindowListener(contents.id, spellcheck);
@@ -315,6 +344,8 @@ export class WebContentsEventManager {
         const removeWebContentsListeners = () => {
             try {
                 contents.removeListener('will-navigate', willNavigate);
+                contents.removeListener('will-frame-navigate', willFrameNavigate);
+                contents.removeListener('will-redirect', willRedirect);
                 contents.removeListener('console-message', consoleMessage);
                 removeListeners?.(contents);
             } catch (e) {

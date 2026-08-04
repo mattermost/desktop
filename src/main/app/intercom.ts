@@ -78,7 +78,6 @@ export function handleMainWindowIsShown() {
     */
 
     const mainWindow = MainWindow.get();
-
     log.debug('handleMainWindowIsShown', {showWelcomeScreen, showNewServerModal, mainWindow: Boolean(mainWindow)});
     if (mainWindow?.isVisible()) {
         handleShowOnboardingScreens(showWelcomeScreen(), showNewServerModal(), true);
@@ -188,7 +187,7 @@ export function handleShowSettingsModal() {
         return;
     }
 
-    ModalManager.addModal(
+    ModalManager.addPriorityModal(
         ModalConstants.SETTINGS_MODAL,
         'mattermost-desktop://renderer/settings.html',
         getLocalPreload('internalAPI.js'),

@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {dialog} from 'electron';
+
 import CallsWidgetWindow from 'app/callsWidgetWindow';
 import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
@@ -9,6 +11,7 @@ import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
 import PopoutManager from 'app/windows/popoutManager';
 import {BROWSER_HISTORY_PUSH} from 'common/communication';
+import Config from 'common/config';
 import ServerManager from 'common/servers/serverManager';
 import Utils from 'common/utils/util';
 import {ViewType} from 'common/views/MattermostView';
@@ -18,6 +21,9 @@ import {handleWelcomeScreenModal} from 'main/app/intercom';
 import {NavigationManager} from './navigationManager';
 
 jest.mock('electron', () => ({
+    dialog: {
+        showErrorBox: jest.fn(),
+    },
     ipcMain: {
         handle: jest.fn(),
         on: jest.fn(),
@@ -55,6 +61,7 @@ jest.mock('common/communication', () => ({
 jest.mock('common/log', () => ({
     Logger: jest.fn().mockImplementation(() => ({
         error: jest.fn(),
+        warn: jest.fn(),
         debug: jest.fn(),
         silly: jest.fn(),
     })),
@@ -65,6 +72,10 @@ jest.mock('common/servers/serverManager', () => ({
     hasServers: jest.fn(),
     getRemoteInfo: jest.fn(),
     getServer: jest.fn(),
+}));
+
+jest.mock('common/config', () => ({
+    enableServerManagement: true,
 }));
 
 jest.mock('app/mainWindow/mainWindow', () => ({
@@ -104,6 +115,10 @@ jest.mock('main/app/intercom', () => ({
 
 jest.mock('app/windows/popoutManager', () => ({
     getWindow: jest.fn(),
+}));
+
+jest.mock('main/i18nManager', () => ({
+    localizeMessage: jest.fn(),
 }));
 
 describe('app/navigationManager', () => {
@@ -177,6 +192,21 @@ describe('app/navigationManager', () => {
             expect(ServerHub.showNewServerModal).toHaveBeenCalledWith('server-2.com/deep/link?thing=yes');
         });
 
+        it('should not open new server modal but show a dialog when server management is disabled by policy', () => {
+            ServerHub.showNewServerModal.mockClear();
+            dialog.showErrorBox.mockClear();
+            ServerManager.hasServers.mockReturnValue(true);
+            ServerManager.lookupServerByURL.mockReturnValue(null);
+            Config.enableServerManagement = false;
+
+            navigationManager.openLinkInPrimaryTab('mattermost://server-2.com/deep/link?thing=yes');
+
+            expect(ServerHub.showNewServerModal).not.toHaveBeenCalled();
+            expect(dialog.showErrorBox).toHaveBeenCalled();
+
+            Config.enableServerManagement = true;
+        });
+
         it('should handle welcome screen modal when no servers exist', () => {
             ServerManager.hasServers.mockReturnValue(false);
             ServerManager.lookupServerByURL.mockReturnValue(null);
@@ -185,6 +215,23 @@ describe('app/navigationManager', () => {
 
             expect(ModalManager.removeModal).toHaveBeenCalledWith('welcomeScreen');
             expect(handleWelcomeScreenModal).toHaveBeenCalledWith('server-2.com/deep/link?thing=yes');
+        });
+
+        it('should not handle welcome screen modal but show a dialog when server management is disabled by policy', () => {
+            ModalManager.removeModal.mockClear();
+            handleWelcomeScreenModal.mockClear();
+            dialog.showErrorBox.mockClear();
+            ServerManager.hasServers.mockReturnValue(false);
+            ServerManager.lookupServerByURL.mockReturnValue(null);
+            Config.enableServerManagement = false;
+
+            navigationManager.openLinkInPrimaryTab('mattermost://server-2.com/deep/link?thing=yes');
+
+            expect(ModalManager.removeModal).not.toHaveBeenCalled();
+            expect(handleWelcomeScreenModal).not.toHaveBeenCalled();
+            expect(dialog.showErrorBox).toHaveBeenCalled();
+
+            Config.enableServerManagement = true;
         });
 
         it('should handle null URL gracefully', () => {
@@ -197,6 +244,13 @@ describe('app/navigationManager', () => {
             navigationManager.openLinkInPrimaryTab('');
 
             expect(ServerManager.lookupServerByURL).not.toHaveBeenCalled();
+        });
+
+        it('should handle unparseable URL gracefully and show error dialog', () => {
+            navigationManager.openLinkInPrimaryTab('not-a-valid-url');
+
+            expect(ServerManager.lookupServerByURL).not.toHaveBeenCalled();
+            expect(dialog.showErrorBox).toHaveBeenCalled();
         });
     });
 
@@ -256,6 +310,19 @@ describe('app/navigationManager', () => {
             expect(ServerHub.showNewServerModal).toHaveBeenCalledWith('server-2.com/deep/link?thing=yes');
         });
 
+        it('should not open new server modal but show a dialog when server management is disabled by policy', () => {
+            ServerManager.hasServers.mockReturnValue(true);
+            ServerManager.lookupServerByURL.mockReturnValue(null);
+            Config.enableServerManagement = false;
+
+            navigationManager.openLinkInNewTab('mattermost://server-2.com/deep/link?thing=yes');
+
+            expect(ServerHub.showNewServerModal).not.toHaveBeenCalled();
+            expect(dialog.showErrorBox).toHaveBeenCalled();
+
+            Config.enableServerManagement = true;
+        });
+
         it('should handle welcome screen modal when no servers exist', () => {
             ServerManager.hasServers.mockReturnValue(false);
             ServerManager.lookupServerByURL.mockReturnValue(null);
@@ -276,6 +343,13 @@ describe('app/navigationManager', () => {
             navigationManager.openLinkInNewTab('');
 
             expect(ServerManager.lookupServerByURL).not.toHaveBeenCalled();
+        });
+
+        it('should handle unparseable URL gracefully and show error dialog', () => {
+            navigationManager.openLinkInNewTab('not-a-valid-url');
+
+            expect(ServerManager.lookupServerByURL).not.toHaveBeenCalled();
+            expect(dialog.showErrorBox).toHaveBeenCalled();
         });
 
         it('should handle missing view gracefully', () => {

@@ -21,6 +21,7 @@ defaults:
 env:
   TERM: xterm
   MM_WIN_INSTALLERS: 1
+  MM_DESKTOP_BUILD_SENTRYDSN: ${{ secrets.MM_DESKTOP_BUILD_SENTRYDSN }}
   REFERENCE: ${{ inputs.tag }}
 
 jobs:
@@ -28,13 +29,13 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: ci/checkout-repo
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ env.REFERENCE }}
       - name: ci/setup-node
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version-file: "package.json"
+          node-version-file: ".nvmrc"
           cache: "npm"
           cache-dependency-path: package-lock.json
       - name: ci/install-dependencies
@@ -53,7 +54,7 @@ jobs:
           npm run package:linux
           bash -x ./scripts/cp_artifacts.sh release ./build/linux
       - name: ci/upload-build
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: build-nightly-main-${{ runner.os }}
           path: ./build
@@ -64,13 +65,13 @@ jobs:
     runs-on: windows-2022
     steps:
       - name: nightly/checkout-repo
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ env.REFERENCE }}
       - name: nightly/setup-node
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version-file: "package.json"
+          node-version-file: ".nvmrc"
           cache: "npm"
           cache-dependency-path: package-lock.json
       - name: nightly/install-deps
@@ -97,7 +98,7 @@ jobs:
           mkdir -p ./build/win-release
           bash -x ./scripts/cp_artifacts.sh release ./build/win-release
       - name: nightly/upload-build
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: build-nightly-main-${{ runner.os }}
           path: ./build
@@ -117,13 +118,13 @@ jobs:
       CSC_LINK: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_CSC_LINK }}
     steps:
       - name: nightly/checkout-repo
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ env.REFERENCE }}
       - name: nightly/setup-node
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version-file: "package.json"
+          node-version-file: ".nvmrc"
           cache: "npm"
           cache-dependency-path: package-lock.json
       - name: nightly/install-dependencies
@@ -133,8 +134,6 @@ jobs:
           npm ci
       - name: nightly/copy-provisioning-profile
         run: echo $MAS_PROFILE | base64 -D > ./mas.provisionprofile
-      - name: nightly/patch-version-number-for-MAS
-        run: ./scripts/patch_mas_version.sh
       - name: nightly/test
         uses: ./.github/actions/test
       - name: nightly/package
@@ -150,13 +149,13 @@ jobs:
       - mac-app-store-preflight
     steps:
       - name: nightly/checkout-repo
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ env.REFERENCE }}
       - name: nightly/setup-node
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version-file: "package.json"
+          node-version-file: ".nvmrc"
           cache: "npm"
           cache-dependency-path: package-lock.json
       - name: nightly/install-dependencies
@@ -183,7 +182,7 @@ jobs:
           npm run package:mac-with-universal
           bash -x ./scripts/cp_artifacts.sh release ./build/macos-release
       - name: nightly/upload-build
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: build-nightly-main-${{ runner.os }}
           path: ./build
@@ -203,17 +202,17 @@ jobs:
       contents: read
     steps:
       - name: nightly/checkout-repo
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ env.REFERENCE }}
       - name: nightly/setup-aws-credentials
-        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
+        uses: aws-actions/configure-aws-credentials@517a711dbcd0e402f90c77e7e2f81e849156e31d # v6.2.2
         with:
           aws-region: us-east-1
-          aws-access-key-id: ${{ secrets.MM_DESKTOP_RELEASE_AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.MM_DESKTOP_RELEASE_AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.MM_DESKTOP_RELEASE_AWS_ROLE_TO_ASSUME }}
+
       - name: nightly/download-builds
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           path: build
           pattern: build-nightly-main-*
@@ -226,10 +225,16 @@ jobs:
         id: generate-latest
         run: |
           bash -x ./scripts/generate_latest_version.sh
+
       - name: nightly/upload-to-s3
-        run: aws s3 cp ./aws-s3-dist/ s3://releases.mattermost.com/desktop/ --acl public-read --cache-control "no-cache" --recursive
+        run: aws s3 cp ./aws-s3-dist/ s3://${{ secrets.MM_DESKTOP_RELEASE_BUCKET }} --cache-control "no-cache" --recursive
+
       - name: nightly/upload-latest-version
-        run: aws s3 cp ./${{ steps.generate-latest.outputs.FILENAME }} s3://releases.mattermost.com/desktop/${{ steps.generate-latest.outputs.FILENAME }} --acl public-read --cache-control "no-cache"
+        env:
+          FILENAME: ${{ steps.generate-latest.outputs.FILENAME }}
+          BUCKET: ${{ secrets.MM_DESKTOP_RELEASE_BUCKET }}
+        run: aws s3 cp ./"$FILENAME" "s3://${BUCKET}${FILENAME}" --cache-control "no-cache"
+
       - name: nightly/generate-linklist
         id: generate-linklist
         run: |
@@ -237,28 +242,17 @@ jobs:
           echo "### Nightly builds:" > ./links/linklist.txt
           echo "Links for $(date +"%b-%d-%Y")" >> ./links/linklist.txt
           echo "##### :tux: Linux" >> ./links/linklist.txt
-          for i in `ls ./build/linux/$(jq -r .version package.json)/` ; do echo "- [$i](https://s3.amazonaws.com/releases.mattermost.com/desktop/$(jq -r .version package.json)/$i)" ; done >> ./links/linklist.txt
+          for i in `ls ./build/linux/$(jq -r .version package.json)/` ; do echo "- [$i](https://releases.mattermost.com/desktop/$(jq -r .version package.json)/$i)" ; done >> ./links/linklist.txt
           echo "##### :apple_logo: macOS" >> ./links/linklist.txt
-          for i in `ls ./build/macos-release/$(jq -r .version package.json)/` ; do echo "- [$i](https://s3.amazonaws.com/releases.mattermost.com/desktop/$(jq -r .version package.json)/$i)" ; done >> ./links/linklist.txt
+          for i in `ls ./build/macos-release/$(jq -r .version package.json)/` ; do echo "- [$i](https://releases.mattermost.com/desktop/$(jq -r .version package.json)/$i)" ; done >> ./links/linklist.txt
           echo "##### :windows: Windows" >> ./links/linklist.txt
-          for i in `ls ./build/win-release/$(jq -r .version package.json)/` ; do echo "- [$i](https://s3.amazonaws.com/releases.mattermost.com/desktop/$(jq -r .version package.json)/$i)" ; done >> ./links/linklist.txt
+          for i in `ls ./build/win-release/$(jq -r .version package.json)/` ; do echo "- [$i](https://releases.mattermost.com/desktop/$(jq -r .version package.json)/$i)" ; done >> ./links/linklist.txt
           cat ./links/linklist.txt
           LINKLIST=$(<./links/linklist.txt)
           ## https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#multiline-strings
           echo 'linklist<<EOF' >> $GITHUB_OUTPUT
           echo "$LINKLIST" >> $GITHUB_OUTPUT
           echo 'EOF' >> $GITHUB_OUTPUT
-
-      # Upload artifacts new bucket
-      - name: nightly/setup-aws-credentials-new-bucket
-        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
-        with:
-          aws-region: us-east-1
-          role-to-assume: ${{ secrets.MM_DESKTOP_RELEASE_AWS_ROLE_TO_ASSUME }}
-      - name: nightly/upload-to-s3-new-bucket
-        run: aws s3 cp ./aws-s3-dist/ s3://${{ secrets.MM_DESKTOP_RELEASE_BUCKET }} --cache-control "no-cache" --recursive
-      - name: nightly/upload-latest-version-new-bucket
-        run: aws s3 cp ./${{ steps.generate-latest.outputs.FILENAME }} s3://${{ secrets.MM_DESKTOP_RELEASE_BUCKET }}/${{ steps.generate-latest.outputs.FILENAME }} --cache-control "no-cache"
 
   share-links-to-channel:
     runs-on: ubuntu-22.04

@@ -241,6 +241,10 @@ export const MESSAGE_FROM_PARENT = 'message-from-parent';
 export const SEND_TO_POPOUT = 'send-to-popout';
 export const MESSAGE_FROM_POPOUT = 'message-from-popout';
 export const POPOUT_CLOSED = 'popout-closed';
+export const UPDATE_POPOUT_TITLE_TEMPLATE = 'update-popout-title-template';
+
+// View close
+export const WINDOW_CLOSE = 'window-close';
 
 // View limit events
 export const VIEW_LIMIT_UPDATED = 'view-limit-updated';
@@ -255,3 +259,8 @@ export const UPDATE_THEME = 'update-theme';
 export const UPDATE_SERVER_THEME = 'update-server-theme';
 export const SERVER_THEME_CHANGED = 'server-theme-changed';
 export const RESET_THEME = 'reset-theme';
+
+// Session attributes events
+export const SESSION_ATTRIBUTES_MANIFEST_INVALIDATED = 'session-attributes-manifest-invalidated';
+export const SESSION_ATTRIBUTES_RESEND_REQUESTED = 'session-attributes-resend-requested';
+export const SESSION_ATTRIBUTES_FIELD_UPDATED = 'session-attributes-field-updated';

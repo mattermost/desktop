@@ -7,12 +7,12 @@ import notMockedCP from 'child_process';
 import type {BrowserWindow, IpcMain, IpcMainEvent, WebContents} from 'electron';
 import {Notification as NotMockedNotification, shell, app, ipcMain as NotMockedIpcMain} from 'electron';
 import {getDoNotDisturb as notMockedGetDarwinDoNotDisturb} from 'macos-notification-state';
-import {getFocusAssist as notMockedGetFocusAssist} from 'windows-focus-assist';
+import {getFocusAssist as notMockedGetFocusAssist, isPriority as notMockedIsPriority} from 'windows-focus-assist';
 
 import notMockedMainWindow from 'app/mainWindow/mainWindow';
 import TabManager from 'app/tabs/tabManager';
 import notMockedWebContentsManager from 'app/views/webContentsManager';
-import {PLAY_SOUND} from 'common/communication';
+import {PLAY_SOUND, NOTIFICATION_CLICKED} from 'common/communication';
 import notMockedConfig from 'common/config';
 import notMockedServerManager from 'common/servers/serverManager';
 import notMockedViewManager from 'common/views/viewManager';
@@ -37,6 +37,9 @@ const ServerManager = jest.mocked(notMockedServerManager);
 const ViewManager = jest.mocked(notMockedViewManager);
 
 const mentions: Array<{body: string; value: any}> = [];
+let mockBlockShow = false;
+const mockNotificationConstruct = jest.fn();
+const isPriority = jest.mocked(notMockedIsPriority);
 
 jest.mock('child_process', () => ({
     execSync: jest.fn(),
@@ -46,10 +49,9 @@ jest.mock('electron', () => {
     class NotificationMock {
         callbackMap: Map<string, () => void>;
         static isSupported = jest.fn();
-        static didConstruct = jest.fn();
 
         constructor(options: any) {
-            NotificationMock.didConstruct();
+            mockNotificationConstruct();
             this.callbackMap = new Map();
             mentions.push({body: options.body, value: this});
         }
@@ -59,7 +61,9 @@ jest.mock('electron', () => {
         };
 
         show = jest.fn().mockImplementation(() => {
-            this.callbackMap.get('show')?.();
+            if (!mockBlockShow) {
+                this.callbackMap.get('show')?.();
+            }
         });
 
         click = jest.fn().mockImplementation(() => {
@@ -90,6 +94,7 @@ jest.mock('electron', () => {
 
 jest.mock('windows-focus-assist', () => ({
     getFocusAssist: jest.fn(),
+    isPriority: jest.fn(),
 }));
 
 jest.mock('macos-notification-state', () => ({
@@ -479,13 +484,173 @@ describe('main/notifications', () => {
             expect(result).toEqual({status: 'not_sent', reason: 'view_should_not_notify'});
             expect(mentions.length).toBe(0);
         });
+
+        it('NM-01: should return error when view is not found', async () => {
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(undefined);
+            const result = await NotificationManager.displayMention(
+                'test', 'test body', 'channel_id', 'team_id',
+                'http://server-1.com/team_id/channel_id', false,
+                {id: 1} as WebContents, '',
+            );
+            expect(result).toEqual({status: 'error', reason: 'missing_view'});
+            expect(mentions.length).toBe(0);
+        });
+
+        it('NM-02: should return error when server is not found', async () => {
+            ServerManager.getServer.mockReturnValue(undefined);
+            const result = await NotificationManager.displayMention(
+                'test', 'test body', 'channel_id', 'team_id',
+                'http://server-1.com/team_id/channel_id', false,
+                {id: 1} as WebContents, '',
+            );
+            expect(result).toEqual({status: 'error', reason: 'missing_server'});
+            expect(mentions.length).toBe(0);
+        });
+
+        it('NM-03: should not send PLAY_SOUND when silent=true', async () => {
+            await NotificationManager.displayMention(
+                'test', 'test body', 'channel_id', 'team_id',
+                'http://server-1.com/team_id/channel_id', true,
+                {id: 1} as WebContents, '',
+            );
+            expect(MainWindow.sendToRenderer).not.toHaveBeenCalledWith(PLAY_SOUND, expect.anything());
+        });
+
+        it('NM-04: should not send PLAY_SOUND when soundName is "None"', async () => {
+            await NotificationManager.displayMention(
+                'test', 'test body', 'channel_id', 'team_id',
+                'http://server-1.com/team_id/channel_id', false,
+                {id: 1} as WebContents, 'None',
+            );
+            expect(MainWindow.sendToRenderer).not.toHaveBeenCalledWith(PLAY_SOUND, expect.anything());
+        });
+
+        describe('notification failed events', () => {
+            beforeEach(() => {
+                mockBlockShow = true;
+            });
+
+            afterEach(() => {
+                mockBlockShow = false;
+            });
+
+            it('NM-05: should return electron_notification_failed on generic failed error', async () => {
+                const promise = NotificationManager.displayMention(
+                    'test', 'test body', 'channel_id', 'team_id',
+                    'http://server-1.com/team_id/channel_id', false,
+                    {id: 1} as WebContents, '',
+                );
+                await new Promise(setImmediate);
+                mentions[0].value.callbackMap.get('failed')?.(null, 'some error');
+                const result = await promise;
+                expect(result).toEqual({status: 'error', reason: 'electron_notification_failed', data: 'some error'});
+            });
+
+            it('NM-06: should return windows_permissions_denied on HRESULT error', async () => {
+                const promise = NotificationManager.displayMention(
+                    'test', 'test body', 'channel_id', 'team_id',
+                    'http://server-1.com/team_id/channel_id', false,
+                    {id: 1} as WebContents, '',
+                );
+                await new Promise(setImmediate);
+                mentions[0].value.callbackMap.get('failed')?.(null, 'Error: HRESULT:-2143420143');
+                const result = await promise;
+                expect(result).toEqual({status: 'not_sent', reason: 'windows_permissions_denied'});
+            });
+        });
+
+        describe('notification timeout', () => {
+            beforeEach(() => {
+                mockBlockShow = true;
+                jest.useFakeTimers({doNotFake: ['setImmediate']});
+            });
+
+            afterEach(() => {
+                mockBlockShow = false;
+                jest.useRealTimers();
+            });
+
+            it('NM-07: should resolve with notification_timeout after 10s if show never fires', async () => {
+                const promise = NotificationManager.displayMention(
+                    'test', 'test body', 'channel_id', 'team_id',
+                    'http://server-1.com/team_id/channel_id', false,
+                    {id: 1} as WebContents, '',
+                );
+                await new Promise(setImmediate);
+                jest.advanceTimersByTime(10000);
+                const result = await promise;
+                expect(result).toEqual({status: 'error', reason: 'notification_timeout'});
+            });
+        });
+
+        it('NM-08: should remove mention from allActiveNotifications when close event fires', async () => {
+            await NotificationManager.displayMention(
+                'test', 'test body', 'channel_id', 'team_id',
+                'http://server-1.com/team_id/channel_id', false,
+                {id: 1} as WebContents, '',
+            );
+            const mention = mentions[0];
+            const uId = mention.value.uId;
+            const allActive = (NotificationManager as any).allActiveNotifications as Map<string, any>;
+            expect(allActive.has(uId)).toBe(true);
+            mention.value.callbackMap.get('close')?.();
+            expect(allActive.has(uId)).toBe(false);
+        });
+
+        it('NM-09: should send NOTIFICATION_CLICKED with channelId, teamId, and url when clicked', async () => {
+            const webcontents = {id: 1, send: jest.fn()} as unknown as WebContents;
+            const url = 'http://server-1.com/team_id/channel_id';
+            await NotificationManager.displayMention(
+                'test', 'test body', 'channel_id', 'team_id', url, false, webcontents, '',
+            );
+            const mention = mentions[0];
+            mention.value.callbackMap.get('click')?.();
+            expect(webcontents.send).toHaveBeenCalledWith(NOTIFICATION_CLICKED, 'channel_id', 'team_id', url);
+        });
+
+        it('NM-10: should suppress notification when Linux DND is active', async () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {value: 'linux'});
+            cp.execSync.mockReturnValue(Buffer.from('false'));
+            await NotificationManager.displayMention(
+                'test', 'test body', 'channel_id', 'team_id',
+                'http://server-1.com/team_id/channel_id', false,
+                {id: 1} as WebContents, '',
+            );
+            expect(mentions.length).toBe(0);
+            Object.defineProperty(process, 'platform', {value: originalPlatform});
+        });
+
+        it('NM-11: should suppress notification on Windows Priority Only when app is not priority', async () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {value: 'win32'});
+            getFocusAssist.mockReturnValue({value: 1, name: ''});
+            isPriority.mockReturnValue({value: 0, name: ''});
+            await NotificationManager.displayMention(
+                'test', 'test body', 'channel_id', 'team_id',
+                'http://server-1.com/team_id/channel_id', false,
+                {id: 1} as WebContents, '',
+            );
+            expect(mentions.length).toBe(0);
+            Object.defineProperty(process, 'platform', {value: originalPlatform});
+        });
     });
 
     describe('displayDownloadCompleted', () => {
+        const dlMainWindow = {
+            flashFrame: jest.fn(),
+        } as unknown as BrowserWindow;
+
         beforeEach(() => {
             Notification.isSupported.mockImplementation(() => true);
             getFocusAssist.mockReturnValue({value: 0, name: ''});
             getDarwinDoNotDisturb.mockReturnValue(Promise.resolve(false));
+            MainWindow.get.mockReturnValue(dlMainWindow);
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+            mentions.length = 0;
         });
 
         it('should open file when clicked', async () => {
@@ -499,6 +664,130 @@ describe('main/notifications', () => {
             const mention = mentions.find((m) => m.body.includes('test_filename'));
             mention?.value.click();
             expect(shell.showItemInFolder).toHaveBeenCalledWith('/path/to/file');
+        });
+
+        it('DD-01: should not show notification when DND is active on macOS', async () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {value: 'darwin'});
+            getDarwinDoNotDisturb.mockReturnValue(Promise.resolve(true));
+            await NotificationManager.displayDownloadCompleted('test.zip', '/path', 'server');
+            expect(mockNotificationConstruct).not.toHaveBeenCalled();
+            Object.defineProperty(process, 'platform', {value: originalPlatform});
+        });
+
+        it('DD-02: should not show notification when Notification is not supported', async () => {
+            Notification.isSupported.mockImplementation(() => false);
+            await NotificationManager.displayDownloadCompleted('test.zip', '/path', 'server');
+            expect(mockNotificationConstruct).not.toHaveBeenCalled();
+        });
+
+        it('DD-03: should flash frame on Linux when show fires and flashWindow config is set', async () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {value: 'linux'});
+            Config.notifications = {flashWindow: 1, bounceIcon: false, bounceIconType: 'informational'};
+            localizeMessage.mockReturnValue('test.zip');
+            await NotificationManager.displayDownloadCompleted('test.zip', '/path', 'server');
+            expect(dlMainWindow.flashFrame).toHaveBeenCalledWith(true);
+            Object.defineProperty(process, 'platform', {value: originalPlatform});
+        });
+
+        it('DD-04: should remove download from allActiveNotifications when close event fires', async () => {
+            localizeMessage.mockReturnValue('test.zip');
+            await NotificationManager.displayDownloadCompleted('test.zip', '/path', 'server');
+            const download = mentions[0];
+            const uId = download.value.uId;
+            const allActive = (NotificationManager as any).allActiveNotifications as Map<string, any>;
+            expect(allActive.has(uId)).toBe(true);
+            download.value.callbackMap.get('close')?.();
+            expect(allActive.has(uId)).toBe(false);
+        });
+
+        it('DD-05: should remove download from allActiveNotifications when failed event fires', async () => {
+            localizeMessage.mockReturnValue('test.zip');
+            await NotificationManager.displayDownloadCompleted('test.zip', '/path', 'server');
+            const download = mentions[0];
+            const uId = download.value.uId;
+            const allActive = (NotificationManager as any).allActiveNotifications as Map<string, any>;
+            expect(allActive.has(uId)).toBe(true);
+            download.value.callbackMap.get('failed')?.();
+            expect(allActive.has(uId)).toBe(false);
+        });
+    });
+
+    describe('displayUpgrade', () => {
+        beforeEach(() => {
+            Notification.isSupported.mockImplementation(() => true);
+            getFocusAssist.mockReturnValue({value: 0, name: ''});
+            getDarwinDoNotDisturb.mockReturnValue(Promise.resolve(false));
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+            mentions.length = 0;
+        });
+
+        it('UV-07: should not show notification when Notification is not supported', async () => {
+            Notification.isSupported.mockImplementation(() => false);
+            await NotificationManager.displayUpgrade('1.0.0', jest.fn());
+            expect(mockNotificationConstruct).not.toHaveBeenCalled();
+        });
+
+        it('UV-08: should not show notification when DND is active', async () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {value: 'darwin'});
+            getDarwinDoNotDisturb.mockReturnValue(Promise.resolve(true));
+            await NotificationManager.displayUpgrade('1.0.0', jest.fn());
+            expect(mockNotificationConstruct).not.toHaveBeenCalled();
+            Object.defineProperty(process, 'platform', {value: originalPlatform});
+        });
+
+        it('UV-09: should call handleUpgrade when upgrade notification is clicked', async () => {
+            const handleUpgrade = jest.fn();
+            await NotificationManager.displayUpgrade('1.0.0', handleUpgrade);
+            mentions[0].value.callbackMap.get('click')?.();
+            expect(handleUpgrade).toHaveBeenCalledTimes(1);
+        });
+
+        it('UV-10: should close existing upgrade notification when a second one is shown', async () => {
+            await NotificationManager.displayUpgrade('1.0.0', jest.fn());
+            const firstNotification = mentions[0];
+            await NotificationManager.displayUpgrade('1.1.0', jest.fn());
+            expect(firstNotification.value.close).toHaveBeenCalled();
+        });
+    });
+
+    describe('displayRestartToUpgrade', () => {
+        beforeEach(() => {
+            Notification.isSupported.mockImplementation(() => true);
+            getFocusAssist.mockReturnValue({value: 0, name: ''});
+            getDarwinDoNotDisturb.mockReturnValue(Promise.resolve(false));
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+            mentions.length = 0;
+        });
+
+        it('UV-11: should not show notification when Notification is not supported', async () => {
+            Notification.isSupported.mockImplementation(() => false);
+            await NotificationManager.displayRestartToUpgrade('1.0.0', jest.fn());
+            expect(mockNotificationConstruct).not.toHaveBeenCalled();
+        });
+
+        it('UV-12: should not show notification when DND is active', async () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {value: 'darwin'});
+            getDarwinDoNotDisturb.mockReturnValue(Promise.resolve(true));
+            await NotificationManager.displayRestartToUpgrade('1.0.0', jest.fn());
+            expect(mockNotificationConstruct).not.toHaveBeenCalled();
+            Object.defineProperty(process, 'platform', {value: originalPlatform});
+        });
+
+        it('UV-13: should call handleUpgrade when restart-to-upgrade notification is clicked', async () => {
+            const handleUpgrade = jest.fn();
+            await NotificationManager.displayRestartToUpgrade('1.0.0', handleUpgrade);
+            mentions[0].value.callbackMap.get('click')?.();
+            expect(handleUpgrade).toHaveBeenCalledTimes(1);
         });
     });
 

@@ -1,6 +1,8 @@
 {
+  "app.menus.contextMenu.copyEmailAddress": "Kopírovat e-mailovou adresu",
   "app.menus.contextMenu.openInNewTab": "Otevřít v novém panelu",
   "app.menus.contextMenu.openInNewWindow": "Otevřít v novém okně",
+  "app.navigationManager.invalidLinkTitle": "Neplatný odkaz",
   "app.navigationManager.viewLimitReached": "Limit počtu pohledů dosažen",
   "app.navigationManager.viewLimitReached.description": "Dosáhli jste maximálního počtu otevřených oken a panelů pro tento server. Zavřete prosím některé okno nebo panel, či upravte limit zobrazení v nastavení.",
   "callsWidgetWindow.cannotStartCall.message": "Na jiném serveru probíhá hovor, který musí být ukončen před připojením k novému hovoru.",

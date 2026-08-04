@@ -8,6 +8,7 @@ import {dialog, shell} from 'electron';
 
 import buildConfig from 'common/config/buildConfig';
 import {Logger} from 'common/log';
+import {parseURL} from 'common/utils/url';
 import * as Validator from 'common/Validator';
 import {localizeMessage} from 'main/i18nManager';
 
@@ -15,6 +16,20 @@ import MainWindow from '../../app/mainWindow/mainWindow';
 import {allowedProtocolFile} from '../constants';
 
 const log = new Logger('AllowProtocolDialog');
+
+// Protocols that must never be opened via shell.openExternal regardless of user choice.
+// These are known attack vectors for remote code execution or local file access.
+const BLOCKED_PROTOCOLS = new Set([
+    'file:',
+    // eslint-disable-next-line no-script-url
+    'javascript:',
+    'data:',
+    'vbscript:',
+    'ms-msdt:', // CVE-2021-34527 / Follina — MSDT remote code execution
+    'search-ms:', // Windows Search protocol — can be abused for UNC path injection
+    'ms-appinstaller:', // CVE-2021-43890 — App Installer malware distribution vector
+    'ms-officecmd:', // Office command handler — can trigger macro execution
+]);
 
 export class AllowProtocolDialog {
     allowedProtocols: string[];
@@ -37,15 +52,30 @@ export class AllowProtocolDialog {
 
     addScheme = (scheme: string) => {
         const proto = `${scheme}:`;
+        if (BLOCKED_PROTOCOLS.has(proto)) {
+            log.warn(`Refusing to add blocked protocol to allowlist: ${proto}`);
+            return;
+        }
         if (!this.allowedProtocols.includes(proto)) {
             this.allowedProtocols.push(proto);
         }
     };
 
-    handleDialogEvent = async (protocol: string, URL: string) => {
+    handleDialogEvent = async (url: string) => {
+        const parsedURL = parseURL(url);
+        if (!parsedURL) {
+            return;
+        }
+        const protocol = parsedURL.protocol;
+
+        if (BLOCKED_PROTOCOLS.has(protocol)) {
+            log.warn(`Blocked attempt to open dangerous protocol: ${protocol}`);
+            return;
+        }
+
         try {
             if (this.allowedProtocols.indexOf(protocol) !== -1) {
-                await shell.openExternal(URL);
+                await shell.openExternal(url);
                 return;
             }
             const mainWindow = MainWindow.get();
@@ -55,7 +85,7 @@ export class AllowProtocolDialog {
             const {response} = await dialog.showMessageBox(mainWindow, {
                 title: localizeMessage('main.allowProtocolDialog.title', 'Non http(s) protocol'),
                 message: localizeMessage('main.allowProtocolDialog.message', '{protocol} link requires an external application.', {protocol}),
-                detail: localizeMessage('main.allowProtocolDialog.detail', 'The requested link is {URL}. Do you want to continue?', {URL}),
+                detail: localizeMessage('main.allowProtocolDialog.detail', 'The requested link is {URL}. Do you want to continue?', {URL: url}),
                 defaultId: 2,
                 type: 'warning',
                 buttons: [
@@ -76,11 +106,11 @@ export class AllowProtocolDialog {
                     }
                 }
                 fs.writeFile(allowedProtocolFile, JSON.stringify(this.allowedProtocols), handleError);
-                await shell.openExternal(URL);
+                await shell.openExternal(url);
                 break;
             }
             case 0:
-                await shell.openExternal(URL);
+                await shell.openExternal(url);
                 break;
             }
         } catch (error) {

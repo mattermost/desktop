@@ -1,0 +1,140 @@
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+import * as os from 'os';
+
+import {defineConfig, type Project} from '@playwright/test';
+
+type Platform = 'linux' | 'darwin' | 'win32';
+
+function getActivePlatform(): Platform {
+    if (process.platform === 'darwin') {
+        return 'darwin';
+    }
+    if (process.platform === 'win32') {
+        return 'win32';
+    }
+    return 'linux';
+}
+
+const PLATFORM_GREP: Record<Platform, RegExp> = {
+    linux: /@all|@linux/,
+    darwin: /@all|@darwin/,
+    win32: /@all|@win32/,
+};
+
+// Each test gets its own isolated userDataDir (testInfo.outputDir/userdata), so each
+// Electron instance has its own SingletonLock — parallel workers never conflict.
+// Electron processes are heavy (~300MB each), so cap at 2 in CI and half the CPU
+// count locally (max 4). Override with E2E_WORKERS env var.
+const cpuCount = os.cpus().length;
+
+// Linux CI hits Playwright worker-teardown hangs with 2 parallel Electron workers;
+// one worker can finish with a stuck app.close() and burn the full 90s budget.
+function getDefaultWorkers(): number {
+    if (process.env.CI) {
+        return getActivePlatform() === 'linux' ? 1 : 2;
+    }
+    return Math.min(4, Math.max(1, Math.floor(cpuCount / 2)));
+}
+const defaultWorkers = getDefaultWorkers();
+const parsedWorkers = process.env.E2E_WORKERS ? Number.parseInt(process.env.E2E_WORKERS, 10) : NaN;
+const workers = Number.isFinite(parsedWorkers) && parsedWorkers > 0 ? parsedWorkers : defaultWorkers;
+
+// Prepended to each test in blob/HTML reports so multi-environment runs are distinguishable
+// when merging. Must NOT reuse platform grep tokens (@linux, @darwin, @win32, @all) —
+// Playwright inherits config tags onto file suites, which would make Linux grep match
+// every test when CI used to set CI_ENVIRONMENT_NAME=@linux.
+function getReportTag(): string | undefined {
+    const raw = process.env.CI_ENVIRONMENT_NAME;
+    if (!raw) {
+        return undefined;
+    }
+
+    const legacyReportTags: Record<string, string> = {
+        '@linux': '@ci-linux',
+        '@macos': '@ci-macos',
+        '@windows': '@ci-windows',
+    };
+
+    return legacyReportTags[raw] ?? raw;
+}
+
+const reportTag = getReportTag();
+const excludePolicyFromMainRun = Boolean(process.env.CI) && process.env.RUN_POLICY_E2E !== 'true';
+const activePlatform = getActivePlatform();
+
+function buildPlatformProjects(): Project[] {
+    const policyFilter = excludePolicyFromMainRun ? {grepInvert: /[/\\]policy[/\\]/} : {};
+
+    const projects: Project[] = [
+        {
+            name: activePlatform,
+            grep: PLATFORM_GREP[activePlatform],
+            ...policyFilter,
+        },
+    ];
+
+    if (process.env.E2E_WAYLAND === 'true' && activePlatform === 'linux') {
+        projects.push({
+            name: 'wayland',
+            grep: /@wayland/,
+            ...policyFilter,
+        });
+    }
+
+    return projects;
+}
+
+const reporters = process.env.CI ? [
+    ['blob', {outputDir: 'blob-report'}],
+    ['line'],
+
+    // Native Playwright JSON — required by test-system-io-report-upload's
+    // `framework: playwright` parser (reads suites[].specs[].tests[].results[]).
+    ['json', {outputFile: 'test-results/results.json'}],
+] as const : [
+    ['html', {open: 'never', outputFolder: 'playwright-report'}],
+    ['list'],
+] as const;
+
+export default defineConfig({
+    testDir: './specs',
+    testMatch: '**/*.test.ts',
+    globalSetup: './global-setup.ts',
+    globalTeardown: './global-teardown.ts',
+
+    workers,
+    fullyParallel: true,
+
+    retries: process.env.CI ? 1 : 0,
+
+    // 90s per test/hook. The Windows GitHub-hosted runner can take 30–60s just
+    // to launch Electron + reach `__e2eAppReady`; many tests then need their
+    // own beforeAll launch. The previous 60s budget caused ~17 Windows
+    // hook/test timeouts on every run. 90s gives the launch + setup head-room
+    // while still failing reasonably fast on a genuinely-stuck test.
+    timeout: 90_000,
+
+    // Worker teardown reaps this worker's orphaned Electron main processes. The
+    // per-worker PID registry + concurrent SIGKILL reap keep this to ~2s even
+    // with several leftovers, so 90s is ample headroom. If teardown ever
+    // approaches this it signals a reaping gap to fix, not a timeout to raise.
+    workerTeardownTimeout: 90_000,
+
+    ...(reportTag ? {tag: reportTag} : {}),
+
+    reporter: reporters,
+
+    use: {
+
+        // Video/trace land in test-results/ and bloat CI artifacts (Electron
+        // userdata + webm/zip per test). Failures are debugged via the merged
+        // HTML report on S3, which includes screenshots and traces from blob.
+        trace: process.env.CI ? 'on-first-retry' : 'retain-on-failure',
+        screenshot: 'only-on-failure',
+        video: process.env.CI ? 'off' : 'retain-on-failure',
+    },
+
+    projects: buildPlatformProjects(),
+});

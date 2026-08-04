@@ -1,22 +1,17 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {Event, WebContentsConsoleMessageEventParams} from 'electron';
+import type {Event, WebContentsConsoleMessageEventParams, WebContentsWillFrameNavigateEventParams} from 'electron';
 
 import type {Logger} from 'common/log';
 import {getLevel} from 'common/log';
 import {parseURL} from 'common/utils/url';
 
-import {generateHandleConsoleMessage, isCustomProtocol, isMattermostProtocol} from './webContentEventsCommon';
+import {generateHandleConsoleMessage, generateWillFrameNavigate, isAllowedSubframeNavigation, isCustomProtocol, isMattermostProtocol} from './webContentEventsCommon';
 
 // Mock the electron-builder.json protocols
-jest.mock('../../../electron-builder.json', () => ({
-    protocols: [
-        {
-            name: 'Mattermost',
-            schemes: ['mattermost'],
-        },
-    ],
+jest.mock('common/constants', () => ({
+    MATTERMOST_PROTOCOL: 'mattermost',
 }));
 
 // Mock the log module
@@ -52,6 +47,7 @@ describe('webContentEventsCommon', () => {
 
         mockLogger = {
             withPrefix: jest.fn().mockReturnValue(mockWcLog),
+            debug: jest.fn(),
         } as any;
     });
 
@@ -266,6 +262,85 @@ describe('webContentEventsCommon', () => {
 
         it('should handle URLs with different case mattermost protocol', () => {
             expect(isCustomProtocol(new URL('MATTERMOST://server1'))).toBe(false);
+        });
+    });
+
+    describe('isAllowedSubframeNavigation', () => {
+        beforeEach(() => {
+            mockParseURL.mockImplementation((input: string | URL) => {
+                try {
+                    return new URL(input as string);
+                } catch {
+                    return undefined;
+                }
+            });
+        });
+
+        it('allows http and https embeds', () => {
+            expect(isAllowedSubframeNavigation('https://www.youtube.com/embed/abc')).toBe(true);
+            expect(isAllowedSubframeNavigation('http://example.com/widget')).toBe(true);
+        });
+
+        it('allows about:blank and about:srcdoc without parsing', () => {
+            expect(isAllowedSubframeNavigation('about:blank')).toBe(true);
+            expect(isAllowedSubframeNavigation('about:srcdoc')).toBe(true);
+            expect(mockParseURL).not.toHaveBeenCalled();
+        });
+
+        it('allows empty/undefined frame URLs', () => {
+            expect(isAllowedSubframeNavigation(undefined)).toBe(true);
+            expect(isAllowedSubframeNavigation('')).toBe(true);
+        });
+
+        it('blocks non-web protocols including mailto', () => {
+            expect(isAllowedSubframeNavigation('mailto:user@example.com')).toBe(false);
+            expect(isAllowedSubframeNavigation('tel:+15551234')).toBe(false);
+            expect(isAllowedSubframeNavigation('custom://payload')).toBe(false);
+            expect(isAllowedSubframeNavigation('file:///etc/passwd')).toBe(false);
+
+            // eslint-disable-next-line no-script-url
+            expect(isAllowedSubframeNavigation('javascript:alert(1)')).toBe(false);
+        });
+
+        it('blocks unparseable URLs', () => {
+            mockParseURL.mockReturnValue(undefined);
+            expect(isAllowedSubframeNavigation('::::not a url')).toBe(false);
+        });
+    });
+
+    describe('generateWillFrameNavigate', () => {
+        beforeEach(() => {
+            mockParseURL.mockImplementation((input: string | URL) => {
+                try {
+                    return new URL(input as string);
+                } catch {
+                    return undefined;
+                }
+            });
+        });
+
+        const generateEvent = (url: string, isMainFrame: boolean) => ({
+            preventDefault: jest.fn(),
+            isMainFrame,
+            url,
+        } as unknown as Event<WebContentsWillFrameNavigateEventParams>);
+
+        it('should ignore main frame navigations', () => {
+            const event = generateEvent('custom://payload', true);
+            generateWillFrameNavigate(mockLogger)(event);
+            expect(event.preventDefault).not.toHaveBeenCalled();
+        });
+
+        it('should allow subframes to navigate to web protocols', () => {
+            const event = generateEvent('https://www.youtube.com/embed/abc', false);
+            generateWillFrameNavigate(mockLogger)(event);
+            expect(event.preventDefault).not.toHaveBeenCalled();
+        });
+
+        it('should prevent subframes from navigating to other protocols', () => {
+            const event = generateEvent('custom://payload', false);
+            generateWillFrameNavigate(mockLogger)(event);
+            expect(event.preventDefault).toHaveBeenCalled();
         });
     });
 

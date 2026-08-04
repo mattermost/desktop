@@ -1,8 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {session} from 'electron';
+import {ipcMain, session} from 'electron';
 
+import AppState from 'common/appState';
 import ServerManager from 'common/servers/serverManager';
 import ViewManager from 'common/views/viewManager';
 import {flushCookiesStore} from 'main/app/utils';
@@ -96,6 +97,7 @@ jest.mock('common/views/viewManager', () => ({
     getViewLog: jest.fn(),
     getView: jest.fn(),
     getPrimaryView: jest.fn(),
+    isPrimaryView: jest.fn(),
 }));
 
 jest.mock('main/app/utils', () => ({
@@ -149,7 +151,10 @@ jest.mock('app/mainWindow/modals/modalManager', () => ({
     isModalDisplayed: jest.fn(),
 }));
 jest.mock('./webContentEvents', () => ({}));
-jest.mock('common/appState', () => ({}));
+jest.mock('common/appState', () => ({
+    updateExpired: jest.fn(),
+    updateUnreadsAndMentionsPerServer: jest.fn(),
+}));
 jest.mock('app/popoutMenu', () => ({
     default: jest.fn(),
 }));
@@ -356,6 +361,7 @@ describe('app/views/webContentsManager', () => {
         beforeEach(() => {
             webContentsManager.webContentsIdToView = new Map();
             ServerManager.setLoggedIn = jest.fn();
+            ViewManager.isPrimaryView.mockReturnValue(true);
         });
 
         afterEach(() => {
@@ -365,32 +371,90 @@ describe('app/views/webContentsManager', () => {
         it('should handle login state change for existing view', () => {
             webContentsManager.webContentsIdToView.set(123, mockView);
 
-            // Emit the IPC event
-            const ipcMain = require('electron').ipcMain;
             ipcMain.emit('tab-login-changed', mockEvent, true);
 
             expect(ServerManager.setLoggedIn).toHaveBeenCalledWith('server-1', true);
             expect(flushCookiesStore).toHaveBeenCalled();
         });
 
-        it('should handle logout state change for existing view', () => {
+        it('should handle logout state change for primary view', () => {
             webContentsManager.webContentsIdToView.set(123, mockView);
+            ViewManager.isPrimaryView.mockReturnValue(true);
 
-            // Emit the IPC event
-            const ipcMain = require('electron').ipcMain;
             ipcMain.emit('tab-login-changed', mockEvent, false);
 
             expect(ServerManager.setLoggedIn).toHaveBeenCalledWith('server-1', false);
             expect(flushCookiesStore).toHaveBeenCalled();
         });
 
+        it('should ignore logout from non-primary view', () => {
+            webContentsManager.webContentsIdToView.set(123, mockView);
+            ViewManager.isPrimaryView.mockReturnValue(false);
+
+            ipcMain.emit('tab-login-changed', mockEvent, false);
+
+            expect(ServerManager.setLoggedIn).not.toHaveBeenCalled();
+            expect(flushCookiesStore).not.toHaveBeenCalled();
+        });
+
+        it('should still accept login from non-primary view', () => {
+            webContentsManager.webContentsIdToView.set(123, mockView);
+            ViewManager.isPrimaryView.mockReturnValue(false);
+
+            ipcMain.emit('tab-login-changed', mockEvent, true);
+
+            expect(ServerManager.setLoggedIn).toHaveBeenCalledWith('server-1', true);
+            expect(flushCookiesStore).toHaveBeenCalled();
+        });
+
         it('should do nothing when view does not exist', () => {
-            // Emit the IPC event
-            const ipcMain = require('electron').ipcMain;
             ipcMain.emit('tab-login-changed', mockEvent, true);
 
             expect(ServerManager.setLoggedIn).not.toHaveBeenCalled();
             expect(flushCookiesStore).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('handleSessionExpired', () => {
+        const webContentsManager = new WebContentsManager();
+        const mockEvent = {
+            sender: {id: 123},
+        };
+        const mockView = {
+            id: 'test-view',
+            serverId: 'server-1',
+        };
+
+        beforeEach(() => {
+            webContentsManager.webContentsIdToView = new Map();
+            ServerManager.setLoggedIn = jest.fn();
+            ViewManager.getViewLog.mockReturnValue({debug: jest.fn()});
+            ViewManager.isPrimaryView.mockReturnValue(true);
+            AppState.updateExpired.mockClear();
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should mark logged out when primary view session expires', () => {
+            webContentsManager.webContentsIdToView.set(123, mockView);
+            ViewManager.isPrimaryView.mockReturnValue(true);
+
+            ipcMain.emit('session_expired', mockEvent, true);
+
+            expect(ServerManager.setLoggedIn).toHaveBeenCalledWith('server-1', false);
+            expect(AppState.updateExpired).toHaveBeenCalledWith('server-1', true);
+        });
+
+        it('should ignore session expiry from non-primary view', () => {
+            webContentsManager.webContentsIdToView.set(123, mockView);
+            ViewManager.isPrimaryView.mockReturnValue(false);
+
+            ipcMain.emit('session_expired', mockEvent, true);
+
+            expect(ServerManager.setLoggedIn).not.toHaveBeenCalled();
+            expect(AppState.updateExpired).not.toHaveBeenCalled();
         });
     });
 

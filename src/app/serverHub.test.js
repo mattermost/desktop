@@ -21,6 +21,12 @@ jest.mock('electron', () => ({
         handle: jest.fn(),
         emit: jest.fn(),
     },
+    session: {
+        defaultSession: {
+            allowNTLMCredentialsForDomains: jest.fn(),
+            clearData: jest.fn(),
+        },
+    },
 }));
 
 jest.mock('common/servers/serverManager', () => ({
@@ -47,6 +53,7 @@ jest.mock('main/server/serverInfo', () => ({
 }));
 jest.mock('app/mainWindow/modals/modalManager', () => ({
     addModal: jest.fn(),
+    removeModal: jest.fn(),
 }));
 jest.mock('main/utils', () => ({
     getLocalPreload: jest.fn(),
@@ -494,6 +501,55 @@ describe('app/serverViewState', () => {
             expect(result.validatedURL).toBe('https://server.com/');
         });
 
+        it('should preserve the original URL with subpaths when validation fails all the way down', async () => {
+            ServerInfo.mockImplementation(() => ({
+                pingServer: jest.fn().mockImplementation(() => {
+                    throw new Error();
+                }),
+            }));
+
+            const result = await serverViewState.handleServerURLValidation({}, 'https://not-server.com/some/deep/path');
+            expect(result.status).toBe(URLValidationStatus.NotMattermost);
+            expect(result.validatedURL).toBe('https://not-server.com/some/deep/path');
+        });
+
+        it('should preserve the original URL with subpaths when entered without protocol', async () => {
+            ServerInfo.mockImplementation(() => ({
+                pingServer: jest.fn().mockImplementation(() => {
+                    throw new Error();
+                }),
+            }));
+
+            const result = await serverViewState.handleServerURLValidation({}, 'not-server.com/some/path');
+            expect(result.status).toBe(URLValidationStatus.NotMattermost);
+            expect(result.validatedURL).toBe('https://not-server.com/some/path');
+        });
+
+        it('should use the matched URL when a subpath-stripped URL finds a valid server', async () => {
+            ServerInfo.mockImplementation(({url}) => ({
+                pingServer: jest.fn().mockImplementation(() => {
+                    if (url !== 'https://server.com/') {
+                        throw new Error();
+                    }
+                    return {status: 'OK'};
+                }),
+                fetchConfigData: jest.fn().mockImplementation(() => {
+                    if (url !== 'https://server.com/') {
+                        throw new Error();
+                    }
+                    return {
+                        serverVersion: '7.8.0',
+                        siteName: 'Mattermost',
+                        siteURL: 'https://server.com/',
+                    };
+                }),
+            }));
+
+            const result = await serverViewState.handleServerURLValidation({}, 'https://server.com/extra/path');
+            expect(result.status).toBe(URLValidationStatus.OK);
+            expect(result.validatedURL).toBe('https://server.com/');
+        });
+
         it('should warn the user when the Site URL already exists as another server', async () => {
             ServerManager.lookupServerByURL.mockReturnValue({name: 'Test Server 1', id: 'server-1', url: new URL('https://mainserver.com')});
             ServerInfo.mockImplementation(() => ({
@@ -513,6 +569,42 @@ describe('app/serverViewState', () => {
             expect(result.status).toBe(URLValidationStatus.URLExists);
             expect(result.validatedURL).toBe('https://mainserver.com/');
             expect(result.existingServerName).toBe('Test Server 1');
+        });
+    });
+
+    describe('updateAuthServerAllowlist', () => {
+        const {session} = jest.requireMock('electron');
+
+        beforeEach(() => {
+            session.defaultSession.allowNTLMCredentialsForDomains.mockClear();
+        });
+
+        it('should set the allowlist to the configured server hostnames', () => {
+            ServerManager.getAllServers.mockReturnValue([
+                {url: new URL('https://server-1.com')},
+                {url: new URL('https://server-2.example.org:8443/subpath')},
+            ]);
+            const hub = new ServerHub();
+            hub.updateAuthServerAllowlist();
+            expect(session.defaultSession.allowNTLMCredentialsForDomains).
+                toHaveBeenCalledWith('server-1.com,server-2.example.org');
+        });
+
+        it('should set an empty allowlist when there are no configured servers', () => {
+            ServerManager.getAllServers.mockReturnValue([]);
+            const hub = new ServerHub();
+            hub.updateAuthServerAllowlist();
+            expect(session.defaultSession.allowNTLMCredentialsForDomains).toHaveBeenCalledWith('');
+        });
+
+        it('should clear server data and refresh the allowlist when a server is removed', () => {
+            ServerManager.getAllServers.mockReturnValue([
+                {url: new URL('https://server-1.com')},
+            ]);
+            const hub = new ServerHub();
+            hub.handleServerCleanup({id: 'server-2', url: new URL('https://server-2.com')});
+            expect(session.defaultSession.clearData).toHaveBeenCalledWith({origins: ['https://server-2.com']});
+            expect(session.defaultSession.allowNTLMCredentialsForDomains).toHaveBeenCalledWith('server-1.com');
         });
     });
 });

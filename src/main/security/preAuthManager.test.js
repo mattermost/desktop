@@ -145,20 +145,13 @@ describe('main/preAuthManager', () => {
             preAuthManager.handleClientCert({preventDefault: jest.fn()}, null, 'trustedurl.com:8080', [{}, {}], callback);
             expect(ModalManager.addModal).toBeCalled();
         });
-
-        it('should not pop modal for untrusted domain:port format URLs', () => {
-            ServerManager.lookupServerByURL.mockReturnValue(undefined);
-            const callback = jest.fn();
-            preAuthManager.handleClientCert({preventDefault: jest.fn()}, null, 'untrusted.com:8080', [{}, {}], callback);
-            expect(ModalManager.addModal).not.toBeCalled();
-            expect(callback).not.toBeCalled();
-        });
     });
 
     describe('handlePreAuthSecret', () => {
         const preAuthManager = new PreAuthManager();
 
         it('should not pop modal on untrusted URL', () => {
+            ServerManager.lookupServerByURL.mockReturnValue(undefined);
             const callback = jest.fn();
             preAuthManager.handlePreAuthSecret('http://untrustedurl.com/', callback);
             expect(ModalManager.addModal).not.toBeCalled();
@@ -310,6 +303,38 @@ describe('main/preAuthManager', () => {
             // Wait for the promise to resolve/reject
             await expect(promise).rejects.toThrow(error);
             expect(callback).toBeCalledWith();
+        });
+    });
+
+    describe('injectPreAuthSecret', () => {
+        const preAuthManager = new PreAuthManager();
+
+        beforeEach(() => {
+            ServerManager.lookupServerByURL.mockReset();
+        });
+
+        it('should inject the secret header when the server has a secret and the header is absent', () => {
+            ServerManager.lookupServerByURL.mockReturnValue({id: 'server-1', preAuthSecret: 'secret123'});
+            const result = preAuthManager.injectPreAuthSecret({url: 'http://trustedurl.com/', requestHeaders: {}});
+            expect(result).toEqual({'X-Mattermost-Preauth-Secret': 'secret123'});
+        });
+
+        it('should not inject the secret header when it is already present', () => {
+            ServerManager.lookupServerByURL.mockReturnValue({id: 'server-1', preAuthSecret: 'secret123'});
+            const result = preAuthManager.injectPreAuthSecret({url: 'http://trustedurl.com/', requestHeaders: {'X-Mattermost-Preauth-Secret': 'existing'}});
+            expect(result).toEqual({});
+        });
+
+        it('should not inject the secret header when no server is found', () => {
+            ServerManager.lookupServerByURL.mockReturnValue(undefined);
+            const result = preAuthManager.injectPreAuthSecret({url: 'http://unknown.com/', requestHeaders: {}});
+            expect(result).toEqual({});
+        });
+
+        it('should not inject the secret header when the server has no secret', () => {
+            ServerManager.lookupServerByURL.mockReturnValue({id: 'server-1'});
+            const result = preAuthManager.injectPreAuthSecret({url: 'http://trustedurl.com/', requestHeaders: {}});
+            expect(result).toEqual({});
         });
     });
 

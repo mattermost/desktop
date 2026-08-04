@@ -17,10 +17,15 @@
 If this policy is disabled, the Server Management section is hidden in the app settings and only servers defined by Group Policy can be used.</string>
 			<string id="DefaultServerList">DefaultServerList</string>
 			<string id="DefaultServerListDescription">If this policy is enabled, you can define one or more Mattermost servers that will be pre-configured for users when they launch the app. "Value name" represents the name of the corresponding server tab and "Value" is the URL of the Mattermost server.</string>
+			<string id="TrustedEmbeddedMediaOrigins">TrustedEmbeddedMediaOrigins</string>
+			<string id="TrustedEmbeddedMediaOriginsDescription">If this policy is enabled, you can define one or more embedded origins that may reuse media permissions granted to a Mattermost server origin. "Value name" must be unique and "Value" must be a JSON object with serverOrigin and embeddedOrigin string properties, for example {"serverOrigin":"https://chat.example.com","embeddedOrigin":"https://meet.example.com"}.</string>
 		</stringTable>
 		<presentationTable>
 			<presentation id="DefaultServerList">
 				<listBox refId="DefaultServerList">List of default Mattermost servers:</listBox>
+			</presentation>
+			<presentation id="TrustedEmbeddedMediaOrigins">
+				<listBox refId="TrustedEmbeddedMediaOrigins">List of trusted embedded media origins:</listBox>
 			</presentation>
 		</presentationTable>
 	</resources>

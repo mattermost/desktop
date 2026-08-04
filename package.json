@@ -1,7 +1,7 @@
 {
   "name": "mattermost-desktop",
   "productName": "Mattermost",
-  "version": "6.2.0-develop.1",
+  "version": "6.4.0-develop.1",
   "description": "Mattermost",
   "main": "dist/index.js",
   "author": "Mattermost, Inc. <feedback@mattermost.com>",
@@ -9,7 +9,7 @@
   "desktopName": "Mattermost.Desktop",
   "homepage": "https://mattermost.com",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=24.0.0"
   },
   "repository": {
     "type": "git",
@@ -31,7 +31,7 @@
     "test": "run-s lint:js test:unit",
     "test:unit": "jest",
     "test:unit-coverage": "jest --coverage",
-    "e2e": "npm run build-test && cd e2e && npm i && npm run run:e2e",
+    "e2e": "npm run build-test && npm --prefix e2e test",
     "build": "run-p build:*",
     "build:main": "webpack-cli --config webpack.config.main.js",
     "build:preload": "webpack-cli --config webpack.config.preload.js",
@@ -81,7 +81,7 @@
     ],
     "testPathIgnorePatterns": [
       "/node_modules/",
-      "/e2e/",
+      "<rootDir>/e2e/",
       "/webpack.config.test.js"
     ],
     "globals": {
@@ -130,7 +130,7 @@
     "copy-webpack-plugin": "10.2.4",
     "cross-env": "7.0.3",
     "css-loader": "6.7.1",
-    "electron": "40.1.0",
+    "electron": "43.0.0",
     "electron-builder": "26.6.0",
     "eslint": "8.57.0",
     "eslint-import-resolver-webpack": "0.13.8",
@@ -138,6 +138,7 @@
     "eslint-plugin-no-only-tests": "3.1.0",
     "eslint-plugin-react": "7.34.0",
     "eslint-plugin-react-hooks": "4.6.0",
+    "fast-xml-parser": "^5.8.0",
     "html-webpack-plugin": "5.5.0",
     "jest": "29.4.1",
     "jest-junit": "13.1.0",
@@ -145,6 +146,7 @@
     "mmjstool": "github:mattermost/mattermost-utilities#3b4506b0f6b14fbb402f9f8ef932370e459e3773",
     "node-loader": "2.0.0",
     "npm-run-all": "4.1.5",
+    "pacote": "22.0.0",
     "patch-package": "8.0.1",
     "sass": "1.49.11",
     "sass-loader": "16.0.2",
@@ -160,7 +162,7 @@
     "@emotion/react": "11.11.4",
     "@floating-ui/react": "0.26.28",
     "@mattermost/compass-icons": "0.1.45",
-    "@sentry/electron": "7.4.0",
+    "@sentry/electron": "7.11.0",
     "auto-launch": "5.0.6",
     "cf-prefs": "2.0.1",
     "classnames": "2.5.1",
@@ -169,6 +171,7 @@
     "electron-is-dev": "2.0.0",
     "electron-log": "5.2.0",
     "joi": "17.12.2",
+    "koffi": "3.1.1",
     "macos-notification-state": "3.0.0",
     "pretty-bytes": "6.1.1",
     "react": "17.0.2",
@@ -181,5 +184,8 @@
     "valid-url": "1.0.9",
     "windows-focus-assist": "1.4.0",
     "yargs": "17.7.2"
+  },
+  "overrides": {
+    "yauzl": "3.3.1"
   }
 }

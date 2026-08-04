@@ -43,23 +43,39 @@ export class ModalManager {
         ipcMain.on(EMIT_CONFIGURATION, this.handleEmitConfiguration);
     }
 
-    // TODO: add a queue/add differentiation, in case we need to put a modal first in line
     addModal = <T, T2>(key: string, html: string, preload: string, data: T, win: BrowserWindow, uncloseable = false) => {
+        return this.enqueueModal<T, T2>(key, html, preload, data, win, uncloseable, false);
+    };
+
+    addPriorityModal = <T, T2>(key: string, html: string, preload: string, data: T, win: BrowserWindow, uncloseable = false) => {
+        return this.enqueueModal<T, T2>(key, html, preload, data, win, uncloseable, true);
+    };
+
+    private enqueueModal = <T, T2>(key: string, html: string, preload: string, data: T, win: BrowserWindow, uncloseable: boolean, priority: boolean) => {
         const foundModal = this.modalQueue.find((modal) => modal.key === key);
-        if (!foundModal) {
-            const modalPromise = new Promise((resolve: (value: T2) => void, reject) => {
-                const mv = new ModalView<T, T2>(key, html, preload, data, resolve, reject, win, uncloseable);
-                this.modalQueue.push(mv);
-            });
-
-            if (this.modalQueue.length === 1) {
-                this.showModal();
-            }
-
-            this.modalPromises.set(key, modalPromise);
-            return modalPromise;
+        if (foundModal) {
+            return this.modalPromises.get(key) as Promise<T2>;
         }
-        return this.modalPromises.get(key) as Promise<T2>;
+
+        const modalPromise = new Promise((resolve: (value: T2) => void, reject) => {
+            const mv = new ModalView<T, T2>(key, html, preload, data, resolve, reject, win, uncloseable);
+
+            if (priority) {
+                if (this.modalQueue.length > 0) {
+                    this.modalQueue[0].suspend();
+                }
+                this.modalQueue.unshift(mv);
+            } else {
+                this.modalQueue.push(mv);
+            }
+        });
+
+        if (priority || this.modalQueue.length === 1) {
+            this.showModal();
+        }
+
+        this.modalPromises.set(key, modalPromise);
+        return modalPromise;
     };
 
     removeModal = (key: string) => {
@@ -102,8 +118,7 @@ export class ModalManager {
                 modal.show(undefined, Boolean(withDevTools));
                 WebContentsEventManager.addWebContentsEventListeners(modal.view.webContents);
             } else {
-                MainWindow.sendToRenderer(MODAL_CLOSE);
-                modal.hide();
+                modal.suspend();
             }
         });
     };

@@ -19,6 +19,7 @@ jest.mock('electron', () => {
             mockWebContents.send = jest.fn();
             mockWebContents.loadURL = jest.fn();
             mockWebContents.isLoading = jest.fn();
+            mockWebContents.isDestroyed = jest.fn(() => false);
 
             return {
                 webContents: mockWebContents,
@@ -50,6 +51,7 @@ describe('main/views/loadingScreen', () => {
             webContents: {
                 id: 123,
             },
+            isDestroyed: jest.fn(() => false),
         };
         const loadingScreen = new LoadingScreen(mainWindow);
 
@@ -74,6 +76,74 @@ describe('main/views/loadingScreen', () => {
 
             expect(loadingScreen.view.webContents.send).toHaveBeenCalledWith(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
             expect(mainWindow.contentView.addChildView).toHaveBeenCalledWith(loadingScreen.view);
+        });
+
+        it('should not show the loading screen if fade() is called before did-finish-load fires', () => {
+            loadingScreen.view.webContents.send.mockClear();
+            mainWindow.contentView.addChildView.mockClear();
+
+            loadingScreen.view.webContents.isLoading.mockReturnValue(true);
+            loadingScreen.show();
+            loadingScreen.fade();
+
+            loadingScreen.view.webContents.emit('did-finish-load');
+
+            expect(loadingScreen.view.webContents.send).not.toHaveBeenCalledWith(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
+            expect(mainWindow.contentView.addChildView).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('fade', () => {
+        const mainWindow = {
+            contentView: {
+                addChildView: jest.fn(),
+                on: jest.fn(),
+            },
+            webContents: {
+                id: 123,
+            },
+            isDestroyed: jest.fn(() => false),
+        };
+        let loadingScreen;
+
+        beforeEach(() => {
+            jest.clearAllMocks();
+            loadingScreen = new LoadingScreen(mainWindow);
+            loadingScreen.view.webContents.isLoading.mockReturnValue(false);
+            loadingScreen.show();
+            loadingScreen.view.webContents.send.mockClear();
+        });
+
+        it('should send the fade event when webContents is alive', () => {
+            loadingScreen.fade();
+
+            expect(loadingScreen.view.webContents.send).toHaveBeenCalledWith(TOGGLE_LOADING_SCREEN_VISIBILITY, false);
+        });
+
+        it('should not send the fade event when webContents is destroyed', () => {
+            loadingScreen.view.webContents.isDestroyed.mockReturnValue(true);
+
+            loadingScreen.fade();
+
+            expect(loadingScreen.view.webContents.send).not.toHaveBeenCalled();
+        });
+
+        it('should not throw when webContents is undefined during teardown', () => {
+            loadingScreen.view.webContents = undefined;
+
+            expect(() => loadingScreen.fade()).not.toThrow();
+        });
+
+        it('should still leave the visible state when webContents is undefined', () => {
+            const webContents = loadingScreen.view.webContents;
+            loadingScreen.view.webContents = undefined;
+            loadingScreen.fade();
+
+            loadingScreen.view.webContents = webContents;
+            loadingScreen.fade();
+
+            // The second fade is only a no-op if the first one advanced out of VISIBLE.
+            expect(webContents.send).not.toHaveBeenCalled();
         });
     });
 });

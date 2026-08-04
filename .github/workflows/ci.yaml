@@ -14,11 +14,11 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: ci/checkout-repo
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: ci/setup-node
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version-file: "package.json"
+          node-version-file: ".nvmrc"
           cache: "npm"
           cache-dependency-path: package-lock.json
       - name: ci/install-dependencies
@@ -37,13 +37,13 @@ jobs:
           npm run package:linux-tar
           bash -x ./scripts/cp_artifacts.sh release ./build/linux
       - name: ci/upload-test-results
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: linux-test-results
           path: test-results.xml
           retention-days: 5
       - name: ci/upload-build
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: build-linux
           path: ./build/linux
@@ -53,16 +53,16 @@ jobs:
     runs-on: windows-2022
     steps:
       - name: ci/checkout-repo
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: ci/setup-node
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version-file: "package.json"
+          node-version-file: ".nvmrc"
           cache: "npm"
           cache-dependency-path: package-lock.json
       - name: ci/cache-node-modules
         id: cache-node-modules
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: node_modules
           key: ${{ runner.os }}-build-node-modules-${{ hashFiles('**/package-lock.json') }}
@@ -86,16 +86,16 @@ jobs:
       - windows-install-deps
     steps:
       - name: ci/checkout-repo
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: ci/setup-node
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version-file: "package.json"
+          node-version-file: ".nvmrc"
           cache: "npm"
           cache-dependency-path: package-lock.json
       - name: ci/cache-node-modules
         id: cache-node-modules
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: node_modules
           key: ${{ runner.os }}-build-node-modules-${{ hashFiles('package-lock.json') }}
@@ -122,17 +122,16 @@ jobs:
       - name: ci/build
         run: |
           mkdir -p ./build/win
-          jq '.win.azureSignOptions=null' electron-builder.json > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
           npm run package:windows
           bash -x ./scripts/cp_artifacts.sh release ./build/win
       - name: ci/upload-test-results
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: windows-test-results
           path: test-results.xml
           retention-days: 5
       - name: ci/upload-build
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: build-windows
           path: ./build/win
@@ -142,13 +141,14 @@ jobs:
     runs-on: macos-15
     env:
       MACOS_NOTIFICATION_STATE_NO_SDK_CHECK: true
+      CI_MAC_ZIP_ONLY: true
     steps:
       - name: ci/checkout-repo
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: ci/setup-node
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version-file: "package.json"
+          node-version-file: ".nvmrc"
           cache: "npm"
           cache-dependency-path: package-lock.json
       - name: ci/install-dependencies
@@ -156,7 +156,6 @@ jobs:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
         run: |
           brew install yq
-          jq '.mac.target=["zip"]' electron-builder.json | jq '.mac.gatekeeperAssess=false' > /tmp/electron-builder.json && cp /tmp/electron-builder.json .
           sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
           export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
           echo "SDKROOT=$SDKROOT" >> $GITHUB_ENV
@@ -174,13 +173,13 @@ jobs:
         env:
           SDKROOT: ${{ env.SDKROOT }}
       - name: ci/upload-test-results
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: macos-test-results
           path: test-results.xml
           retention-days: 5
       - name: ci/upload-build
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: build-macos
           path: ./build/macos/
@@ -198,23 +197,24 @@ jobs:
       pull-requests: write
     steps:
       - name: ci/download-macos-test-results
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: macos-test-results
           path: macos-test-results
       - name: ci/download-windows-test-results
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: windows-test-results
           path: windows-test-results
       - name: ci/download-linux-test-results
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: linux-test-results
           path: linux-test-results
       - name: ci/publish-results
-        uses: EnricoMi/publish-unit-test-result-action@27d65e188ec43221b20d26de30f4892fad91df2f # v2.22.0
+        uses: EnricoMi/publish-unit-test-result-action@d0a4676d0e0b938bc201470d88276b7c74c712b3 # v2.24.0
         with:
+          check_name: Unit Tests (Jest)
           comment_mode: failures
           compare_to_earlier_commit: false
           junit_files: "**/*.xml"

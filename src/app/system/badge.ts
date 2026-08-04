@@ -16,6 +16,14 @@ const MAX_WIN_COUNT = 99;
 
 let showUnreadBadgeSetting: boolean;
 
+type BadgeTestRecorder = (sessionExpired: boolean, mentionCount: number, showUnreadBadge: boolean, showUnreadBadgeSetting: boolean) => void;
+let badgeTestRecorder: BadgeTestRecorder | undefined;
+
+/** Lets E2E wire up test-state recording without badge.ts depending on main/e2e. */
+export function setBadgeTestRecorder(recorder: BadgeTestRecorder | undefined) {
+    badgeTestRecorder = recorder;
+}
+
 /**
      * Badge generation for Windows
      */
@@ -123,6 +131,8 @@ function showBadge(sessionExpired: boolean, mentionCount: number, showUnreadBadg
         showBadgeLinux(sessionExpired, mentionCount);
         break;
     }
+
+    badgeTestRecorder?.(sessionExpired, mentionCount, showUnreadBadge, showUnreadBadgeSetting);
 }
 
 export function setUnreadBadgeSetting(showUnreadBadge: boolean) {

@@ -43,6 +43,16 @@ export type PopoutViewProps = {
     titleTemplate?: string;
     isRHS?: boolean;
 };
+export type SessionAttributeField = {
+    name: string;
+    type: string;
+    attrs: {
+        enabled: boolean;
+        ttl_seconds: number;
+        grace_period_seconds: number;
+        platforms: string[];
+    };
+};
 
 export type DesktopAPI = {
 
@@ -60,6 +70,9 @@ export type DesktopAPI = {
     ) => void) => () => void;
     onLogin: () => void;
     onLogout: () => void;
+    invalidateSessionAttributeManifest: () => void;
+    resendSessionAttributes: () => void;
+    updateSessionAttribute: (field: SessionAttributeField) => void;
 
     // Unreads/mentions/notifications
     sendNotification: (title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, soundName: string) => Promise<{status: string; reason?: string; data?: string}>;
@@ -119,6 +132,7 @@ export type DesktopAPI = {
 
     // Utility
     unregister: (channel: string) => void;
+    closeWindow: () => void;
 
     // Popouts
     canPopout: () => Promise<boolean>;
@@ -129,4 +143,5 @@ export type DesktopAPI = {
     sendToPopout: (id: string, channel: string, ...args: unknown[]) => void;
     onMessageFromPopout: (listener: (id: string, channel: string, ...args: unknown[]) => void) => () => void;
     onPopoutClosed: (listener: (id: string) => void) => () => void;
+    updatePopoutTitleTemplate: (titleTemplate: string) => void;
 }

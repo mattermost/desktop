@@ -41,5 +41,12 @@
 				<list id="DefaultServerList" key="Software\Policies\Mattermost\DefaultServerList" additive="true" explicitValue="true" />
 			</elements>
 		</policy>
+		<policy name="TrustedEmbeddedMediaOrigins" class="Both" displayName="$(string.TrustedEmbeddedMediaOrigins)" explainText="$(string.TrustedEmbeddedMediaOriginsDescription)" presentation="$(presentation.TrustedEmbeddedMediaOrigins)" key="Software\Policies\Mattermost">
+			<parentCategory ref="mattermost" />
+			<supportedOn ref="RequiresMattermost51" />
+			<elements>
+				<list id="TrustedEmbeddedMediaOrigins" key="Software\Policies\Mattermost\TrustedEmbeddedMediaOrigins" additive="true" explicitValue="true" />
+			</elements>
+		</policy>
 	</policies>
 </policyDefinitions>

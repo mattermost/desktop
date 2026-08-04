@@ -1,0 +1,105 @@
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+import {expect} from '@playwright/test';
+
+import {isTransientEvaluateError} from './testRefs';
+import {CHANNEL_HEADER_SELECTORS, POST_TEXTBOX_SELECTOR} from './rendererUtils';
+import {reloadServerView} from './serverContext';
+import type {ServerView} from './serverView';
+
+async function isMattermostServerUrl(win: ServerView): Promise<boolean> {
+    const url = await win.url().catch(() => '');
+    return url.startsWith('http://') || url.startsWith('https://');
+}
+
+async function runRendererProbe(win: ServerView, body: string): Promise<boolean> {
+    try {
+        return await win.runInRenderer<boolean>(body);
+    } catch (error) {
+        if (isTransientEvaluateError(error)) {
+            return false;
+        }
+        throw error;
+    }
+}
+
+async function hasAppShell(win: ServerView): Promise<boolean> {
+    if (!(await isMattermostServerUrl(win))) {
+        return false;
+    }
+
+    return runRendererProbe(win, `
+        return Boolean(
+            document.querySelector(${JSON.stringify(POST_TEXTBOX_SELECTOR)})
+            || document.querySelector(${JSON.stringify(CHANNEL_HEADER_SELECTORS)})
+            || document.querySelector('input.search-bar.form-control'),
+        );
+    `);
+}
+
+async function hasLoginForm(win: ServerView): Promise<boolean> {
+    if (!(await isMattermostServerUrl(win))) {
+        return false;
+    }
+
+    return runRendererProbe(win, `
+        return Boolean(document.querySelector('#input_loginId'));
+    `);
+}
+
+/**
+ * Log in to a Mattermost server in the given window/page.
+ * Callers must ensure the server WebContentsView is loaded first
+ * (switch server, prepareMattermostServerView, waitForMattermostShell).
+ */
+export async function loginToMattermost(win: ServerView): Promise<void> {
+    const username = process.env.MM_TEST_USER_NAME;
+    const password = process.env.MM_TEST_PASSWORD;
+
+    if (!username || !password) {
+        throw new Error('MM_TEST_USER_NAME and MM_TEST_PASSWORD must be set for tests requiring login');
+    }
+
+    const timeout = process.platform === 'win32' ? 60_000 : 45_000;
+    const loginSelector = '#input_loginId';
+    const passwordSelector = '#input_password-input, input[type="password"]';
+    const submitSelector = '#saveSetting, button[type="submit"]';
+    const pollStart = Date.now();
+    const reloadAt = pollStart + Math.min(timeout / 2, 15_000);
+    let reloaded = false;
+
+    // Cold cloud hosts often paint a blank hex shell; one mid-wait reload unsticks it.
+    await expect.poll(async () => {
+        if (await hasAppShell(win)) {
+            return 'logged-in';
+        }
+        if (await hasLoginForm(win)) {
+            return 'login-form';
+        }
+        if (!reloaded && Date.now() >= reloadAt) {
+            reloaded = true;
+            await reloadServerView(win.app, win.webContentsId).catch(() => undefined);
+        }
+        return 'loading';
+    }, {
+        timeout,
+        intervals: [500, 1000, 2000],
+        message: `Mattermost login form or app shell must appear (URL: ${await win.url()})`,
+    }).not.toBe('loading');
+
+    if (await hasAppShell(win)) {
+        return;
+    }
+
+    await win.fill(loginSelector, username);
+    await win.fill(passwordSelector, password);
+    await win.click(submitSelector);
+
+    await win.waitForURL((url) => !url.pathname.startsWith('/login'), {timeout});
+    await expect.poll(async () => hasAppShell(win), {
+        timeout,
+        intervals: [500, 1000, 2000],
+        message: `Mattermost app shell must appear after login (URL: ${await win.url()})`,
+    }).toBe(true);
+}

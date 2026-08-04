@@ -3,6 +3,7 @@
 
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 import {dialog, ipcMain} from 'electron';
+import Joi from 'joi';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
@@ -10,11 +11,13 @@ import ServerHub from 'app/serverHub';
 import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
 import {BROWSER_HISTORY_PUSH, HISTORY, LOAD_FAILED, LOAD_SUCCESS, REQUEST_BROWSER_HISTORY_STATUS} from 'common/communication';
+import Config from 'common/config';
 import {Logger} from 'common/log';
 import type {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {getFormattedPathName, isMagicLinkUrl, parseURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
+import {ipcValidate} from 'common/Validator';
 import type {MattermostView} from 'common/views/MattermostView';
 import {ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
@@ -35,7 +38,7 @@ export class NavigationManager {
 
         ipcMain.handle(REQUEST_BROWSER_HISTORY_STATUS, this.handleRequestBrowserHistoryStatus);
         ipcMain.on(HISTORY, this.handleHistory);
-        ipcMain.on(BROWSER_HISTORY_PUSH, this.handleBrowserHistoryPush);
+        ipcMain.on(BROWSER_HISTORY_PUSH, ipcValidate(this.handleBrowserHistoryPush, [Joi.string().required()]));
     }
 
     private openLinkInTab = (url: string | URL, getView: (server: MattermostServer) => MattermostView | undefined) => {
@@ -43,7 +46,15 @@ export class NavigationManager {
             return;
         }
 
-        const parsedURL = parseURL(url)!;
+        const parsedURL = parseURL(url);
+        if (!parsedURL) {
+            log.warn(`Ignoring invalid URL: ${url}`);
+            dialog.showErrorBox(
+                localizeMessage('app.navigationManager.invalidLinkTitle', 'Invalid Link'),
+                localizeMessage('app.navigationManager.invalidLinkDescription', 'The link you clicked appears to be malformed and cannot be opened. Please check the URL for errors before trying again.'),
+            );
+            return;
+        }
         const server = ServerManager.lookupServerByURL(parsedURL, true);
 
         if (server) {
@@ -78,6 +89,11 @@ export class NavigationManager {
                 webContentsView.once(LOAD_FAILED, this.deeplinkFailed);
                 webContentsView.load(urlWithSchema);
             }
+        } else if (!Config.enableServerManagement) {
+            dialog.showErrorBox(
+                localizeMessage('app.navigationManager.serverManagementDisabledTitle', 'Unable to add server'),
+                localizeMessage('app.navigationManager.serverManagementDisabledDescription', 'Your organization\'s settings don\'t allow adding new servers, so this link couldn\'t be opened. Contact your system administrator for more information.'),
+            );
         } else if (ServerManager.hasServers()) {
             ServerHub.showNewServerModal(`${parsedURL.host}${parsedURL.pathname}${parsedURL.search}`);
         } else {

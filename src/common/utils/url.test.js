@@ -2,12 +2,12 @@
 // See LICENSE.txt for license information.
 'use strict';
 
+import {MAX_URL_LENGTH} from 'common/constants';
 import {
     getFormattedPathName,
     isUrlType,
     isValidURL,
     isValidURI,
-    normalizeUrlForValidation,
     parseURL,
     isInternalURL,
     isCallsPopOutURL,
@@ -37,6 +37,45 @@ describe('common/utils/url', () => {
             const parsedURL = parseURL(urlWithExtraSlashes);
 
             expect(parsedURL.toString()).toBe('https://mattermost.com/sub/path/example');
+        });
+
+        it('should preserve triple slashes for non-special schemes', () => {
+            const onenoteUrl = 'onenote:///D:/OneNote/Test.one#section';
+            const parsedURL = parseURL(onenoteUrl);
+
+            expect(parsedURL).toBeDefined();
+            expect(parsedURL.protocol).toBe('onenote:');
+            expect(parsedURL.toString()).toBe(onenoteUrl);
+        });
+
+        it('should preserve file:/// URLs', () => {
+            const fileUrl = 'file:///C:/Users/test.txt';
+            const parsedURL = parseURL(fileUrl);
+
+            expect(parsedURL).toBeDefined();
+            expect(parsedURL.protocol).toBe('file:');
+            expect(parsedURL.toString()).toBe(fileUrl);
+        });
+
+        it('should reject URLs with literal null bytes', () => {
+            expect(parseURL('customproto:///path\x00malicious')).toBeUndefined();
+        });
+
+        it('should reject URLs with percent-encoded null bytes', () => {
+            expect(parseURL('customproto:///path%00malicious')).toBeUndefined();
+        });
+
+        it('should reject URLs longer than the maximum allowed length', () => {
+            const oversizedURL = `http://example.com/${'A'.repeat(MAX_URL_LENGTH)}`;
+            expect(parseURL(oversizedURL)).toBeUndefined();
+        });
+
+        it('should accept URLs at exactly the maximum allowed length', () => {
+            const prefix = 'http://example.com/';
+            const padding = 'A'.repeat(MAX_URL_LENGTH - prefix.length);
+            const maxLengthURL = `${prefix}${padding}`;
+            expect(maxLengthURL.length).toBe(MAX_URL_LENGTH);
+            expect(parseURL(maxLengthURL)).toBeDefined();
         });
     });
 
@@ -89,31 +128,6 @@ describe('common/utils/url', () => {
         });
     });
 
-    describe('normalizeUrlForValidation', () => {
-        it('should convert backslashes to forward slashes', () => {
-            const input = String.raw`onenote:///D:\OneNote\Apps\Test.one`;
-            expect(normalizeUrlForValidation(input)).toBe('onenote:///D:/OneNote/Apps/Test.one');
-        });
-        it('should encode curly braces', () => {
-            const input = 'https://teams.microsoft.com/l/message?context={%22contextType%22:%22chat%22}';
-            expect(normalizeUrlForValidation(input)).toBe('https://teams.microsoft.com/l/message?context=%7B%22contextType%22:%22chat%22%7D');
-        });
-        it('should make MS Teams URLs pass isValidURI after normalization', () => {
-            const teamsUrl = 'https://teams.microsoft.com/l/message/19:meeting@thread.v2/123?context={%22contextType%22:%22chat%22}';
-            expect(isValidURI(teamsUrl)).toBe(false); // Fails without normalization
-            expect(isValidURI(normalizeUrlForValidation(teamsUrl))).toBe(true); // Passes with normalization
-        });
-        it('should make OneNote URLs pass isValidURI after normalization', () => {
-            const onenoteUrl = 'onenote:///D:/path#section&page-id={GUID}';
-            expect(isValidURI(onenoteUrl)).toBe(false); // Fails without normalization
-            expect(isValidURI(normalizeUrlForValidation(onenoteUrl))).toBe(true); // Passes with normalization
-        });
-        it('should still reject malicious URLs after normalization', () => {
-            const maliciousUrl = String.raw`mattermost:///" --data-dir "\\deans-mbp\mattermost`;
-            expect(isValidURI(normalizeUrlForValidation(maliciousUrl))).toBe(false);
-        });
-    });
-
     describe('isInternalURL', () => {
         it('should return false on different hosts', () => {
             const baseURL = new URL('http://mattermost.com');
@@ -161,6 +175,13 @@ describe('common/utils/url', () => {
             const url1 = new URL('http://server-1.com');
             const url2 = new URL('mattermost://server-1.com');
             expect(isInternalURL(url1, url2, true)).toBe(true);
+        });
+
+        it('should return false for http target on an https server', () => {
+            const baseURL = new URL('https://mattermost.com/');
+            const externalURL = new URL('http://mattermost.com/plugins/x');
+
+            expect(isInternalURL(externalURL, baseURL)).toBe(false);
         });
     });
     describe('isTrustedURL', () => {

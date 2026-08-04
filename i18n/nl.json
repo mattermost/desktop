@@ -1,6 +1,9 @@
 {
+  "app.menus.contextMenu.copyEmailAddress": "E-mailadres kopiëren",
   "app.menus.contextMenu.openInNewTab": "In nieuw tabblad openen",
   "app.menus.contextMenu.openInNewWindow": "Openen in nieuw venster",
+  "app.navigationManager.invalidLinkDescription": "De link waarop je hebt geklikt lijkt foutief gevormd en kan niet worden geopend. Controleer de URL op fouten voordat je het opnieuw probeert.",
+  "app.navigationManager.invalidLinkTitle": "Ongeldige link",
   "app.navigationManager.viewLimitReached": "Weergave limiet bereikt",
   "app.navigationManager.viewLimitReached.description": "Je hebt het maximale aantal geopende vensters en tabbladen voor deze server bereikt. Sluit een bestaand venster of tabblad of pas de weergavelimiet aan in het instellingenvenster.",
   "callsWidgetWindow.cannotStartCall.message": "Er is een actieve callop een andere server dat eerst beëindigd moet worden voordat je aan een nieuw gesprek kan deelnemen.",
@@ -308,6 +311,8 @@
   "renderer.components.settingsPage.enableMetrics.description": "Stuurt gebruiksgegevens over de applicatie en de prestaties naar je geconfigureerde servers die dit aanvaarden.",
   "renderer.components.settingsPage.enableSentry": "Stuur foutrapporten om de app te helpen verbeteren",
   "renderer.components.settingsPage.enableSentry.description": "Als deze optie is ingeschakeld, worden foutrapporten en crashinformatie verzonden om problemen in de applicatie te identificeren en op te lossen. De instelling wordt van kracht na het herstarten van de app.",
+  "renderer.components.settingsPage.enableSessionAttributes": "Sessieattributen inschakelen",
+  "renderer.components.settingsPage.enableSessionAttributes.description": "Verzendt apparaat- en netwerkinformatie naar uw geconfigureerde servers voor gebruik in toegangsbeleid. Sommige bronnen zijn mogelijk niet toegankelijk als deze instelling is uitgeschakeld.",
   "renderer.components.settingsPage.flashWindow": "Taakbalkpictogram laten knipperen als een nieuw bericht werd ontvangen",
   "renderer.components.settingsPage.flashWindow.description": "Indien ingeschakeld, knippert het taakbalkpictogram enkele seconden wanneer een nieuw bericht wordt ontvangen.",
   "renderer.components.settingsPage.flashWindow.description.linuxFunctionality": "Deze functie werkt mogelijk niet met alle Linux window managers.",

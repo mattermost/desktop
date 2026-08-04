@@ -11,7 +11,7 @@ import {shell} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import NavigationManager from 'app/navigationManager';
-import {generateHandleConsoleMessage, isCustomProtocol} from 'app/views/webContentEventsCommon';
+import {generateHandleConsoleMessage, generateWillFrameNavigate, isCustomProtocol} from 'app/views/webContentEventsCommon';
 import WebContentsManager from 'app/views/webContentsManager';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -62,6 +62,7 @@ export class PluginsPopUpsManager {
             log.warn('prevented popup window from navigating');
             ev.preventDefault();
         });
+        win.webContents.on('will-frame-navigate', generateWillFrameNavigate(log));
         win.webContents.on('did-start-navigation', (ev: Event<WebContentsDidStartNavigationEventParams>) => {
             if (ev.url === details.url) {
                 return;
@@ -79,7 +80,7 @@ export class PluginsPopUpsManager {
 
             // Check for custom protocol
             if (isCustomProtocol(parsedURL)) {
-                allowProtocolDialog.handleDialogEvent(parsedURL.protocol, url);
+                allowProtocolDialog.handleDialogEvent(url);
                 return {action: 'deny'};
             }
 
@@ -93,7 +94,7 @@ export class PluginsPopUpsManager {
                 NavigationManager.openLinkInNewTab(parsedURL);
             } else {
                 // We allow to open external links through browser.
-                shell.openExternal(url);
+                shell.openExternal(parsedURL.toString());
             }
 
             log.warn('prevented popup window from opening window');

@@ -1,4 +1,5 @@
 {
+  "app.menus.contextMenu.copyEmailAddress": "E-mail cím másolása",
   "app.menus.contextMenu.openInNewTab": "Megnyitás új fülön",
   "app.menus.contextMenu.openInNewWindow": "Megnyitás új ablakban",
   "app.navigationManager.viewLimitReached": "Megtekintési limit elérve",

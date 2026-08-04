@@ -143,7 +143,7 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
     webRequestOnHeadersReceivedHandler = (details: Electron.OnHeadersReceivedListenerDetails, cb: (headersReceivedResponse: Electron.HeadersReceivedResponse) => void) => {
         const headers = details.responseHeaders ?? {};
 
-        if (headers?.['content-encoding']?.includes('gzip') && headers?.['x-uncompressed-content-length'] && headers?.['content-disposition'].join(';')?.includes('filename=')) {
+        if (headers?.['content-encoding']?.includes('gzip') && headers?.['x-uncompressed-content-length'] && headers?.['content-disposition']?.join?.(';')?.includes('filename=')) {
             const filename = readFilenameFromContentDispositionHeader(headers['content-disposition']);
             const fileSize = headers['x-uncompressed-content-length']?.[0] || '0';
             if (filename && (!this.fileSizes.has(filename) || this.fileSizes.get(filename)?.toString() !== fileSize)) {

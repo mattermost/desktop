@@ -61,10 +61,12 @@ jest.mock('electron', () => {
             mockWebContents.on = jest.fn(mockWebContents.on);
             mockWebContents.once = jest.fn(mockWebContents.once);
             mockWebContents.emit = jest.fn(mockWebContents.emit);
+            mockWebContents.isDestroyed = jest.fn(() => false);
             mockBrowserWindow.webContents = mockWebContents;
             mockBrowserWindow.getContentBounds = jest.fn(() => ({x: 0, y: 0, width: 800, height: 600}));
             mockBrowserWindow.getSize = jest.fn(() => [800, 600]);
             mockBrowserWindow.restore = jest.fn();
+            mockBrowserWindow.isDestroyed = jest.fn(() => false);
             return mockBrowserWindow;
         }),
         dialog: {

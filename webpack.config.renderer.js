@@ -31,7 +31,7 @@ module.exports = merge(base, {
     output: {
         path: process.env.NODE_ENV === 'test' ? path.resolve(__dirname, 'e2e/dist/renderer') : path.resolve(__dirname, 'dist/renderer'),
         filename: '[name]_bundle.js',
-        assetModuleFilename: '[name].[ext]',
+        assetModuleFilename: '[name][ext]',
     },
     optimization: {
         splitChunks: {

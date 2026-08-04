@@ -51,7 +51,16 @@ export class LoadingScreen {
 
         if (this.view.webContents.isLoading()) {
             this.view.webContents.once('did-finish-load', () => {
+                if (this.view.webContents.isDestroyed() || this.parent.isDestroyed()) {
+                    return;
+                }
+                if (this.state !== LoadingScreenState.VISIBLE) {
+                    return;
+                }
+
                 this.view.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
+
+                log.debug('show: did-finish-load fired, adding loading screen view');
 
                 // Electron does a weird thing where even if the index is undefined, it will not add the view on top properly
                 if (condition?.()) {
@@ -61,7 +70,11 @@ export class LoadingScreen {
                 }
             });
         } else {
+            if (this.view.webContents.isDestroyed() || this.parent.isDestroyed()) {
+                return;
+            }
             this.view.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, true);
+            log.debug('show: not loading, adding loading screen view');
             if (condition?.()) {
                 this.parent.contentView.addChildView(this.view, 1);
             } else {
@@ -74,8 +87,12 @@ export class LoadingScreen {
 
     fade = () => {
         if (this.state === LoadingScreenState.VISIBLE) {
+            log.debug('fade: fading loading screen');
             this.state = LoadingScreenState.FADING;
-            this.view.webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, false);
+            const webContents = this.view.webContents;
+            if (webContents && !webContents.isDestroyed()) {
+                webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, false);
+            }
         }
     };
 

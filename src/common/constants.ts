@@ -18,6 +18,9 @@ export const UPDATE_DOWNLOAD_ITEM: Omit<DownloadedItem, 'filename' | 'state'> = 
     totalBytes: 0,
 };
 
+export const MAILTO_PREFIX = 'mailto:';
+export const MATTERMOST_PROTOCOL = 'mattermost';
+
 // Regular expressions
 export const REGEX_EMAIL = /[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*/; // based on W3C input type email regex
 export const REGEX_IPV4 = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/;
@@ -37,6 +40,7 @@ export const MASK_URL = 'URL';
 
 export const LOGS_MAX_STRING_LENGTH = 63;
 export const POPOUT_RATE_LIMIT = 1000;
+export const MAX_URL_LENGTH = 8192;
 
 // We use this URL inside the Diagnostics to check if the computer has internet connectivity
 export const IS_ONLINE_ENDPOINT = 'https://community.mattermost.com/api/v4/system/ping';

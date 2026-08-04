@@ -4,6 +4,7 @@
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 import {ipcMain, nativeTheme, session, shell} from 'electron';
 import isDev from 'electron-is-dev';
+import Joi from 'joi';
 
 import type {Theme} from '@mattermost/desktop-api';
 
@@ -31,6 +32,7 @@ import Config from 'common/config';
 import {DEFAULT_CHANGELOG_LINK} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
+import {ipcValidate, themeSchema} from 'common/Validator';
 import {ViewType, type MattermostView} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import {flushCookiesStore} from 'main/app/utils';
@@ -58,11 +60,14 @@ export class WebContentsManager {
         ipcMain.on(OPEN_SERVER_EXTERNALLY, this.handleOpenServerExternally);
         ipcMain.on(OPEN_SERVER_UPGRADE_LINK, this.handleOpenServerUpgradeLink);
         ipcMain.on(OPEN_CHANGELOG_LINK, this.handleOpenChangelogLink);
-        ipcMain.on(UNREADS_AND_MENTIONS, this.handleUnreadsAndMentionsChanged);
-        ipcMain.on(SESSION_EXPIRED, this.handleSessionExpired);
+        ipcMain.on(UNREADS_AND_MENTIONS, ipcValidate(
+            this.handleUnreadsAndMentionsChanged,
+            [Joi.boolean().required(), Joi.number().integer().min(0).required()],
+        ));
+        ipcMain.on(SESSION_EXPIRED, ipcValidate(this.handleSessionExpired, [Joi.boolean().required()]));
         ipcMain.on(OPEN_POPOUT_MENU, this.handleOpenPopoutMenu);
-        ipcMain.on(UPDATE_SERVER_THEME, this.handleUpdateServerTheme);
-        ipcMain.on(UPDATE_THEME, this.handleUpdateTheme);
+        ipcMain.on(UPDATE_SERVER_THEME, ipcValidate(this.handleUpdateServerTheme, [themeSchema.required()]));
+        ipcMain.on(UPDATE_THEME, ipcValidate(this.handleUpdateTheme, [themeSchema.required()]));
 
         if (process.platform !== 'linux') {
             nativeTheme.on('updated', this.handleDarkModeChanged);
@@ -172,11 +177,21 @@ export class WebContentsManager {
     };
 
     private handleTabLoginChanged = (event: IpcMainEvent, loggedIn: boolean) => {
-        log.debug('handleTabLoggedIn', {webContentsId: event.sender.id});
+        log.debug('handleTabLoggedIn', {webContentsId: event.sender.id, loggedIn});
         const view = this.getViewByWebContentsId(event.sender.id);
         if (!view) {
             return;
         }
+
+        // Secondary tabs share the server session. A loading secondary tab can emit
+        // onLogout(false) before cookies/session are visible; treating that as a
+        // server-wide logout destroys sibling tabs (TabManager.handleServerLoggedInChanged).
+        // Only the primary view may mark the server logged out. Login from any tab is fine.
+        if (!loggedIn && !ViewManager.isPrimaryView(view.id)) {
+            log.debug('handleTabLoginChanged: ignoring logout from non-primary view', {viewId: view.id});
+            return;
+        }
+
         this.setLoggedIn(view, loggedIn);
     };
 
@@ -249,6 +264,13 @@ export class WebContentsManager {
             return;
         }
         ViewManager.getViewLog(view.id).debug('handleSessionExpired', isExpired);
+
+        // Same as handleTabLoginChanged: a non-primary view must not drive server-wide
+        // logout/teardown (TabManager.handleServerLoggedInChanged removes sibling tabs).
+        if (isExpired && !ViewManager.isPrimaryView(view.id)) {
+            log.debug('handleSessionExpired: ignoring expiry from non-primary view', {viewId: view.id});
+            return;
+        }
 
         if (isExpired) {
             this.setLoggedIn(view, false);

@@ -86,7 +86,8 @@ describe('PluginsPopUpsManager', () => {
 
         expect(win.webContents.on).toHaveBeenNthCalledWith(1, 'will-redirect', handlers['will-redirect']);
         expect(win.webContents.on).toHaveBeenNthCalledWith(2, 'will-navigate', handlers['will-navigate']);
-        expect(win.webContents.on).toHaveBeenNthCalledWith(3, 'did-start-navigation', handlers['did-start-navigation']);
+        expect(win.webContents.on).toHaveBeenNthCalledWith(3, 'will-frame-navigate', handlers['will-frame-navigate']);
+        expect(win.webContents.on).toHaveBeenNthCalledWith(4, 'did-start-navigation', handlers['did-start-navigation']);
         expect(win.webContents.once).toHaveBeenCalledWith('render-process-gone', handlers['render-process-gone']);
         expect(win.webContents.setWindowOpenHandler).toHaveBeenCalledWith(handlers['window-open']);
 
@@ -115,6 +116,18 @@ describe('PluginsPopUpsManager', () => {
         handlers['will-navigate'](navigateEv);
         expect(navigateEv.preventDefault).toHaveBeenCalled();
 
+        // Verify subframes can only navigate to web protocols
+        const frameEv = {
+            preventDefault: jest.fn(),
+            isMainFrame: false,
+            url: 'https://example.com/embed',
+        };
+        handlers['will-frame-navigate'](frameEv);
+        expect(frameEv.preventDefault).not.toHaveBeenCalled();
+        frameEv.url = 'custom://payload';
+        handlers['will-frame-navigate'](frameEv);
+        expect(frameEv.preventDefault).toHaveBeenCalled();
+
         navigateEv.preventDefault = jest.fn();
         navigateEv.url = 'about:blank';
         handlers['did-start-navigation'](navigateEv);
@@ -136,12 +149,12 @@ describe('PluginsPopUpsManager', () => {
 
         // Verify opening custom protocols is handled through allowProtocolDialog
         expect(handlers['window-open']({url: 'custom:somelink'})).toEqual({action: 'deny'});
-        expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith('custom:', 'custom:somelink');
+        expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith('custom:somelink');
         expect(shell.openExternal).not.toHaveBeenCalledWith('custom:somelink');
 
         // Verify opening external links is allowed through browser
         expect(handlers['window-open']({url: 'https://www.example.com'})).toEqual({action: 'deny'});
-        expect(shell.openExternal).toHaveBeenCalledWith('https://www.example.com');
+        expect(shell.openExternal).toHaveBeenCalledWith('https://www.example.com/');
 
         // Simulate render process gone
         handlers['render-process-gone'](null, {reason: 'oom'});

@@ -94,11 +94,52 @@ describe('main/views/modalManager', () => {
         });
     });
 
+    describe('addPriorityModal', () => {
+        const modalManager = new ModalManager();
+
+        beforeEach(() => {
+            modalManager.modalQueue = [];
+            modalManager.modalPromises = new Map();
+            modalManager.showModal = jest.fn();
+        });
+
+        it('should not add modal with the same key, should return the existing promise', () => {
+            modalManager.modalQueue.push({key: 'existing_key'});
+            const promise = Promise.resolve();
+            modalManager.modalPromises.set('existing_key', promise);
+            expect(modalManager.addPriorityModal('existing_key', 'some_html', 'preload', {}, {})).toBe(promise);
+        });
+
+        it('should insert modal at front of queue and always call showModal', () => {
+            const existingModal = {key: 'existing_key', suspend: jest.fn()};
+            modalManager.modalQueue.push(existingModal);
+            modalManager.addPriorityModal('priority_key', 'some_html', 'preload', {}, {});
+            expect(modalManager.modalPromises.has('priority_key')).toBe(true);
+            expect(modalManager.modalQueue.length).toBe(2);
+            expect(modalManager.modalQueue[1]).toBe(existingModal);
+            expect(modalManager.showModal).toBeCalled();
+        });
+
+        it('should suspend the current front modal before inserting', () => {
+            const existingModal = {key: 'existing_key', suspend: jest.fn()};
+            modalManager.modalQueue.push(existingModal);
+            modalManager.addPriorityModal('priority_key', 'some_html', 'preload', {}, {});
+            expect(existingModal.suspend).toBeCalled();
+        });
+
+        it('should work when queue is empty', () => {
+            modalManager.addPriorityModal('new_key', 'some_html', 'preload', {}, {});
+            expect(modalManager.modalPromises.has('new_key')).toBe(true);
+            expect(modalManager.modalQueue.length).toBe(1);
+            expect(modalManager.showModal).toBeCalled();
+        });
+    });
+
     describe('showModal', () => {
         const oldEnv = process.env;
         const modalManager = new ModalManager();
-        const modalView = {key: 'test', view: {webContents: {id: 1}}, show: jest.fn(), hide: jest.fn()};
-        const modalView2 = {key: 'test2', view: {webContents: {id: 2}}, show: jest.fn(), hide: jest.fn()};
+        const modalView = {key: 'test', view: {webContents: {id: 1}}, show: jest.fn(), suspend: jest.fn()};
+        const modalView2 = {key: 'test2', view: {webContents: {id: 2}}, show: jest.fn(), suspend: jest.fn()};
         const promise = Promise.resolve();
 
         beforeEach(() => {
@@ -112,10 +153,10 @@ describe('main/views/modalManager', () => {
             process.env = oldEnv;
         });
 
-        it('should show first modal and hide second one', () => {
+        it('should show first modal and suspend second one', () => {
             modalManager.showModal();
             expect(modalView.show).toBeCalled();
-            expect(modalView.hide).not.toBeCalled();
+            expect(modalView2.suspend).toBeCalled();
         });
 
         it('should include dev tools when env variable is enabled', () => {

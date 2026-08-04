@@ -1,4 +1,3 @@
-// Copyright (c) 2015-2016 Yuya Ochiai
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 'use strict';
@@ -31,7 +30,7 @@ const downloadsLocation = path.join(userDataDir, 'Downloads');
 const boundsInfoPath = path.join(userDataDir, 'bounds-info.json');
 const appUpdatePath = path.join(userDataDir, 'app-update.yml');
 const certificateStorePath = path.join(userDataDir, 'certificate.json');
-const exampleURL = 'http://example.com/';
+const exampleURL = 'https://example.com/';
 const mattermostURL = process.env.MM_TEST_SERVER_URL || 'http://localhost:8065/';
 
 const exampleServer = {
@@ -224,13 +223,6 @@ module.exports = {
                     }
 
                     debugLog(`Checking process PID ${proc.pid}: command="${proc.command}"`);
-
-                    // Skip electron-mocha processes
-                    if (proc.arguments && proc.arguments.some &&
-                        proc.arguments.some((arg) => arg.includes('electron-mocha'))) {
-                        debugLog(`Skipping electron-mocha process ${proc.pid}`);
-                        return;
-                    }
 
                     // Match by exact path (primary method)
                     const exactMatch = this.pathsMatch(proc.command, electronBinaryPath);

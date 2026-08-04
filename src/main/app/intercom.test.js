@@ -12,11 +12,14 @@ import {
     handleWelcomeScreenModal,
     handleMainWindowIsShown,
     handleToggleSecureInput,
+    handleShowSettingsModal,
 } from './intercom';
 
 jest.mock('electron', () => ({
     app: {
         setSecureKeyboardEntryEnabled: jest.fn(),
+        once: jest.fn(),
+        removeListener: jest.fn(),
     },
 }));
 jest.mock('main/secureStorage', () => ({
@@ -47,9 +50,12 @@ jest.mock('main/utils', () => ({
 jest.mock('common/views/viewManager', () => ({}));
 jest.mock('app/mainWindow/modals/modalManager', () => ({
     addModal: jest.fn(),
+    addPriorityModal: jest.fn(),
 }));
 jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
+    once: jest.fn(),
+    on: jest.fn(),
 }));
 
 jest.mock('./app', () => ({}));
@@ -77,11 +83,30 @@ describe('main/app/intercom', () => {
             getLocalPreload.mockReturnValue('/some/preload.js');
             MainWindow.get.mockReturnValue({
                 isVisible: () => true,
+                once: jest.fn(),
             });
             ServerManager.hasServers.mockReturnValue(true);
 
             handleMainWindowIsShown();
             expect(ModalManager.addModal).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('handleShowSettingsModal', () => {
+        beforeEach(() => {
+            getLocalPreload.mockReturnValue('/some/preload.js');
+            MainWindow.get.mockReturnValue({});
+        });
+
+        it('should open settings modal using addPriorityModal', () => {
+            handleShowSettingsModal();
+            expect(ModalManager.addPriorityModal).toHaveBeenCalledWith('settingsModal', 'mattermost-desktop://renderer/settings.html', '/some/preload.js', null, {});
+        });
+
+        it('should not open settings modal if no main window', () => {
+            MainWindow.get.mockReturnValue(null);
+            handleShowSettingsModal();
+            expect(ModalManager.addPriorityModal).not.toHaveBeenCalled();
         });
     });
 

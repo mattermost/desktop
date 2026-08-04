@@ -8,6 +8,7 @@ import type {IpcMainInvokeEvent} from 'electron';
 import {app, BrowserWindow, ipcMain, nativeTheme, net, protocol, session} from 'electron';
 import installExtension, {REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS} from 'electron-devtools-installer';
 import isDev from 'electron-is-dev';
+import Joi from 'joi';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import MenuManager from 'app/menus';
@@ -30,7 +31,6 @@ import {
     DOUBLE_CLICK_ON_WINDOW,
     TOGGLE_SECURE_INPUT,
     GET_APP_INFO,
-    SHOW_SETTINGS_WINDOW,
     DEVELOPER_MODE_UPDATED,
     SERVER_ADDED,
     GET_FULL_SCREEN_STATUS,
@@ -38,15 +38,18 @@ import {
     SERVER_URL_CHANGED,
 } from 'common/communication';
 import Config from 'common/config';
+import {MATTERMOST_PROTOCOL} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
+import {ipcValidate} from 'common/Validator';
 import AppVersionManager from 'main/AppVersionManager';
 import AutoLauncher from 'main/AutoLauncher';
 import {configPath, updatePaths} from 'main/constants';
 import CriticalErrorHandler from 'main/CriticalErrorHandler';
 import DeveloperMode from 'main/developerMode';
 import downloadsManager from 'main/downloadsManager';
+import {maybeRegisterE2eHooks} from 'main/e2e/register';
 import i18nManager from 'main/i18nManager';
 import NonceManager from 'main/nonceManager';
 import {getDoNotDisturb} from 'main/notifications';
@@ -54,13 +57,16 @@ import parseArgs from 'main/ParseArgs';
 import PerformanceMonitor from 'main/performanceMonitor';
 import secureStorage from 'main/secureStorage';
 import AllowProtocolDialog from 'main/security/allowProtocolDialog';
+import {shouldCancelLocalNetworkRequest} from 'main/security/localNetworkAccess';
 import PermissionsManager from 'main/security/permissionsManager';
 import PreAuthManager from 'main/security/preAuthManager';
 import sentryHandler from 'main/sentryHandler';
+import SessionAttributesManager from 'main/sessionAttributes/sessionAttributesManager';
 import updateNotifier from 'main/updateNotifier';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 
 import {
+    handleAppActivate,
     handleAppBeforeQuit,
     handleAppBrowserWindowCreated,
     handleAppCertificateError,
@@ -86,7 +92,6 @@ import {
     handleQuit,
     handlePingDomain,
     handleToggleSecureInput,
-    handleShowSettingsModal,
 } from './intercom';
 import {
     clearAppCache,
@@ -100,10 +105,6 @@ import {
     handleDoubleClick,
     handleGetDarkMode,
 } from './windows';
-
-import {protocols} from '../../../electron-builder.json';
-
-export const mainProtocol = protocols?.[0]?.schemes?.[0];
 
 const log = new Logger('App.Initialize');
 
@@ -188,7 +189,7 @@ function initializeAppEventListeners() {
     app.on('second-instance', handleAppSecondInstance);
     app.on('window-all-closed', handleAppWindowAllClosed);
     app.on('browser-window-created', handleAppBrowserWindowCreated);
-    app.on('activate', () => MainWindow.show());
+    app.on('activate', handleAppActivate);
     app.on('before-quit', handleAppBeforeQuit);
     app.on('certificate-error', handleAppCertificateError);
     app.on('child-process-gone', handleChildProcessGone);
@@ -200,6 +201,7 @@ function initializeBeforeAppReady() {
         log.error('No config loaded');
         return;
     }
+
     if (process.env.NODE_ENV !== 'test') {
         app.enableSandbox();
     }
@@ -213,11 +215,13 @@ function initializeBeforeAppReady() {
 
     Tray.refreshImages(Config.trayIconTheme);
 
+    // E2E tests intentionally launch multiple Electron instances in parallel.
+    // Skip the single-instance lock in test mode so secondary workers do not exit during startup.
     // If there is already an instance, quit this one
     // eslint-disable-next-line no-undef
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    if (!__IS_MAC_APP_STORE__) {
+    if (!__IS_MAC_APP_STORE__ && (process.env.NODE_ENV !== 'test' || process.env.MM_E2E_USE_SINGLE_INSTANCE_LOCK === 'true')) {
         const gotTheLock = app.requestSingleInstanceLock();
         if (!gotTheLock) {
             app.exit();
@@ -229,8 +233,8 @@ function initializeBeforeAppReady() {
 
     if (isDev && process.env.NODE_ENV !== 'test') {
         app.setAsDefaultProtocolClient('mattermost-dev', process.execPath, [path.resolve(process.cwd(), 'dist/')]);
-    } else if (mainProtocol) {
-        app.setAsDefaultProtocolClient(mainProtocol);
+    } else {
+        app.setAsDefaultProtocolClient(MATTERMOST_PROTOCOL);
     }
 
     if (process.platform === 'darwin' || process.platform === 'win32') {
@@ -243,7 +247,15 @@ function initializeBeforeAppReady() {
 }
 
 function initializeInterCommunicationEventListeners() {
-    ipcMain.handle(NOTIFY_MENTION, handleMentionNotification);
+    ipcMain.handle(NOTIFY_MENTION, ipcValidate(handleMentionNotification, [
+        Joi.string().allow('').required(),
+        Joi.string().allow('').required(),
+        Joi.string().allow('').required(),
+        Joi.string().allow('').required(),
+        Joi.string().allow('').required(),
+        Joi.boolean().required(),
+        Joi.string().allow('').required(),
+    ]));
     ipcMain.handle(GET_APP_INFO, handleAppVersion);
 
     if (process.platform !== 'darwin') {
@@ -264,16 +276,17 @@ function initializeInterCommunicationEventListeners() {
 
     ipcMain.on(TOGGLE_SECURE_INPUT, handleToggleSecureInput);
 
-    if (process.env.NODE_ENV === 'test') {
-        ipcMain.on(SHOW_SETTINGS_WINDOW, handleShowSettingsModal);
-    }
-
     ipcMain.handle(GET_FULL_SCREEN_STATUS, (event: IpcMainInvokeEvent) => {
         return BrowserWindow.fromWebContents(event.sender)?.isFullScreen();
     });
 }
 
 async function initializeAfterAppReady() {
+    maybeRegisterE2eHooks();
+
+    // Block all NTLM/Negotiate requests by default
+    session.defaultSession.allowNTLMCredentialsForDomains('');
+
     protocol.handle('mattermost-desktop', (request: Request) => {
         const url = parseURL(request.url);
         if (!url) {
@@ -320,6 +333,26 @@ async function initializeAfterAppReady() {
 
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;
+    defaultSession.webRequest.onBeforeRequest(async (details, callback) => {
+        try {
+            const shouldCancel = await shouldCancelLocalNetworkRequest(details);
+
+            if (shouldCancel) {
+                log.warn('Blocked server content from accessing local or private network URL', {
+                    resourceType: details.resourceType,
+                    origin: parseURL(details.url)?.origin,
+                    webContentsId: details.webContentsId,
+                });
+                callback({cancel: true});
+                return;
+            }
+        } catch (error) {
+            log.warn('Error while checking local network request policy', {error});
+        }
+
+        callback({});
+    });
+
     defaultSession.webRequest.onHeadersReceived((details, callback) => {
         const url = parseURL(details.url);
         if (url?.protocol === 'mattermost-desktop:' && url?.pathname.endsWith('html')) {
@@ -340,30 +373,19 @@ async function initializeAfterAppReady() {
         downloadsManager.webRequestOnHeadersReceivedHandler(details, callback);
     });
 
-    // Inject X-Mattermost-Preauth-Secret header for all server requests
     defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
         try {
-            const server = ServerManager.lookupServerByURL(details.url);
-
-            if (server && server.preAuthSecret) {
-                const secret = server.preAuthSecret;
-
-                if (!('X-Mattermost-Preauth-Secret' in details.requestHeaders)) {
-                    const requestHeaders = {
-                        ...details.requestHeaders,
-                        'X-Mattermost-Preauth-Secret': secret,
-                    };
-
-                    callback({requestHeaders});
-                    return;
-                }
-            }
+            callback({
+                requestHeaders: {
+                    ...details.requestHeaders,
+                    ...PreAuthManager.injectPreAuthSecret(details),
+                    ...SessionAttributesManager.injectHeader(details),
+                },
+            });
         } catch (error) {
-            log.debug('Error injecting preauth secret header:', {error});
+            log.debug('Header injector error', {error});
+            callback({requestHeaders: details.requestHeaders});
         }
-
-        // If no secret found or error occurred, proceed with original headers
-        callback({requestHeaders: details.requestHeaders});
     });
 
     if (process.platform !== 'darwin') {

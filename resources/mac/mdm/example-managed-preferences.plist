@@ -15,5 +15,14 @@
 	<true/>
 	<key>EnableAutoUpdater</key>
 	<true/>
+	<key>TrustedEmbeddedMediaOrigins</key>
+	<array>
+		<dict>
+			<key>serverOrigin</key>
+			<string>https://chat.example.com</string>
+			<key>embeddedOrigin</key>
+			<string>https://meet.example.com</string>
+		</dict>
+	</array>
 </dict>
 </plist>

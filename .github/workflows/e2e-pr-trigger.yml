@@ -1,0 +1,183 @@
+name: E2E PR Trigger
+
+# Adds E2E/Run on non-draft PRs to master (Matterwick dispatches e2e-functional.yml).
+# E2E/Override skips/cancels E2E; manual E2E/Run removal cancels in-flight runs.
+# One job keeps the PR checks list to a single row. Concurrency is keyed by
+# event type so unrelated label bots cannot cancel an in-progress trigger (PR #3891).
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - ready_for_review
+      - synchronize
+      - labeled
+      - unlabeled
+    branches:
+      - master
+
+concurrency:
+  group: >-
+    e2e-pr-trigger-${{ github.event.pull_request.number }}-${{
+    contains(fromJSON('["opened", "reopened", "ready_for_review", "synchronize"]'), github.event.action)
+    && 'trigger' || format('other-{0}-{1}', github.event.action, github.event.label.name) }}
+  cancel-in-progress: true
+
+jobs:
+  e2e-label-orchestration:
+    name: E2E label
+    runs-on: ubuntu-24.04
+    permissions:
+      issues: write
+      pull-requests: write
+      actions: write
+      statuses: write
+    if: >-
+      (
+        !github.event.pull_request.draft
+        && contains(fromJSON('["opened", "reopened", "ready_for_review", "synchronize"]'), github.event.action)
+      )
+      || (
+        github.event.action == 'labeled'
+        && github.event.label.name == 'E2E/Override'
+      )
+      || (
+        github.event.action == 'unlabeled'
+        && github.event.label.name == 'E2E/Run'
+        && github.event.sender.login != 'github-actions[bot]'
+      )
+    steps:
+      # Always the base ref's own reviewed copy — this job holds write-scoped
+      # tokens, so it must never execute code from the untrusted PR head.
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+
+      - name: Cancel E2E on manual label removal
+        if: >-
+          github.event.action == 'unlabeled'
+          && github.event.label.name == 'E2E/Run'
+          && github.event.sender.login != 'github-actions[bot]'
+        uses: ./.github/actions/cancel-e2e-runs
+        with:
+          pr_number: ${{ github.event.pull_request.number }}
+          reason: E2E cancelled (E2E/Run label removed)
+
+      - name: Honor E2E/Override
+        if: >-
+          github.event.action == 'labeled'
+          && github.event.label.name == 'E2E/Override'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const {cancelActiveE2ERuns, markE2EStatusesCancelled} = require('./e2e/utils/github-actions.js');
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const pr = context.payload.pull_request;
+
+            try {
+              await github.rest.issues.removeLabel({
+                owner,
+                repo,
+                issue_number,
+                name: 'E2E/Run',
+              });
+            } catch (error) {
+              if (error.status !== 404) {
+                throw error;
+              }
+            }
+
+            await cancelActiveE2ERuns({
+              github,
+              context,
+              prNumber: issue_number,
+              headBranch: pr.head.ref,
+            });
+            await markE2EStatusesCancelled({
+              github,
+              context,
+              sha: pr.head.sha,
+              reason: 'E2E cancelled (E2E/Override label applied)',
+            });
+
+      - name: Refresh E2E/Run label
+        if: >-
+          !github.event.pull_request.draft
+          && contains(fromJSON('["opened", "reopened", "ready_for_review", "synchronize"]'), github.event.action)
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const {cancelActiveE2ERuns, markE2EStatusesCancelled} = require('./e2e/utils/github-actions.js');
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const pr = context.payload.pull_request;
+
+            const { data: labels } = await github.rest.issues.listLabelsOnIssue({
+              owner,
+              repo,
+              issue_number,
+            });
+            const labelNames = labels.map((label) => label.name);
+
+            if (labelNames.includes('E2E/Override')) {
+              core.info(`PR #${issue_number} has E2E/Override — skipping E2E/Run refresh.`);
+
+              if (labelNames.includes('E2E/Run')) {
+                try {
+                  await github.rest.issues.removeLabel({
+                    owner,
+                    repo,
+                    issue_number,
+                    name: 'E2E/Run',
+                  });
+                } catch (error) {
+                  if (error.status !== 404) {
+                    throw error;
+                  }
+                }
+              }
+
+              await cancelActiveE2ERuns({
+                github,
+                context,
+                prNumber: issue_number,
+                headBranch: pr.head.ref,
+              });
+              await markE2EStatusesCancelled({
+                github,
+                context,
+                sha: pr.head.sha,
+                reason: 'E2E skipped (E2E/Override label active)',
+              });
+              return;
+            }
+
+            await cancelActiveE2ERuns({
+              github,
+              context,
+              prNumber: issue_number,
+              headBranch: pr.head.ref,
+            });
+
+            try {
+              await github.rest.issues.removeLabel({
+                owner,
+                repo,
+                issue_number,
+                name: 'E2E/Run',
+              });
+            } catch (error) {
+              if (error.status !== 404) {
+                throw error;
+              }
+            }
+
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number,
+              labels: ['E2E/Run'],
+            });

@@ -2,11 +2,14 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {BrowserWindow, BrowserView, WebviewTag, WebContents, ContextMenuParams, Event} from 'electron';
+import type {BrowserWindow, BrowserView, WebviewTag, WebContents, ContextMenuParams, Event, MenuItemConstructorOptions} from 'electron';
+import {clipboard} from 'electron';
 import type {Options} from 'electron-context-menu';
 import electronContextMenu from 'electron-context-menu';
 
 import {parseURL} from 'common/utils/url';
+import {localizeMessage} from 'main/i18nManager';
+import {getEmailAddressFromMailtoLink} from 'main/utils';
 
 const defaultMenuOptions = {
     shouldShowMenu: (e: Event, p: ContextMenuParams) => {
@@ -35,8 +38,29 @@ export default class ContextMenu {
 
     constructor(options: Options, view: BrowserWindow | WebContents) {
         const providedOptions: Options = options || {};
+        const providedAppend = providedOptions.append;
 
-        this.menuOptions = Object.assign({}, defaultMenuOptions, providedOptions);
+        const append: Options['append'] = (defaultActions, parameters, ...rest) => {
+            const items: MenuItemConstructorOptions[] = [];
+
+            const emailAddress = getEmailAddressFromMailtoLink(parameters.linkURL);
+            if (emailAddress) {
+                items.push({
+                    label: localizeMessage('app.menus.contextMenu.copyEmailAddress', 'Copy Email Address'),
+                    click() {
+                        clipboard.writeText(emailAddress);
+                    },
+                });
+            }
+
+            if (providedAppend) {
+                items.push(...providedAppend(defaultActions, parameters, ...rest));
+            }
+
+            return items;
+        };
+
+        this.menuOptions = {...defaultMenuOptions, ...providedOptions, append};
         this.view = view;
 
         this.reload();
