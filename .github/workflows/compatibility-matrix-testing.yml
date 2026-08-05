@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       DESKTOP_SHA: ${{ steps.repo.outputs.DESKTOP_SHA }}
-      CMT_MATRIX: ${{ steps.normalize-matrix.outputs.matrix }}
+      CMT_MATRIX: ${{ steps.matrix.outputs.matrix }}
       TSIO_COMPOSITE_IDENTITY: ${{ steps.tsio-identity.outputs.composite-identity-json }}
       TSIO_TOTAL_REPORTS_EXPECTED: ${{ steps.tsio-identity.outputs.total-reports-expected }}
     steps:
@@ -55,20 +55,13 @@ jobs:
         id: repo
         run: echo "DESKTOP_SHA=$(git rev-parse HEAD)" >> ${GITHUB_OUTPUT}
 
-      # Matterwick still dispatches ubuntu-22.04 for Linux; pin to ubuntu-latest so
-      # CMT matches PR E2E (24.04) and install-os-dependencies can resolve
-      # libasound2t64. Same idea as e2e-functional.yml remapping macos-latest → macos-26.
-      - name: cmt/normalize-matrix-runners
-        id: normalize-matrix
+      # Matterwick (≥ v0.4.16) sends the runners we run on: ubuntu-latest,
+      # macos-26, windows-2022. Pass the matrix through as-is.
+      - name: cmt/set-matrix
+        id: matrix
         env:
           CMT_MATRIX: ${{ inputs.CMT_MATRIX }}
-        run: |
-          NORMALIZED=$(echo "${CMT_MATRIX}" | jq -c '
-            .environment |= map(
-              if .runner == "ubuntu-22.04" then .runner = "ubuntu-latest" else . end
-            )
-          ')
-          echo "matrix=${NORMALIZED}" >> "$GITHUB_OUTPUT"
+        run: echo "matrix=${CMT_MATRIX}" >> "$GITHUB_OUTPUT"
 
       # One composite identity + total-reports-expected for the WHOLE CMT run
       # (every OS x server-version leg), computed once here and threaded into
@@ -79,7 +72,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           MM_SHA: ${{ steps.repo.outputs.DESKTOP_SHA }}
           MM_BRANCH: ${{ inputs.DESKTOP_VERSION }}
-          CMT_MATRIX: ${{ steps.normalize-matrix.outputs.matrix }}
+          CMT_MATRIX: ${{ steps.matrix.outputs.matrix }}
         run: |
           TOTAL=$(echo "${CMT_MATRIX}" | jq -c '(.environment | length) * (.server | length)')
           echo "total-reports-expected=${TOTAL}" >> "$GITHUB_OUTPUT"
@@ -114,17 +107,16 @@ jobs:
           description: "Compatibility Matrix Testing for ${{ inputs.DESKTOP_VERSION }} version"
           status: pending
 
-  # Input follows the below schema (Matterwick may still send ubuntu-22.04;
-  # calculate-commit-hash remaps Linux to ubuntu-latest before the e2e matrix).
+  # Input follows the below schema (Matterwick ≥ v0.4.16).
   # {
   #   "environment": [
   #     {
   #       "os": "linux",
-  #       "runner": "ubuntu-22.04"
+  #       "runner": "ubuntu-latest"
   #     },
   #     {
   #       "os": "macos",
-  #       "runner": "macos-13"
+  #       "runner": "macos-26"
   #     },
   #     {
   #       "os": "windows",
