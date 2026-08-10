@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import type {Session} from 'electron';
+
 import type {MattermostServer} from 'common/servers/MattermostServer';
 import {parseURL} from 'common/utils/url';
 
@@ -18,17 +20,19 @@ export class ServerInfo {
         this.remoteInfo = {};
     }
 
-    pingServer = async () => {
+    pingServer = async (session?: Session) => {
         await this.getRemoteInfo<{status: string}>(
             () => {}, // No callback needed for ping, just checking if it responds
             parseURL(`${this.server.url}/api/v4/system/ping`),
+            session,
         );
     };
 
-    fetchConfigData = async () => {
+    fetchConfigData = async (session?: Session) => {
         await this.getRemoteInfo<ClientConfig>(
             this.onGetConfig,
             parseURL(`${this.server.url}/api/v4/config/client?format=old`),
+            session,
         );
 
         return this.remoteInfo;
@@ -57,6 +61,7 @@ export class ServerInfo {
     private getRemoteInfo = <T>(
         callback: (data: T) => void,
         url?: URL,
+        session?: Session,
     ) => {
         if (!url) {
             return Promise.reject(new Error('Malformed URL'));
@@ -79,7 +84,9 @@ export class ServerInfo {
                     const enhancedError = error as Error & { errorReason?: {needsBasicAuth?: boolean; needsPreAuth?: boolean} };
                     enhancedError.errorReason = errorReason;
                     reject(enhancedError);
-                });
+                },
+                session,
+            );
         });
     };
 

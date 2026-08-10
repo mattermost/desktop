@@ -455,10 +455,10 @@ export class ServerHub {
         const serverInfo = new ServerInfo(server);
         try {
             // Ping server first for pre-auth - config endpoint might be whitelisted
-            await serverInfo.pingServer();
+            await serverInfo.pingServer(session.fromPartition('server-validation'));
 
             // Only proceed to fetch config if ping is successful
-            const remoteInfo = await serverInfo.fetchConfigData();
+            const remoteInfo = await serverInfo.fetchConfigData(session.fromPartition('server-validation'));
             return {data: remoteInfo};
         } catch (error) {
             return {error: error as Error & { errorReason?: ErrorReason }};

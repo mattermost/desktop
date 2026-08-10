@@ -1,6 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import type {Session} from 'electron';
 import {net, session} from 'electron';
 
 import {COOKIE_NAME_AUTH_TOKEN, COOKIE_NAME_CSRF, COOKIE_NAME_USER_ID} from 'common/constants';
@@ -16,9 +17,10 @@ export async function getServerAPI(
     onSuccess?: (raw: string) => void,
     onAbort?: () => void,
     onError?: (error: Error, errorReason?: ErrorReason) => void,
+    requestSession: Session = session.defaultSession,
 ) {
     if (isAuthenticated) {
-        const cookies = await session.defaultSession.cookies.get({});
+        const cookies = await requestSession.cookies.get({});
         if (!cookies) {
             log.error('Cannot authenticate, no cookies present');
             return;
@@ -40,7 +42,7 @@ export async function getServerAPI(
 
     const req = net.request({
         url: url.toString(),
-        session: session.defaultSession,
+        session: requestSession,
         useSessionCookies: true,
     });
 
