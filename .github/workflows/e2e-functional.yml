@@ -64,7 +64,7 @@ jobs:
       # Resolve the SHA under test from version_name (branch/tag/SHA), not github.sha
       # from the dispatch ref — same approach as compatibility-matrix-testing.yml.
       - name: e2e/checkout-desktop-version
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.version_name }}
 
@@ -165,7 +165,7 @@ jobs:
       statuses: write
     steps:
       # tsio-report-status.js is repo code, not fetched by github-script itself.
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.version_name }}
           persist-credentials: false
@@ -320,7 +320,7 @@ jobs:
           echo "MM_TEST_SERVER_URL=${URL}" >> $GITHUB_ENV
 
       - name: e2e/checkout-repo
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.version_name }}
 
