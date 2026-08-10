@@ -99,6 +99,7 @@ declare global {
             getLocalConfiguration: () => Promise<LocalConfiguration>;
             getDownloadLocation: (downloadLocation?: string) => Promise<string>;
             getLanguageInformation: () => Promise<Language>;
+            getSessionAttributes: () => Promise<Record<string, string>>;
             getTheme: () => Promise<Theme>;
 
             onReloadConfiguration: (listener: () => void) => () => void;

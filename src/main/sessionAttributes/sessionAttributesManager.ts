@@ -6,6 +6,7 @@ import {ipcMain} from 'electron';
 
 import WebContentsManager from 'app/views/webContentsManager';
 import {
+    GET_SESSION_ATTRIBUTES,
     SERVER_PRE_AUTH_SECRET_CHANGED,
     SERVER_REMOVED,
     SERVER_URL_CHANGED,
@@ -39,6 +40,7 @@ export class SessionAttributesManager {
         ipcMain.on(SESSION_ATTRIBUTES_MANIFEST_INVALIDATED, this.handleManifestInvalidated);
         ipcMain.on(SESSION_ATTRIBUTES_RESEND_REQUESTED, this.handleResendRequested);
         ipcMain.on(SESSION_ATTRIBUTES_FIELD_UPDATED, ipcValidate(this.handleFieldUpdated, [sessionAttributeFieldSchema]));
+        ipcMain.handle(GET_SESSION_ATTRIBUTES, this.getCollectedAttributes);
     }
 
     getHeaderForRequest = (
@@ -104,6 +106,22 @@ export class SessionAttributesManager {
         return Buffer.from(JSON.stringify(payload)).toString('base64');
     };
 
+    // server_fqdn is the only server-specific attribute, so it is reported for the active server
+    getCollectedAttributes = () => {
+        return {
+            client_ip_address: this.collectAttribute('client_ip_address'),
+            network_interface_type: this.collectAttribute('network_interface_type'),
+            vpn_active: this.collectAttribute('vpn_active'),
+            ssid: this.collectAttribute('ssid'),
+            hardware_id: this.collectAttribute('hardware_id'),
+            mdm_enrolled: this.collectAttribute('mdm_enrolled'),
+            os_platform: this.collectAttribute('os_platform'),
+            os_version: this.collectAttribute('os_version'),
+            client_version: this.collectAttribute('client_version'),
+            client_fqdn: this.collectAttribute('client_fqdn'),
+        };
+    };
+
     injectHeader = (
         details: OnBeforeSendHeadersListenerDetails,
     ): Record<string, string | string[]> => {
@@ -116,7 +134,7 @@ export class SessionAttributesManager {
         };
     };
 
-    private collectAttribute = (name: string, serverId: string) => {
+    private collectAttribute = (name: string, serverId?: string) => {
         try {
             const collector = getSessionAttributeCollector();
             switch (name) {
