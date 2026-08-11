@@ -106,7 +106,6 @@ export class SessionAttributesManager {
         return Buffer.from(JSON.stringify(payload)).toString('base64');
     };
 
-    // server_fqdn is the only server-specific attribute, so it is reported for the active server
     getCollectedAttributes = () => {
         return {
             client_ip_address: this.collectAttribute('client_ip_address'),
