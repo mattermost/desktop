@@ -74,6 +74,7 @@ jest.mock('electron', () => ({
             on: jest.fn(),
             allowNTLMCredentialsForDomains: jest.fn(),
         },
+        fromPartition: jest.fn(),
     },
     protocol: {
         registerSchemesAsPrivileged: jest.fn(),
@@ -268,6 +269,16 @@ describe('main/app/initialize', () => {
         app.whenReady.mockResolvedValue();
         app.requestSingleInstanceLock.mockReturnValue(true);
         app.getPath.mockImplementation((p) => `/basedir/${p}`);
+        session.fromPartition.mockImplementation((partition) => {
+            if (partition === 'server-validation') {
+                return {
+                    webRequest: {
+                        onHeadersReceived: jest.fn(),
+                    },
+                };
+            }
+            return session.defaultSession;
+        });
     });
 
     afterEach(() => {
