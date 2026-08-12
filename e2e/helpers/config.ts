@@ -39,7 +39,7 @@ export const appDir = path.join(sourceRootDir, 'e2e/dist');
 
 export const mattermostURL = process.env.MM_TEST_SERVER_URL ?? 'http://localhost:8065/';
 
-export const exampleURL = 'http://example.com/';
+export const exampleURL = 'https://example.com/';
 
 export const cmdOrCtrl = process.platform === 'darwin' ? 'command' : 'control';
 
@@ -113,6 +113,16 @@ export const emptyConfig: AppConfig = {
     ...baseConfig,
     servers: [],
 };
+
+// Single configured server, used by the local-network policy spec to point at a loopback
+// test server so no live Mattermost is required.
+export function localNetworkConfig(serverUrl: string): AppConfig {
+    return {
+        ...baseConfig,
+        servers: [{name: 'local', url: serverUrl, order: 0}],
+        lastActiveServer: 0,
+    };
+}
 
 // ---- File writer ----
 

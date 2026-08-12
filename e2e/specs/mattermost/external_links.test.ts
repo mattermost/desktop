@@ -16,7 +16,7 @@ const externalLinksConfig: AppConfig = {
 test.describe('external_links', () => {
     test.use({appConfig: externalLinksConfig});
 
-    test('MM-T_EL_1 clicking an external URL opens the system browser, not the app', {tag: ['@P2', '@darwin', '@win32']}, async ({electronApp, serverMap}) => {
+    test('MM-T6144 clicking an external URL opens the system browser, not the app', {tag: ['@P2', '@darwin', '@win32']}, async ({electronApp, serverMap}) => {
         if (!process.env.MM_TEST_SERVER_URL) {
             test.skip(true, 'MM_TEST_SERVER_URL required');
             return;
@@ -77,7 +77,7 @@ test.describe('external_links', () => {
         });
     });
 
-    test('MM-T_EL_2 clicking an internal Mattermost channel link stays in the app', {tag: ['@P2', '@darwin', '@win32']}, async ({electronApp, serverMap}) => {
+    test('MM-T6145 clicking an internal Mattermost channel link stays in the app', {tag: ['@P2', '@darwin', '@win32']}, async ({electronApp, serverMap}) => {
         if (!process.env.MM_TEST_SERVER_URL) {
             test.skip(true, 'MM_TEST_SERVER_URL required');
             return;

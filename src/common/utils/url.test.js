@@ -176,6 +176,13 @@ describe('common/utils/url', () => {
             const url2 = new URL('mattermost://server-1.com');
             expect(isInternalURL(url1, url2, true)).toBe(true);
         });
+
+        it('should return false for http target on an https server', () => {
+            const baseURL = new URL('https://mattermost.com/');
+            const externalURL = new URL('http://mattermost.com/plugins/x');
+
+            expect(isInternalURL(externalURL, baseURL)).toBe(false);
+        });
     });
     describe('isTrustedURL', () => {
         it('base urls', () => {

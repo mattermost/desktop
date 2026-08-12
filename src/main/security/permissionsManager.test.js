@@ -8,6 +8,7 @@ import MainWindow from 'app/mainWindow/mainWindow';
 import WebContentsManager from 'app/views/webContentsManager';
 import Config from 'common/config';
 import {parseURL, isTrustedURL} from 'common/utils/url';
+import {localizeMessage} from 'main/i18nManager';
 
 import {PermissionsManager} from './permissionsManager';
 
@@ -42,6 +43,9 @@ jest.mock('common/utils/url', () => ({
 }));
 
 jest.mock('common/config', () => ({
+    data: {
+        trustedEmbeddedMediaOrigins: [],
+    },
     registryData: {
         servers: [
             {url: 'http://gposerver.com'},
@@ -176,6 +180,7 @@ describe('main/PermissionsManager', () => {
                     url: 'http://gposerver.com',
                 },
             ];
+            Config.data.trustedEmbeddedMediaOrigins = [];
         });
 
         afterEach(() => {
@@ -223,6 +228,62 @@ describe('main/PermissionsManager', () => {
             const cb = jest.fn();
             await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://wrongurl.com'});
             expect(cb).toHaveBeenCalledWith(false);
+        });
+
+        it('should deny media from an embedded origin that is not explicitly trusted', async () => {
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            const cb = jest.fn();
+            await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://meet.anyurl.com'});
+            expect(cb).toHaveBeenCalledWith(false);
+        });
+
+        it('should allow media from an explicitly trusted embedded origin using the server permission', async () => {
+            Config.data.trustedEmbeddedMediaOrigins = [
+                {
+                    serverOrigin: 'http://anyurl.com',
+                    embeddedOrigin: 'http://meet.anyurl.com',
+                },
+            ];
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            permissionsManager.json = {
+                'http://anyurl.com': {
+                    media: {
+                        allowed: true,
+                    },
+                },
+            };
+            const cb = jest.fn();
+            await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://meet.anyurl.com'});
+            expect(cb).toHaveBeenCalledWith(true);
+            expect(dialog.showMessageBox).not.toHaveBeenCalled();
+        });
+
+        it('should store media decisions for trusted embedded origins on the server origin', async () => {
+            Config.data.trustedEmbeddedMediaOrigins = [
+                {
+                    serverOrigin: 'http://anyurl.com',
+                    embeddedOrigin: 'http://meet.anyurl.com',
+                },
+            ];
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            permissionsManager.writeToFile = jest.fn();
+            const cb = jest.fn();
+            dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 2}));
+            await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://meet.anyurl.com'});
+            expect(permissionsManager.json['http://anyurl.com'].media.allowed).toBe(true);
+            expect(permissionsManager.json['http://meet.anyurl.com']).toBeUndefined();
+            expect(localizeMessage).toHaveBeenCalledWith(
+                'main.permissionsManager.checkPermission.dialog.message.media',
+                '{appName} ({url}) is requesting the "{permission}" permission.',
+                {
+                    appName: 'Mattermost',
+                    url: 'http://anyurl.com (via http://meet.anyurl.com)',
+                    permission: 'media',
+                    externalURL: undefined,
+                },
+            );
+            expect(permissionsManager.writeToFile).toHaveBeenCalled();
+            expect(cb).toHaveBeenCalledWith(true);
         });
 
         it('should allow if dialog is not required', async () => {

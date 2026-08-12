@@ -4,7 +4,7 @@
 import {test, expect} from '../../fixtures/index';
 
 test(
-    'switching servers preserves view state on return',
+    'MM-T6189 switching servers preserves view state on return',
     {tag: ['@P1', '@all']},
     async ({serverMap, electronApp}) => {
         const serverA = serverMap.example?.[0]?.win;

@@ -3,6 +3,7 @@
 
 import {test, expect} from '../../fixtures/index';
 import {waitForCallsWidgetWindow, closeCallsWidget, sendWidgetShortcut, leaveCallIfActive, startCall} from '../../helpers/callsWidget';
+import {waitForMattermostShellReady} from '../../helpers/channelReadiness';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
@@ -42,7 +43,7 @@ test.describe('calls/calls_functionality', () => {
         serverWin = serverEntry!.win;
 
         await loginToMattermost(serverWin);
-        await serverWin.waitForSelector('#sidebarItem_town-square', {timeout: 15_000});
+        await waitForMattermostShellReady(serverWin, {channelItem: '#sidebarItem_town-square'});
         await serverWin.click('#sidebarItem_town-square');
         await serverWin.waitForSelector('#channelHeaderTitle', {timeout: 10_000});
         await leaveCallIfActive(electronApp);
@@ -154,3 +155,32 @@ test.describe('calls/calls_functionality', () => {
     );
 });
 
+<<<<<<< HEAD
+=======
+async function closeCallsWidget(
+    electronApp: ElectronApplication,
+    widgetWindow: Page,
+): Promise<void> {
+    const leaveClicked = await widgetWindow.evaluate(() => {
+        const leaveBtn = document.querySelector(
+            'button[aria-label*="Leave"], button[aria-label*="leave"], button[aria-label*="End"], button[aria-label*="end"]',
+        ) as HTMLButtonElement;
+        if (leaveBtn) {
+            leaveBtn.click();
+            return true;
+        }
+        return false;
+    });
+
+    if (!leaveClicked) {
+        await widgetWindow.evaluate(() => {
+            (window as unknown as {desktopAPI?: {leaveCall: () => void}}).desktopAPI?.leaveCall();
+        });
+    }
+
+    await expect.poll(
+        () => findCallsWidgetWindow(electronApp),
+        {timeout: 10_000, message: 'Calls widget window must close after leave'},
+    ).toBeNull();
+}
+>>>>>>> origin/master

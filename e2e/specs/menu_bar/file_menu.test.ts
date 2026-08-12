@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../../fixtures/index';
-import {clickApplicationMenuItem} from '../../helpers/menu';
+import {clickApplicationMenuItem, openSignInToAnotherServerModal} from '../../helpers/menu';
 
 async function openPreferencesFromAppMenu(electronApp: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>) {
     await electronApp.evaluate(async ({app}) => {
@@ -81,6 +81,19 @@ test.describe('file_menu/dropdown', () => {
         const settingsWindow = await waitForSettingsWindow(electronApp);
         expect(settingsWindow).toBeDefined();
     });
+
+    test(
+        'MM-T1319 Sign in to Another Server — server name input should be focused',
+        {tag: ['@P2', '@all']},
+        async ({electronApp}) => {
+            const newServerWindow = await openSignInToAnotherServerModal(electronApp);
+            await newServerWindow.waitForLoadState();
+
+            await expect.poll(async () => {
+                return newServerWindow.evaluate(() => document.activeElement?.id ?? null);
+            }, {timeout: 10_000}).toBe('serverUrlInput');
+        },
+    );
 
     test('MM-T806 Exit in the Menu Bar', {tag: ['@P2', '@darwin']}, async ({electronApp, mainWindow}) => {
         expect(mainWindow).toBeDefined();

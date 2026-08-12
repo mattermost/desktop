@@ -56,7 +56,7 @@ async function startDownloadServer(filename: string, contents: string) {
 }
 
 test(
-    'downloaded file exists on disk after download completes',
+    'MM-T6132 downloaded file exists on disk after download completes',
     {tag: ['@P1', '@all']},
     async ({}, testInfo) => {
         const filename = 'downloaded-file.txt';

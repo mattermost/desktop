@@ -1,20 +1,37 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import type {ElectronApplication} from 'playwright';
+
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {
     clearAllBadgesViaAppState,
+    prepareServerBadgeViaAppState,
     readOsBadge,
+    refreshBadgeStateForTest,
     setServerExpiredViaAppState,
     setUnreadBadgeSetting,
     updateServerBadgeViaAppState,
     waitForBadgeInfrastructure,
+    type OsBadgeState,
 } from '../../helpers/badge';
 import {demoConfig} from '../../helpers/config';
 import {acquireExclusiveLock} from '../../helpers/exclusiveLock';
 
 const FIRST_SERVER = demoConfig.servers[0].name;
+const WIN_BADGE_POLL_TIMEOUT = 30_000;
+
+async function expectWindowsBadge(
+    electronApp: ElectronApplication,
+    expected: Partial<OsBadgeState>,
+    message: string,
+) {
+    await expect.poll(async () => {
+        await refreshBadgeStateForTest(electronApp);
+        return readOsBadge(electronApp);
+    }, {timeout: WIN_BADGE_POLL_TIMEOUT, message}).toMatchObject(expected);
+}
 
 test.describe('notification_trigger/notification_badge', () => {
     test.use({appConfig: demoConfig});
@@ -32,7 +49,7 @@ test.describe('notification_trigger/notification_badge', () => {
     // That keeps these tests exercising the real AppState -> showBadge() dispatch
     // on every run, with a real OS read only when a Unity session happens to exist.
 
-    test('MM-T_BADGE_LNX mention count via AppState',
+    test('MM-T6153 mention count via AppState',
         {tag: ['@P2', '@linux']},
         async ({electronApp}) => {
             const releaseLock = await acquireExclusiveLock('notification-badge-state');
@@ -50,7 +67,7 @@ test.describe('notification_trigger/notification_badge', () => {
         },
     );
 
-    test('MM-T_BADGE_LNX session expired via AppState',
+    test('MM-T6154 session expired via AppState',
         {tag: ['@P2', '@linux']},
         async ({electronApp}) => {
             const releaseLock = await acquireExclusiveLock('notification-badge-state');
@@ -68,7 +85,7 @@ test.describe('notification_trigger/notification_badge', () => {
         },
     );
 
-    test('MM-T_BADGE_LNX mentions beat session expired',
+    test('MM-T6155 mentions beat session expired',
         {tag: ['@P2', '@linux']},
         async ({electronApp}) => {
             const releaseLock = await acquireExclusiveLock('notification-badge-state');
@@ -91,7 +108,7 @@ test.describe('notification_trigger/notification_badge', () => {
         },
     );
 
-    test('MM-T_BADGE_OSX dock badge via AppState',
+    test('MM-T6156 dock badge via AppState',
         {tag: ['@P2', '@darwin']},
         async ({electronApp}) => {
             const releaseLock = await acquireExclusiveLock('notification-badge-state');
@@ -109,7 +126,7 @@ test.describe('notification_trigger/notification_badge', () => {
         },
     );
 
-    test('MM-T_BADGE_OSX unread dot via AppState',
+    test('MM-T6157 unread dot via AppState',
         {tag: ['@P2', '@darwin']},
         async ({electronApp}) => {
             const releaseLock = await acquireExclusiveLock('notification-badge-state');
@@ -128,7 +145,7 @@ test.describe('notification_trigger/notification_badge', () => {
         },
     );
 
-    test('MM-T_BADGE_OSX clear badge via AppState',
+    test('MM-T6158 clear badge via AppState',
         {tag: ['@P2', '@darwin']},
         async ({electronApp}) => {
             const releaseLock = await acquireExclusiveLock('notification-badge-state');
@@ -146,55 +163,55 @@ test.describe('notification_trigger/notification_badge', () => {
         },
     );
 
-    test('MM-T_BADGE_WIN overlay via AppState',
+    test('MM-T6159 overlay via AppState',
         {tag: ['@P2', '@win32']},
         async ({electronApp}) => {
             const releaseLock = await acquireExclusiveLock('notification-badge-state');
             try {
-                await clearAllBadgesViaAppState(electronApp);
-                await updateServerBadgeViaAppState(electronApp, FIRST_SERVER, 5, false);
+                await prepareServerBadgeViaAppState(electronApp, FIRST_SERVER, 5, false);
 
-                await expect.poll(
-                    () => readOsBadge(electronApp),
-                    {timeout: 10_000, message: 'Windows taskbar overlay must appear for mentions'},
-                ).toMatchObject({hasOverlay: true, symbol: 'mention', count: 5});
+                await expectWindowsBadge(
+                    electronApp,
+                    {hasOverlay: true, symbol: 'mention', count: 5},
+                    'Windows taskbar overlay must appear for mentions',
+                );
             } finally {
                 await releaseLock();
             }
         },
     );
 
-    test('MM-T_BADGE_WIN unread overlay via AppState',
+    test('MM-T6160 unread overlay via AppState',
         {tag: ['@P2', '@win32']},
         async ({electronApp}) => {
             const releaseLock = await acquireExclusiveLock('notification-badge-state');
             try {
-                await clearAllBadgesViaAppState(electronApp);
-                await setUnreadBadgeSetting(electronApp, true);
-                await updateServerBadgeViaAppState(electronApp, FIRST_SERVER, 0, true);
+                await prepareServerBadgeViaAppState(electronApp, FIRST_SERVER, 0, true, {enableUnreadBadge: true});
 
-                await expect.poll(
-                    () => readOsBadge(electronApp),
-                    {timeout: 10_000, message: 'Windows taskbar overlay must appear for unreads when enabled'},
-                ).toMatchObject({hasOverlay: true, symbol: 'unread'});
+                await expectWindowsBadge(
+                    electronApp,
+                    {hasOverlay: true, symbol: 'unread'},
+                    'Windows taskbar overlay must appear for unreads when enabled',
+                );
             } finally {
                 await releaseLock();
             }
         },
     );
 
-    test('MM-T_BADGE_WIN clear overlay via AppState',
+    test('MM-T6161 clear overlay via AppState',
         {tag: ['@P2', '@win32']},
         async ({electronApp}) => {
             const releaseLock = await acquireExclusiveLock('notification-badge-state');
             try {
-                await updateServerBadgeViaAppState(electronApp, FIRST_SERVER, 2, false);
-                await clearAllBadgesViaAppState(electronApp);
+                await prepareServerBadgeViaAppState(electronApp, FIRST_SERVER, 2, false);
+                await prepareServerBadgeViaAppState(electronApp, FIRST_SERVER, 0, false);
 
-                await expect.poll(
-                    () => readOsBadge(electronApp),
-                    {timeout: 10_000, message: 'Windows taskbar overlay must clear when AppState totals reset'},
-                ).toMatchObject({hasOverlay: false, symbol: 'none', count: 0});
+                await expectWindowsBadge(
+                    electronApp,
+                    {hasOverlay: false, symbol: 'none', count: 0},
+                    'Windows taskbar overlay must clear when AppState totals reset',
+                );
             } finally {
                 await releaseLock();
             }

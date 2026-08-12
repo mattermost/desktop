@@ -17,7 +17,7 @@ import {buildServerMap} from '../../helpers/serverMap';
 const UNREACHABLE_SERVER_URL = 'https://jhsgefhjsaeiuofhseifuphoauifdhjauiowijdfcpohuawoiudfjpdhauwodjahwdpojaoiwdhawhdiuawd.com';
 const EXPIRED_CERT_URL = 'https://expired.badssl.com';
 const TLS_1_0_URL = 'https://tls-v1-0.badssl.com:1010';
-const TLS_1_1_URL = 'https://tls-v1-1.badssl.com';
+const TLS_1_1_URL = 'https://tls-v1-1.badssl.com:1011';
 const RC4_CIPHER_URL = 'https://rc4.badssl.com';
 const INSECURE_TLS_ERROR_PATTERN = /ERR_SSL_(VERSION_OR_CIPHER_MISMATCH|PROTOCOL_ERROR|OBSOLETE_CIPHER)|ERR_CONNECTION_RESET|ERR_ABORTED/;
 
@@ -158,7 +158,7 @@ test.describe('Bad Server Configurations', () => {
         // ever leak state, prefer sending CLOSE_SERVERS_DROPDOWN via IPC instead of
         // Page.close(), or press Escape at test end.
 
-        test('should handle server with unresolvable DNS', {tag: ['@P2', '@all']}, async () => {
+        test('MM-T6175 should handle server with unresolvable DNS', {tag: ['@P2', '@all']}, async () => {
             const app = sharedApp;
             const userDataDir = sharedUserDataDir;
             const newServerView = await openAddServerModal(app);
@@ -179,7 +179,7 @@ test.describe('Bad Server Configurations', () => {
             expect(errorInfo).toContain('ERR_NAME_NOT_RESOLVED');
         });
 
-        test('should handle server with expired certificate', {tag: ['@P2', '@all']}, async () => {
+        test('MM-T6176 should handle server with expired certificate', {tag: ['@P2', '@all']}, async () => {
             const app = sharedApp;
             const userDataDir = sharedUserDataDir;
             const newServerView = await openAddServerModal(app);
@@ -200,7 +200,7 @@ test.describe('Bad Server Configurations', () => {
             expect(errorInfo).toContain('ERR_CERT_DATE_INVALID');
         });
 
-        test('should handle server using TLS 1.0', {tag: ['@P2', '@all']}, async () => {
+        test('MM-T6177 should handle server using TLS 1.0', {tag: ['@P2', '@all']}, async () => {
             const app = sharedApp;
             const userDataDir = sharedUserDataDir;
             const newServerView = await openAddServerModal(app);
@@ -224,7 +224,7 @@ test.describe('Bad Server Configurations', () => {
             }, {timeout: 15_000, message: 'TLS 1.0 server must surface a connection error'}).not.toBeNull();
         });
 
-        test('should handle server using RC4 cipher', {tag: ['@P2', '@all']}, async () => {
+        test('MM-T6178 should handle server using RC4 cipher', {tag: ['@P2', '@all']}, async () => {
             const app = sharedApp;
             const userDataDir = sharedUserDataDir;
             const newServerView = await openAddServerModal(app);
@@ -250,7 +250,7 @@ test.describe('Bad Server Configurations', () => {
     });
 
     test.describe('Pre-configured servers', () => {
-        test('MULTI-01 unreachable server at startup does not block other servers', {tag: ['@P0', '@all']}, async ({}, testInfo) => {
+        test('MM-T6179 unreachable server at startup does not block other servers', {tag: ['@P0', '@all']}, async ({}, testInfo) => {
             const badConfig = {
                 ...demoConfig,
                 servers: [
@@ -290,7 +290,7 @@ test.describe('Bad Server Configurations', () => {
             }
         });
 
-        test('should handle pre-configured unreachable server', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
+        test('MM-T6180 should handle pre-configured unreachable server', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
             const badConfig = {
                 ...demoConfig,
                 servers: [
@@ -318,7 +318,7 @@ test.describe('Bad Server Configurations', () => {
             }
         });
 
-        test('should handle pre-configured unreachable server and still allow login to working Mattermost server', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
+        test('MM-T6181 should handle pre-configured unreachable server and still allow login to working Mattermost server', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
             test.setTimeout(120_000);
             if (!process.env.MM_TEST_SERVER_URL) {
                 test.skip(true, 'MM_TEST_SERVER_URL required');
@@ -379,7 +379,7 @@ test.describe('Bad Server Configurations', () => {
             }
         });
 
-        test('should handle pre-configured server with expired certificate', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
+        test('MM-T6182 should handle pre-configured server with expired certificate', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
             const badConfig = {
                 ...demoConfig,
                 servers: [
@@ -407,7 +407,7 @@ test.describe('Bad Server Configurations', () => {
             }
         });
 
-        test('should load pre-configured server with expired certificate when certificate is trusted in CertificateStore', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
+        test('MM-T6183 should load pre-configured server with expired certificate when certificate is trusted in CertificateStore', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
             const {mkdirSync} = await import('fs');
             const userDataDir = path.join(testInfo.outputDir, 'custom-userdata');
             mkdirSync(userDataDir, {recursive: true});
@@ -464,7 +464,7 @@ test.describe('Bad Server Configurations', () => {
             }
         });
 
-        test('should handle pre-configured server using TLS 1.1', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
+        test('MM-T6184 should handle pre-configured server using TLS 1.1', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
             const badConfig = {
                 ...demoConfig,
                 servers: [
@@ -494,7 +494,7 @@ test.describe('Bad Server Configurations', () => {
             }
         });
 
-        test('should handle pre-configured server using RC4 cipher', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
+        test('MM-T6185 should handle pre-configured server using RC4 cipher', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
             const badConfig = {
                 ...demoConfig,
                 servers: [

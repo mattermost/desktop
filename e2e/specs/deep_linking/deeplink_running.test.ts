@@ -10,7 +10,7 @@ import {loginToMattermost} from '../../helpers/login';
 test.use({appConfig: demoMattermostConfig});
 
 test(
-    'deep link navigates to correct server while app is running',
+    'MM-T6127 deep link navigates to correct server while app is running',
     {tag: ['@P1', '@darwin', '@win32']},
     async ({electronApp, serverMap}) => {
         if (!process.env.MM_TEST_SERVER_URL) {
@@ -49,7 +49,7 @@ test.describe('deep link server URL without trailing slash', () => {
     test.use({appConfig: configWithoutTrailingSlash});
 
     test(
-        'DL-01 deep link navigates when configured server URL has no trailing slash',
+        'MM-T6128 deep link navigates when configured server URL has no trailing slash',
         {tag: ['@P1', '@darwin', '@win32']},
         async ({electronApp, serverMap}) => {
             if (!process.env.MM_TEST_SERVER_URL) {

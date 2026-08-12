@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {IpcMainEvent, Rectangle, Event, IpcMainInvokeEvent} from 'electron';
+import type {IpcMainEvent, Rectangle, Event, IpcMainInvokeEvent, WebContentsWillRedirectEventParams} from 'electron';
 import {BrowserWindow, desktopCapturer, dialog, ipcMain, systemPreferences} from 'electron';
 import Joi from 'joi';
 
@@ -10,6 +10,7 @@ import NavigationManager from 'app/navigationManager';
 import TabManager from 'app/tabs/tabManager';
 import type {MattermostWebContentsView} from 'app/views/MattermostWebContentsView';
 import webContentsEventManager from 'app/views/webContentEvents';
+import {generateWillFrameNavigate} from 'app/views/webContentEventsCommon';
 import WebContentsManager from 'app/views/webContentsManager';
 import {
     BROWSER_HISTORY_PUSH,
@@ -210,6 +211,10 @@ export class CallsWidgetWindow {
         // Calls widget window is not supposed to navigate anywhere else.
         this.win.webContents.on('will-navigate', this.onNavigate);
         this.win.webContents.on('did-start-navigation', this.onNavigate);
+        this.win.webContents.on('devtools-focused', this.emitShortcutMenuUpdate);
+        this.win.webContents.on('devtools-closed', this.emitShortcutMenuUpdate);
+        this.win.webContents.on('will-redirect', this.onRedirect);
+        this.win.webContents.on('will-frame-navigate', this.onFrameNavigate);
 
         const widgetURL = this.getWidgetURL();
         if (!widgetURL) {
@@ -263,6 +268,8 @@ export class CallsWidgetWindow {
      * BrowserWindow/WebContents handlers
      */
 
+    private emitShortcutMenuUpdate = () => ipcMain.emit(UPDATE_SHORTCUT_MENU);
+
     private onClosed = () => {
         ipcMain.emit(UPDATE_SHORTCUT_MENU);
         delete this.win;
@@ -276,6 +283,18 @@ export class CallsWidgetWindow {
         }
         log.warn('prevented widget window from navigating');
         ev.preventDefault();
+    };
+
+    private onFrameNavigate = generateWillFrameNavigate(log);
+
+    private onRedirect = (ev: Event<WebContentsWillRedirectEventParams>, url: string) => {
+        // Unlike will-navigate, will-redirect fires for subframes as well, so each frame
+        // type needs to be evaluated against its own policy.
+        if (ev.isMainFrame) {
+            this.onNavigate(ev, url);
+        } else {
+            this.onFrameNavigate(ev);
+        }
     };
 
     private setWidgetWindowStacking = ({onTop}: {onTop: boolean}) => {
@@ -372,6 +391,8 @@ export class CallsWidgetWindow {
 
         // Update menu to show the developer tools option for this window.
         ipcMain.emit(UPDATE_SHORTCUT_MENU);
+        this.popOut.webContents.on('devtools-focused', this.emitShortcutMenuUpdate);
+        this.popOut.webContents.on('devtools-closed', this.emitShortcutMenuUpdate);
 
         this.popOut.on('closed', () => {
             ipcMain.emit(UPDATE_SHORTCUT_MENU);
@@ -615,8 +636,13 @@ export class CallsWidgetWindow {
         return promise;
     };
 
-    private handleCallsLeave = () => {
+    private handleCallsLeave = (event: IpcMainEvent) => {
         log.debug('handleCallsLeave');
+
+        if (!this.isCallsWidget(event.sender.id) && this.mainView?.webContentsId !== event.sender.id) {
+            log.debug('handleCallsLeave', 'blocked on wrong webContentsId');
+            return;
+        }
 
         this.close();
     };

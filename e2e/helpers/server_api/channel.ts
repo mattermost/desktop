@@ -36,6 +36,10 @@ export function buildChannelUrl(baseUrl: string, teamName: string, channelName: 
     return `${baseUrl}/${teamName}/channels/${channelName}`;
 }
 
+export function resolvedChannelPath(channel: ResolvedChannel): string {
+    return new URL(channel.url).pathname;
+}
+
 export async function resolveChannelByName(
     channelName: string,
     credentials = getTestServerCredentials(),

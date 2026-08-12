@@ -3,49 +3,14 @@
 
 import {test, expect} from '../../fixtures/index';
 import {cmdOrCtrl} from '../../helpers/config';
-import {SHOW_SETTINGS_WINDOW} from '../../helpers/ipcChannels';
-
-type ElectronApplication = Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>;
-
-async function openSettingsWindow(electronApp: ElectronApplication) {
-    for (let attempt = 0; attempt < 5; attempt++) {
-        const existingWindow = electronApp.windows().find((window) => window.url().includes('settings'));
-        if (existingWindow) {
-            await existingWindow.waitForLoadState().catch(() => {});
-            return existingWindow;
-        }
-
-        try {
-            await electronApp.evaluate(({ipcMain}, showWindow) => {
-                ipcMain.emit(showWindow);
-            }, SHOW_SETTINGS_WINDOW);
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            if (!message.includes('Execution context was destroyed') || attempt === 4) {
-                throw error;
-            }
-        }
-
-        try {
-            const settingsWindow = await electronApp.waitForEvent('window', {
-                predicate: (window) => window.url().includes('settings'),
-                timeout: 3_000,
-            });
-            await settingsWindow.waitForLoadState().catch(() => {});
-            return settingsWindow;
-        } catch (error) {
-            if (attempt === 4) {
-                throw error;
-            }
-            await new Promise((resolve) => setTimeout(resolve, 250));
-        }
-    }
-
-    throw new Error('Settings window did not open');
-}
+import {openSettingsWindow} from '../../helpers/settingsWindow';
 
 test.describe('settings/keyboard_shortcuts', () => {
     test.describe('MM-T1288 Manipulating Text', () => {
+        test.beforeEach(async ({mainWindow}) => {
+            await mainWindow.bringToFront().catch(() => {});
+        });
+
         test('MM-T1288_1 should be able to select and deselect language in the settings window', {tag: ['@P2', '@all']}, async ({electronApp}) => {
             const settingsWindow = await openSettingsWindow(electronApp);
             await settingsWindow.waitForSelector('#settingCategoryButton-language');

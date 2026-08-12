@@ -4,6 +4,9 @@
 import {expect} from '@playwright/test';
 import type {ElectronApplication} from 'playwright';
 
+import type {BadgeTestState} from 'src/main/e2e/badgeState';
+import type {E2eGlobalRefs} from 'src/main/e2e/hooks';
+
 import {evaluateInMainProcess, evaluateInMainProcessWithArg} from './testRefs';
 
 export type OsBadgeState = {
@@ -15,7 +18,8 @@ export type OsBadgeState = {
 export async function waitForBadgeInfrastructure(app: ElectronApplication): Promise<void> {
     await expect.poll(
         async () => app.evaluate(() => {
-            const refs = (global as any).__e2eTestRefs;
+            const e2eTestRefsKey = '__e2eTestRefs';
+            const refs = (global as Record<string, unknown>)[e2eTestRefsKey] as E2eGlobalRefs | undefined;
             return Boolean(refs?.AppState && refs?.ServerManager);
         }),
         {timeout: 30_000, message: 'AppState and ServerManager must be exposed on __e2eTestRefs'},
@@ -24,7 +28,8 @@ export async function waitForBadgeInfrastructure(app: ElectronApplication): Prom
 
 export async function setUnreadBadgeSetting(app: ElectronApplication, enabled: boolean): Promise<void> {
     await evaluateInMainProcessWithArg(app, (_electron, showUnreadBadge) => {
-        const refs = (global as any).__e2eTestRefs;
+        const e2eTestRefsKey = '__e2eTestRefs';
+        const refs = (global as Record<string, unknown>)[e2eTestRefsKey] as E2eGlobalRefs | undefined;
         if (!refs?.setUnreadBadgeSetting) {
             throw new Error('setUnreadBadgeSetting missing from __e2eTestRefs');
         }
@@ -40,7 +45,8 @@ export async function updateServerBadgeViaAppState(
     unreads: boolean,
 ): Promise<void> {
     await evaluateInMainProcessWithArg(app, (_electron, {serverName: name, mentions: mentionCount, unreads: hasUnreads}) => {
-        const refs = (global as any).__e2eTestRefs;
+        const e2eTestRefsKey = '__e2eTestRefs';
+        const refs = (global as Record<string, unknown>)[e2eTestRefsKey] as E2eGlobalRefs | undefined;
         const AppState = refs?.AppState;
         const ServerManager = refs?.ServerManager;
         if (!AppState || !ServerManager) {
@@ -60,7 +66,8 @@ export async function setServerExpiredViaAppState(
     expired: boolean,
 ): Promise<void> {
     await evaluateInMainProcessWithArg(app, (_electron, {serverName: name, expired: isExpired}) => {
-        const refs = (global as any).__e2eTestRefs;
+        const e2eTestRefsKey = '__e2eTestRefs';
+        const refs = (global as Record<string, unknown>)[e2eTestRefsKey] as E2eGlobalRefs | undefined;
         const AppState = refs?.AppState;
         const ServerManager = refs?.ServerManager;
         if (!AppState || !ServerManager) {
@@ -76,7 +83,8 @@ export async function setServerExpiredViaAppState(
 
 export async function clearAllBadgesViaAppState(app: ElectronApplication): Promise<void> {
     await evaluateInMainProcess(app, () => {
-        const refs = (global as any).__e2eTestRefs;
+        const e2eTestRefsKey = '__e2eTestRefs';
+        const refs = (global as Record<string, unknown>)[e2eTestRefsKey] as E2eGlobalRefs | undefined;
         const AppState = refs?.AppState;
         const ServerManager = refs?.ServerManager;
         if (!AppState || !ServerManager) {
@@ -91,9 +99,54 @@ export async function clearAllBadgesViaAppState(app: ElectronApplication): Promi
     });
 }
 
+/**
+ * Clear all servers and set one server's badge state in a single main-process
+ * turn so external AppState updates cannot land between separate clear/set IPC calls.
+ */
+export async function prepareServerBadgeViaAppState(
+    app: ElectronApplication,
+    serverName: string,
+    mentions: number,
+    unreads: boolean,
+    options: {enableUnreadBadge?: boolean} = {},
+): Promise<void> {
+    const {enableUnreadBadge = false} = options;
+    await evaluateInMainProcessWithArg(app, (_, payload) => {
+        const e2eTestRefsKey = '__e2eTestRefs';
+        const refs = (global as Record<string, unknown>)[e2eTestRefsKey] as E2eGlobalRefs | undefined;
+        const AppState = refs?.AppState;
+        const ServerManager = refs?.ServerManager;
+        if (!AppState || !ServerManager) {
+            throw new Error('AppState or ServerManager missing from __e2eTestRefs');
+        }
+
+        for (const server of ServerManager.getAllServers()) {
+            AppState.updateUnreadsAndMentionsPerServer(server.id, 0, false);
+            AppState.updateExpired(server.id, false);
+        }
+        refs.Config?.set?.('showUnreadBadge', payload.enableUnreadBadge);
+        refs.setUnreadBadgeSetting?.(payload.enableUnreadBadge);
+
+        const server = ServerManager.getAllServers().find((s: {name: string}) => s.name === payload.serverName);
+        if (!server) {
+            throw new Error(`Server not found: ${payload.serverName}`);
+        }
+        AppState.updateUnreadsAndMentionsPerServer(server.id, payload.mentions, payload.unreads);
+    }, {serverName, mentions, unreads, enableUnreadBadge});
+}
+
+export async function refreshBadgeStateForTest(app: ElectronApplication): Promise<void> {
+    await evaluateInMainProcess(app, () => {
+        const e2eTestRefsKey = '__e2eTestRefs';
+        const refs = (global as Record<string, unknown>)[e2eTestRefsKey] as E2eGlobalRefs | undefined;
+        refs?.AppState?.emitStatus();
+    });
+}
+
 export async function readOsBadge(electronApp: ElectronApplication): Promise<OsBadgeState> {
     return evaluateInMainProcess(electronApp, ({app}) => {
-        const testState = (global as any).__testBadgeState;
+        const testBadgeStateKey = '__testBadgeState';
+        const testState = (global as Record<string, unknown>)[testBadgeStateKey] as BadgeTestState | undefined;
 
         if (process.platform === 'darwin') {
             const badge = app.dock?.getBadge() ?? '';

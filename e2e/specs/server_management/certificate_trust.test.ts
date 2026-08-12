@@ -15,7 +15,7 @@ import {evaluateInMainProcess} from '../../helpers/testRefs';
 const EXPIRED_CERT_URL = 'https://expired.badssl.com';
 
 test(
-    'SEC-03 trusting an invalid certificate allows the server view to load',
+    'MM-T2631 SEC-03 trusting an invalid certificate allows the server view to load',
     {tag: ['@P1', '@all']},
     async ({}, testInfo) => {
         const userDataDir = path.join(testInfo.outputDir, 'userdata');

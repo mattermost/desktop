@@ -107,7 +107,12 @@ export class TrayIcon {
         }
     };
 
-    setMenu = (tMenu: Electron.Menu) => this.tray?.setContextMenu(tMenu);
+    setMenu = (tMenu: Electron.Menu) => {
+        if (!this.tray || this.tray.isDestroyed()) {
+            return;
+        }
+        this.tray.setContextMenu(tMenu);
+    };
 
     private update = (status: string, message: string) => {
         if (!this.tray || this.tray.isDestroyed()) {

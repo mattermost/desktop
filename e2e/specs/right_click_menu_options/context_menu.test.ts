@@ -15,7 +15,7 @@ import type {ServerView} from '../../helpers/serverView';
 // Channel menus use webapp .Menu components; team sidebar uses Chromium's
 // native context menu since MM-57962 removed the webapp Copy Link menu.
 
-test.describe('mattermost/context_menu', () => {
+test.describe('right_click_menu_options/context_menu', () => {
     test.describe.configure({mode: 'serial'});
     test.use({appConfig: demoMattermostConfig});
     test.setTimeout(120_000);

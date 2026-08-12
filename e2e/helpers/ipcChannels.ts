@@ -8,3 +8,4 @@ export const CLOSE_DOWNLOADS_DROPDOWN_MENU = 'close-downloads-dropdown-menu';
 export const CALLS_LEAVE_CALL = 'calls-leave-call';
 export const EMIT_CONFIGURATION = 'emit-configuration';
 export const SHOW_NEW_SERVER_MODAL = 'show_new_server_modal';
+export const NOTIFICATION_CLICKED = 'notification-clicked';

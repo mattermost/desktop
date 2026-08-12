@@ -2,150 +2,49 @@
 // See LICENSE.txt for license information.
 
 import {expect} from '@playwright/test';
+import type {ElectronApplication} from 'playwright';
 
-import {isTransientEvaluateError} from './testRefs';
+import {
+    ensureChannelReady,
+    isChannelPostListLoaded,
+    isChannelViewLoaded,
+    isComposerInteractive,
+    prepareInteractiveChannel,
+    recoverChannelViewIfNeeded,
+    recoverInteractiveChannel,
+    recoverServerViewIfNeeded,
+    waitForChannelPostListLoaded,
+    waitForInteractiveChannel,
+    waitForMattermostShell,
+    waitForMattermostShellReady,
+} from './channelReadiness';
+import {
+    POST_TEXTBOX_CANDIDATES,
+    POST_TEXTBOX_RESOLVER_JS,
+    POST_TEXTBOX_SELECTOR,
+} from './rendererUtils';
 import type {ServerView} from './serverView';
 
-export const POST_TEXTBOX_CANDIDATES = [
-    '[data-slate-editor="true"]',
-    '#post_textbox[contenteditable="true"]',
-    '[data-testid="post_textbox"][contenteditable="true"]',
-    '#post_textbox',
-    '[data-testid="post_textbox"]',
-    '.post-create__input [contenteditable="true"]',
-    '.post-create__input [role="textbox"]',
-    '.AdvancedTextEditor [contenteditable="true"]',
-    '[role="textbox"][contenteditable="true"]',
-    'textarea#post_textbox',
-] as const;
+export {
+    ensureChannelReady,
+    isChannelPostListLoaded,
+    isChannelViewLoaded,
+    isComposerInteractive,
+    prepareInteractiveChannel,
+    recoverChannelViewIfNeeded,
+    recoverInteractiveChannel,
+    recoverServerViewIfNeeded,
+    waitForChannelPostListLoaded,
+    waitForInteractiveChannel,
+    waitForMattermostShell,
+    waitForMattermostShellReady,
+};
 
-export const POST_TEXTBOX_SELECTOR = POST_TEXTBOX_CANDIDATES.join(', ');
-
-const POST_TEXTBOX_CANDIDATES_JSON = JSON.stringify(POST_TEXTBOX_CANDIDATES);
-
-/**
- * Shared renderer-side JS, inlined into each `runInRenderer` string below.
- * Defines `__mmIsVisible` and `__mmResolvePostTextboxRoot` once so the four
- * functions in this file don't each carry their own copy of the candidate
- * resolution logic — `runInRenderer` evaluates a raw string in the renderer
- * process, so this has to be textually interpolated rather than imported.
- */
-const POST_TEXTBOX_RESOLVER_JS = `
-    const __mmIsVisible = (element) => {
-        if (!element || !element.isConnected) {
-            return false;
-        }
-        const style = window.getComputedStyle(element);
-        if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
-            return false;
-        }
-        const rect = element.getBoundingClientRect();
-        return rect.width > 0 && rect.height > 0;
-    };
-
-    const __mmResolvePostTextboxRoot = () => {
-        const seen = new Set();
-        const candidates = [];
-        for (const selector of ${POST_TEXTBOX_CANDIDATES_JSON}) {
-            for (const element of document.querySelectorAll(selector)) {
-                if (!seen.has(element)) {
-                    seen.add(element);
-                    candidates.push(element);
-                }
-            }
-        }
-        for (const candidate of candidates) {
-            if (!__mmIsVisible(candidate)) {
-                continue;
-            }
-            if (candidate.matches('[contenteditable="true"], textarea, input')) {
-                return candidate;
-            }
-            const nested = candidate.querySelector('[contenteditable="true"], textarea, input');
-            if (nested && __mmIsVisible(nested)) {
-                return nested;
-            }
-        }
-        return null;
-    };
-`;
-
-/**
- * Wait until the Mattermost webapp shell is interactive in a server view.
- */
-export async function waitForMattermostShell(
-    win: ServerView,
-    options?: {channelItem?: string; timeout?: number},
-) {
-    const channelItem = options?.channelItem ?? '#sidebarItem_town-square';
-    const timeout = options?.timeout ?? 60_000;
-
-    await expect.poll(async () => {
-        try {
-            await win.waitForSelector(channelItem, {timeout: 2_000});
-            return true;
-        } catch {
-            return false;
-        }
-    }, {timeout, message: `Mattermost shell must expose ${channelItem}`}).toBe(true);
-}
-
-/**
- * Reload the server view when the channel shell failed to mount (blank hex background).
- */
-export async function recoverServerViewIfNeeded(
-    win: ServerView,
-    options?: {channelItem?: string},
-) {
-    const channelItem = options?.channelItem ?? '#sidebarItem_town-square';
-    const healthy = await win.runInRenderer<boolean>(`
-        return Boolean(
-            document.querySelector('#channelHeaderTitle')
-            && document.querySelector(${JSON.stringify(channelItem)}),
-        );
-    `).catch(() => false);
-
-    if (healthy) {
-        return;
-    }
-
-    try {
-        await win.runInRenderer('window.location.reload(); return true;', true);
-    } catch (error) {
-        // reload() tears down the renderer; runInRenderer may reject after navigation starts.
-        if (!isTransientEvaluateError(error)) {
-            throw error;
-        }
-    }
-    await waitForMattermostShell(win, {channelItem});
-}
-
-/** Wait for the shell to mount, then recover it if the channel content failed to render. */
-export async function waitForMattermostShellReady(
-    win: ServerView,
-    options?: {channelItem?: string; timeout?: number},
-): Promise<void> {
-    await waitForMattermostShell(win, options);
-    await recoverServerViewIfNeeded(win, options);
-}
-
-/** Wait until the channel post list finishes its initial load. */
-export async function waitForChannelPostListLoaded(
-    win: ServerView,
-    options?: {timeout?: number},
-): Promise<void> {
-    const timeout = options?.timeout ?? 15_000;
-    await expect.poll(
-        async () => win.evaluate(() => !document.querySelector(
-            '.post-list__loading, .post-list__dynamic-loading, .loading-screen',
-        )),
-        {timeout, message: 'Channel post list must finish loading'},
-    ).toBe(true);
-}
+export {POST_TEXTBOX_CANDIDATES, POST_TEXTBOX_SELECTOR};
 
 /** Read the current post textbox contents (textarea value or contenteditable text). */
 export async function getPostTextboxValue(win: ServerView): Promise<string> {
-    const value = await win.runInRenderer<string>(`
+    const value = await win.runInRenderer(`
         ${POST_TEXTBOX_RESOLVER_JS}
 
         const root = __mmResolvePostTextboxRoot();
@@ -158,12 +57,12 @@ export async function getPostTextboxValue(win: ServerView): Promise<string> {
         return root.innerText || root.textContent || '';
     `, true);
 
-    return value ?? '';
+    return (value as string | undefined) ?? '';
 }
 
 /** Press a keyboard shortcut on the post textbox. */
 export async function pressPostTextboxKey(win: ServerView, key: string): Promise<void> {
-    const focused = await win.runInRenderer<boolean>(`
+    const focused = await win.runInRenderer(`
         ${POST_TEXTBOX_RESOLVER_JS}
 
         const root = __mmResolvePostTextboxRoot();
@@ -188,7 +87,7 @@ export async function typeIntoPostTextbox(win: ServerView, text: string): Promis
     await win.waitForSelector(POST_TEXTBOX_SELECTOR, {timeout: 10_000});
     await win.click(POST_TEXTBOX_SELECTOR);
 
-    const inserted = await win.runInRenderer<boolean>(`
+    const inserted = await win.runInRenderer(`
         const value = ${JSON.stringify(text)};
 
         ${POST_TEXTBOX_RESOLVER_JS}
@@ -235,7 +134,7 @@ export async function getPostTextboxWordPoint(
     win: ServerView,
     word: string,
 ): Promise<{x: number; y: number} | null> {
-    return win.runInRenderer<{x: number; y: number} | null>(`
+    return win.runInRenderer(`
         const target = ${JSON.stringify(word)};
 
         ${POST_TEXTBOX_RESOLVER_JS}
@@ -280,9 +179,6 @@ export async function getPostTextboxWordPoint(
             const textareaRect = textarea.getBoundingClientRect();
             document.body.removeChild(mirror);
 
-            // markerRect is relative to the mirror (anchored at 0,0 in body coords),
-            // so (markerRect - mirrorRect) gives the offset inside the mirror. Add that
-            // to the textarea's viewport position and subtract scroll for the final point.
             return {
                 x: Math.round(
                     textareaRect.left + (markerRect.left - mirrorRect.left) - textarea.scrollLeft + (markerRect.width / 2),
@@ -351,4 +247,72 @@ export async function getPostTextboxWordPoint(
             y: Math.round(match.rect.top + (match.rect.height / 2)),
         };
     `, true);
+}
+
+export async function rightClickAtPoint(
+    app: ElectronApplication,
+    webContentsId: number,
+    point: {x: number; y: number},
+): Promise<void> {
+    await app.evaluate(({webContents}, payload) => {
+        const wc = webContents.fromId(payload.id);
+        if (!wc || wc.isDestroyed()) {
+            throw new Error(`webContents ${payload.id} is not available`);
+        }
+        wc.focus();
+        wc.sendInputEvent({type: 'mouseMove', x: payload.x, y: payload.y});
+        wc.sendInputEvent({type: 'mouseDown', x: payload.x, y: payload.y, button: 'right', clickCount: 1});
+        wc.sendInputEvent({type: 'mouseUp', x: payload.x, y: payload.y, button: 'right', clickCount: 1});
+    }, {id: webContentsId, ...point});
+}
+
+export async function listenForNativeContextMenu(app: ElectronApplication, webContentsId: number): Promise<void> {
+    await app.evaluate(({webContents}, id) => {
+        const previousListener = (global as any).__e2eNativeContextMenuListener as
+            | ((event: unknown, params: unknown) => void)
+            | undefined;
+        const previousWebContentsId = (global as any).__e2eNativeContextMenuListenerWebContentsId as number | undefined;
+        if (previousListener && previousWebContentsId != null) {
+            const previousWc = webContents.fromId(previousWebContentsId);
+            if (previousWc && !previousWc.isDestroyed()) {
+                previousWc.off('context-menu', previousListener);
+            }
+        }
+
+        const wc = webContents.fromId(id);
+        if (!wc || wc.isDestroyed()) {
+            return;
+        }
+        delete (global as any).__e2eNativeContextMenu;
+
+        const listener = (_event: unknown, params: unknown) => {
+            (global as any).__e2eNativeContextMenu = params;
+        };
+        (global as any).__e2eNativeContextMenuListener = listener;
+        (global as any).__e2eNativeContextMenuListenerWebContentsId = id;
+        wc.on('context-menu', listener);
+    }, webContentsId);
+}
+
+export async function waitForNativeContextMenu(app: ElectronApplication): Promise<Record<string, unknown>> {
+    await expect.poll(async () => app.evaluate(() => {
+        const params = (global as any).__e2eNativeContextMenu;
+        return Boolean(params);
+    }), {timeout: 10_000, message: 'Native context menu must open'}).toBe(true);
+
+    return app.evaluate(() => (global as any).__e2eNativeContextMenu as Record<string, unknown>);
+}
+
+export async function applySpellcheckSuggestion(
+    app: ElectronApplication,
+    webContentsId: number,
+    suggestion: string,
+): Promise<void> {
+    await app.evaluate(({webContents}, payload) => {
+        const wc = webContents.fromId(payload.id);
+        if (!wc || wc.isDestroyed()) {
+            throw new Error(`webContents ${payload.id} is not available`);
+        }
+        wc.replaceMisspelling(payload.suggestion);
+    }, {id: webContentsId, suggestion});
 }

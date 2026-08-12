@@ -6,9 +6,32 @@ import type {ElectronApplication, Page} from 'playwright';
 import {SHOW_SETTINGS_WINDOW} from './ipcChannels';
 import {evaluateInMainProcessWithArg} from './testRefs';
 
+function findSettingsPage(app: ElectronApplication): Page | undefined {
+    return app.windows().find((window) => {
+        try {
+            return window.url().includes('settings');
+        } catch {
+            return false;
+        }
+    });
+}
+
+async function waitForSettingsPage(app: ElectronApplication, timeoutMs = 15_000): Promise<Page> {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+        const settingsWindow = findSettingsPage(app);
+        if (settingsWindow) {
+            await settingsWindow.waitForLoadState().catch(() => {});
+            return settingsWindow;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+    throw new Error('Settings window did not open');
+}
+
 export async function openSettingsWindow(electronApp: ElectronApplication): Promise<Page> {
     for (let attempt = 0; attempt < 5; attempt++) {
-        const existingWindow = electronApp.windows().find((window) => window.url().includes('settings'));
+        const existingWindow = findSettingsPage(electronApp);
         if (existingWindow) {
             try {
                 await existingWindow.waitForLoadState();
@@ -22,22 +45,12 @@ export async function openSettingsWindow(electronApp: ElectronApplication): Prom
             }
         }
 
-        // Route through evaluateInMainProcessWithArg to reuse its transient
-        // "Execution context was destroyed" retry behavior instead of
-        // duplicating the try/catch loop here.
         await evaluateInMainProcessWithArg(electronApp, ({ipcMain}, showWindow) => {
             ipcMain.emit(showWindow);
         }, SHOW_SETTINGS_WINDOW);
 
         try {
-            const settingsWindow = electronApp.windows().find((window) => window.url().includes('settings')) ??
-                await electronApp.waitForEvent('window', {
-                    predicate: (window) => window.url().includes('settings'),
-                    timeout: 3_000,
-                });
-
-            await settingsWindow.waitForLoadState();
-            return settingsWindow;
+            return await waitForSettingsPage(electronApp);
         } catch (error) {
             if (attempt === 4) {
                 throw error;
@@ -47,4 +60,11 @@ export async function openSettingsWindow(electronApp: ElectronApplication): Prom
     }
 
     throw new Error('Settings window did not open');
+}
+
+export async function waitForSettingsModal(
+    app: ElectronApplication,
+    options?: {timeout?: number},
+): Promise<Page> {
+    return waitForSettingsPage(app, options?.timeout ?? 15_000);
 }

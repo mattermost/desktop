@@ -221,6 +221,12 @@ describe('common/Validator', () => {
             enableSentry: true,
             enableSessionAttributes: true,
             useNativeTitleBar: false,
+            trustedEmbeddedMediaOrigins: [
+                {
+                    serverOrigin: 'https://chat.example.com',
+                    embeddedOrigin: 'https://meet.example.com',
+                },
+            ],
         };
 
         it('should validate v4 config data', () => {
@@ -233,6 +239,19 @@ describe('common/Validator', () => {
                 spellCheckerURL: 'a-bad>url',
             };
             expect(Validator.validateV4ConfigData(modifiedConfig)).not.toHaveProperty('spellCheckerURL');
+        });
+
+        it('should reject trusted embedded media values that are not origins', () => {
+            const modifiedConfig = {
+                ...config,
+                trustedEmbeddedMediaOrigins: [
+                    {
+                        serverOrigin: 'https://chat.example.com/path',
+                        embeddedOrigin: 'https://meet.example.com',
+                    },
+                ],
+            };
+            expect(Validator.validateV4ConfigData(modifiedConfig)).toBeNull();
         });
     });
 

@@ -66,3 +66,7 @@ export async function restoreFlashFrameSpy(app: ElectronApplication): Promise<vo
         delete (global as any).__e2eFlashFrameCalls;
     });
 }
+
+export async function getFlashFrameCalls(app: ElectronApplication): Promise<boolean[]> {
+    return evaluateInMainProcess(app, () => (global as any).__e2eFlashFrameCalls ?? []);
+}

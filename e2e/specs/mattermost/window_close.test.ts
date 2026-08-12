@@ -7,7 +7,7 @@ import {buildServerMap} from '../../helpers/serverMap';
 
 test.describe('mattermost/window_close', () => {
     test(
-        'MM-67909 window.close() in a server view does not crash the app',
+        'MM-T6146 window.close() in a server view does not crash the app',
         {tag: ['@P1', '@all']},
         async ({electronApp, mainWindow, serverMap}) => {
             const serverName = demoConfig.servers[0].name;
@@ -30,7 +30,7 @@ test.describe('mattermost/window_close', () => {
     );
 
     test(
-        'MM-67909 app can be blurred and refocused after window.close() in a server view',
+        'MM-T6147 app can be blurred and refocused after window.close() in a server view',
         {tag: ['@P1', '@all']},
         async ({electronApp, mainWindow, serverMap}) => {
             const serverName = demoConfig.servers[0].name;

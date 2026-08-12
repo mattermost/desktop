@@ -83,7 +83,7 @@ async function openDownloadsDropdown(app: Awaited<ReturnType<typeof import('play
 }
 
 test.describe('downloads/downloads_dropdown_items', () => {
-    test('MM-22239 should display the file correctly (downloaded)', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
+    test('MM-T6134 should display the file correctly (downloaded)', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
         const userDataDir = path.join(testInfo.outputDir, 'userdata');
         const downloadsLocation = path.join(userDataDir, 'Downloads');
         const downloads = {
@@ -118,7 +118,7 @@ test.describe('downloads/downloads_dropdown_items', () => {
         }
     });
 
-    test('MM-22239 should display the file correctly (deleted)', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
+    test('MM-T6135 should display the file correctly (deleted)', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
         const userDataDir = path.join(testInfo.outputDir, 'userdata');
         const downloadsLocation = path.join(userDataDir, 'Downloads');
         const downloads = {
@@ -153,7 +153,7 @@ test.describe('downloads/downloads_dropdown_items', () => {
         }
     });
 
-    test('MM-22239 should display the file correctly (cancelled)', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
+    test('MM-T6136 should display the file correctly (cancelled)', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
         const userDataDir = path.join(testInfo.outputDir, 'userdata');
         const downloadsLocation = path.join(userDataDir, 'Downloads');
         const cancelledFile = {
@@ -192,7 +192,7 @@ test.describe('downloads/downloads_dropdown_items', () => {
         }
     });
 
-    test('MM-22239 should display the files in correct order', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
+    test('MM-T6137 should display the files in correct order', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
         const userDataDir = path.join(testInfo.outputDir, 'userdata');
         const downloadsLocation = path.join(userDataDir, 'Downloads');
         const downloads = {

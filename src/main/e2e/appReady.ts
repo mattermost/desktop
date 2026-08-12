@@ -3,38 +3,29 @@
 
 import type {BrowserWindow} from 'electron';
 
-import MainWindow from 'app/mainWindow/mainWindow';
-import {MAIN_WINDOW_CREATED} from 'common/communication';
+import Config from 'common/config';
 import {setTestField} from 'common/utils/util';
 
 /**
- * Signals `__e2eAppReady` once the main window is visible so Playwright can wait
- * on app readiness. No-op outside NODE_ENV=test.
+ * Register listeners on the main BrowserWindow so `__e2eAppReady` is set at the
+ * first reliable lifecycle point. Must run from MainWindow.init() before
+ * index.html finishes loading — otherwise a fast `show` during later startup
+ * work can fire before any listener is attached.
  */
-export function signalE2EAppReadyWhenShown(): void {
+export function registerMainWindowE2EReadiness(win: BrowserWindow): void {
     if (process.env.NODE_ENV !== 'test') {
         return;
     }
 
     const markReady = () => setTestField('__e2eAppReady', true);
-    const whenVisible = (win: BrowserWindow) => {
-        if (win.isVisible()) {
-            markReady();
-        } else {
-            win.once('show', markReady);
-        }
-    };
 
-    const win = MainWindow.get();
-    if (win) {
-        whenVisible(win);
-        return;
+    win.once('show', markReady);
+
+    if (Config.hideOnStart) {
+        win.webContents.once('did-finish-load', () => {
+            if (!win.isDestroyed() && win.webContents.getURL().includes('index')) {
+                markReady();
+            }
+        });
     }
-
-    MainWindow.once(MAIN_WINDOW_CREATED, () => {
-        const created = MainWindow.get();
-        if (created) {
-            whenVisible(created);
-        }
-    });
 }

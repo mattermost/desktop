@@ -7,6 +7,7 @@ import {ipcMain} from 'electron';
 import WebContentsManager from 'app/views/webContentsManager';
 import {
     SERVER_REMOVED,
+    SESSION_ATTRIBUTES_FIELD_UPDATED,
     SESSION_ATTRIBUTES_MANIFEST_INVALIDATED,
     SESSION_ATTRIBUTES_RESEND_REQUESTED,
 } from 'common/communication';
@@ -17,7 +18,6 @@ import {updateServerInfos} from 'main/app/utils';
 
 import type {SAField} from 'types/sessionAttributes';
 
-import SessionAttributeCollector from './collector';
 import {SessionAttributesManager} from './sessionAttributesManager';
 
 jest.mock('electron', () => ({
@@ -47,6 +47,7 @@ jest.mock('common/servers/serverManager', () => ({
         getServer: jest.fn(),
         lookupServerByURL: jest.fn(),
         getRemoteInfo: jest.fn(),
+        updateRemoteInfo: jest.fn(),
     },
 }));
 
@@ -54,12 +55,14 @@ jest.mock('main/app/utils', () => ({
     updateServerInfos: jest.fn(),
 }));
 
+const mockCollector = {
+    getClientIPAddress: jest.fn(() => '10.0.0.1'),
+    getOSPlatform: jest.fn(() => 'macos'),
+};
+
 jest.mock('./collector', () => ({
     __esModule: true,
-    default: {
-        getClientIPAddress: jest.fn(() => '10.0.0.1'),
-        getOSPlatform: jest.fn(() => 'macos'),
-    },
+    default: jest.fn(() => mockCollector),
 }));
 
 const manifest: SAField[] = [
@@ -77,13 +80,13 @@ const ServerManagerMock = jest.mocked(ServerManager);
 const WebContentsManagerMock = jest.mocked(WebContentsManager);
 const updateServerInfosMock = jest.mocked(updateServerInfos);
 const ipcMainMock = jest.mocked(ipcMain);
-const SessionAttributeCollectorMock = jest.mocked(SessionAttributeCollector);
 
 describe('main/sessionAttributes/sessionAttributesManager', () => {
     let manager: SessionAttributesManager;
     let serverRemovedHandler: (srv: typeof server) => void;
     let manifestInvalidatedHandler: (event: IpcMainEvent) => void;
     let resendRequestedHandler: (event: IpcMainEvent) => void;
+    let fieldUpdatedHandler: (event: IpcMainEvent, field: unknown) => void;
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -100,6 +103,9 @@ describe('main/sessionAttributes/sessionAttributesManager', () => {
             }
             if (channel === SESSION_ATTRIBUTES_RESEND_REQUESTED) {
                 resendRequestedHandler = handler;
+            }
+            if (channel === SESSION_ATTRIBUTES_FIELD_UPDATED) {
+                fieldUpdatedHandler = handler;
             }
             return ipcMainMock;
         });
@@ -119,7 +125,7 @@ describe('main/sessionAttributes/sessionAttributesManager', () => {
         });
 
         expect(header).toBeUndefined();
-        expect(SessionAttributeCollectorMock.getClientIPAddress).not.toHaveBeenCalled();
+        expect(mockCollector.getClientIPAddress).not.toHaveBeenCalled();
     });
 
     it('returns undefined without MMAUTHTOKEN cookie', () => {
@@ -138,8 +144,8 @@ describe('main/sessionAttributes/sessionAttributesManager', () => {
             client_ip_address: '10.0.0.1',
             os_platform: 'macos',
         });
-        expect(SessionAttributeCollectorMock.getClientIPAddress).toHaveBeenCalled();
-        expect(SessionAttributeCollectorMock.getOSPlatform).toHaveBeenCalled();
+        expect(mockCollector.getClientIPAddress).toHaveBeenCalled();
+        expect(mockCollector.getOSPlatform).toHaveBeenCalled();
     });
 
     it('does not resend attributes before TTL expires', () => {
@@ -173,11 +179,11 @@ describe('main/sessionAttributes/sessionAttributesManager', () => {
         expect(header).toBeDefined();
         const decoded = JSON.parse(Buffer.from(header!, 'base64').toString('utf8'));
         expect(decoded.os_platform).toBe('macos');
-        expect(SessionAttributeCollectorMock.getOSPlatform).toHaveBeenCalled();
+        expect(mockCollector.getOSPlatform).toHaveBeenCalled();
     });
 
     it('omits blank attribute values from the header', () => {
-        SessionAttributeCollectorMock.getClientIPAddress.mockReturnValue('');
+        mockCollector.getClientIPAddress.mockReturnValue('');
         ServerManagerMock.getRemoteInfo.mockReturnValue({
             sessionAttributesManifest: [
                 {name: 'client_ip_address', type: 'string', ttl_seconds: 30, grace_period_seconds: 60, platforms: ['desktop']},
@@ -230,5 +236,117 @@ describe('main/sessionAttributes/sessionAttributesManager', () => {
 
         expect(updateServerInfos).not.toHaveBeenCalled();
         expect((manager as unknown as {lastSentAt: Map<string, Map<string, number>>}).lastSentAt.has(server.id)).toBe(true);
+    });
+
+    it('appends a new field to the manifest on SESSION_ATTRIBUTES_FIELD_UPDATED', () => {
+        ServerManagerMock.getRemoteInfo.mockReturnValue({
+            sessionAttributesManifest: [
+                {name: 'os_platform', type: 'text', ttl_seconds: 0, grace_period_seconds: 0, platforms: ['desktop']},
+            ],
+        });
+        WebContentsManagerMock.getViewByWebContentsId.mockReturnValue({serverId: server.id} as never);
+
+        fieldUpdatedHandler({sender: {id: 42}} as IpcMainEvent, {
+            name: 'hardware_id',
+            type: 'text',
+            attrs: {enabled: true, ttl_seconds: 300, grace_period_seconds: 300, platforms: ['desktop']},
+        });
+
+        expect(ServerManagerMock.updateRemoteInfo).toHaveBeenCalledWith(server.id, {
+            sessionAttributesManifest: [
+                {name: 'os_platform', type: 'text', ttl_seconds: 0, grace_period_seconds: 0, platforms: ['desktop']},
+                {name: 'hardware_id', type: 'text', ttl_seconds: 300, grace_period_seconds: 300, platforms: ['desktop']},
+            ],
+        });
+    });
+
+    it('replaces an existing field in the manifest on SESSION_ATTRIBUTES_FIELD_UPDATED', () => {
+        ServerManagerMock.getRemoteInfo.mockReturnValue({
+            sessionAttributesManifest: [
+                {name: 'hardware_id', type: 'text', ttl_seconds: 60, grace_period_seconds: 60, platforms: ['desktop']},
+            ],
+        });
+        WebContentsManagerMock.getViewByWebContentsId.mockReturnValue({serverId: server.id} as never);
+
+        fieldUpdatedHandler({sender: {id: 42}} as IpcMainEvent, {
+            name: 'hardware_id',
+            type: 'text',
+            attrs: {enabled: true, ttl_seconds: 300, grace_period_seconds: 300, platforms: ['desktop']},
+        });
+
+        expect(ServerManagerMock.updateRemoteInfo).toHaveBeenCalledWith(server.id, {
+            sessionAttributesManifest: [
+                {name: 'hardware_id', type: 'text', ttl_seconds: 300, grace_period_seconds: 300, platforms: ['desktop']},
+            ],
+        });
+    });
+
+    it('removes a field from the manifest when it is disabled', () => {
+        ServerManagerMock.getRemoteInfo.mockReturnValue({
+            sessionAttributesManifest: [
+                {name: 'hardware_id', type: 'text', ttl_seconds: 300, grace_period_seconds: 300, platforms: ['desktop']},
+            ],
+        });
+        WebContentsManagerMock.getViewByWebContentsId.mockReturnValue({serverId: server.id} as never);
+
+        fieldUpdatedHandler({sender: {id: 42}} as IpcMainEvent, {
+            name: 'hardware_id',
+            type: 'text',
+            attrs: {enabled: false, ttl_seconds: 300, grace_period_seconds: 300, platforms: ['desktop']},
+        });
+
+        expect(ServerManagerMock.updateRemoteInfo).toHaveBeenCalledWith(server.id, {
+            sessionAttributesManifest: [],
+        });
+    });
+
+    it('does not track a field that no longer targets the desktop', () => {
+        ServerManagerMock.getRemoteInfo.mockReturnValue({
+            sessionAttributesManifest: [
+                {name: 'hardware_id', type: 'text', ttl_seconds: 300, grace_period_seconds: 300, platforms: ['desktop']},
+            ],
+        });
+        WebContentsManagerMock.getViewByWebContentsId.mockReturnValue({serverId: server.id} as never);
+
+        fieldUpdatedHandler({sender: {id: 42}} as IpcMainEvent, {
+            name: 'hardware_id',
+            type: 'text',
+            attrs: {enabled: true, ttl_seconds: 300, grace_period_seconds: 300, platforms: ['mobile']},
+        });
+
+        expect(ServerManagerMock.updateRemoteInfo).toHaveBeenCalledWith(server.id, {
+            sessionAttributesManifest: [],
+        });
+    });
+
+    it('clears the lastSentAt entry for the updated field so it is resent', () => {
+        ServerManagerMock.getRemoteInfo.mockReturnValue({
+            sessionAttributesManifest: [
+                {name: 'hardware_id', type: 'text', ttl_seconds: 300, grace_period_seconds: 300, platforms: ['desktop']},
+            ],
+        });
+        (manager as unknown as {lastSentAt: Map<string, Map<string, number>>}).lastSentAt.set(server.id, new Map([['hardware_id', Date.now()]]));
+        WebContentsManagerMock.getViewByWebContentsId.mockReturnValue({serverId: server.id} as never);
+
+        fieldUpdatedHandler({sender: {id: 42}} as IpcMainEvent, {
+            name: 'hardware_id',
+            type: 'text',
+            attrs: {enabled: true, ttl_seconds: 600, grace_period_seconds: 300, platforms: ['desktop']},
+        });
+
+        expect((manager as unknown as {lastSentAt: Map<string, Map<string, number>>}).lastSentAt.get(server.id)?.has('hardware_id')).toBe(false);
+    });
+
+    it('ignores an invalid field payload on SESSION_ATTRIBUTES_FIELD_UPDATED', () => {
+        ServerManagerMock.getRemoteInfo.mockReturnValue({
+            sessionAttributesManifest: [
+                {name: 'hardware_id', type: 'text', ttl_seconds: 300, grace_period_seconds: 300, platforms: ['desktop']},
+            ],
+        });
+        WebContentsManagerMock.getViewByWebContentsId.mockReturnValue({serverId: server.id} as never);
+
+        fieldUpdatedHandler({sender: {id: 42}} as IpcMainEvent, {name: 'hardware_id'});
+
+        expect(ServerManagerMock.updateRemoteInfo).not.toHaveBeenCalled();
     });
 });

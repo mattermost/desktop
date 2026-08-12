@@ -57,6 +57,7 @@ import parseArgs from 'main/ParseArgs';
 import PerformanceMonitor from 'main/performanceMonitor';
 import secureStorage from 'main/secureStorage';
 import AllowProtocolDialog from 'main/security/allowProtocolDialog';
+import {shouldCancelLocalNetworkRequest} from 'main/security/localNetworkAccess';
 import PermissionsManager from 'main/security/permissionsManager';
 import PreAuthManager from 'main/security/preAuthManager';
 import sentryHandler from 'main/sentryHandler';
@@ -65,6 +66,7 @@ import updateNotifier from 'main/updateNotifier';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 
 import {
+    handleAppActivate,
     handleAppBeforeQuit,
     handleAppBrowserWindowCreated,
     handleAppCertificateError,
@@ -187,7 +189,7 @@ function initializeAppEventListeners() {
     app.on('second-instance', handleAppSecondInstance);
     app.on('window-all-closed', handleAppWindowAllClosed);
     app.on('browser-window-created', handleAppBrowserWindowCreated);
-    app.on('activate', () => MainWindow.show());
+    app.on('activate', handleAppActivate);
     app.on('before-quit', handleAppBeforeQuit);
     app.on('certificate-error', handleAppCertificateError);
     app.on('child-process-gone', handleChildProcessGone);
@@ -331,6 +333,26 @@ async function initializeAfterAppReady() {
 
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;
+    defaultSession.webRequest.onBeforeRequest(async (details, callback) => {
+        try {
+            const shouldCancel = await shouldCancelLocalNetworkRequest(details);
+
+            if (shouldCancel) {
+                log.warn('Blocked server content from accessing local or private network URL', {
+                    resourceType: details.resourceType,
+                    origin: parseURL(details.url)?.origin,
+                    webContentsId: details.webContentsId,
+                });
+                callback({cancel: true});
+                return;
+            }
+        } catch (error) {
+            log.warn('Error while checking local network request policy', {error});
+        }
+
+        callback({});
+    });
+
     defaultSession.webRequest.onHeadersReceived((details, callback) => {
         const url = parseURL(details.url);
         if (url?.protocol === 'mattermost-desktop:' && url?.pathname.endsWith('html')) {

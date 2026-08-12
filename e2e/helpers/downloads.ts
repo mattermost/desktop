@@ -11,7 +11,7 @@ import type {ElectronApplication} from 'playwright';
 
 import {waitForAppReady} from './appReadiness';
 import {electronBinaryPath, appDir, emptyConfig} from './config';
-import {closeElectronAppFast} from './electronApp';
+import {closeElectronAppFast, registerElectronMainProcess} from './electronApp';
 
 export type DownloadServer = {
     server: http.Server;
@@ -138,6 +138,7 @@ export async function launchAppWithDownloadsDir(userDataDir: string, downloadLoc
         env: {...process.env, NODE_ENV: 'test'},
         timeout: 60_000,
     });
+    registerElectronMainProcess(app.process()?.pid);
     await waitForAppReady(app);
     return app;
 }

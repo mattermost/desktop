@@ -363,6 +363,38 @@ describe('main/windows/callsWidgetWindow', () => {
         expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith(CALLS_WIDGET_SHARE_SCREEN, 'sourceId', true);
     });
 
+    describe('handleCallsLeave', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+
+        beforeEach(() => {
+            callsWidgetWindow.close = jest.fn();
+            callsWidgetWindow.mainView = {webContentsId: 'mainViewID'};
+            callsWidgetWindow.win = {webContents: {id: 'widgetID'}, isDestroyed: () => false};
+            callsWidgetWindow.popOut = undefined;
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+            delete callsWidgetWindow.mainView;
+            delete callsWidgetWindow.win;
+        });
+
+        it('should not close when the sender is a different server', () => {
+            callsWidgetWindow.handleCallsLeave({sender: {id: 'otherServerID'}});
+            expect(callsWidgetWindow.close).not.toHaveBeenCalled();
+        });
+
+        it('should close when the sender is the calls widget', () => {
+            callsWidgetWindow.handleCallsLeave({sender: {id: 'widgetID'}});
+            expect(callsWidgetWindow.close).toHaveBeenCalled();
+        });
+
+        it('should close when the sender is the main view of the call', () => {
+            callsWidgetWindow.handleCallsLeave({sender: {id: 'mainViewID'}});
+            expect(callsWidgetWindow.close).toHaveBeenCalled();
+        });
+    });
+
     describe('onPopOutOpen', () => {
         const callsWidgetWindow = new CallsWidgetWindow();
 
@@ -486,7 +518,9 @@ describe('main/windows/callsWidgetWindow', () => {
             },
             webContents: {
                 on: (event, listener) => {
-                    redirectListener = listener;
+                    if (event === 'will-redirect') {
+                        redirectListener = listener;
+                    }
                 },
                 once: (event, listener) => {
                     frameFinishedLoadListener = listener;
@@ -541,6 +575,56 @@ describe('main/windows/callsWidgetWindow', () => {
         expect(callsWidgetWindow.win.focus).toHaveBeenCalled();
     });
 
+    describe('onPopOutCreate - devtools listeners', () => {
+        const popOut = {
+            on: jest.fn(),
+            webContents: {
+                on: jest.fn(),
+                once: jest.fn(),
+                id: 'webContentsId',
+                getURL: () => ('http://myurl.com'),
+                removeListener: jest.fn(),
+                isDestroyed: jest.fn(() => false),
+            },
+            off: jest.fn(),
+            loadURL: jest.fn(),
+            isDestroyed: jest.fn(() => false),
+        };
+
+        beforeEach(() => {
+            jest.clearAllMocks();
+            const callsWidgetWindow = new CallsWidgetWindow();
+            callsWidgetWindow.win = {
+                setVisibleOnAllWorkspaces: jest.fn(),
+                setAlwaysOnTop: jest.fn(),
+                focus: jest.fn(),
+            };
+            callsWidgetWindow.onPopOutCreate(popOut);
+        });
+
+        it('should register devtools-focused listener on popout webContents', () => {
+            expect(popOut.webContents.on.mock.calls.some(([e]) => e === 'devtools-focused')).toBe(true);
+        });
+
+        it('should register devtools-closed listener on popout webContents', () => {
+            expect(popOut.webContents.on.mock.calls.some(([e]) => e === 'devtools-closed')).toBe(true);
+        });
+
+        it('should emit UPDATE_SHORTCUT_MENU when devtools-focused fires on popout', () => {
+            const call = popOut.webContents.on.mock.calls.find(([e]) => e === 'devtools-focused');
+            expect(call).toBeDefined();
+            call[1]();
+            expect(ipcMain.emit).toHaveBeenCalledWith(UPDATE_SHORTCUT_MENU);
+        });
+
+        it('should emit UPDATE_SHORTCUT_MENU when devtools-closed fires on popout', () => {
+            const call = popOut.webContents.on.mock.calls.find(([e]) => e === 'devtools-closed');
+            expect(call).toBeDefined();
+            call[1]();
+            expect(ipcMain.emit).toHaveBeenCalledWith(UPDATE_SHORTCUT_MENU);
+        });
+    });
+
     it('getViewURL', () => {
         const callsWidgetWindow = new CallsWidgetWindow();
         callsWidgetWindow.mainView = {
@@ -560,6 +644,33 @@ describe('main/windows/callsWidgetWindow', () => {
 
         callsWidgetWindow.onNavigate(ev, 'http://localhost:8065/invalid/url');
         expect(ev.preventDefault).toHaveBeenCalledTimes(1);
+    });
+
+    it('onRedirect', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.getWidgetURL = () => 'http://localhost:8065';
+
+        const mainFrameEv = {preventDefault: jest.fn(), isMainFrame: true};
+        callsWidgetWindow.onRedirect(mainFrameEv, 'https://www.google.com/');
+        expect(mainFrameEv.preventDefault).toHaveBeenCalled();
+
+        urlUtils.parseURL.mockReturnValue(new URL('https://example.com/embed'));
+        const subFrameEv = {preventDefault: jest.fn(), isMainFrame: false, url: 'https://example.com/embed'};
+        callsWidgetWindow.onRedirect(subFrameEv, subFrameEv.url);
+        expect(subFrameEv.preventDefault).not.toHaveBeenCalled();
+    });
+
+    it('onFrameNavigate', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+
+        const mainFrameEv = {preventDefault: jest.fn(), isMainFrame: true, url: 'custom://payload'};
+        callsWidgetWindow.onFrameNavigate(mainFrameEv);
+        expect(mainFrameEv.preventDefault).not.toHaveBeenCalled();
+
+        urlUtils.parseURL.mockReturnValue(new URL('custom://payload'));
+        const subFrameEv = {preventDefault: jest.fn(), isMainFrame: false, url: 'custom://payload'};
+        callsWidgetWindow.onFrameNavigate(subFrameEv);
+        expect(subFrameEv.preventDefault).toHaveBeenCalled();
     });
 
     describe('handleCreateCallsWidgetWindow', () => {
@@ -701,6 +812,32 @@ describe('main/windows/callsWidgetWindow', () => {
             callsWidgetWindow.options = {callID: 'test'};
             await callsWidgetWindow.handleCreateCallsWidgetWindow({sender: {id: 2}}, {callID: 'test2'});
             expect(callsWidgetWindow.win).toEqual(window);
+        });
+
+        it('should register devtools-focused listener on widget webContents in init', async () => {
+            await callsWidgetWindow.handleCreateCallsWidgetWindow({sender: {id: 2}}, {callID: 'test'});
+            expect(browserWindow.webContents.on.mock.calls.some(([e]) => e === 'devtools-focused')).toBe(true);
+        });
+
+        it('should register devtools-closed listener on widget webContents in init', async () => {
+            await callsWidgetWindow.handleCreateCallsWidgetWindow({sender: {id: 2}}, {callID: 'test'});
+            expect(browserWindow.webContents.on.mock.calls.some(([e]) => e === 'devtools-closed')).toBe(true);
+        });
+
+        it('should emit UPDATE_SHORTCUT_MENU when devtools-focused fires on widget webContents', async () => {
+            await callsWidgetWindow.handleCreateCallsWidgetWindow({sender: {id: 2}}, {callID: 'test'});
+            const call = browserWindow.webContents.on.mock.calls.find(([e]) => e === 'devtools-focused');
+            expect(call).toBeDefined();
+            call[1]();
+            expect(ipcMain.emit).toHaveBeenCalledWith(UPDATE_SHORTCUT_MENU);
+        });
+
+        it('should emit UPDATE_SHORTCUT_MENU when devtools-closed fires on widget webContents', async () => {
+            await callsWidgetWindow.handleCreateCallsWidgetWindow({sender: {id: 2}}, {callID: 'test'});
+            const call = browserWindow.webContents.on.mock.calls.find(([e]) => e === 'devtools-closed');
+            expect(call).toBeDefined();
+            call[1]();
+            expect(ipcMain.emit).toHaveBeenCalledWith(UPDATE_SHORTCUT_MENU);
         });
     });
 

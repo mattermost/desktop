@@ -15,7 +15,7 @@ import {
 } from '../../helpers/downloads';
 
 test(
-    'DL-06 in-progress download can be cancelled from the downloads dropdown menu',
+    'MM-T6130 in-progress download can be cancelled from the downloads dropdown menu',
     {tag: ['@P1', '@all']},
     async ({}, testInfo) => {
         const filename = 'slow-cancel.txt';
