@@ -60,16 +60,16 @@ jobs:
           description: "Compatibility Matrix Testing for ${{ inputs.DESKTOP_VERSION }} version"
           status: pending
 
-  # Input follows the below schema
+  # Input follows the below schema (Matterwick ≥ v0.4.16).
   # {
   #   "environment": [
   #     {
   #       "os": "linux",
-  #       "runner": "ubuntu-22.04"
+  #       "runner": "ubuntu-latest"
   #     },
   #     {
   #       "os": "macos",
-  #       "runner": "macos-13"
+  #       "runner": "macos-26"
   #     },
   #     {
   #       "os": "windows",
@@ -78,12 +78,12 @@ jobs:
   #   ],
   #   "server": [
   #     {
-  #       "version": "9.6.1",
-  #       "url": "https://delivery-cmt-8467830017-9-6-1.test.mattermost.cloud/"
+  #       "version": "11.9.0",
+  #       "url": "https://delivery-cmt-8467830017-11-9-0.test.mattermost.cloud/"
   #     },
   #     {
-  #       "version": "9.5.2",
-  #       "url": "https://delivery-cmt-8467830017-9-5-2.test.mattermost.cloud/"
+  #       "version": "11.8.4",
+  #       "url": "https://delivery-cmt-8467830017-11-8-4.test.mattermost.cloud/"
   #     }
   #   ]
   # }
