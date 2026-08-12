@@ -25,11 +25,8 @@ test.describe('calls/calls_functionality', () => {
         if (!serverUrl || !username || !password) {
             return;
         }
-        const token = await apiLogin(serverUrl, username, password).catch(() => null);
-        if (!token) {
-            return;
-        }
-        await ensureCallsPlugin(serverUrl, token).catch(() => null);
+        const token = await apiLogin(serverUrl, username, password);
+        await ensureCallsPlugin(serverUrl, token);
     });
 
     test.beforeEach(async ({serverMap, electronApp}) => {
@@ -98,11 +95,7 @@ test.describe('calls/calls_functionality', () => {
     test('MM-T5587 Calls - Slash Commands',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
-            const widgetWindow = await startCall(electronApp, serverWin).catch(() => null);
-            if (!widgetWindow) {
-                test.skip(true, 'Calls plugin/widget not available on this test server');
-                return;
-            }
+            const widgetWindow = await startCall(electronApp, serverWin);
 
             expect(widgetWindow.url(), '/call start must open Calls widget').toContain(
                 '/plugins/com.mattermost.calls/standalone/widget.html',
@@ -155,32 +148,3 @@ test.describe('calls/calls_functionality', () => {
     );
 });
 
-<<<<<<< HEAD
-=======
-async function closeCallsWidget(
-    electronApp: ElectronApplication,
-    widgetWindow: Page,
-): Promise<void> {
-    const leaveClicked = await widgetWindow.evaluate(() => {
-        const leaveBtn = document.querySelector(
-            'button[aria-label*="Leave"], button[aria-label*="leave"], button[aria-label*="End"], button[aria-label*="end"]',
-        ) as HTMLButtonElement;
-        if (leaveBtn) {
-            leaveBtn.click();
-            return true;
-        }
-        return false;
-    });
-
-    if (!leaveClicked) {
-        await widgetWindow.evaluate(() => {
-            (window as unknown as {desktopAPI?: {leaveCall: () => void}}).desktopAPI?.leaveCall();
-        });
-    }
-
-    await expect.poll(
-        () => findCallsWidgetWindow(electronApp),
-        {timeout: 10_000, message: 'Calls widget window must close after leave'},
-    ).toBeNull();
-}
->>>>>>> origin/master

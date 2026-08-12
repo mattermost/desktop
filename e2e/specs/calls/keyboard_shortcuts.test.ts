@@ -24,11 +24,8 @@ test.describe('calls/keyboard_shortcuts', () => {
         if (!serverUrl || !username || !password) {
             return;
         }
-        const token = await apiLogin(serverUrl, username, password).catch(() => null);
-        if (!token) {
-            return;
-        }
-        await ensureCallsPlugin(serverUrl, token).catch(() => null);
+        const token = await apiLogin(serverUrl, username, password);
+        await ensureCallsPlugin(serverUrl, token);
     });
 
     test.beforeEach(async ({serverMap, electronApp}) => {
@@ -53,12 +50,7 @@ test.describe('calls/keyboard_shortcuts', () => {
     test.skip('MM Calls - Mute/Unmute keyboard shortcut (Cmd/Ctrl+Shift+Space)',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
-            const widgetWindow = await startCall(electronApp, serverWin).catch(() => null);
-            if (!widgetWindow) {
-                test.skip(true, 'Calls plugin/widget not available on this test server');
-                return;
-            }
-
+            const widgetWindow = await startCall(electronApp, serverWin);
             await widgetWindow.bringToFront();
 
             const initialLabel = await widgetWindow.evaluate(() => {
@@ -82,12 +74,7 @@ test.describe('calls/keyboard_shortcuts', () => {
     test('MM Calls - Raise/Lower hand keyboard shortcut (Cmd/Ctrl+Shift+Y)',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
-            const widgetWindow = await startCall(electronApp, serverWin).catch(() => null);
-            if (!widgetWindow) {
-                test.skip(true, 'Calls plugin/widget not available on this test server');
-                return;
-            }
-
+            const widgetWindow = await startCall(electronApp, serverWin);
             await widgetWindow.bringToFront();
 
             // Verify hand starts lowered
@@ -124,12 +111,7 @@ test.describe('calls/keyboard_shortcuts', () => {
     test('MM Calls - Participants list keyboard shortcut (Cmd/Ctrl+Shift+P)',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
-            const widgetWindow = await startCall(electronApp, serverWin).catch(() => null);
-            if (!widgetWindow) {
-                test.skip(true, 'Calls plugin/widget not available on this test server');
-                return;
-            }
-
+            const widgetWindow = await startCall(electronApp, serverWin);
             await widgetWindow.bringToFront();
 
             // Participants list starts hidden
@@ -172,12 +154,7 @@ test.describe('calls/keyboard_shortcuts', () => {
     test('MM Calls - Screen share keyboard shortcut triggers Desktop API (Cmd/Ctrl+Shift+E)',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
-            const widgetWindow = await startCall(electronApp, serverWin).catch(() => null);
-            if (!widgetWindow) {
-                test.skip(true, 'Calls plugin/widget not available on this test server');
-                return;
-            }
-
+            const widgetWindow = await startCall(electronApp, serverWin);
             await widgetWindow.bringToFront();
 
             // desktopAPI is exposed via contextBridge and is a frozen proxy — we cannot
@@ -205,12 +182,7 @@ test.describe('calls/keyboard_shortcuts', () => {
     test('MM Calls - Leave call keyboard shortcut (Cmd/Ctrl+Shift+L)',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
-            const widgetWindow = await startCall(electronApp, serverWin).catch(() => null);
-            if (!widgetWindow) {
-                test.skip(true, 'Calls plugin/widget not available on this test server');
-                return;
-            }
-
+            const widgetWindow = await startCall(electronApp, serverWin);
             await widgetWindow.bringToFront();
 
             const isMac = process.platform === 'darwin';
