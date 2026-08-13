@@ -279,20 +279,36 @@ function formatMetaLine(compositeIdentity) {
  * Prefer unique per-leg counts (retry-collapsed) over TSIO group test_stats, which
  * counts every failed attempt and double-counts retries in channel alerts.
  *
+ * When `expectedJobNames` is provided, per-leg totals are used only if every expected
+ * job is present — otherwise fall back to `stats` so partial consolidation cannot hide
+ * aggregate failures.
+ *
  * @param {Record<string, {passed?: number, failed?: number, skipped?: number, flaky?: number}>} perJobCounts
  * @param {{passed?: number, failed?: number, skipped?: number, flaky?: number}} stats
+ * @param {string[]} [expectedJobNames] - uploaded report job names; omit to trust any per-leg map
  * @returns {{passed: number, failed: number, skipped: number}}
  */
-function resolveChannelTotals(perJobCounts, stats = {}) {
-    const jobs = Object.values(perJobCounts || {});
+function resolveChannelTotals(perJobCounts, stats = {}, expectedJobNames) {
+    const counts = perJobCounts || {};
+
+    let jobs;
+    if (expectedJobNames === undefined) {
+        jobs = Object.values(counts);
+    } else if (expectedJobNames.length > 0 &&
+        expectedJobNames.every((job) => Object.prototype.hasOwnProperty.call(counts, job))) {
+        jobs = expectedJobNames.map((job) => counts[job]);
+    } else {
+        jobs = [];
+    }
+
     if (jobs.length > 0) {
         let passed = 0;
         let failed = 0;
         let skipped = 0;
-        for (const counts of jobs) {
-            passed += (counts.passed || 0) + (counts.flaky || 0);
-            failed += counts.failed || 0;
-            skipped += counts.skipped || 0;
+        for (const jobCounts of jobs) {
+            passed += (jobCounts.passed || 0) + (jobCounts.flaky || 0);
+            failed += jobCounts.failed || 0;
+            skipped += jobCounts.skipped || 0;
         }
         return {passed, failed, skipped};
     }
@@ -324,8 +340,16 @@ function formatCmtChannelMessage({
     upstreamJobsSucceeded = true,
     hasFailures = false,
 }) {
-    const legs = buildLegSummaries(perJobCounts, detail?.reports || [], baseUrl);
-    const {passed, failed, skipped} = resolveChannelTotals(perJobCounts, detail?.test_stats);
+    const reports = detail?.reports || [];
+    const legs = buildLegSummaries(perJobCounts, reports, baseUrl);
+    const expectedJobNames = [...new Set(
+        reports.map((r) => r.gh_job_name || r.display_name).filter(Boolean),
+    )];
+    const {passed, failed, skipped} = resolveChannelTotals(
+        perJobCounts,
+        detail?.test_stats,
+        expectedJobNames,
+    );
 
     // Overall pass/fail follows tests + upstream CI — not TSIO consolidation state.
     // Stuck `in_progress` / `incomplete` with 0 failures must not render as ❌ Failed.

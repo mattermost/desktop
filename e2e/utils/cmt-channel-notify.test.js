@@ -58,6 +58,22 @@ describe('cmt-channel-notify', () => {
                 {passed: 203, failed: 14, skipped: 5},
             );
         });
+
+        it('falls back to aggregate stats when an expected leg is missing from per-job counts', () => {
+            assert.deepEqual(
+                resolveChannelTotals(
+                    {
+                        'e2e-on-ubuntu-latest-11.9.0': {passed: 218, failed: 0, skipped: 11, flaky: 0},
+                    },
+                    {passed: 400, failed: 5, skipped: 20, flaky: 0},
+                    [
+                        'e2e-on-ubuntu-latest-11.9.0',
+                        'e2e-on-windows-2022-11.9.0',
+                    ],
+                ),
+                {passed: 400, failed: 5, skipped: 20},
+            );
+        });
     });
 
     describe('formatLegResultText', () => {
@@ -203,6 +219,7 @@ describe('cmt-channel-notify', () => {
             assert.match(text, /\*\*Branch:\*\* `v6\.2\.0-rc\.1` · \*\*Commit:\*\* `55afc0b`/);
             assert.match(text, /🔴 \*\*1 failing test\*\*/);
             assert.match(text, /\| 🪟 Windows \| Server `11\.9\.0` \| 1 \|/);
+
             // Overall totals come from unique per-leg counts (not inflated TSIO test_stats).
             assert.match(text, /\| ❌ Failed \| \*\*461\*\* \| \*\*1\*\* \| \*\*40\*\* \|/);
             assert.match(text, /#### Detailed results/);
@@ -221,6 +238,7 @@ describe('cmt-channel-notify', () => {
                 },
                 detail: {
                     status: 'completed',
+
                     // Inflated: each retry attempt counted (e.g. 1 unique fail × 2 attempts).
                     test_stats: {passed: 218, failed: 2, skipped: 11, total: 231},
                     reports: [
@@ -230,6 +248,7 @@ describe('cmt-channel-notify', () => {
                 reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/5eda917/cmt-desktop',
                 baseUrl: 'https://test-io.test.mattermost.com',
                 perJobCounts: {
+
                     // Unique Playwright-style count after collapsing retries.
                     'e2e-on-ubuntu-latest-11.9.1': {passed: 218, failed: 1, skipped: 11, flaky: 0},
                 },
@@ -323,6 +342,7 @@ describe('cmt-channel-notify', () => {
                 upstreamJobsSucceeded: true,
             });
             assert.match(text, /^## ✅ Desktop PR E2E\n/);
+
             // Unique per-leg sum: 216+220+237+9 = 682 passed, 30 skipped (not TSIO test_stats 674/51).
             assert.match(text, /\| ✅ Passed \| \*\*682\*\* \| \*\*0\*\* \| \*\*30\*\* \|/);
             assert.match(text, /TSIO report status: `in_progress` \(consolidation still catching up; not treated as a test failure\)/);
