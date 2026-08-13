@@ -5,10 +5,11 @@ import {test, expect} from '../../fixtures/index';
 import {waitForCallsWidgetWindow, closeCallsWidget, sendWidgetShortcut, leaveCallIfActive, startCall} from '../../helpers/callsWidget';
 import {waitForMattermostShellReady} from '../../helpers/channelReadiness';
 import {demoMattermostConfig} from '../../helpers/config';
-import {loginToMattermost} from '../../helpers/login';
+import {loginToMattermost, logoutFromMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {apiLogin} from '../../helpers/server_api/client';
 import {ensureCallsPlugin} from '../../helpers/server_api/plugin';
+import {apiGetAdminTeamId, createCallsTestUser, type TestUser} from '../../helpers/server_api/user';
 import type {ServerView} from '../../helpers/serverView';
 
 test.describe('calls/calls_functionality', () => {
@@ -17,6 +18,9 @@ test.describe('calls/calls_functionality', () => {
     test.setTimeout(120_000);
 
     let serverWin: ServerView;
+    let adminToken: string;
+    let teamId: string;
+    let testServerUrl: string;
 
     test.beforeAll(async () => {
         const serverUrl = process.env.MM_TEST_SERVER_URL;
@@ -25,8 +29,10 @@ test.describe('calls/calls_functionality', () => {
         if (!serverUrl || !username || !password) {
             return;
         }
-        const token = await apiLogin(serverUrl, username, password);
-        await ensureCallsPlugin(serverUrl, token);
+        testServerUrl = serverUrl;
+        adminToken = await apiLogin(serverUrl, username, password);
+        await ensureCallsPlugin(serverUrl, adminToken);
+        teamId = await apiGetAdminTeamId(serverUrl, adminToken);
     });
 
     test.beforeEach(async ({serverMap, electronApp}) => {
@@ -39,7 +45,9 @@ test.describe('calls/calls_functionality', () => {
         expect(serverEntry, 'Mattermost server view should exist').toBeTruthy();
         serverWin = serverEntry!.win;
 
-        await loginToMattermost(serverWin);
+        await logoutFromMattermost(serverWin);
+        const testUser: TestUser = await createCallsTestUser(testServerUrl, adminToken, teamId);
+        await loginToMattermost(serverWin, testUser);
         await waitForMattermostShellReady(serverWin, {channelItem: '#sidebarItem_town-square'});
         await serverWin.click('#sidebarItem_town-square');
         await serverWin.waitForSelector('#channelHeaderTitle', {timeout: 10_000});

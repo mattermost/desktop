@@ -4,10 +4,11 @@
 import {test, expect} from '../../fixtures/index';
 import {findCallsWidgetWindow, startCall, closeCallsWidget, leaveCallIfActive} from '../../helpers/callsWidget';
 import {demoMattermostConfig} from '../../helpers/config';
-import {loginToMattermost} from '../../helpers/login';
+import {loginToMattermost, logoutFromMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
-import {apiLogin} from '../../helpers/server_api/client';
+import {apiLogin, apiRequest} from '../../helpers/server_api/client';
 import {ensureCallsPlugin} from '../../helpers/server_api/plugin';
+import {apiGetAdminTeamId, createCallsTestUser, type TestUser} from '../../helpers/server_api/user';
 import type {ServerView} from '../../helpers/serverView';
 
 async function sendSlashCommand(serverWin: ServerView, command: string): Promise<void> {
@@ -21,6 +22,9 @@ test.describe('calls/slash_commands', () => {
     test.setTimeout(120_000);
 
     let serverWin: ServerView;
+    let adminToken: string;
+    let teamId: string;
+    let testServerUrl: string;
 
     test.beforeAll(async () => {
         const serverUrl = process.env.MM_TEST_SERVER_URL;
@@ -29,11 +33,18 @@ test.describe('calls/slash_commands', () => {
         if (!serverUrl || !username || !password) {
             return;
         }
-        const token = await apiLogin(serverUrl, username, password).catch(() => null);
-        if (!token) {
-            return;
-        }
-        await ensureCallsPlugin(serverUrl, token).catch(() => null);
+        testServerUrl = serverUrl;
+        adminToken = await apiLogin(serverUrl, username, password);
+        await ensureCallsPlugin(serverUrl, adminToken);
+        teamId = await apiGetAdminTeamId(serverUrl, adminToken);
+
+        // SiteURL is required by the Calls plugin /logs/upload endpoint to construct
+        // DM links. Set it here so this file is self-contained when run in isolation
+        // without calls_plugin_setup.test.ts.
+        await apiRequest(serverUrl, adminToken, '/api/v4/config/patch', {
+            method: 'PUT',
+            body: JSON.stringify({ServiceSettings: {SiteURL: serverUrl}}),
+        });
     });
 
     test.beforeEach(async ({serverMap, electronApp}) => {
@@ -46,7 +57,9 @@ test.describe('calls/slash_commands', () => {
         expect(serverEntry, 'Mattermost server view should exist').toBeTruthy();
         serverWin = serverEntry!.win;
 
-        await loginToMattermost(serverWin);
+        await logoutFromMattermost(serverWin);
+        const testUser: TestUser = await createCallsTestUser(testServerUrl, adminToken, teamId);
+        await loginToMattermost(serverWin, testUser);
         await serverWin.waitForSelector('#sidebarItem_town-square', {timeout: 15_000});
         await serverWin.click('#sidebarItem_town-square');
         await serverWin.waitForSelector('#channelHeaderTitle', {timeout: 10_000});
@@ -58,11 +71,7 @@ test.describe('calls/slash_commands', () => {
         'MM-T5588 /call end — host ends the call',
         {tag: ['@P1', '@all']},
         async ({electronApp}) => {
-            const widgetWindow = await startCall(electronApp, serverWin).catch(() => null);
-            if (!widgetWindow) {
-                test.skip(true, 'Calls plugin/widget not available on this test server');
-                return;
-            }
+            await startCall(electronApp, serverWin);
 
             // Wait for background WebRTC ICE exchange to finish consuming Calls plugin
             // rate limiter tokens (burst=10, 1/sec refill). ICE continues after the
@@ -82,11 +91,15 @@ test.describe('calls/slash_commands', () => {
                 {timeout: 30_000, message: 'Calls widget must close after /call end'},
             ).toBeNull();
 
-            const toastVisible = await serverWin.isVisible('#calls-channel-toast');
-            expect(toastVisible, '#calls-channel-toast must not be visible after call ends').toBe(false);
+            await expect.poll(
+                () => serverWin.isVisible('#calls-channel-toast'),
+                {timeout: 15_000, message: '#calls-channel-toast must not be visible after call ends'},
+            ).toBe(false);
 
-            const activeCallIconVisible = await serverWin.isVisible('[data-testid="calls-sidebar-active-call-icon"]');
-            expect(activeCallIconVisible, 'Sidebar active call icon must not be visible after call ends').toBe(false);
+            await expect.poll(
+                () => serverWin.isVisible('[data-testid="calls-sidebar-active-call-icon"]'),
+                {timeout: 15_000, message: 'Sidebar active call icon must not be visible after call ends'},
+            ).toBe(false);
         },
     );
 
@@ -94,11 +107,7 @@ test.describe('calls/slash_commands', () => {
         'MM-T5589 /call stats — returns call statistics',
         {tag: ['@P1', '@all']},
         async ({electronApp}) => {
-            const widgetWindow = await startCall(electronApp, serverWin).catch(() => null);
-            if (!widgetWindow) {
-                test.skip(true, 'Calls plugin/widget not available on this test server');
-                return;
-            }
+            const widgetWindow = await startCall(electronApp, serverWin);
 
             await closeCallsWidget(electronApp, widgetWindow);
             await sendSlashCommand(serverWin, '/call stats');
