@@ -373,6 +373,15 @@ async function initializeAfterAppReady() {
         downloadsManager.webRequestOnHeadersReceivedHandler(details, callback);
     });
 
+    // Attach this to the server-validation session to handle pre-auth headers for server validation as well
+    session.fromPartition('server-validation').webRequest.onHeadersReceived((details, callback) => {
+        if (PreAuthManager.preAuthHeaderOnHeadersReceivedHander(details, callback)) {
+            return;
+        }
+
+        callback({});
+    });
+
     defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
         try {
             callback({
