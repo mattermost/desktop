@@ -67,9 +67,9 @@ jobs:
               ($row.platform // $row.os // "") as $raw |
               (
                 if $raw == "linux" or $raw == "macos" or $raw == "windows" then $raw
-                elif ($row.runner | test("^(ubuntu|linux)")) then "linux"
-                elif ($row.runner | test("^(macos|darwin)")) then "macos"
-                elif ($row.runner | test("^windows")) then "windows"
+                elif (($row.runner // "") | test("^(ubuntu|linux)")) then "linux"
+                elif (($row.runner // "") | test("^(macos|darwin)")) then "macos"
+                elif (($row.runner // "") | test("^windows")) then "windows"
                 else null
                 end
               ) as $canon |
@@ -140,7 +140,7 @@ jobs:
             e2e/utils/github-actions.js
           sparse-checkout-cone-mode: false
 
-      - name: Post pending e2e/linux|macos|windows
+      - name: Post pending e2e/linux|macos|windows (+ policy)
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         continue-on-error: true
         env:
@@ -154,6 +154,7 @@ jobs:
               context,
               sha: process.env.DESKTOP_SHA,
               platforms: JSON.parse(process.env.PLATFORMS || '[]'),
+              includePolicy: true,
             });
 
   e2e-tests:
@@ -181,8 +182,8 @@ jobs:
       tsio-config: ${{ format('{{"composite_identity":{0},"total_reports_expected":"{1}"}}', needs.prepare-matrix.outputs.tsio-composite-identity, needs.prepare-matrix.outputs.tsio-total-reports-expected) }}
     secrets: inherit
 
-  # Per-OS E2E commit statuses (e2e/linux, e2e/macos, e2e/windows), restored from
-  # the pre-TSIO model. Policy legs fold into their OS via gh_job_name parsing.
+  # Per-OS E2E commit statuses (e2e/linux, e2e/macos, e2e/windows) plus
+  # e2e/macos-policy and e2e/windows-policy for the dedicated policy legs.
   #
   # Uses e2e/utils/tsio-report-status.js, not test-system-io-summary — summary
   # only reads /api/v1/orchestration/status, which report-upload never
@@ -230,7 +231,7 @@ jobs:
           MATTERMOST_MASTER_HEALTH_WEBHOOK_URL: ${{ secrets.MM_E2E_MASTER_HEALTH_WEBHOOK_URL }}
         with:
           script: |
-            const {canonicalizeOs} = require('./e2e/utils/github-actions.js');
+            const {canonicalizeOs, E2E_POLICY_OS_LIST} = require('./e2e/utils/github-actions.js');
             const platforms = JSON.parse(process.env.PLATFORMS || '[]');
             const expectedOs = [...new Set(
               platforms.map((p) => canonicalizeOs(p.platform || p.os, p.runner)).filter(Boolean),
@@ -242,6 +243,7 @@ jobs:
               upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
               perOsCommitStatuses: true,
               expectedOs,
+              expectedPolicyOs: E2E_POLICY_OS_LIST,
               failOnTestFailures: true,
             });
             core.info(`TSIO report ${reportUrl}: ${status} (${JSON.stringify(stats)})`);

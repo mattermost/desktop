@@ -12,8 +12,8 @@ const {
 } = require('./tsio-report-status');
 
 describe('buildOsStatusTotals', () => {
-    it('groups per-job counts and shard failures by OS', () => {
-        const byOs = buildOsStatusTotals({
+    it('groups per-job counts and shard failures by OS, keeping policy separate', () => {
+        const byKey = buildOsStatusTotals({
             detail: {
                 reports: [
                     {gh_job_name: 'e2e-on-ubuntu-latest-11.9.0', status: 'complete'},
@@ -28,21 +28,22 @@ describe('buildOsStatusTotals', () => {
             },
         });
 
-        assert.deepEqual(byOs.linux, {
+        assert.deepEqual(byKey.linux, {
             passed: 101,
             failed: 0,
             skipped: 5,
             shardFailed: false,
             hasResults: true,
         });
-        assert.deepEqual(byOs.windows, {
+        assert.deepEqual(byKey.windows, {
             passed: 90,
             failed: 2,
             skipped: 5,
             shardFailed: true,
             hasResults: true,
         });
-        assert.deepEqual(byOs.macos, {
+        assert.equal(byKey.macos, undefined);
+        assert.deepEqual(byKey['macos-policy'], {
             passed: 9,
             failed: 0,
             skipped: 0,
@@ -52,7 +53,7 @@ describe('buildOsStatusTotals', () => {
     });
 
     it('marks an OS with no counts but a failed shard', () => {
-        const byOs = buildOsStatusTotals({
+        const byKey = buildOsStatusTotals({
             detail: {
                 reports: [
                     {gh_job_name: 'e2e-on-macos-26-11.10.0', status: 'failed'},
@@ -61,8 +62,8 @@ describe('buildOsStatusTotals', () => {
             perJobCounts: {},
         });
 
-        assert.equal(byOs.macos.shardFailed, true);
-        assert.equal(byOs.macos.hasResults, false);
+        assert.equal(byKey.macos.shardFailed, true);
+        assert.equal(byKey.macos.hasResults, false);
     });
 });
 
@@ -108,6 +109,36 @@ describe('flipPerOsCommitStatuses', () => {
         assert.match(byContext['e2e/linux'].description, /10 passed, 0 failed/);
         assert.equal(byContext['e2e/windows'].state, 'failure');
         assert.match(byContext['e2e/windows'].description, /8 passed, 2 failed/);
+    });
+
+    it('flips separate e2e/<os>-policy contexts', async () => {
+        const {statuses, github, core, context, compositeIdentity} = makeHarness();
+
+        await flipPerOsCommitStatuses({
+            github,
+            context,
+            compositeIdentity,
+            detail: {
+                reports: [
+                    {gh_job_name: 'policy-tests-windows', status: 'failed'},
+                ],
+            },
+            perJobCounts: {
+                'policy-tests-macos': {passed: 14, failed: 0, skipped: 0, flaky: 0},
+                'policy-tests-windows': {passed: 10, failed: 1, skipped: 0, flaky: 0},
+            },
+            targetUrl: 'https://example.test/report',
+            upstreamJobsSucceeded: true,
+            expectedOs: ['macos'],
+            expectedPolicyOs: ['macos', 'windows'],
+            core,
+        });
+
+        const byContext = Object.fromEntries(statuses.map((s) => [s.context, s]));
+        assert.equal(byContext['e2e/macos'].state, 'error');
+        assert.equal(byContext['e2e/macos-policy'].state, 'success');
+        assert.equal(byContext['e2e/windows-policy'].state, 'failure');
+        assert.equal(byContext['e2e/windows'], undefined);
     });
 
     it('emits error when upstream succeeded but OS has no results', async () => {
@@ -169,5 +200,25 @@ describe('flipPerOsCommitStatuses', () => {
         const contexts = statuses.map((s) => s.context).sort();
         assert.deepEqual(contexts, ['e2e/linux', 'e2e/macos', 'e2e/windows']);
         assert.ok(statuses.every((s) => s.state === 'error'));
+    });
+
+    it('does not flip policy contexts when expectedPolicyOs is omitted', async () => {
+        const {statuses, github, core, context, compositeIdentity} = makeHarness();
+
+        await flipPerOsCommitStatuses({
+            github,
+            context,
+            compositeIdentity,
+            detail: {reports: []},
+            perJobCounts: {
+                'policy-tests-macos': {passed: 1, failed: 0, skipped: 0, flaky: 0},
+            },
+            targetUrl: 'https://example.test/report',
+            upstreamJobsSucceeded: true,
+            expectedOs: ['linux'],
+            core,
+        });
+
+        assert.deepEqual(statuses.map((s) => s.context), ['e2e/linux']);
     });
 });

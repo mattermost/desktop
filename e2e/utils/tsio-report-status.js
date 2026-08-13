@@ -24,10 +24,33 @@ function positiveInt(value, fallback) {
 }
 
 const {parseCmtJobName, fetchPerJobCountsFromConsolidated} = require('./cmt-channel-notify');
-const {osStatusContext, E2E_OS_LIST} = require('./github-actions');
+const {
+    osStatusContext,
+    policyStatusContext,
+    E2E_OS_LIST,
+    E2E_POLICY_OS_LIST,
+} = require('./github-actions');
 
 /**
- * Aggregate TSIO per-job counts / shard failures by OS for e2e/<os> commit statuses.
+ * Bucket key for commit-status aggregation.
+ * Policy legs use `<os>-policy` so they do not fold into e2e/<os>.
+ *
+ * @param {{os: string, kind?: string}|null} parsed
+ * @returns {string|null}
+ */
+function statusBucketKey(parsed) {
+    if (!parsed || parsed.os === 'unknown') {
+        return null;
+    }
+    if (parsed.kind === 'policy') {
+        return `${parsed.os}-policy`;
+    }
+    return parsed.os;
+}
+
+/**
+ * Aggregate TSIO per-job counts / shard failures by status bucket
+ * (linux|macos|windows|macos-policy|windows-policy).
  *
  * @param {Object} params
  * @param {Object} params.detail - TSIO group detail
@@ -36,21 +59,21 @@ const {osStatusContext, E2E_OS_LIST} = require('./github-actions');
  */
 function buildOsStatusTotals({detail, perJobCounts}) {
     /** @type {Record<string, {passed: number, failed: number, skipped: number, shardFailed: boolean, hasResults: boolean}>} */
-    const byOs = {};
+    const byKey = {};
 
-    const ensure = (os) => {
-        if (!byOs[os]) {
-            byOs[os] = {passed: 0, failed: 0, skipped: 0, shardFailed: false, hasResults: false};
+    const ensure = (key) => {
+        if (!byKey[key]) {
+            byKey[key] = {passed: 0, failed: 0, skipped: 0, shardFailed: false, hasResults: false};
         }
-        return byOs[os];
+        return byKey[key];
     };
 
     for (const [jobName, counts] of Object.entries(perJobCounts || {})) {
-        const parsed = parseCmtJobName(jobName);
-        if (!parsed || parsed.os === 'unknown') {
+        const key = statusBucketKey(parseCmtJobName(jobName));
+        if (!key) {
             continue;
         }
-        const row = ensure(parsed.os);
+        const row = ensure(key);
         row.passed += (counts.passed || 0) + (counts.flaky || 0);
         row.failed += counts.failed || 0;
         row.skipped += counts.skipped || 0;
@@ -59,37 +82,84 @@ function buildOsStatusTotals({detail, perJobCounts}) {
 
     for (const report of detail?.reports || []) {
         const name = report.gh_job_name || report.display_name;
-        const parsed = parseCmtJobName(name);
-        if (!parsed || parsed.os === 'unknown') {
+        const key = statusBucketKey(parseCmtJobName(name));
+        if (!key) {
             continue;
         }
-        const row = ensure(parsed.os);
+        const row = ensure(key);
         if (report.status === 'failed') {
             row.shardFailed = true;
         }
     }
 
-    return byOs;
+    return byKey;
 }
 
 /**
  * Resolve which OS contexts this run should report.
  *
  * @param {string[]} [expectedOs]
- * @param {Record<string, unknown>} byOs
+ * @param {Record<string, unknown>} byKey
  * @returns {string[]}
  */
-function resolveExpectedOs(expectedOs, byOs) {
+function resolveExpectedOs(expectedOs, byKey) {
     if (Array.isArray(expectedOs) && expectedOs.length > 0) {
         return expectedOs.filter((os) => E2E_OS_LIST.includes(os));
     }
-    const fromResults = Object.keys(byOs || {}).filter((os) => E2E_OS_LIST.includes(os));
+    const fromResults = Object.keys(byKey || {}).filter((os) => E2E_OS_LIST.includes(os));
     return fromResults.length > 0 ? fromResults : [...E2E_OS_LIST];
+}
+
+/**
+ * Resolve which policy OS contexts this run should report.
+ * Only flips when explicitly expected (PR/master) — CMT has no policy legs.
+ *
+ * @param {string[]} [expectedPolicyOs]
+ * @returns {string[]}
+ */
+function resolveExpectedPolicyOs(expectedPolicyOs) {
+    if (!Array.isArray(expectedPolicyOs) || expectedPolicyOs.length === 0) {
+        return [];
+    }
+    return expectedPolicyOs.filter((os) => E2E_POLICY_OS_LIST.includes(os));
+}
+
+/**
+ * @param {Object} row
+ * @param {boolean} upstreamJobsSucceeded
+ * @param {string} incompleteLabel
+ * @returns {{state: string, description: string}}
+ */
+function statusFromTotals(row, upstreamJobsSucceeded, incompleteLabel) {
+    const hasFailures = row.failed > 0 || row.shardFailed;
+    if (hasFailures) {
+        return {
+            state: 'failure',
+            description: `${row.passed} passed, ${row.failed} failed, ${row.skipped} skipped`,
+        };
+    }
+    if (row.hasResults) {
+        return {
+            state: 'success',
+            description: `${row.passed} passed, ${row.failed} failed, ${row.skipped} skipped`,
+        };
+    }
+    if (upstreamJobsSucceeded) {
+        return {
+            state: 'error',
+            description: incompleteLabel,
+        };
+    }
+    return {
+        state: 'failure',
+        description: 'CI job failed (untracked by TSIO)',
+    };
 }
 
 /**
  * @param {Object} params
  * @param {string[]} [params.expectedOs]
+ * @param {string[]} [params.expectedPolicyOs]
  * @returns {Promise<void>}
  */
 async function flipPerOsCommitStatuses({
@@ -101,45 +171,60 @@ async function flipPerOsCommitStatuses({
     targetUrl,
     upstreamJobsSucceeded,
     expectedOs,
+    expectedPolicyOs,
     core,
 }) {
-    const byOs = buildOsStatusTotals({detail, perJobCounts});
-    const oss = resolveExpectedOs(expectedOs, byOs);
+    const byKey = buildOsStatusTotals({detail, perJobCounts});
+    const oss = resolveExpectedOs(expectedOs, byKey);
+    const policyOss = resolveExpectedPolicyOs(expectedPolicyOs);
+    const emptyRow = {passed: 0, failed: 0, skipped: 0, shardFailed: false, hasResults: false};
 
-    await Promise.all(oss.map(async (os) => {
-        const row = byOs[os] || {passed: 0, failed: 0, skipped: 0, shardFailed: false, hasResults: false};
-        const hasFailures = row.failed > 0 || row.shardFailed;
-        let state = 'failure';
-        let description;
+    const posts = [
+        ...oss.map(async (os) => {
+            const row = byKey[os] || emptyRow;
+            const {state, description} = statusFromTotals(
+                row,
+                upstreamJobsSucceeded,
+                'E2E incomplete — no results for this OS',
+            );
+            try {
+                await github.rest.repos.createCommitStatus({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    sha: compositeIdentity.commit_sha,
+                    state,
+                    context: osStatusContext(os),
+                    description: description.slice(0, 140),
+                    target_url: targetUrl,
+                });
+            } catch (error) {
+                core.warning(`Failed to create ${osStatusContext(os)} status: ${error.message}`);
+            }
+        }),
+        ...policyOss.map(async (os) => {
+            const row = byKey[`${os}-policy`] || emptyRow;
+            const {state, description} = statusFromTotals(
+                row,
+                upstreamJobsSucceeded,
+                'Policy incomplete — no results for this OS',
+            );
+            try {
+                await github.rest.repos.createCommitStatus({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    sha: compositeIdentity.commit_sha,
+                    state,
+                    context: policyStatusContext(os),
+                    description: description.slice(0, 140),
+                    target_url: targetUrl,
+                });
+            } catch (error) {
+                core.warning(`Failed to create ${policyStatusContext(os)} status: ${error.message}`);
+            }
+        }),
+    ];
 
-        if (hasFailures) {
-            state = 'failure';
-            description = `${row.passed} passed, ${row.failed} failed, ${row.skipped} skipped`;
-        } else if (row.hasResults) {
-            state = 'success';
-            description = `${row.passed} passed, ${row.failed} failed, ${row.skipped} skipped`;
-        } else if (upstreamJobsSucceeded) {
-            state = 'error';
-            description = 'E2E incomplete — no results for this OS';
-        } else {
-            state = 'failure';
-            description = 'CI job failed (untracked by TSIO)';
-        }
-
-        try {
-            await github.rest.repos.createCommitStatus({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                sha: compositeIdentity.commit_sha,
-                state,
-                context: osStatusContext(os),
-                description: description.slice(0, 140),
-                target_url: targetUrl,
-            });
-        } catch (error) {
-            core.warning(`Failed to create ${osStatusContext(os)} status: ${error.message}`);
-        }
-    }));
+    await Promise.all(posts);
 }
 
 /**
@@ -170,6 +255,7 @@ function buildDisplayReportUrl(baseUrl, compositeIdentity) {
  * @param {string} [params.commitStatusContext] - Optional umbrella context (e.g. CMT)
  * @param {boolean} [params.perOsCommitStatuses] - When true, also flip e2e/linux|macos|windows
  * @param {string[]} [params.expectedOs] - Canonical OS list for this run (linux|macos|windows)
+ * @param {string[]} [params.expectedPolicyOs] - Policy OS list (macos|windows); PR/master only
  * @param {boolean} [params.failOnTestFailures] - When true (default), throw if tests/shards/upstream CI failed (not merely TSIO still consolidating)
  * @param {boolean} [params.useStaging] - Target TSIO staging instead of production
  * @param {string} [params.oidcAudience] - OIDC audience claim TSIO expects
@@ -193,6 +279,7 @@ async function reportTsioStatus({
     commitStatusContext,
     perOsCommitStatuses = false,
     expectedOs,
+    expectedPolicyOs,
     failOnTestFailures = true,
     useStaging = false,
     oidcAudience = 'mattermost-test-system-io',
@@ -305,19 +392,35 @@ async function reportTsioStatus({
         }
         if (perOsCommitStatuses) {
             const oss = resolveExpectedOs(expectedOs, {});
-            await Promise.all(oss.map((os) =>
-                github.rest.repos.createCommitStatus({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    sha: compositeIdentity.commit_sha,
-                    state: 'failure',
-                    context: osStatusContext(os),
-                    description: 'TSIO reporting error — see workflow run for details',
-                    target_url: errTarget,
-                }).catch((statusError) => {
-                    core.warning(`Failed to create ${osStatusContext(os)} failure status: ${statusError.message}`);
-                }),
-            ));
+            const policyOss = resolveExpectedPolicyOs(expectedPolicyOs);
+            await Promise.all([
+                ...oss.map((os) =>
+                    github.rest.repos.createCommitStatus({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        sha: compositeIdentity.commit_sha,
+                        state: 'failure',
+                        context: osStatusContext(os),
+                        description: 'TSIO reporting error — see workflow run for details',
+                        target_url: errTarget,
+                    }).catch((statusError) => {
+                        core.warning(`Failed to create ${osStatusContext(os)} failure status: ${statusError.message}`);
+                    }),
+                ),
+                ...policyOss.map((os) =>
+                    github.rest.repos.createCommitStatus({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        sha: compositeIdentity.commit_sha,
+                        state: 'failure',
+                        context: policyStatusContext(os),
+                        description: 'TSIO reporting error — see workflow run for details',
+                        target_url: errTarget,
+                    }).catch((statusError) => {
+                        core.warning(`Failed to create ${policyStatusContext(os)} failure status: ${statusError.message}`);
+                    }),
+                ),
+            ]);
         }
         throw error;
     }
@@ -433,6 +536,7 @@ async function reportTsioStatus({
                 targetUrl,
                 upstreamJobsSucceeded,
                 expectedOs,
+                expectedPolicyOs,
                 core,
             });
         }
