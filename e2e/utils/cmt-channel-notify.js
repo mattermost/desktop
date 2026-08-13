@@ -11,6 +11,9 @@
  *
  * Per-leg pass/fail counts come from TSIO consolidated specs grouped by
  * contributing report id → gh_job_name (group report only has upload status).
+ *
+ * Retry attempts are collapsed to one outcome per (spec × job), matching
+ * Playwright: failed+passed → flaky; all failed → failed once (not once per attempt).
  */
 
 const OS_ORDER = {linux: 0, macos: 1, windows: 2};
@@ -273,6 +276,51 @@ function formatMetaLine(compositeIdentity) {
 }
 
 /**
+ * Prefer unique per-leg counts (retry-collapsed) over TSIO group test_stats, which
+ * counts every failed attempt and double-counts retries in channel alerts.
+ *
+ * When `expectedJobNames` is provided, per-leg totals are used only if every expected
+ * job is present — otherwise fall back to `stats` so partial consolidation cannot hide
+ * aggregate failures.
+ *
+ * @param {Record<string, {passed?: number, failed?: number, skipped?: number, flaky?: number}>} perJobCounts
+ * @param {{passed?: number, failed?: number, skipped?: number, flaky?: number}} stats
+ * @param {string[]} [expectedJobNames] - uploaded report job names; omit to trust any per-leg map
+ * @returns {{passed: number, failed: number, skipped: number}}
+ */
+function resolveChannelTotals(perJobCounts, stats = {}, expectedJobNames) {
+    const counts = perJobCounts || {};
+
+    let jobs;
+    if (expectedJobNames === undefined) {
+        jobs = Object.values(counts);
+    } else if (expectedJobNames.length > 0 &&
+        expectedJobNames.every((job) => Object.prototype.hasOwnProperty.call(counts, job))) {
+        jobs = expectedJobNames.map((job) => counts[job]);
+    } else {
+        jobs = [];
+    }
+
+    if (jobs.length > 0) {
+        let passed = 0;
+        let failed = 0;
+        let skipped = 0;
+        for (const jobCounts of jobs) {
+            passed += (jobCounts.passed || 0) + (jobCounts.flaky || 0);
+            failed += jobCounts.failed || 0;
+            skipped += jobCounts.skipped || 0;
+        }
+        return {passed, failed, skipped};
+    }
+
+    return {
+        passed: (stats.passed ?? 0) + (stats.flaky ?? 0),
+        failed: stats.failed ?? 0,
+        skipped: stats.skipped ?? 0,
+    };
+}
+
+/**
  * @param {Object} params
  * @param {Object} params.compositeIdentity
  * @param {Object} params.detail - TSIO group report detail
@@ -292,19 +340,22 @@ function formatCmtChannelMessage({
     upstreamJobsSucceeded = true,
     hasFailures = false,
 }) {
-    const stats = detail?.test_stats || {};
-
-    // Match buildLegSummaries: fold flaky into passed so the headline matches per-leg totals.
-    const passed = (stats.passed ?? 0) + (stats.flaky ?? 0);
-    const failed = stats.failed ?? 0;
-    const skipped = stats.skipped ?? 0;
+    const reports = detail?.reports || [];
+    const legs = buildLegSummaries(perJobCounts, reports, baseUrl);
+    const expectedJobNames = [...new Set(
+        reports.map((r) => r.gh_job_name || r.display_name).filter(Boolean),
+    )];
+    const {passed, failed, skipped} = resolveChannelTotals(
+        perJobCounts,
+        detail?.test_stats,
+        expectedJobNames,
+    );
 
     // Overall pass/fail follows tests + upstream CI — not TSIO consolidation state.
     // Stuck `in_progress` / `incomplete` with 0 failures must not render as ❌ Failed.
     const overallFailed = failed > 0 || !upstreamJobsSucceeded || hasFailures;
     const tsioPending = Boolean(detail?.status && detail.status !== 'completed');
     const title = reportTitleForIdentity(compositeIdentity);
-    const legs = buildLegSummaries(perJobCounts, detail?.reports || [], baseUrl);
     const missingLegs = legs.filter((leg) => leg.status === 'missing' || leg.status === 'no-results');
 
     const lines = [
@@ -380,6 +431,54 @@ function formatCmtChannelMessage({
 }
 
 /**
+ * Collapse TSIO history attempts for one spec on one job into a single Playwright-style status.
+ * failed then passed (or explicit flaky) → flaky; all failed → failed once.
+ *
+ * @param {Array<{status?: string}>} entries
+ * @returns {'passed'|'failed'|'skipped'|'flaky'|null}
+ */
+function collapseSpecAttempts(entries) {
+    if (!entries || entries.length === 0) {
+        return null;
+    }
+
+    let sawPassed = false;
+    let sawFailed = false;
+    let sawSkipped = false;
+    let sawFlaky = false;
+
+    for (const entry of entries) {
+        const status = entry.status || 'failed';
+        if (status === 'passed') {
+            sawPassed = true;
+        } else if (status === 'failed') {
+            sawFailed = true;
+        } else if (status === 'skipped') {
+            sawSkipped = true;
+        } else if (status === 'flaky') {
+            sawFlaky = true;
+        } else {
+            // Unknown statuses treated as failures so they still surface in alerts.
+            sawFailed = true;
+        }
+    }
+
+    if (sawFlaky || (sawFailed && sawPassed)) {
+        return 'flaky';
+    }
+    if (sawFailed) {
+        return 'failed';
+    }
+    if (sawPassed) {
+        return 'passed';
+    }
+    if (sawSkipped) {
+        return 'skipped';
+    }
+    return null;
+}
+
+/**
  * @param {string} baseUrl
  * @param {Object} compositeIdentity
  * @param {Object} groupDetail
@@ -422,6 +521,8 @@ async function fetchPerJobCountsFromConsolidated(baseUrl, compositeIdentity, gro
     const attempt = Number.parseInt(compositeIdentity.gh_run_attempt || '1', 10);
 
     for (const spec of consol.specs || []) {
+        /** @type {Record<string, Array<{status?: string}>>} */
+        const entriesByJob = {};
         for (const entry of spec.history || []) {
             if (entry.commit_sha !== commitSha) {
                 continue;
@@ -433,15 +534,21 @@ async function fetchPerJobCountsFromConsolidated(baseUrl, compositeIdentity, gro
             if (!job) {
                 continue;
             }
+            if (!entriesByJob[job]) {
+                entriesByJob[job] = [];
+            }
+            entriesByJob[job].push(entry);
+        }
+
+        for (const [job, entries] of Object.entries(entriesByJob)) {
+            const status = collapseSpecAttempts(entries);
+            if (!status) {
+                continue;
+            }
             if (!counts[job]) {
                 counts[job] = {passed: 0, failed: 0, skipped: 0, flaky: 0};
             }
-            const status = entry.status || 'failed';
-            if (Object.prototype.hasOwnProperty.call(counts[job], status)) {
-                counts[job][status] += 1;
-            } else {
-                counts[job].failed += 1;
-            }
+            counts[job][status] += 1;
         }
     }
 
@@ -541,6 +648,8 @@ module.exports = {
     buildLegSummaries,
     formatLegResultText,
     reportTitleForIdentity,
+    resolveChannelTotals,
+    collapseSpecAttempts,
     formatCmtChannelMessage,
     fetchPerJobCountsFromConsolidated,
     postMattermostWebhook,
