@@ -23,6 +23,108 @@ function positiveInt(value, fallback) {
     return Number.isInteger(n) && n > 0 ? n : fallback;
 }
 
+const {parseCmtJobName, fetchPerJobCountsFromConsolidated} = require('./cmt-channel-notify');
+const {osStatusContext} = require('./github-actions');
+
+/**
+ * Aggregate TSIO per-job counts / shard failures by OS for e2e/<os> commit statuses.
+ *
+ * @param {Object} params
+ * @param {Object} params.detail - TSIO group detail
+ * @param {Record<string, {passed?: number, failed?: number, skipped?: number, flaky?: number}>} params.perJobCounts
+ * @returns {Record<string, {passed: number, failed: number, skipped: number, shardFailed: boolean, hasResults: boolean}>}
+ */
+function buildOsStatusTotals({detail, perJobCounts}) {
+    /** @type {Record<string, {passed: number, failed: number, skipped: number, shardFailed: boolean, hasResults: boolean}>} */
+    const byOs = {};
+
+    const ensure = (os) => {
+        if (!byOs[os]) {
+            byOs[os] = {passed: 0, failed: 0, skipped: 0, shardFailed: false, hasResults: false};
+        }
+        return byOs[os];
+    };
+
+    for (const [jobName, counts] of Object.entries(perJobCounts || {})) {
+        const parsed = parseCmtJobName(jobName);
+        if (!parsed || parsed.os === 'unknown') {
+            continue;
+        }
+        const row = ensure(parsed.os);
+        row.passed += (counts.passed || 0) + (counts.flaky || 0);
+        row.failed += counts.failed || 0;
+        row.skipped += counts.skipped || 0;
+        row.hasResults = true;
+    }
+
+    for (const report of detail?.reports || []) {
+        const name = report.gh_job_name || report.display_name;
+        const parsed = parseCmtJobName(name);
+        if (!parsed || parsed.os === 'unknown') {
+            continue;
+        }
+        const row = ensure(parsed.os);
+        if (report.status === 'failed') {
+            row.shardFailed = true;
+        }
+    }
+
+    return byOs;
+}
+
+/**
+ * @param {Object} params
+ * @returns {Promise<void>}
+ */
+async function flipPerOsCommitStatuses({
+    github,
+    context,
+    compositeIdentity,
+    detail,
+    perJobCounts,
+    targetUrl,
+    upstreamJobsSucceeded,
+    core,
+}) {
+    const byOs = buildOsStatusTotals({detail, perJobCounts});
+    const oss = Object.keys(byOs).length > 0 ? Object.keys(byOs) : ['linux', 'macos', 'windows'];
+
+    await Promise.all(oss.map(async (os) => {
+        const row = byOs[os] || {passed: 0, failed: 0, skipped: 0, shardFailed: false, hasResults: false};
+        const hasFailures = row.failed > 0 || row.shardFailed;
+        let state = 'failure';
+        let description;
+
+        if (hasFailures) {
+            state = 'failure';
+            description = `${row.passed} passed, ${row.failed} failed, ${row.skipped} skipped`;
+        } else if (row.hasResults) {
+            state = 'success';
+            description = `${row.passed} passed, ${row.failed} failed, ${row.skipped} skipped`;
+        } else if (upstreamJobsSucceeded) {
+            state = 'error';
+            description = 'E2E incomplete — no results for this OS';
+        } else {
+            state = 'failure';
+            description = 'CI job failed (untracked by TSIO)';
+        }
+
+        try {
+            await github.rest.repos.createCommitStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                sha: compositeIdentity.commit_sha,
+                state,
+                context: osStatusContext(os),
+                description: description.slice(0, 140),
+                target_url: targetUrl,
+            });
+        } catch (error) {
+            core.warning(`Failed to create ${osStatusContext(os)} status: ${error.message}`);
+        }
+    }));
+}
+
 /**
  * Commit-level rollup URL: /reports/{repo}/{branch}/{shortSha}/{name}
  * e.g. https://test-io.test.mattermost.com/reports/desktop/tsio-spike/cff190a/desktop-pr
@@ -41,14 +143,15 @@ function buildDisplayReportUrl(baseUrl, compositeIdentity) {
 /**
  * Recover a report group's id via the idempotent begin endpoint, poll the
  * public status endpoint until the group leaves in_progress, render a step
- * summary, and flip a commit status.
+ * summary, and flip commit status(es).
  * @param {Object} params - Parameters object
  * @param {Object} params.core - @actions/core from actions/github-script
  * @param {Object} params.context - GitHub Actions context
  * @param {Object} params.github - GitHub API client from actions/github-script
  * @param {Object} params.compositeIdentity - {repository, commit_sha, gh_run_id, name, gh_run_attempt, branch, gh_pr_number}
  * @param {number} params.totalReportsExpected - Number of per-leg reports expected in this group
- * @param {string} params.commitStatusContext - Commit-status context to flip on completion
+ * @param {string} [params.commitStatusContext] - Optional umbrella context (e.g. CMT)
+ * @param {boolean} [params.perOsCommitStatuses] - When true, also flip e2e/linux|macos|windows
  * @param {boolean} [params.failOnTestFailures] - When true (default), throw if tests/shards/upstream CI failed (not merely TSIO still consolidating)
  * @param {boolean} [params.useStaging] - Target TSIO staging instead of production
  * @param {string} [params.oidcAudience] - OIDC audience claim TSIO expects
@@ -70,6 +173,7 @@ async function reportTsioStatus({
     compositeIdentity,
     totalReportsExpected,
     commitStatusContext,
+    perOsCommitStatuses = false,
     failOnTestFailures = true,
     useStaging = false,
     oidcAudience = 'mattermost-test-system-io',
@@ -164,18 +268,36 @@ async function reportTsioStatus({
         }
     } catch (error) {
         core.error(`TSIO reporting error: ${error.message}`);
-        try {
-            await github.rest.repos.createCommitStatus({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                sha: compositeIdentity.commit_sha,
-                state: 'failure',
-                context: commitStatusContext,
-                description: 'TSIO reporting error — see workflow run for details',
-                target_url: groupReportUrl || displayReportUrl || runUrl,
-            });
-        } catch (statusError) {
-            core.warning(`Failed to create failure commit status: ${statusError.message}`);
+        const errTarget = groupReportUrl || displayReportUrl || runUrl;
+        if (commitStatusContext) {
+            try {
+                await github.rest.repos.createCommitStatus({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    sha: compositeIdentity.commit_sha,
+                    state: 'failure',
+                    context: commitStatusContext,
+                    description: 'TSIO reporting error — see workflow run for details',
+                    target_url: errTarget,
+                });
+            } catch (statusError) {
+                core.warning(`Failed to create failure commit status: ${statusError.message}`);
+            }
+        }
+        if (perOsCommitStatuses) {
+            await Promise.all(['linux', 'macos', 'windows'].map((os) =>
+                github.rest.repos.createCommitStatus({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    sha: compositeIdentity.commit_sha,
+                    state: 'failure',
+                    context: osStatusContext(os),
+                    description: 'TSIO reporting error — see workflow run for details',
+                    target_url: errTarget,
+                }).catch((statusError) => {
+                    core.warning(`Failed to create ${osStatusContext(os)} failure status: ${statusError.message}`);
+                }),
+            ));
         }
         throw error;
     }
@@ -256,15 +378,37 @@ async function reportTsioStatus({
     const descriptionPrefix = !upstreamJobsSucceeded && !hasFailures ? 'CI job failed (untracked by TSIO), ' : '';
     const tsioLagSuffix = !isComplete && overallState === 'success' ? ' (TSIO consolidating)' : '';
     const description = `${descriptionPrefix}${passedForStatus}/${stats.total ?? 0} passed, ${stats.failed ?? 0} failed, ${stats.skipped ?? 0} skipped${tsioLagSuffix}`.slice(0, 140);
-    await github.rest.repos.createCommitStatus({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        sha: compositeIdentity.commit_sha,
-        state: overallState,
-        context: commitStatusContext,
-        description,
-        target_url: targetUrl,
-    });
+
+    if (commitStatusContext) {
+        await github.rest.repos.createCommitStatus({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            sha: compositeIdentity.commit_sha,
+            state: overallState,
+            context: commitStatusContext,
+            description,
+            target_url: targetUrl,
+        });
+    }
+
+    if (perOsCommitStatuses) {
+        let perJobCounts = {};
+        try {
+            perJobCounts = await fetchPerJobCountsFromConsolidated(baseUrl, compositeIdentity, detail);
+        } catch (error) {
+            core.warning(`Could not load per-OS TSIO counts for commit statuses: ${error.message}`);
+        }
+        await flipPerOsCommitStatuses({
+            github,
+            context,
+            compositeIdentity,
+            detail,
+            perJobCounts,
+            targetUrl,
+            upstreamJobsSucceeded,
+            core,
+        });
+    }
 
     // Channel notify (best-effort). Routing (see resolveWebhookUrl):
     //   cmt-desktop      → MM_E2E_RELEASE_WEBHOOK_URL
@@ -319,3 +463,5 @@ async function reportTsioStatus({
 }
 
 module.exports = reportTsioStatus;
+module.exports.buildOsStatusTotals = buildOsStatusTotals;
+module.exports.flipPerOsCommitStatuses = flipPerOsCommitStatuses;

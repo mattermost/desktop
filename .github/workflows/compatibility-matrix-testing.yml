@@ -107,6 +107,33 @@ jobs:
           description: "Compatibility Matrix Testing for ${{ inputs.DESKTOP_VERSION }} version"
           status: pending
 
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        continue-on-error: true
+        with:
+          ref: ${{ inputs.DESKTOP_VERSION }}
+          persist-credentials: false
+          sparse-checkout: |
+            e2e/utils/github-actions.js
+          sparse-checkout-cone-mode: false
+
+      - name: Post pending e2e/linux|macos|windows
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        continue-on-error: true
+        env:
+          DESKTOP_SHA: ${{ needs.calculate-commit-hash.outputs.DESKTOP_SHA }}
+          CMT_MATRIX: ${{ needs.calculate-commit-hash.outputs.CMT_MATRIX }}
+        with:
+          script: |
+            const {updateInitialOsStatuses} = require('./e2e/utils/github-actions.js');
+            const matrix = JSON.parse(process.env.CMT_MATRIX || '{}');
+            const platforms = (matrix.environment || []).map((env) => ({platform: env.os}));
+            await updateInitialOsStatuses({
+              github,
+              context,
+              sha: process.env.DESKTOP_SHA,
+              platforms,
+            });
+
   # Input follows the below schema (Matterwick ≥ v0.4.16).
   # {
   #   "environment": [
@@ -178,9 +205,10 @@ jobs:
           sparse-checkout: |
             e2e/utils/tsio-report-status.js
             e2e/utils/cmt-channel-notify.js
+            e2e/utils/github-actions.js
           sparse-checkout-cone-mode: false
 
-      - name: Render TSIO summary + flip commit status
+      - name: Render TSIO summary + flip commit statuses
         id: summary
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
@@ -206,6 +234,7 @@ jobs:
               compositeIdentity: JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY),
               totalReportsExpected: parseInt(process.env.TSIO_TOTAL_REPORTS_EXPECTED, 10),
               commitStatusContext: process.env.COMMIT_STATUS_CONTEXT,
+              perOsCommitStatuses: true,
               upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
               failOnTestFailures: true,
             });

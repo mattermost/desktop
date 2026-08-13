@@ -98,7 +98,7 @@ jobs:
           echo "composite-identity-json=${COMPOSITE_IDENTITY}" >> "$GITHUB_OUTPUT"
 
   update-initial-status:
-    name: Set pending TSIO status
+    name: Set pending E2E OS statuses
     runs-on: ubuntu-24.04
     needs:
       - prepare-matrix
@@ -108,16 +108,29 @@ jobs:
     steps:
       # Best-effort: a transient status-API hiccup here must never block the
       # actual test matrix from running.
-      - uses: mattermost/actions/delivery/update-commit-status@218fd96a63451259dc100e1292a5e44af92fe15d
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.version_name }}
+          persist-credentials: false
+          sparse-checkout: |
+            e2e/utils/github-actions.js
+          sparse-checkout-cone-mode: false
+
+      - name: Post pending e2e/linux|macos|windows
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         continue-on-error: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PLATFORMS: ${{ needs.prepare-matrix.outputs.platforms }}
+          DESKTOP_SHA: ${{ needs.prepare-matrix.outputs.desktop-sha }}
         with:
-          repository_full_name: ${{ github.repository }}
-          commit_sha: ${{ needs.prepare-matrix.outputs.desktop-sha }}
-          context: e2e-test/desktop-playwright
-          description: "Running Electron Playwright E2E tests..."
-          status: pending
+          script: |
+            const {updateInitialOsStatuses} = require('./e2e/utils/github-actions.js');
+            await updateInitialOsStatuses({
+              github,
+              context,
+              sha: process.env.DESKTOP_SHA,
+              platforms: JSON.parse(process.env.PLATFORMS || '[]'),
+            });
 
   e2e-tests:
     needs:
@@ -144,9 +157,8 @@ jobs:
       tsio-config: ${{ format('{{"composite_identity":{0},"total_reports_expected":"{1}"}}', needs.prepare-matrix.outputs.tsio-composite-identity, needs.prepare-matrix.outputs.tsio-total-reports-expected) }}
     secrets: inherit
 
-  # The single E2E status check for PR/master (e2e-test/desktop-playwright),
-  # replacing the former 5 (e2e/linux, e2e/macos, e2e/windows,
-  # policy-test/macos, policy-test/windows).
+  # Per-OS E2E commit statuses (e2e/linux, e2e/macos, e2e/windows), restored from
+  # the pre-TSIO model. Policy legs fold into their OS via gh_job_name parsing.
   #
   # Uses e2e/utils/tsio-report-status.js, not test-system-io-summary — summary
   # only reads /api/v1/orchestration/status, which report-upload never
@@ -172,9 +184,10 @@ jobs:
           sparse-checkout: |
             e2e/utils/tsio-report-status.js
             e2e/utils/cmt-channel-notify.js
+            e2e/utils/github-actions.js
           sparse-checkout-cone-mode: false
 
-      - name: Render TSIO summary + flip commit status
+      - name: Render TSIO summary + flip per-OS commit statuses
         id: summary
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
@@ -184,7 +197,6 @@ jobs:
           # time to attach all legs before we snapshot the group for the channel post.
           TSIO_POLL_ATTEMPTS: 36
           TSIO_POLL_DELAY_MS: 5000
-          COMMIT_STATUS_CONTEXT: e2e-test/desktop-playwright
           UPSTREAM_JOBS_SUCCEEDED: ${{ needs.e2e-tests.result == 'success' && needs.e2e-policy-tests.result == 'success' }}
           # PR → MM_DESKTOP_E2E_WEBHOOK_URL; master → MM_E2E_MASTER_HEALTH_WEBHOOK_URL;
           # CMT/RC uses MM_E2E_RELEASE_WEBHOOK_URL (compatibility-matrix-testing.yml).
@@ -198,7 +210,7 @@ jobs:
               compositeIdentity: JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY),
               totalReportsExpected: parseInt(process.env.TSIO_TOTAL_REPORTS_EXPECTED, 10),
               upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
-              commitStatusContext: process.env.COMMIT_STATUS_CONTEXT,
+              perOsCommitStatuses: true,
               failOnTestFailures: true,
             });
             core.info(`TSIO report ${reportUrl}: ${status} (${JSON.stringify(stats)})`);
