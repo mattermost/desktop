@@ -6,6 +6,7 @@ import {ipcMain} from 'electron';
 
 import WebContentsManager from 'app/views/webContentsManager';
 import {
+    GET_SESSION_ATTRIBUTES,
     SERVER_REMOVED,
     SESSION_ATTRIBUTES_FIELD_UPDATED,
     SESSION_ATTRIBUTES_MANIFEST_INVALIDATED,
@@ -23,6 +24,7 @@ import {SessionAttributesManager} from './sessionAttributesManager';
 jest.mock('electron', () => ({
     ipcMain: {
         on: jest.fn(),
+        handle: jest.fn(),
     },
 }));
 
@@ -45,6 +47,7 @@ jest.mock('common/servers/serverManager', () => ({
     default: {
         on: jest.fn(),
         getServer: jest.fn(),
+        getCurrentServerId: jest.fn(),
         lookupServerByURL: jest.fn(),
         getRemoteInfo: jest.fn(),
         updateRemoteInfo: jest.fn(),
@@ -57,7 +60,15 @@ jest.mock('main/app/utils', () => ({
 
 const mockCollector = {
     getClientIPAddress: jest.fn(() => '10.0.0.1'),
+    getNetworkInterfaceType: jest.fn(() => 'wifi'),
+    getVPNActive: jest.fn(() => 'false'),
+    getSSID: jest.fn(() => 'some-ssid'),
+    getHardwareId: jest.fn(() => 'some-hardware-id'),
+    getMDMEnrolled: jest.fn(() => 'true'),
     getOSPlatform: jest.fn(() => 'macos'),
+    getOSVersion: jest.fn(() => '15.0'),
+    getClientVersion: jest.fn(() => '6.0.0'),
+    getClientFQDN: jest.fn(() => 'my-laptop.local'),
 };
 
 jest.mock('./collector', () => ({
@@ -75,6 +86,19 @@ const server = {
     url: new URL('https://chat.example.com'),
 };
 
+const allCollectedAttributes = {
+    client_ip_address: '10.0.0.1',
+    network_interface_type: 'wifi',
+    vpn_active: 'false',
+    ssid: 'some-ssid',
+    hardware_id: 'some-hardware-id',
+    mdm_enrolled: 'true',
+    os_platform: 'macos',
+    os_version: '15.0',
+    client_version: '6.0.0',
+    client_fqdn: 'my-laptop.local',
+};
+
 const ConfigMock = jest.mocked(Config);
 const ServerManagerMock = jest.mocked(ServerManager);
 const WebContentsManagerMock = jest.mocked(WebContentsManager);
@@ -87,10 +111,12 @@ describe('main/sessionAttributes/sessionAttributesManager', () => {
     let manifestInvalidatedHandler: (event: IpcMainEvent) => void;
     let resendRequestedHandler: (event: IpcMainEvent) => void;
     let fieldUpdatedHandler: (event: IpcMainEvent, field: unknown) => void;
+    let getSessionAttributesHandler: () => Record<string, string>;
 
     beforeEach(() => {
         jest.clearAllMocks();
         ConfigMock.enableSessionAttributes = true;
+        mockCollector.getClientIPAddress.mockReturnValue('10.0.0.1');
         ServerManagerMock.on.mockImplementation((event, handler) => {
             if (event === SERVER_REMOVED) {
                 serverRemovedHandler = handler;
@@ -109,7 +135,13 @@ describe('main/sessionAttributes/sessionAttributesManager', () => {
             }
             return ipcMainMock;
         });
+        ipcMainMock.handle.mockImplementation((channel, handler) => {
+            if (channel === GET_SESSION_ATTRIBUTES) {
+                getSessionAttributesHandler = handler as () => Record<string, string>;
+            }
+        });
         ServerManagerMock.getServer.mockReturnValue(server as never);
+        ServerManagerMock.getCurrentServerId.mockReturnValue(server.id);
         ServerManagerMock.lookupServerByURL.mockReturnValue(server as never);
         ServerManagerMock.getRemoteInfo.mockReturnValue({sessionAttributesManifest: manifest});
         updateServerInfosMock.mockResolvedValue(undefined);
@@ -198,6 +230,27 @@ describe('main/sessionAttributes/sessionAttributesManager', () => {
         expect(header).toBeDefined();
         const decoded = JSON.parse(Buffer.from(header!, 'base64').toString('utf8'));
         expect(decoded).toEqual({os_platform: 'macos'});
+    });
+
+    it('collects every attribute even when no server requests any', () => {
+        ServerManagerMock.getRemoteInfo.mockReturnValue(undefined);
+
+        expect(manager.getCollectedAttributes()).toEqual(allCollectedAttributes);
+    });
+
+    it('collects a blank value for an attribute whose collector fails', () => {
+        mockCollector.getClientIPAddress.mockImplementation(() => {
+            throw new Error('collector exploded');
+        });
+
+        expect(manager.getCollectedAttributes()).toEqual({
+            ...allCollectedAttributes,
+            client_ip_address: '',
+        });
+    });
+
+    it('returns the collected attributes over GET_SESSION_ATTRIBUTES', () => {
+        expect(getSessionAttributesHandler()).toEqual(allCollectedAttributes);
     });
 
     it('clears lastSentAt on SERVER_REMOVED', () => {
