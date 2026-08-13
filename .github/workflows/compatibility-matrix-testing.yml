@@ -227,14 +227,23 @@ jobs:
           # matching failed test (hung worker teardown, crashed runner, npm ci
           # failure) would otherwise still read as "100% passed".
           UPSTREAM_JOBS_SUCCEEDED: ${{ needs.e2e.result == 'success' }}
+          CMT_MATRIX: ${{ needs.calculate-commit-hash.outputs.CMT_MATRIX }}
         with:
           script: |
+            const {canonicalizeOs} = require('./e2e/utils/github-actions.js');
+            const matrix = JSON.parse(process.env.CMT_MATRIX || '{}');
+            const expectedOs = [...new Set(
+              (matrix.environment || []).
+                map((env) => canonicalizeOs(env.os, env.runner)).
+                filter(Boolean),
+            )];
             const {reportUrl, status, stats} = await require('./e2e/utils/tsio-report-status.js')({
               core, context, github,
               compositeIdentity: JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY),
               totalReportsExpected: parseInt(process.env.TSIO_TOTAL_REPORTS_EXPECTED, 10),
               commitStatusContext: process.env.COMMIT_STATUS_CONTEXT,
               perOsCommitStatuses: true,
+              expectedOs,
               upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
               failOnTestFailures: true,
             });

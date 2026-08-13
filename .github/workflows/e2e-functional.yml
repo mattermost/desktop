@@ -58,7 +58,30 @@ jobs:
         run: |
           # Matterwick still dispatches macos-latest; pin explicitly so the job
           # does not drift when GitHub retargets that label to macOS 26.
-          platforms=$(echo "${INSTANCE_DETAILS}" | jq -c 'map(if .runner == "macos-latest" then .runner = "macos-26" else . end)')
+          # Normalize platform to canonical linux|macos|windows (derive from runner
+          # when needed) so job names and e2e/<os> statuses stay consistent.
+          platforms=$(echo "${INSTANCE_DETAILS}" | jq -c '
+            map(
+              (if .runner == "macos-latest" then .runner = "macos-26" else . end) |
+              . as $row |
+              ($row.platform // $row.os // "") as $raw |
+              (
+                if $raw == "linux" or $raw == "macos" or $raw == "windows" then $raw
+                elif ($row.runner | test("^(ubuntu|linux)")) then "linux"
+                elif ($row.runner | test("^(macos|darwin)")) then "macos"
+                elif ($row.runner | test("^windows")) then "windows"
+                else null
+                end
+              ) as $canon |
+              if $canon == null then empty
+              else ($row | .platform = $canon | del(.os))
+              end
+            )
+          ')
+          if [ "$(echo "${platforms}" | jq 'length')" -eq 0 ]; then
+            echo "No supported platforms in instance_details (need linux|macos|windows)" >&2
+            exit 1
+          fi
           echo "platforms=${platforms}" >> "$GITHUB_OUTPUT"
 
       # Resolve the SHA under test from version_name (branch/tag/SHA), not github.sha
@@ -109,6 +132,7 @@ jobs:
       # Best-effort: a transient status-API hiccup here must never block the
       # actual test matrix from running.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        continue-on-error: true
         with:
           ref: ${{ inputs.version_name }}
           persist-credentials: false
@@ -198,6 +222,7 @@ jobs:
           TSIO_POLL_ATTEMPTS: 36
           TSIO_POLL_DELAY_MS: 5000
           UPSTREAM_JOBS_SUCCEEDED: ${{ needs.e2e-tests.result == 'success' && needs.e2e-policy-tests.result == 'success' }}
+          PLATFORMS: ${{ needs.prepare-matrix.outputs.platforms }}
           # PR → MM_DESKTOP_E2E_WEBHOOK_URL; master → MM_E2E_MASTER_HEALTH_WEBHOOK_URL;
           # CMT/RC uses MM_E2E_RELEASE_WEBHOOK_URL (compatibility-matrix-testing.yml).
           # Routing is by compositeIdentity.name in cmt-channel-notify.js.
@@ -205,12 +230,18 @@ jobs:
           MATTERMOST_MASTER_HEALTH_WEBHOOK_URL: ${{ secrets.MM_E2E_MASTER_HEALTH_WEBHOOK_URL }}
         with:
           script: |
+            const {canonicalizeOs} = require('./e2e/utils/github-actions.js');
+            const platforms = JSON.parse(process.env.PLATFORMS || '[]');
+            const expectedOs = [...new Set(
+              platforms.map((p) => canonicalizeOs(p.platform || p.os, p.runner)).filter(Boolean),
+            )];
             const {reportUrl, status, stats} = await require('./e2e/utils/tsio-report-status.js')({
               core, context, github,
               compositeIdentity: JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY),
               totalReportsExpected: parseInt(process.env.TSIO_TOTAL_REPORTS_EXPECTED, 10),
               upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
               perOsCommitStatuses: true,
+              expectedOs,
               failOnTestFailures: true,
             });
             core.info(`TSIO report ${reportUrl}: ${status} (${JSON.stringify(stats)})`);

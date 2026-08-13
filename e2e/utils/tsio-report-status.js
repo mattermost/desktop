@@ -24,7 +24,7 @@ function positiveInt(value, fallback) {
 }
 
 const {parseCmtJobName, fetchPerJobCountsFromConsolidated} = require('./cmt-channel-notify');
-const {osStatusContext} = require('./github-actions');
+const {osStatusContext, E2E_OS_LIST} = require('./github-actions');
 
 /**
  * Aggregate TSIO per-job counts / shard failures by OS for e2e/<os> commit statuses.
@@ -73,7 +73,23 @@ function buildOsStatusTotals({detail, perJobCounts}) {
 }
 
 /**
+ * Resolve which OS contexts this run should report.
+ *
+ * @param {string[]} [expectedOs]
+ * @param {Record<string, unknown>} byOs
+ * @returns {string[]}
+ */
+function resolveExpectedOs(expectedOs, byOs) {
+    if (Array.isArray(expectedOs) && expectedOs.length > 0) {
+        return expectedOs.filter((os) => E2E_OS_LIST.includes(os));
+    }
+    const fromResults = Object.keys(byOs || {}).filter((os) => E2E_OS_LIST.includes(os));
+    return fromResults.length > 0 ? fromResults : [...E2E_OS_LIST];
+}
+
+/**
  * @param {Object} params
+ * @param {string[]} [params.expectedOs]
  * @returns {Promise<void>}
  */
 async function flipPerOsCommitStatuses({
@@ -84,10 +100,11 @@ async function flipPerOsCommitStatuses({
     perJobCounts,
     targetUrl,
     upstreamJobsSucceeded,
+    expectedOs,
     core,
 }) {
     const byOs = buildOsStatusTotals({detail, perJobCounts});
-    const oss = Object.keys(byOs).length > 0 ? Object.keys(byOs) : ['linux', 'macos', 'windows'];
+    const oss = resolveExpectedOs(expectedOs, byOs);
 
     await Promise.all(oss.map(async (os) => {
         const row = byOs[os] || {passed: 0, failed: 0, skipped: 0, shardFailed: false, hasResults: false};
@@ -152,6 +169,7 @@ function buildDisplayReportUrl(baseUrl, compositeIdentity) {
  * @param {number} params.totalReportsExpected - Number of per-leg reports expected in this group
  * @param {string} [params.commitStatusContext] - Optional umbrella context (e.g. CMT)
  * @param {boolean} [params.perOsCommitStatuses] - When true, also flip e2e/linux|macos|windows
+ * @param {string[]} [params.expectedOs] - Canonical OS list for this run (linux|macos|windows)
  * @param {boolean} [params.failOnTestFailures] - When true (default), throw if tests/shards/upstream CI failed (not merely TSIO still consolidating)
  * @param {boolean} [params.useStaging] - Target TSIO staging instead of production
  * @param {string} [params.oidcAudience] - OIDC audience claim TSIO expects
@@ -174,6 +192,7 @@ async function reportTsioStatus({
     totalReportsExpected,
     commitStatusContext,
     perOsCommitStatuses = false,
+    expectedOs,
     failOnTestFailures = true,
     useStaging = false,
     oidcAudience = 'mattermost-test-system-io',
@@ -285,7 +304,8 @@ async function reportTsioStatus({
             }
         }
         if (perOsCommitStatuses) {
-            await Promise.all(['linux', 'macos', 'windows'].map((os) =>
+            const oss = resolveExpectedOs(expectedOs, {});
+            await Promise.all(oss.map((os) =>
                 github.rest.repos.createCommitStatus({
                     owner: context.repo.owner,
                     repo: context.repo.repo,
@@ -392,22 +412,30 @@ async function reportTsioStatus({
     }
 
     if (perOsCommitStatuses) {
-        let perJobCounts = {};
+        let perJobCounts;
         try {
             perJobCounts = await fetchPerJobCountsFromConsolidated(baseUrl, compositeIdentity, detail);
         } catch (error) {
-            core.warning(`Could not load per-OS TSIO counts for commit statuses: ${error.message}`);
+            // Do not treat a failed fetch as zero results — that would flip e2e/<os>
+            // to error/failure and clear pending. Leave statuses pending until counts exist.
+            core.warning(
+                `Could not load per-OS TSIO counts — leaving e2e/<os> statuses pending: ${error.message}`,
+            );
+            perJobCounts = null;
         }
-        await flipPerOsCommitStatuses({
-            github,
-            context,
-            compositeIdentity,
-            detail,
-            perJobCounts,
-            targetUrl,
-            upstreamJobsSucceeded,
-            core,
-        });
+        if (perJobCounts) {
+            await flipPerOsCommitStatuses({
+                github,
+                context,
+                compositeIdentity,
+                detail,
+                perJobCounts,
+                targetUrl,
+                upstreamJobsSucceeded,
+                expectedOs,
+                core,
+            });
+        }
     }
 
     // Channel notify (best-effort). Routing (see resolveWebhookUrl):

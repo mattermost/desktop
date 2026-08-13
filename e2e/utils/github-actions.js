@@ -2,16 +2,38 @@
 // See LICENSE.txt for license information.
 /* eslint-disable no-console -- Logging is intentional in CI utility scripts */
 
+/** Canonical OS identifiers for e2e/<os> commit statuses. */
+const E2E_OS_LIST = ['linux', 'macos', 'windows'];
+
 /** Per-OS commit status contexts for PR / master / CMT (restored from pre-TSIO merge). */
-const E2E_OS_STATUS_CONTEXTS = [
-    'e2e/linux',
-    'e2e/macos',
-    'e2e/windows',
-];
+const E2E_OS_STATUS_CONTEXTS = E2E_OS_LIST.map((os) => `e2e/${os}`);
 
 const E2E_WORKFLOW_NAME = 'Electron Playwright Tests';
 const ACTIVE_RUN_STATUSES = ['in_progress', 'queued', 'waiting'];
 const CANCELLED_STATUS_DESCRIPTION = 'E2E cancelled — tests skipped';
+
+/**
+ * @param {string} [value] - platform / os field from matrix
+ * @param {string} [runner] - GitHub runner label
+ * @returns {'linux'|'macos'|'windows'|null}
+ */
+function canonicalizeOs(value, runner) {
+    const raw = String(value || '').toLowerCase();
+    if (E2E_OS_LIST.includes(raw)) {
+        return raw;
+    }
+    const r = String(runner || '').toLowerCase();
+    if (r.startsWith('ubuntu') || r.startsWith('linux')) {
+        return 'linux';
+    }
+    if (r.startsWith('macos') || r.startsWith('darwin')) {
+        return 'macos';
+    }
+    if (r.startsWith('windows')) {
+        return 'windows';
+    }
+    return null;
+}
 
 /**
  * @param {string} os
@@ -28,24 +50,26 @@ function osStatusContext(os) {
  * @param {Object} params.github
  * @param {Object} params.context
  * @param {string} params.sha
- * @param {Array<{platform?: string}>} params.platforms
+ * @param {Array<{platform?: string, os?: string, runner?: string}>} params.platforms
  */
 async function updateInitialOsStatuses({github, context, sha, platforms}) {
     const workflowUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
     const seen = new Set();
-    const oss = [];
+    const targets = [];
 
     for (const platform of platforms || []) {
-        const os = platform.platform || platform.os;
+        const os = canonicalizeOs(platform.platform || platform.os, platform.runner);
         if (!os || seen.has(os)) {
             continue;
         }
         seen.add(os);
-        oss.push(os);
+        targets.push(os);
     }
 
-    // Fallback when matrix is empty — still clear the three required checks.
-    const targets = oss.length > 0 ? oss : ['linux', 'macos', 'windows'];
+    if (targets.length === 0) {
+        console.log('No canonical OS platforms — skipping pending e2e/<os> statuses');
+        return;
+    }
 
     await Promise.all(targets.map((os) =>
         github.rest.repos.createCommitStatus({
@@ -233,6 +257,8 @@ module.exports = {
     cancelActiveE2ERuns,
     updateInitialOsStatuses,
     osStatusContext,
+    canonicalizeOs,
+    E2E_OS_LIST,
     E2E_OS_STATUS_CONTEXTS,
 
     // Back-compat alias for callers that still import the old singular name.
