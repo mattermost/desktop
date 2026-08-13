@@ -13,9 +13,53 @@ const {
     buildLegSummaries,
     formatLegResultText,
     formatCmtChannelMessage,
+    collapseSpecAttempts,
+    resolveChannelTotals,
 } = require('./cmt-channel-notify');
 
 describe('cmt-channel-notify', () => {
+    describe('collapseSpecAttempts', () => {
+        it('counts a double-failed retry as one failure', () => {
+            assert.equal(
+                collapseSpecAttempts([{status: 'failed'}, {status: 'failed'}]),
+                'failed',
+            );
+        });
+
+        it('treats failed-then-passed as flaky', () => {
+            assert.equal(
+                collapseSpecAttempts([{status: 'failed'}, {status: 'passed'}]),
+                'flaky',
+            );
+        });
+
+        it('keeps explicit flaky and single pass/skip', () => {
+            assert.equal(collapseSpecAttempts([{status: 'flaky'}]), 'flaky');
+            assert.equal(collapseSpecAttempts([{status: 'passed'}]), 'passed');
+            assert.equal(collapseSpecAttempts([{status: 'skipped'}]), 'skipped');
+            assert.equal(collapseSpecAttempts([]), null);
+        });
+    });
+
+    describe('resolveChannelTotals', () => {
+        it('sums unique per-leg counts and folds flaky into passed', () => {
+            assert.deepEqual(
+                resolveChannelTotals({
+                    'e2e-on-ubuntu-latest-11.9.0': {passed: 218, failed: 1, skipped: 11, flaky: 0},
+                    'e2e-on-windows-2022-10.11.23': {passed: 214, failed: 2, skipped: 34, flaky: 1},
+                }),
+                {passed: 433, failed: 3, skipped: 45},
+            );
+        });
+
+        it('falls back to test_stats when per-leg counts are empty', () => {
+            assert.deepEqual(
+                resolveChannelTotals({}, {passed: 200, failed: 14, skipped: 5, flaky: 3}),
+                {passed: 203, failed: 14, skipped: 5},
+            );
+        });
+    });
+
     describe('formatLegResultText', () => {
         it('renders all-skipped legs as not executed instead of ✅ 0/0', () => {
             assert.equal(
@@ -159,12 +203,44 @@ describe('cmt-channel-notify', () => {
             assert.match(text, /\*\*Branch:\*\* `v6\.2\.0-rc\.1` · \*\*Commit:\*\* `55afc0b`/);
             assert.match(text, /🔴 \*\*1 failing test\*\*/);
             assert.match(text, /\| 🪟 Windows \| Server `11\.9\.0` \| 1 \|/);
-            assert.match(text, /\| ❌ Failed \| \*\*460\*\* \| \*\*1\*\* \| \*\*40\*\* \|/);
+            // Overall totals come from unique per-leg counts (not inflated TSIO test_stats).
+            assert.match(text, /\| ❌ Failed \| \*\*461\*\* \| \*\*1\*\* \| \*\*40\*\* \|/);
             assert.match(text, /#### Detailed results/);
             assert.doesNotMatch(text, /<details>/);
             assert.match(text, /\| 🐧 Linux \| Server `11\.9\.0` \| ✅ 231\/231 \| \[View\]\(https:\/\/test-io\.test\.mattermost\.com\/reports\/r\/rid-linux\) \|/);
             assert.match(text, /\| 🪟 Windows \| Server `11\.9\.0` \| ❌ 230\/231 \| \[View\]\(https:\/\/test-io\.test\.mattermost\.com\/reports\/r\/rid-windows\) \|/);
             assert.match(text, /➡️ \*\*Full report:\*\* https:\/\/test-io\.test\.mattermost\.com\/reports\/desktop\/v6\.2\.0-rc\.1\/55afc0b\/cmt-desktop/);
+        });
+
+        it('prefers unique per-leg failed counts over inflated TSIO attempt totals', () => {
+            const text = formatCmtChannelMessage({
+                compositeIdentity: {
+                    branch: 'master',
+                    commit_sha: '5eda917312db037975bac5c3535272c61a664674',
+                    name: 'cmt-desktop',
+                },
+                detail: {
+                    status: 'completed',
+                    // Inflated: each retry attempt counted (e.g. 1 unique fail × 2 attempts).
+                    test_stats: {passed: 218, failed: 2, skipped: 11, total: 231},
+                    reports: [
+                        {id: 'rid-linux', gh_job_name: 'e2e-on-ubuntu-latest-11.9.1', status: 'complete'},
+                    ],
+                },
+                reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/5eda917/cmt-desktop',
+                baseUrl: 'https://test-io.test.mattermost.com',
+                perJobCounts: {
+                    // Unique Playwright-style count after collapsing retries.
+                    'e2e-on-ubuntu-latest-11.9.1': {passed: 218, failed: 1, skipped: 11, flaky: 0},
+                },
+                upstreamJobsSucceeded: true,
+            });
+
+            assert.match(text, /🔴 \*\*1 failing test\*\*/);
+            assert.match(text, /\| 🐧 Linux \| Server `11\.9\.1` \| 1 \|/);
+            assert.match(text, /\| ❌ Failed \| \*\*218\*\* \| \*\*1\*\* \| \*\*11\*\* \|/);
+            assert.match(text, /\| 🐧 Linux \| Server `11\.9\.1` \| ❌ 218\/219 \|/);
+            assert.doesNotMatch(text, /🔴 \*\*2 failing tests\*\*/);
         });
 
         it('renders a passed PR report with PR link and no failure banner', () => {
@@ -247,7 +323,8 @@ describe('cmt-channel-notify', () => {
                 upstreamJobsSucceeded: true,
             });
             assert.match(text, /^## ✅ Desktop PR E2E\n/);
-            assert.match(text, /\| ✅ Passed \| \*\*674\*\* \| \*\*0\*\* \| \*\*51\*\* \|/);
+            // Unique per-leg sum: 216+220+237+9 = 682 passed, 30 skipped (not TSIO test_stats 674/51).
+            assert.match(text, /\| ✅ Passed \| \*\*682\*\* \| \*\*0\*\* \| \*\*30\*\* \|/);
             assert.match(text, /TSIO report status: `in_progress` \(consolidation still catching up; not treated as a test failure\)/);
             assert.match(text, /Missing or empty leg report\(s\): 🍎 macOS \/ Policy/);
             assert.match(text, /\| 🍎 macOS \| Policy \| ⚠️ missing \|/);
