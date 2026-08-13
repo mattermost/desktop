@@ -23,7 +23,11 @@ function positiveInt(value, fallback) {
     return Number.isInteger(n) && n > 0 ? n : fallback;
 }
 
-const {parseCmtJobName, fetchPerJobCountsFromConsolidated} = require('./cmt-channel-notify');
+const {
+    parseCmtJobName,
+    fetchPerJobCountsFromConsolidated,
+    buildIndividualReportUrl,
+} = require('./cmt-channel-notify');
 const {
     osStatusContext,
     policyStatusContext,
@@ -96,6 +100,46 @@ function buildOsStatusTotals({detail, perJobCounts}) {
 }
 
 /**
+ * Commit-status click-through for one e2e/<os> (or e2e/<os>-policy) bucket.
+ * PR/master has one uploaded report per bucket → /reports/r/{id}.
+ * CMT may have several versions on the same OS: link a failed leg if any,
+ * otherwise keep the group rollup so the check is not one arbitrary version.
+ *
+ * @param {Object} params
+ * @param {Array<{id?: string, gh_job_name?: string, display_name?: string, status?: string}>} [params.reports]
+ * @param {string} params.bucketKey
+ * @param {string} [params.baseUrl]
+ * @param {string} params.fallbackUrl
+ * @returns {string}
+ */
+function reportUrlForStatusBucket({reports, bucketKey, baseUrl, fallbackUrl}) {
+    if (!baseUrl || !bucketKey) {
+        return fallbackUrl;
+    }
+
+    const matching = (reports || []).filter((report) => {
+        if (!report?.id) {
+            return false;
+        }
+        const name = report.gh_job_name || report.display_name;
+        return statusBucketKey(parseCmtJobName(name)) === bucketKey;
+    });
+
+    if (matching.length === 1) {
+        return buildIndividualReportUrl(baseUrl, matching[0].id);
+    }
+
+    if (matching.length > 1) {
+        const failed = matching.find((report) => report.status === 'failed');
+        if (failed) {
+            return buildIndividualReportUrl(baseUrl, failed.id);
+        }
+    }
+
+    return fallbackUrl;
+}
+
+/**
  * Resolve which OS contexts this run should report.
  *
  * @param {string[]} [expectedOs]
@@ -158,6 +202,8 @@ function statusFromTotals(row, upstreamJobsSucceeded, incompleteLabel) {
 
 /**
  * @param {Object} params
+ * @param {string} params.targetUrl - Group / fallback TSIO URL
+ * @param {string} [params.baseUrl] - TSIO origin used to build per-leg /reports/r/{id} links
  * @param {string[]} [params.expectedOs]
  * @param {string[]} [params.expectedPolicyOs]
  * @returns {Promise<void>}
@@ -169,6 +215,7 @@ async function flipPerOsCommitStatuses({
     detail,
     perJobCounts,
     targetUrl,
+    baseUrl,
     upstreamJobsSucceeded,
     expectedOs,
     expectedPolicyOs,
@@ -178,6 +225,14 @@ async function flipPerOsCommitStatuses({
     const oss = resolveExpectedOs(expectedOs, byKey);
     const policyOss = resolveExpectedPolicyOs(expectedPolicyOs);
     const emptyRow = {passed: 0, failed: 0, skipped: 0, shardFailed: false, hasResults: false};
+    const reports = detail?.reports || [];
+
+    const urlFor = (bucketKey) => reportUrlForStatusBucket({
+        reports,
+        bucketKey,
+        baseUrl,
+        fallbackUrl: targetUrl,
+    });
 
     const posts = [
         ...oss.map(async (os) => {
@@ -195,7 +250,7 @@ async function flipPerOsCommitStatuses({
                     state,
                     context: osStatusContext(os),
                     description: description.slice(0, 140),
-                    target_url: targetUrl,
+                    target_url: urlFor(os),
                 });
             } catch (error) {
                 core.warning(`Failed to create ${osStatusContext(os)} status: ${error.message}`);
@@ -216,7 +271,7 @@ async function flipPerOsCommitStatuses({
                     state,
                     context: policyStatusContext(os),
                     description: description.slice(0, 140),
-                    target_url: targetUrl,
+                    target_url: urlFor(`${os}-policy`),
                 });
             } catch (error) {
                 core.warning(`Failed to create ${policyStatusContext(os)} status: ${error.message}`);
@@ -534,6 +589,7 @@ async function reportTsioStatus({
                 detail,
                 perJobCounts,
                 targetUrl,
+                baseUrl,
                 upstreamJobsSucceeded,
                 expectedOs,
                 expectedPolicyOs,
@@ -597,3 +653,4 @@ async function reportTsioStatus({
 module.exports = reportTsioStatus;
 module.exports.buildOsStatusTotals = buildOsStatusTotals;
 module.exports.flipPerOsCommitStatuses = flipPerOsCommitStatuses;
+module.exports.reportUrlForStatusBucket = reportUrlForStatusBucket;

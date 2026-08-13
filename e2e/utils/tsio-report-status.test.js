@@ -9,6 +9,7 @@ const assert = require('node:assert/strict');
 const {
     buildOsStatusTotals,
     flipPerOsCommitStatuses,
+    reportUrlForStatusBucket,
 } = require('./tsio-report-status');
 
 describe('buildOsStatusTotals', () => {
@@ -220,5 +221,110 @@ describe('flipPerOsCommitStatuses', () => {
         });
 
         assert.deepEqual(statuses.map((s) => s.context), ['e2e/linux']);
+    });
+
+    it('points each check at its individual TSIO report, not the group URL', async () => {
+        const {statuses, github, core, context, compositeIdentity} = makeHarness();
+
+        await flipPerOsCommitStatuses({
+            github,
+            context,
+            compositeIdentity,
+            detail: {
+                reports: [
+                    {id: 'rid-linux', gh_job_name: 'e2e-on-ubuntu-latest-11.9.0', status: 'complete'},
+                    {id: 'rid-mac', gh_job_name: 'e2e-on-macos-14-11.9.0', status: 'complete'},
+                    {id: 'rid-win', gh_job_name: 'e2e-on-windows-2022-11.9.0', status: 'complete'},
+                    {id: 'rid-mac-policy', gh_job_name: 'policy-tests-macos', status: 'complete'},
+                    {id: 'rid-win-policy', gh_job_name: 'policy-tests-windows', status: 'complete'},
+                ],
+            },
+            perJobCounts: {
+                'e2e-on-ubuntu-latest-11.9.0': {passed: 219, failed: 0, skipped: 11, flaky: 0},
+                'e2e-on-macos-14-11.9.0': {passed: 225, failed: 0, skipped: 20, flaky: 0},
+                'e2e-on-windows-2022-11.9.0': {passed: 236, failed: 0, skipped: 20, flaky: 0},
+                'policy-tests-macos': {passed: 9, failed: 0, skipped: 0, flaky: 0},
+                'policy-tests-windows': {passed: 9, failed: 0, skipped: 0, flaky: 0},
+            },
+            targetUrl: 'https://test-io.test.mattermost.com/reports/desktop/pr/abc1234/desktop-pr',
+            baseUrl: 'https://test-io.test.mattermost.com',
+            upstreamJobsSucceeded: true,
+            expectedOs: ['linux', 'macos', 'windows'],
+            expectedPolicyOs: ['macos', 'windows'],
+            core,
+        });
+
+        const byContext = Object.fromEntries(statuses.map((s) => [s.context, s]));
+        assert.equal(byContext['e2e/linux'].target_url, 'https://test-io.test.mattermost.com/reports/r/rid-linux');
+        assert.equal(byContext['e2e/macos'].target_url, 'https://test-io.test.mattermost.com/reports/r/rid-mac');
+        assert.equal(byContext['e2e/windows'].target_url, 'https://test-io.test.mattermost.com/reports/r/rid-win');
+        assert.equal(byContext['e2e/macos-policy'].target_url, 'https://test-io.test.mattermost.com/reports/r/rid-mac-policy');
+        assert.equal(byContext['e2e/windows-policy'].target_url, 'https://test-io.test.mattermost.com/reports/r/rid-win-policy');
+    });
+
+    it('falls back to the group URL when a bucket has no uploaded report id', async () => {
+        const {statuses, github, core, context, compositeIdentity} = makeHarness();
+        const groupUrl = 'https://test-io.test.mattermost.com/reports/desktop/pr/abc1234/desktop-pr';
+
+        await flipPerOsCommitStatuses({
+            github,
+            context,
+            compositeIdentity,
+            detail: {reports: []},
+            perJobCounts: {
+                'e2e-on-ubuntu-latest-11.9.0': {passed: 1, failed: 0, skipped: 0, flaky: 0},
+            },
+            targetUrl: groupUrl,
+            baseUrl: 'https://test-io.test.mattermost.com',
+            upstreamJobsSucceeded: true,
+            expectedOs: ['linux'],
+            core,
+        });
+
+        assert.equal(statuses[0].target_url, groupUrl);
+    });
+});
+
+describe('reportUrlForStatusBucket', () => {
+    const baseUrl = 'https://test-io.test.mattermost.com';
+    const fallback = 'https://test-io.test.mattermost.com/reports/desktop/pr/abc/desktop-pr';
+
+    it('returns the individual report URL when a bucket has one uploaded report', () => {
+        const url = reportUrlForStatusBucket({
+            reports: [
+                {id: 'rid-linux', gh_job_name: 'e2e-on-ubuntu-latest-11.9.0'},
+                {id: 'rid-mac', gh_job_name: 'e2e-on-macos-14-11.9.0'},
+            ],
+            bucketKey: 'linux',
+            baseUrl,
+            fallbackUrl: fallback,
+        });
+        assert.equal(url, `${baseUrl}/reports/r/rid-linux`);
+    });
+
+    it('prefers a failed individual report when a bucket has multiple uploads', () => {
+        const url = reportUrlForStatusBucket({
+            reports: [
+                {id: 'rid-linux-a', gh_job_name: 'e2e-on-ubuntu-latest-11.9.0', status: 'complete'},
+                {id: 'rid-linux-b', gh_job_name: 'e2e-on-ubuntu-latest-11.10.0', status: 'failed'},
+            ],
+            bucketKey: 'linux',
+            baseUrl,
+            fallbackUrl: fallback,
+        });
+        assert.equal(url, `${baseUrl}/reports/r/rid-linux-b`);
+    });
+
+    it('keeps the group URL when a bucket has multiple successful uploads', () => {
+        const url = reportUrlForStatusBucket({
+            reports: [
+                {id: 'rid-linux-a', gh_job_name: 'e2e-on-ubuntu-latest-11.9.0', status: 'complete'},
+                {id: 'rid-linux-b', gh_job_name: 'e2e-on-ubuntu-latest-11.10.0', status: 'complete'},
+            ],
+            bucketKey: 'linux',
+            baseUrl,
+            fallbackUrl: fallback,
+        });
+        assert.equal(url, fallback);
     });
 });
