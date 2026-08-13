@@ -22,29 +22,13 @@ export async function isCallsPluginEnabled(baseUrl: string, token: string): Prom
 }
 
 /**
- * Turn the Calls plugin's "Test mode" off, so non-admin users are allowed to start
- * calls. While test mode is on, only users holding manage_system can start or join
- * a call in a channel that has not been explicitly enabled.
+ * Turn Test mode off so non-admin users can start calls.
  *
- * REVIEWER NOTE — two things below are deliberate and easy to "simplify" wrongly:
- *
- * 1. The key is `DefaultEnabled`, not `TestMode`, and it is INVERTED. `TestMode` is
- *    a client-side display name only; no such server config key exists. See
- *    mattermost-plugin-calls server/configuration.go:
- *        TestMode="off" -> DefaultEnabled=true
- *        TestMode="on"  -> DefaultEnabled=false
- *    PluginSettings.Plugins is an untyped map[string]map[string]any with no schema
- *    validation, so patching a key that does not exist is accepted and echoed back
- *    with HTTP 200 while changing nothing. A green response here proves nothing.
- *
- * 2. The read-then-merge is required. config.Merge replaces plugin config maps
- *    wholesale rather than merging them, and patchConfig only preserves plugin IDs
- *    absent from the patch. Patching a single key therefore REPLACES this plugin's
- *    entire settings block and drops every other key. Do not collapse this into a
- *    bare one-line patch.
- *
- * Together those caused the original bug: patching `{TestMode: false}` deleted
- * `DefaultEnabled`, which falls back to false — pinning test mode permanently ON.
+ * Note: the UI label "Test mode" maps to the config key `DefaultEnabled` (inverted:
+ * DefaultEnabled=true means test mode off). Both casings must be written —
+ * `DefaultEnabled` for the plugin, `defaultenabled` for the System Console display.
+ * The read-then-merge is required because config.Merge replaces the entire plugin
+ * settings map, so a one-line patch drops every other Calls setting.
  */
 async function disableCallsTestMode(baseUrl: string, token: string): Promise<void> {
     const config = await apiRequest<ServerConfig>(baseUrl, token, '/api/v4/config');

@@ -35,7 +35,7 @@ test.describe('calls/keyboard_shortcuts', () => {
     });
 
     test.beforeEach(async ({serverMap, electronApp}) => {
-        if (!process.env.MM_TEST_SERVER_URL) {
+        if (!process.env.MM_TEST_SERVER_URL || !adminToken || !teamId) {
             test.skip(true, 'MM_TEST_SERVER_URL required');
             return;
         }
