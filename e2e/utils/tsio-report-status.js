@@ -445,7 +445,7 @@ async function reportTsioStatus({
 
     // Commit status / job outcome must reflect test + upstream CI health — not TSIO
     // consolidation lag. A stuck `in_progress` / `incomplete` group with 0 failed tests
-    // previously flipped e2e-test/desktop-playwright red and posted "Failed" with 0 failures.
+    // previously flipped the commit status red and posted "Failed" with 0 failures.
     let overallState = 'failure';
     if (!hasFailures && upstreamJobsSucceeded) {
         overallState = 'success';
