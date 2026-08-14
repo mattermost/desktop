@@ -75,7 +75,7 @@ test.describe('calls/keyboard_shortcuts', () => {
                 {timeout: 5_000, message: 'Mute button aria-label must toggle after Cmd/Ctrl+Shift+Space'},
             ).not.toBe(initialLabel);
 
-            await closeCallsWidget(electronApp, widgetWindow);
+            await closeCallsWidget(electronApp, widgetWindow, serverWin);
         },
     );
 
@@ -112,7 +112,7 @@ test.describe('calls/keyboard_shortcuts', () => {
                 {timeout: 5_000, message: 'Raise hand button aria-label must revert to "Raise hand" after second shortcut'},
             ).toContain('Raise hand');
 
-            await closeCallsWidget(electronApp, widgetWindow);
+            await closeCallsWidget(electronApp, widgetWindow, serverWin);
         },
     );
 
@@ -155,7 +155,7 @@ test.describe('calls/keyboard_shortcuts', () => {
                 {timeout: 5_000, message: 'Participants button aria-expanded must be false after closing shortcut'},
             ).toBe('false');
 
-            await closeCallsWidget(electronApp, widgetWindow);
+            await closeCallsWidget(electronApp, widgetWindow, serverWin);
         },
     );
 
@@ -183,7 +183,7 @@ test.describe('calls/keyboard_shortcuts', () => {
                 {timeout: 5_000, message: 'Cmd/Ctrl+Shift+E must send desktop-sources-modal-request IPC from widget'},
             ).toBe(true);
 
-            await closeCallsWidget(electronApp, widgetWindow);
+            await closeCallsWidget(electronApp, widgetWindow, serverWin);
         },
     );
 

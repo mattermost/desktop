@@ -109,7 +109,7 @@ test.describe('calls/slash_commands', () => {
         async ({electronApp}) => {
             const widgetWindow = await startCall(electronApp, serverWin);
 
-            await closeCallsWidget(electronApp, widgetWindow);
+            await closeCallsWidget(electronApp, widgetWindow, serverWin);
             await sendSlashCommand(serverWin, '/call stats');
 
             // /call stats posts an ephemeral response with the stats JSON.

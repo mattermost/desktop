@@ -96,7 +96,7 @@ test.describe('calls/calls_functionality', () => {
                 {timeout: 5_000, message: 'Mute button aria-label must toggle after click'},
             ).not.toBe(initialLabel);
 
-            await closeCallsWidget(electronApp, widgetWindow);
+            await closeCallsWidget(electronApp, widgetWindow, serverWin);
         },
     );
 
@@ -109,7 +109,7 @@ test.describe('calls/calls_functionality', () => {
                 '/plugins/com.mattermost.calls/standalone/widget.html',
             );
 
-            await closeCallsWidget(electronApp, widgetWindow);
+            await closeCallsWidget(electronApp, widgetWindow, serverWin);
         },
     );
 
@@ -151,7 +151,7 @@ test.describe('calls/calls_functionality', () => {
                 {timeout: 5_000, message: 'Mute button aria-label must toggle after pressing the mute keyboard shortcut'},
             ).not.toBe(initialLabel);
 
-            await closeCallsWidget(electronApp, widgetWindow);
+            await closeCallsWidget(electronApp, widgetWindow, serverWin);
         },
     );
 });

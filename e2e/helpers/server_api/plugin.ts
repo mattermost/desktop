@@ -66,17 +66,8 @@ async function disableCallsTestMode(baseUrl: string, token: string): Promise<voi
  */
 export async function ensureCallsPlugin(baseUrl: string, token: string): Promise<void> {
     if (await isCallsPluginEnabled(baseUrl, token)) {
-        // Restart the plugin. NOTE: this is not required by the config write below.
-        // Calls never calls SavePluginConfig (it appears only in generated mocks) and
-        // Mattermost does not persist schema defaults on activation, so nothing can
-        // overwrite a patch regardless of when it is applied. The restart is kept
-        // because it resets the plugin's in-memory per-user API rate limiter
+        // Restart resets the plugin's in-memory per-user API rate limiter
         // (burst 10, refill 1/sec), giving each spec file a fresh bucket.
-        //
-        // KNOWN GAP: the poll below uses isCallsPluginEnabled, which reports the
-        // plugin active before OnActivate has finished registering slash commands —
-        // so `/call` can briefly resolve to "command with trigger not found". The fix
-        // is to poll GET /api/v4/commands?team_id= until the `call` trigger appears.
         await apiRequest<Record<string, unknown>>(baseUrl, token, `/api/v4/plugins/${CALLS_PLUGIN_ID}/disable`, {
             method: 'POST',
         });
@@ -87,6 +78,10 @@ export async function ensureCallsPlugin(baseUrl: string, token: string): Promise
                 break;
             }
             await new Promise((resolve) => setTimeout(resolve, 1_000));
+        }
+
+        if (await isCallsPluginEnabled(baseUrl, token)) {
+            throw new Error(`Calls plugin (${CALLS_PLUGIN_ID}) did not disable within 30s`);
         }
 
         await apiRequest<Record<string, unknown>>(baseUrl, token, `/api/v4/plugins/${CALLS_PLUGIN_ID}/enable`, {
@@ -119,4 +114,20 @@ export async function ensureCallsPlugin(baseUrl: string, token: string): Promise
     }
 
     await disableCallsTestMode(baseUrl, token);
+
+    // Poll until OnActivate has registered the 'call' slash command.
+    // The plugin reports active before slash commands are ready, so /call start
+    // can briefly return "command with trigger not found".
+    const teams = await apiRequest<Array<{id: string}>>(baseUrl, token, '/api/v4/users/me/teams');
+    if (teams.length > 0) {
+        const firstTeamId = teams[0].id;
+        const cmdDeadline = Date.now() + 30_000;
+        while (Date.now() < cmdDeadline) {
+            const commands = await apiRequest<Array<{trigger: string}>>(baseUrl, token, `/api/v4/commands?team_id=${firstTeamId}`);
+            if (commands.some((c) => c.trigger === 'call')) {
+                break;
+            }
+            await new Promise((resolve) => setTimeout(resolve, 1_000));
+        }
+    }
 }

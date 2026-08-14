@@ -97,7 +97,11 @@ export async function leaveCallIfActive(electronApp: ElectronApplication): Promi
     }
 }
 
-export async function closeCallsWidget(electronApp: ElectronApplication, widgetWindow: Page): Promise<void> {
+export async function closeCallsWidget(
+    electronApp: ElectronApplication,
+    widgetWindow: Page,
+    serverWin?: ServerView,
+): Promise<void> {
     const leaveClicked = await widgetWindow.evaluate(() => {
         const btn = document.querySelector(
             'button[aria-label*="Leave"], button[aria-label*="leave"], button[aria-label*="End"], button[aria-label*="end"]',
@@ -119,4 +123,11 @@ export async function closeCallsWidget(electronApp: ElectronApplication, widgetW
         () => findCallsWidgetWindow(electronApp),
         {timeout: 10_000, message: 'Calls widget window must close after leaving'},
     ).toBeNull();
+
+    if (serverWin) {
+        await expect.poll(
+            () => serverWin.isVisible('[data-testid="calls-sidebar-active-call-icon"]'),
+            {timeout: 10_000, message: 'Sidebar active-call icon must disappear after leaving'},
+        ).toBe(false);
+    }
 }
