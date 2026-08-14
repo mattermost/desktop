@@ -67,6 +67,37 @@ function summarizeCmtJobsByOs(jobs, expectedOs) {
 }
 
 /**
+ * Commit-status payload for one CMT OS bucket.
+ *
+ * @param {{failed: boolean, seen: boolean}} row
+ * @param {string} os
+ * @returns {{state: 'success'|'failure', description: string}}
+ */
+function cmtOsCommitStatus(row, os) {
+    if (row.seen === false) {
+        return {state: 'failure', description: `E2E incomplete — no ${os} CMT jobs`};
+    }
+    if (row.failed) {
+        return {state: 'failure', description: `E2E failed on ${os}`};
+    }
+    return {state: 'success', description: `E2E passed on ${os}`};
+}
+
+const PLAYWRIGHT_PROJECT_BY_OS = {
+    linux: 'linux',
+    macos: 'darwin',
+    windows: 'win32',
+};
+
+/**
+ * @param {'linux'|'macos'|'windows'|null} os
+ * @returns {string}
+ */
+function playwrightProjectForOs(os) {
+    return PLAYWRIGHT_PROJECT_BY_OS[os] || 'linux';
+}
+
+/**
  * Post pending e2e/<os> statuses for this run.
  *
  * @param {Object} params
@@ -145,13 +176,7 @@ async function updateCmtOsStatusesFromWorkflowJobs({github, context, sha, platfo
 
     const byOs = summarizeCmtJobsByOs(jobs, expectedOs);
     await Promise.all(expectedOs.map((os) => {
-        const row = byOs[os];
-        const state = !row.seen || row.failed ? 'failure' : 'success';
-        const description = !row.seen ?
-            `E2E incomplete — no ${os} CMT jobs` :
-            row.failed ?
-                `E2E failed on ${os}` :
-                `E2E passed on ${os}`;
+        const {state, description} = cmtOsCommitStatus(byOs[os], os);
         return github.rest.repos.createCommitStatus({
             owner: context.repo.owner,
             repo: context.repo.repo,
@@ -197,7 +222,7 @@ async function updateFinalStatus({github, context, platforms, outputs, mergedRep
     await Promise.all(platforms.map((platform) => {
         const os = canonicalizeOs(platform.platform || platform.os, platform.runner);
         const osKey = os ? os.toUpperCase() : 'WINDOWS';
-        const playwrightProject = os === 'macos' ? 'darwin' : os === 'windows' ? 'win32' : 'linux';
+        const playwrightProject = playwrightProjectForOs(os);
 
         const failures = outputs[`NEW_FAILURES_${osKey}`] || 0;
         const status = outputs[`STATUS_${osKey}`] || 'failure';
@@ -303,6 +328,8 @@ module.exports = {
     canonicalizeOs,
     osFromCmtJobName,
     summarizeCmtJobsByOs,
+    cmtOsCommitStatus,
+    playwrightProjectForOs,
     osStatusContext,
     E2E_OS_LIST,
 };

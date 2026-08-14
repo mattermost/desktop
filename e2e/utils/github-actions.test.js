@@ -10,6 +10,8 @@ const {
     canonicalizeOs,
     osFromCmtJobName,
     summarizeCmtJobsByOs,
+    cmtOsCommitStatus,
+    playwrightProjectForOs,
 } = require('./github-actions');
 
 describe('canonicalizeOs', () => {
@@ -55,5 +57,37 @@ describe('summarizeCmtJobsByOs', () => {
         assert.deepEqual(byOs.linux, {failed: true, seen: true});
         assert.deepEqual(byOs.macos, {failed: false, seen: true});
         assert.deepEqual(byOs.windows, {failed: false, seen: false});
+    });
+});
+
+describe('cmtOsCommitStatus', () => {
+    it('fails incomplete OS buckets', () => {
+        assert.deepEqual(
+            cmtOsCommitStatus({failed: false, seen: false}, 'windows'),
+            {state: 'failure', description: 'E2E incomplete — no windows CMT jobs'},
+        );
+    });
+
+    it('fails when any matrix cell failed', () => {
+        assert.deepEqual(
+            cmtOsCommitStatus({failed: true, seen: true}, 'linux'),
+            {state: 'failure', description: 'E2E failed on linux'},
+        );
+    });
+
+    it('succeeds when every seen cell passed', () => {
+        assert.deepEqual(
+            cmtOsCommitStatus({failed: false, seen: true}, 'macos'),
+            {state: 'success', description: 'E2E passed on macos'},
+        );
+    });
+});
+
+describe('playwrightProjectForOs', () => {
+    it('maps canonical OS ids to Playwright project names', () => {
+        assert.equal(playwrightProjectForOs('linux'), 'linux');
+        assert.equal(playwrightProjectForOs('macos'), 'darwin');
+        assert.equal(playwrightProjectForOs('windows'), 'win32');
+        assert.equal(playwrightProjectForOs(null), 'linux');
     });
 });
