@@ -50,8 +50,36 @@ jobs:
       platforms: ${{ steps.generate.outputs.platforms }}
     steps:
       - id: generate
+        env:
+          INSTANCE_DETAILS: ${{ inputs.instance_details }}
         run: |
-          echo "platforms=$(echo '${{ inputs.instance_details }}' | jq -c)" >> $GITHUB_OUTPUT
+          # Matterwick still dispatches macos-latest; pin explicitly so the job
+          # does not drift when GitHub retargets that label to macOS 26.
+          # Normalize platform to canonical linux|macos|windows (derive from runner
+          # when needed) so job names and e2e/<os> statuses stay consistent.
+          platforms=$(echo "${INSTANCE_DETAILS}" | jq -c '
+            map(
+              (if .runner == "macos-latest" then .runner = "macos-26" else . end) |
+              . as $row |
+              ($row.platform // $row.os // "") as $raw |
+              (
+                if $raw == "linux" or $raw == "macos" or $raw == "windows" then $raw
+                elif (($row.runner // "") | test("^(ubuntu|linux)")) then "linux"
+                elif (($row.runner // "") | test("^(macos|darwin)")) then "macos"
+                elif (($row.runner // "") | test("^windows")) then "windows"
+                else null
+                end
+              ) as $canon |
+              if $canon == null then empty
+              else ($row | .platform = $canon | del(.os))
+              end
+            )
+          ')
+          if [ "$(echo "${platforms}" | jq 'length')" -eq 0 ]; then
+            echo "No supported platforms in instance_details (need linux|macos|windows)" >&2
+            exit 1
+          fi
+          echo "platforms=${platforms}" >> "$GITHUB_OUTPUT"
 
   update-initial-status:
     name: Update initial status

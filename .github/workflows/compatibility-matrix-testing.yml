@@ -60,6 +60,32 @@ jobs:
           description: "Compatibility Matrix Testing for ${{ inputs.DESKTOP_VERSION }} version"
           status: pending
 
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        continue-on-error: true
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            e2e/utils/github-actions.js
+          sparse-checkout-cone-mode: false
+
+      - name: Post pending e2e/linux|macos|windows
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        continue-on-error: true
+        env:
+          DESKTOP_SHA: ${{ needs.calculate-commit-hash.outputs.DESKTOP_SHA }}
+          CMT_MATRIX: ${{ inputs.CMT_MATRIX }}
+        with:
+          script: |
+            const {updateInitialOsStatuses} = require('./e2e/utils/github-actions.js');
+            const matrix = JSON.parse(process.env.CMT_MATRIX || '{}');
+            const platforms = (matrix.environment || []).map((env) => ({platform: env.os, runner: env.runner}));
+            await updateInitialOsStatuses({
+              github,
+              context,
+              sha: process.env.DESKTOP_SHA,
+              platforms,
+            });
+
   # Input follows the below schema (Matterwick ≥ v0.4.16).
   # {
   #   "environment": [
@@ -123,6 +149,32 @@ jobs:
           description: "Compatibility Matrix Testing for ${{ inputs.DESKTOP_VERSION }} version"
           status: failure
 
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        continue-on-error: true
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            e2e/utils/github-actions.js
+          sparse-checkout-cone-mode: false
+
+      - name: Flip e2e/linux|macos|windows from CMT job results
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        continue-on-error: true
+        env:
+          DESKTOP_SHA: ${{ needs.calculate-commit-hash.outputs.DESKTOP_SHA }}
+          CMT_MATRIX: ${{ inputs.CMT_MATRIX }}
+        with:
+          script: |
+            const {updateCmtOsStatusesFromWorkflowJobs} = require('./e2e/utils/github-actions.js');
+            const matrix = JSON.parse(process.env.CMT_MATRIX || '{}');
+            const platforms = (matrix.environment || []).map((env) => ({platform: env.os, runner: env.runner}));
+            await updateCmtOsStatusesFromWorkflowJobs({
+              github,
+              context,
+              sha: process.env.DESKTOP_SHA,
+              platforms,
+            });
+
   # https://mattermost.atlassian.net/browse/CLD-5815
   update-success-final-status:
     runs-on: ubuntu-22.04
@@ -140,6 +192,32 @@ jobs:
           context: e2e/compatibility-matrix-testing
           description: "Compatibility Matrix Testing for ${{ inputs.DESKTOP_VERSION }} version"
           status: success
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        continue-on-error: true
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            e2e/utils/github-actions.js
+          sparse-checkout-cone-mode: false
+
+      - name: Flip e2e/linux|macos|windows from CMT job results
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        continue-on-error: true
+        env:
+          DESKTOP_SHA: ${{ needs.calculate-commit-hash.outputs.DESKTOP_SHA }}
+          CMT_MATRIX: ${{ inputs.CMT_MATRIX }}
+        with:
+          script: |
+            const {updateCmtOsStatusesFromWorkflowJobs} = require('./e2e/utils/github-actions.js');
+            const matrix = JSON.parse(process.env.CMT_MATRIX || '{}');
+            const platforms = (matrix.environment || []).map((env) => ({platform: env.os, runner: env.runner}));
+            await updateCmtOsStatusesFromWorkflowJobs({
+              github,
+              context,
+              sha: process.env.DESKTOP_SHA,
+              platforms,
+            });
 
   cleanup-cmt-instances:
     runs-on: ubuntu-22.04
