@@ -2,33 +2,147 @@
 // See LICENSE.txt for license information.
 /* eslint-disable no-console -- Logging is intentional in CI utility scripts */
 
-const E2E_STATUS_CONTEXT = 'e2e-test/desktop-playwright';
+/** Canonical OS identifiers for e2e/<os> commit statuses. */
+const E2E_OS_LIST = ['linux', 'macos', 'windows'];
+
+/** Platforms that run dedicated policy-test legs (PR / master only). */
+const E2E_POLICY_OS_LIST = ['macos', 'windows'];
+
+/** Per-OS commit status contexts for PR / master / CMT (restored from pre-TSIO merge). */
+const E2E_OS_STATUS_CONTEXTS = E2E_OS_LIST.map((os) => `e2e/${os}`);
+
+/** Policy commit status contexts: e2e/macos-policy, e2e/windows-policy. */
+const E2E_POLICY_STATUS_CONTEXTS = E2E_POLICY_OS_LIST.map((os) => `e2e/${os}-policy`);
 
 const E2E_WORKFLOW_NAME = 'Electron Playwright Tests';
 const ACTIVE_RUN_STATUSES = ['in_progress', 'queued', 'waiting'];
 const CANCELLED_STATUS_DESCRIPTION = 'E2E cancelled — tests skipped';
 
 /**
- * Mark the E2E commit status as cancelled/skipped on a SHA.
+ * @param {string} [value] - platform / os field from matrix
+ * @param {string} [runner] - GitHub runner label
+ * @returns {'linux'|'macos'|'windows'|null}
+ */
+function canonicalizeOs(value, runner) {
+    const raw = String(value || '').toLowerCase();
+    if (E2E_OS_LIST.includes(raw)) {
+        return raw;
+    }
+    const r = String(runner || '').toLowerCase();
+    if (r.startsWith('ubuntu') || r.startsWith('linux')) {
+        return 'linux';
+    }
+    if (r.startsWith('macos') || r.startsWith('darwin')) {
+        return 'macos';
+    }
+    if (r.startsWith('windows')) {
+        return 'windows';
+    }
+    return null;
+}
+
+/**
+ * @param {string} os
+ * @returns {string}
+ */
+function osStatusContext(os) {
+    return `e2e/${os}`;
+}
+
+/**
+ * @param {string} os - macos | windows
+ * @returns {string}
+ */
+function policyStatusContext(os) {
+    return `e2e/${os}-policy`;
+}
+
+/**
+ * Post pending e2e/<os> (and optionally e2e/<os>-policy) statuses for this run.
+ *
+ * @param {Object} params
+ * @param {Object} params.github
+ * @param {Object} params.context
+ * @param {string} params.sha
+ * @param {Array<{platform?: string, os?: string, runner?: string}>} params.platforms
+ * @param {boolean} [params.includePolicy] - When true (PR/master), also pending policy checks
+ */
+async function updateInitialOsStatuses({github, context, sha, platforms, includePolicy = false}) {
+    const workflowUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+    const seen = new Set();
+    const targets = [];
+
+    for (const platform of platforms || []) {
+        const os = canonicalizeOs(platform.platform || platform.os, platform.runner);
+        if (!os || seen.has(os)) {
+            continue;
+        }
+        seen.add(os);
+        targets.push(os);
+    }
+
+    if (targets.length === 0 && !includePolicy) {
+        console.log('No canonical OS platforms — skipping pending e2e/<os> statuses');
+        return;
+    }
+
+    const posts = targets.map((os) =>
+        github.rest.repos.createCommitStatus({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            sha,
+            state: 'pending',
+            context: osStatusContext(os),
+            description: `E2E tests on ${os} have started...`,
+            target_url: workflowUrl,
+        }).catch((error) => {
+            console.log(`Could not set pending ${osStatusContext(os)} on ${sha}: ${error.message}`);
+        }),
+    );
+
+    if (includePolicy) {
+        for (const os of E2E_POLICY_OS_LIST) {
+            posts.push(
+                github.rest.repos.createCommitStatus({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    sha,
+                    state: 'pending',
+                    context: policyStatusContext(os),
+                    description: `Policy tests on ${os} have started...`,
+                    target_url: workflowUrl,
+                }).catch((error) => {
+                    console.log(`Could not set pending ${policyStatusContext(os)} on ${sha}: ${error.message}`);
+                }),
+            );
+        }
+    }
+
+    await Promise.all(posts);
+}
+
+/**
+ * Mark the E2E commit statuses as cancelled/skipped on a SHA.
  * GitHub commit statuses have no "skipped" state — `error` matches mobile E2E.
  */
 async function markE2EStatusesCancelled({github, context, sha, reason = CANCELLED_STATUS_DESCRIPTION}) {
     const description = String(reason).substring(0, 140);
     const targetUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+    const contexts = [...E2E_OS_STATUS_CONTEXTS, ...E2E_POLICY_STATUS_CONTEXTS];
 
-    try {
-        await github.rest.repos.createCommitStatus({
+    await Promise.all(contexts.map((statusContext) =>
+        github.rest.repos.createCommitStatus({
             owner: context.repo.owner,
             repo: context.repo.repo,
             sha,
             state: 'error',
-            context: E2E_STATUS_CONTEXT,
+            context: statusContext,
             description,
             target_url: targetUrl,
-        });
-    } catch (error) {
-        console.log(`Could not update ${E2E_STATUS_CONTEXT} on ${sha}: ${error.message}`);
-    }
+        }).catch((error) => {
+            console.log(`Could not update ${statusContext} on ${sha}: ${error.message}`);
+        }),
+    ));
 }
 
 /**
@@ -177,6 +291,16 @@ module.exports = {
     removeE2ELabel,
     markE2EStatusesCancelled,
     cancelActiveE2ERuns,
-    E2E_STATUS_CONTEXT,
+    updateInitialOsStatuses,
+    osStatusContext,
+    policyStatusContext,
+    canonicalizeOs,
+    E2E_OS_LIST,
+    E2E_POLICY_OS_LIST,
+    E2E_OS_STATUS_CONTEXTS,
+    E2E_POLICY_STATUS_CONTEXTS,
+
+    // Back-compat alias for callers that still import the old singular name.
+    E2E_STATUS_CONTEXT: E2E_OS_STATUS_CONTEXTS[0],
     CANCELLED_STATUS_DESCRIPTION,
 };
