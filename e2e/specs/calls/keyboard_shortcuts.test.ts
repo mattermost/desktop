@@ -202,8 +202,10 @@ test.describe('calls/keyboard_shortcuts', () => {
                 {timeout: 10_000, message: 'Calls widget must close after Cmd/Ctrl+Shift+L'},
             ).toBeNull();
 
-            const activeCallIconVisible = await serverWin.isVisible('[data-testid="calls-sidebar-active-call-icon"]');
-            expect(activeCallIconVisible, 'Sidebar active call icon must not be visible after leaving').toBe(false);
+            await expect.poll(
+                () => serverWin.isVisible('[data-testid="calls-sidebar-active-call-icon"]'),
+                {timeout: 10_000, message: 'Sidebar active call icon must not be visible after leaving'},
+            ).toBe(false);
         },
     );
 });

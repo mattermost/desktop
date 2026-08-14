@@ -120,8 +120,10 @@ test.describe('calls/slash_commands', () => {
                 {timeout: 15_000, message: '/call stats must post a response containing call statistics'},
             ).toContain('initTime');
 
-            const text = await serverWin.locator(".post__body:has-text('channelID')").last().textContent();
-            expect(text).toContain('channelID');
+            await expect.poll(
+                async () => serverWin.locator(".post__body:has-text('channelID')").last().textContent(),
+                {timeout: 15_000, message: '/call stats post must contain channelID'},
+            ).toContain('channelID');
         },
     );
 
