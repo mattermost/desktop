@@ -17,7 +17,6 @@ import type {AddressInfo} from 'net';
 export type StubMattermostServer = {
     origin: string;
     url: string;
-    getRequestPaths: () => string[];
     close: () => Promise<void>;
 };
 
@@ -51,11 +50,9 @@ export async function startStubMattermostServer(
     options: StubMattermostServerOptions = {},
 ): Promise<StubMattermostServer> {
     const {siteURL, version = '10.0.0'} = options;
-    const requestPaths: string[] = [];
 
     const server = http.createServer((req, res) => {
         const url = req.url ?? '/';
-        requestPaths.push(url);
 
         res.setHeader('Cache-Control', 'no-store');
 
@@ -100,7 +97,6 @@ export async function startStubMattermostServer(
     return {
         origin,
         url: `${origin}/`,
-        getRequestPaths: () => [...requestPaths],
         close: () => closeServer(server),
     };
 }

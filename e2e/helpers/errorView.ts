@@ -183,3 +183,26 @@ export async function waitForErrorView(
 
     return resolveErrorViewHost(app, mainWindow);
 }
+
+/**
+ * Assert `.ErrorView` is absent, and stays absent.
+ *
+ * ErrorView is driven by IPC from the main process, so a single sample can pass
+ * simply because the error page has not been rendered *yet*. Proving the negative
+ * requires re-sampling across a window rather than reading the DOM once.
+ */
+export async function expectNoErrorView(
+    app: ElectronApplication,
+    fallback: Page,
+    {samples = 5, intervalMs = 500}: {samples?: number; intervalMs?: number} = {},
+): Promise<void> {
+    for (let sample = 0; sample < samples; sample++) {
+        const window = resolveErrorViewHost(app, fallback);
+        const visible = await window.isVisible('.ErrorView').catch(() => false);
+        expect(visible, 'ErrorView should never appear').toBe(false);
+
+        if (sample < samples - 1) {
+            await window.waitForTimeout(intervalMs);
+        }
+    }
+}

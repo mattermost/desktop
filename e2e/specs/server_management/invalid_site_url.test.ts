@@ -10,10 +10,10 @@ import {test, expect} from '../../fixtures/index';
 import {demoConfig, type AppConfig} from '../../helpers/config';
 import {launchDirectTestApp} from '../../helpers/directLaunch';
 import {closeElectronAppFast} from '../../helpers/electronApp';
-import {ERROR_VIEW_HEADERS, waitForErrorView} from '../../helpers/errorView';
+import {ERROR_VIEW_HEADERS, expectNoErrorView, waitForErrorView} from '../../helpers/errorView';
 import {buildServerMap} from '../../helpers/serverMap';
 import {startStubMattermostServer, type StubMattermostServer} from '../../helpers/stubMattermostServer';
-import {evaluateInMainProcessWithArg} from '../../helpers/testRefs';
+import {evaluateInMainProcessWithArg, resolveMainIndexWindow} from '../../helpers/testRefs';
 
 /**
  * A server that responds normally but reports a Site URL the app cannot parse.
@@ -53,6 +53,25 @@ function getServerURL(app: ElectronApplication, serverName: string): Promise<str
             refs?.ServerManager?.getAllServers?.() ?? [];
         const server = servers.find((candidate) => candidate.name === payload.serverName);
         return server ? server.url.toString() : undefined;
+    }, {serverName});
+}
+
+/**
+ * Reads the Site URL the app recorded from a server's client configuration.
+ *
+ * ServerManager only holds remote info once updateServerInfos has finished
+ * deciding what to do with the reported Site URL, so this doubles as the
+ * completion signal for that (asynchronous) validation.
+ */
+function getRecordedSiteURL(app: ElectronApplication, serverName: string): Promise<string | undefined> {
+    return evaluateInMainProcessWithArg(app, (_electron, payload) => {
+        const refs = (global as never as {__e2eTestRefs?: any}).__e2eTestRefs;
+        const servers: Array<{id: string; name: string}> = refs?.ServerManager?.getAllServers?.() ?? [];
+        const server = servers.find((candidate) => candidate.name === payload.serverName);
+        if (!server) {
+            return undefined;
+        }
+        return refs?.ServerManager?.getRemoteInfo?.(server.id)?.siteURL;
     }, {serverName});
 }
 
@@ -163,22 +182,20 @@ test.describe('Invalid Site URL', () => {
         ]);
 
         try {
-            // updateServerInfos must have read the config before asserting on what it did with it.
+            // The configured URL is what getServerURL returns to begin with, so wait
+            // for the Site URL validation to actually finish before asserting that it
+            // left the URL alone — otherwise the assertion below passes vacuously.
             await expect.poll(
-                () => unreachableSiteURLServer.getRequestPaths().some((p) => p.startsWith('/api/v4/config/client')),
-                {timeout: 45_000, message: 'App should fetch the client config'},
-            ).toBe(true);
+                () => getRecordedSiteURL(app, serverName),
+                {timeout: 45_000, message: 'App should record the Site URL reported by the server'},
+            ).toBe(UNREACHABLE_SITE_URL);
 
             // Site URL parses, so it is never treated as misconfigured — but it failed
             // validation, so the configured URL must stand.
-            await expect.poll(
-                () => getServerURL(app, serverName),
-                {timeout: 15_000, message: 'Server URL should not be rewritten to an unvalidated Site URL'},
-            ).toContain(unreachableSiteURLServer.origin);
+            expect(await getServerURL(app, serverName)).toContain(unreachableSiteURLServer.origin);
 
-            const mainWindow = app.windows().find((w) => w.url().includes('index'));
-            expect(mainWindow).toBeDefined();
-            expect(await mainWindow!.$('.ErrorView')).toBeNull();
+            const mainWindow = await resolveMainIndexWindow(app);
+            await expectNoErrorView(app, mainWindow);
         } finally {
             await closeElectronAppFast(app, userDataDir);
             await unreachableSiteURLServer.close();
