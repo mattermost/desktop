@@ -291,6 +291,22 @@ describe('common/utils/url', () => {
             )).toBe(false);
         });
 
+        it('should match with percent-encoded (non-ASCII) team name', () => {
+            expect(isCallsPopOutURL(
+                new URL('http://example.org'),
+                new URL('http://example.org/%E7%84%A1%E9%99%90%E5%88%B6%E5%9C%98%E9%9A%8A/com.mattermost.calls/expanded/callid'),
+                'callid',
+            )).toBe(true);
+        });
+
+        it('should match with subpath and percent-encoded (non-ASCII) team name', () => {
+            expect(isCallsPopOutURL(
+                new URL('http://example.org/subpath'),
+                new URL('http://example.org/subpath/%E7%84%A1%E9%99%90%E5%88%B6%E5%9C%98%E9%9A%8A/com.mattermost.calls/expanded/callid'),
+                'callid',
+            )).toBe(true);
+        });
+
         it('should match with regex path embedded', () => {
             expect(isCallsPopOutURL(
                 new URL('http://example.com/path(a+)+'),

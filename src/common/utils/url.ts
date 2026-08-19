@@ -106,7 +106,7 @@ export const isTeamUrl = (serverURL: URL, inputURL: URL, withApi?: boolean) => {
 };
 
 export const isCallsPopOutURL = (serverURL: URL, inputURL: URL, callID: string) => {
-    const matches = inputURL.pathname.match(new RegExp(`^${escapeRegExp(getFormattedPathName(serverURL.pathname))}([A-Za-z0-9-_]+)/`, 'i'));
+    const matches = inputURL.pathname.match(new RegExp(`^${escapeRegExp(getFormattedPathName(serverURL.pathname))}([A-Za-z0-9%_-]+)/`, 'i'));
     if (matches?.length !== 2) {
         return false;
     }
