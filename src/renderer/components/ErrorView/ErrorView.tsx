@@ -13,11 +13,12 @@ import './ErrorView.scss';
 type ErrorViewProps = {
     header: React.ReactNode;
     subHeader: React.ReactNode;
-    bullets: React.ReactNode;
-    contactAdmin: React.ReactNode;
+    bullets?: React.ReactNode;
+    contactAdmin?: React.ReactNode;
     errorInfo?: string;
     url?: string;
-    handleLink: () => void;
+    showOpenInBrowser?: boolean;
+    handleLink?: () => void;
 };
 
 export default function ErrorView({
@@ -27,6 +28,7 @@ export default function ErrorView({
     contactAdmin,
     errorInfo,
     url,
+    showOpenInBrowser = true,
     handleLink,
 }: ErrorViewProps) {
     return (
@@ -38,29 +40,35 @@ export default function ErrorView({
             <span>
                 {subHeader}
             </span>
-            <ul className='ErrorView-bullets'>
-                {bullets}
-                <li>
-                    <FormattedMessage
-                        id='renderer.components.errorView.troubleshooting.webContentsView.canReachFromBrowserWindow'
-                        defaultMessage='Try opening <link>{url}</link> in a browser window.'
-                        values={{
-                            url,
-                            link: (msg: React.ReactNode) => (
-                                <a
-                                    onClick={handleLink}
-                                    href='#'
-                                >
-                                    {msg}
-                                </a>
-                            ),
-                        }}
-                    />
-                </li>
-            </ul>
-            <span>
-                {contactAdmin}
-            </span>
+            {(bullets || showOpenInBrowser) && (
+                <ul className='ErrorView-bullets'>
+                    {bullets}
+                    {showOpenInBrowser && (
+                        <li>
+                            <FormattedMessage
+                                id='renderer.components.errorView.troubleshooting.webContentsView.canReachFromBrowserWindow'
+                                defaultMessage='Try opening <link>{url}</link> in a browser window.'
+                                values={{
+                                    url,
+                                    link: (msg: React.ReactNode) => (
+                                        <a
+                                            onClick={handleLink}
+                                            href='#'
+                                        >
+                                            {msg}
+                                        </a>
+                                    ),
+                                }}
+                            />
+                        </li>
+                    )}
+                </ul>
+            )}
+            {contactAdmin && (
+                <span>
+                    {contactAdmin}
+                </span>
+            )}
             <span className='ErrorView-techInfo'>
                 {errorInfo}
             </span>

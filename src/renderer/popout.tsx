@@ -41,6 +41,11 @@ function Popout() {
             setErrorUrl(loadUrl);
         });
 
+        window.desktop.onLoadInvalidSiteURL((_, loadUrl) => {
+            setErrorState(ErrorState.INVALID_SITE_URL);
+            setErrorUrl(loadUrl);
+        });
+
         window.desktop.onUpdatePopoutTitle((viewId, title) => {
             setTitle(title);
             setViewId(viewId);

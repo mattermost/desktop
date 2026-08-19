@@ -8,12 +8,28 @@ import {waitForRendererReady} from './badServer';
 import {clearCertificateErrorCallbacks} from './dialog';
 import {evaluateInMainProcessWithArg, findMainIndexWindow, resolveMainIndexWindow} from './testRefs';
 
+/**
+ * Which error page BasePage should be showing. `.ErrorView` alone cannot tell
+ * them apart — all three render the same container — so specs that care which
+ * failure was diagnosed match on the header text instead.
+ */
+export const ERROR_VIEW_HEADERS = {
+    failed: "Couldn't connect to this server",
+    incompatible: 'Incompatible server version',
+    invalidSiteURL: 'Server configuration issue',
+} as const;
+
+export type ErrorViewKind = keyof typeof ERROR_VIEW_HEADERS;
+
 type WaitForErrorViewOptions = {
     serverName?: string;
     timeout?: number;
 
     /** Set after add-server modal confirm; skip for pre-configured startup configs. */
     waitForActiveServer?: boolean;
+
+    /** Also require this specific error page, matched on its header text. */
+    kind?: ErrorViewKind;
 };
 
 type ServerReloadAction = 'checkRegistered' | 'reload' | 'checkLoading';
@@ -113,7 +129,7 @@ export async function waitForErrorView(
     options: WaitForErrorViewOptions = {},
 ): Promise<Page> {
     const timeout = options.timeout ?? (process.env.CI ? 60_000 : 45_000);
-    const {serverName, waitForActiveServer = false} = options;
+    const {serverName, waitForActiveServer = false, kind} = options;
 
     const mainWindow = await resolveMainIndexWindow(app, Math.min(timeout, 30_000));
     await waitForRendererReady(mainWindow);
@@ -155,5 +171,41 @@ export async function waitForErrorView(
         message: 'ErrorView did not appear before timeout',
     }).toBe(true);
 
+    if (kind) {
+        await expect.poll(async () => {
+            const window = resolveErrorViewHost(app, mainWindow);
+            return window.innerText('.ErrorView-header').catch(() => '');
+        }, {
+            timeout,
+            message: `ErrorView should be the ${kind} page`,
+        }).toContain(ERROR_VIEW_HEADERS[kind]);
+    }
+
     return resolveErrorViewHost(app, mainWindow);
+}
+
+/**
+ * Assert `.ErrorView` is absent, and stays absent.
+ *
+ * ErrorView is driven by IPC from the main process, so a single sample can pass
+ * simply because the error page has not been rendered *yet*. Proving the negative
+ * requires re-sampling across a window rather than reading the DOM once.
+ */
+export async function expectNoErrorView(
+    app: ElectronApplication,
+    fallback: Page,
+    {samples = 5, intervalMs = 500}: {samples?: number; intervalMs?: number} = {},
+): Promise<void> {
+    for (let sample = 0; sample < samples; sample++) {
+        const window = resolveErrorViewHost(app, fallback);
+
+        // Deliberately unguarded: a page that cannot be queried means the window
+        // (or the app) is gone, which must fail rather than read as 'no error view'.
+        const visible = await window.isVisible('.ErrorView');
+        expect(visible, 'ErrorView should never appear').toBe(false);
+
+        if (sample < samples - 1) {
+            await window.waitForTimeout(intervalMs);
+        }
+    }
 }

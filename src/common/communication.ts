@@ -28,6 +28,7 @@ export const LOAD_RETRY = 'load_retry';
 export const LOAD_SUCCESS = 'load_success';
 export const LOAD_FAILED = 'load_fail';
 export const LOAD_INCOMPATIBLE_SERVER = 'load_incompatible_server';
+export const LOAD_INVALID_SITE_URL = 'load_invalid_site_url';
 export const RELOAD_VIEW = 'reload_view';
 
 export const MAXIMIZE_CHANGE = 'maximized_change';

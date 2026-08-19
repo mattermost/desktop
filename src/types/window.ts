@@ -110,6 +110,7 @@ declare global {
             onLoadSuccess: (listener: (viewId: string) => void) => void;
             onLoadFailed: (listener: (viewId: string, err: string, loadUrl: string) => void) => void;
             onLoadIncompatibleServer: (listener: (viewId: string, loadUrl: string) => void) => void;
+            onLoadInvalidSiteURL: (listener: (viewId: string, loadUrl: string) => void) => void;
             onSetActiveView: (listener: (serverId: string, viewId: string) => void) => void;
             onMaximizeChange: (listener: (maximize: boolean) => void) => void;
             onEnterFullScreen: (listener: () => void) => void;
