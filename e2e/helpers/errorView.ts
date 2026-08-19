@@ -198,7 +198,10 @@ export async function expectNoErrorView(
 ): Promise<void> {
     for (let sample = 0; sample < samples; sample++) {
         const window = resolveErrorViewHost(app, fallback);
-        const visible = await window.isVisible('.ErrorView').catch(() => false);
+
+        // Deliberately unguarded: a page that cannot be queried means the window
+        // (or the app) is gone, which must fail rather than read as 'no error view'.
+        const visible = await window.isVisible('.ErrorView');
         expect(visible, 'ErrorView should never appear').toBe(false);
 
         if (sample < samples - 1) {
