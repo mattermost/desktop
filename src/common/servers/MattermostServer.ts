@@ -31,7 +31,7 @@ export class MattermostServer {
         this.preAuthSecret = preAuthSecret;
     }
 
-    updateURL = (url: string) => {
+    updateURL = (url: string | URL) => {
         this.url = parseURL(url)!;
         if (!this.url) {
             throw new Error('Invalid url for creating a server');

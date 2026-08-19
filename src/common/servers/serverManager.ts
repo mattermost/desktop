@@ -182,7 +182,7 @@ export class ServerManager extends EventEmitter {
 
         const siteURL = remoteInfo.siteURL ? parseURL(remoteInfo.siteURL) : undefined;
         if (siteURL && server.url.toString() !== siteURL.toString() && isSiteURLValidated) {
-            server.updateURL(siteURL.toString());
+            server.updateURL(siteURL);
             this.servers.set(serverId, server);
             this.emit(SERVER_URL_CHANGED, serverId);
             this.persistServers();
