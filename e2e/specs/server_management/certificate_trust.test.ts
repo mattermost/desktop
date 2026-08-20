@@ -11,7 +11,7 @@ import {launchDirectTestApp} from '../../helpers/directLaunch';
 import {closeElectronApp, closeElectronAppFast} from '../../helpers/electronApp';
 import {waitForErrorView} from '../../helpers/errorView';
 import {buildServerMap} from '../../helpers/serverMap';
-import {evaluateInMainProcess} from '../../helpers/testRefs';
+import {evaluateInMainProcess, isTransientEvaluateError, isTransientNavigationError} from '../../helpers/testRefs';
 
 const EXPIRED_CERT_URL = 'https://expired.badssl.com';
 
@@ -95,14 +95,17 @@ test(
                         if (!entry) {
                             return '';
                         }
-                        return await entry.win.url().catch(() => '');
-                    } catch {
-                        return '';
+                        return await entry.win.url();
+                    } catch (error) {
+                        if (isTransientEvaluateError(error) || isTransientNavigationError(error)) {
+                            return '';
+                        }
+                        throw error;
                     }
                 }, {
                     timeout: 45_000,
                     message: 'Relaunch after trust must load expired.badssl.com without a new cert prompt',
-                }).toContain('expired.badssl.com');
+                }).toMatch(/^https:\/\/expired\.badssl\.com(?:\/|$)/);
 
                 const mainWindow = relaunchedApp.windows().find((window) => window.url().includes('index'));
                 expect(mainWindow, 'Main window must exist after relaunch').toBeDefined();
