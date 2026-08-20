@@ -10,6 +10,7 @@ import {clearCertificateErrorCallbacks, restoreMessageBox, stubMessageBoxRespons
 import {launchDirectTestApp} from '../../helpers/directLaunch';
 import {closeElectronApp, closeElectronAppFast} from '../../helpers/electronApp';
 import {waitForErrorView} from '../../helpers/errorView';
+import {buildServerMap} from '../../helpers/serverMap';
 import {evaluateInMainProcess} from '../../helpers/testRefs';
 
 const EXPIRED_CERT_URL = 'https://expired.badssl.com';
@@ -88,16 +89,20 @@ test(
                 // is the stand-in. Cancel-stubbed relaunch proves trust persisted — a new
                 // untrusted cert would be rejected and ErrorView would reappear.
                 await expect.poll(async () => {
-                    return evaluateInMainProcess(relaunchedApp, ({webContents}) => {
-                        return webContents.getAllWebContents().some((contents) => {
-                            const url = contents.getURL() || '';
-                            return url.includes('expired.badssl.com');
-                        });
-                    });
+                    try {
+                        const serverMap = await buildServerMap(relaunchedApp);
+                        const entry = serverMap['Expired Cert']?.[0];
+                        if (!entry) {
+                            return '';
+                        }
+                        return await entry.win.url().catch(() => '');
+                    } catch {
+                        return '';
+                    }
                 }, {
                     timeout: 45_000,
                     message: 'Relaunch after trust must load expired.badssl.com without a new cert prompt',
-                }).toBe(true);
+                }).toContain('expired.badssl.com');
 
                 const mainWindow = relaunchedApp.windows().find((window) => window.url().includes('index'));
                 expect(mainWindow, 'Main window must exist after relaunch').toBeDefined();

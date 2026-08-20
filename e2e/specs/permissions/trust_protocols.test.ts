@@ -141,8 +141,9 @@ test.describe('permissions/trust_protocols', () => {
                 await expect.poll(async () => {
                     const mailto = await serverWin.locator('a[href^="mailto:"]').count();
                     const httpsLink = await serverWin.locator('a[href*="mattermost.com"]').count();
-                    return mailto + httpsLink;
-                }, {timeout: 15_000, message: 'Posted protocol markdown should render as anchors'}).toBeGreaterThan(0);
+                    const spotify = await serverWin.locator(`a[href="${SPOTIFY_URL}"]`).count();
+                    return mailto > 0 && httpsLink > 0 && spotify > 0 ? mailto + httpsLink + spotify : 0;
+                }, {timeout: 15_000, message: 'Posted protocol markdown should render mailto, HTTPS, and Spotify anchors'}).toBeGreaterThanOrEqual(3);
             },
         );
     });

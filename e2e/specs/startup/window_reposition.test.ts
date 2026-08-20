@@ -72,14 +72,28 @@ test.describe('startup/window_reposition', () => {
                     `Window y should be near ${newY}`,
                 ).toBeLessThanOrEqual(50);
 
-                await app.evaluate(() => {
+                await app.evaluate(async () => {
                     const refs = (global as any).__e2eTestRefs;
                     const main = refs?.MainWindow?.get?.();
                     if (!main) {
                         throw new Error('MainWindow test ref is not available');
                     }
+
+                    const waitForMinimized = async (expected: boolean) => {
+                        const deadline = Date.now() + 5_000;
+                        while (Date.now() < deadline) {
+                            if (Boolean(main.isMinimized()) === expected) {
+                                return;
+                            }
+                            await new Promise((resolve) => setTimeout(resolve, 50));
+                        }
+                        throw new Error(`Window isMinimized() did not become ${expected}`);
+                    };
+
                     main.minimize();
+                    await waitForMinimized(true);
                     main.restore();
+                    await waitForMinimized(false);
                 });
                 const afterMinimizeBounds = await getMainWindowBounds(app);
                 expect(

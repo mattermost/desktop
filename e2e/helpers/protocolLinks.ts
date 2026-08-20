@@ -1,8 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {expect} from '@playwright/test';
 import type {ElectronApplication} from 'playwright';
+
+import {expect} from '../fixtures/index';
 
 import {getMessageBoxCalls} from './dialog';
 import type {ServerView} from './serverView';
@@ -19,6 +20,10 @@ export async function waitForDefaultProtocolsAllowed(app: ElectronApplication): 
     ).toBe(true);
 }
 
+/**
+ * Direct AllowProtocolDialog.handleDialogEvent invocation. Use only when a spec
+ * cannot exercise renderer / WebContentsEventManager protocol dispatch.
+ */
 export async function invokeAllowProtocolDialog(app: ElectronApplication, url: string): Promise<void> {
     await evaluateInMainProcessWithArg(app, (_electron, protocolUrl) => {
         const refs = (global as any).__e2eTestRefs;
@@ -48,9 +53,8 @@ export async function clickProtocolLink(win: ServerView, href: string): Promise<
 }
 
 /**
- * Prefer a real link click through WebContentsEventManager. If the view cannot
- * dispatch the custom protocol (error page, CSP), fall back to the same
- * AllowProtocolDialog handler the click path uses.
+ * Dispatch a custom protocol through WebContentsEventManager via a real link click.
+ * Click failures propagate so a broken renderer path fails the spec.
  */
 export async function triggerCustomProtocol(
     app: ElectronApplication,
@@ -62,17 +66,13 @@ export async function triggerCustomProtocol(
     const dialogsBefore = (await getMessageBoxCalls(app)).length;
     const opensBefore = (await getShellOpenExternalCalls(app)).length;
 
-    await clickProtocolLink(win, url).catch(() => {});
+    await clickProtocolLink(win, url);
 
-    try {
-        await expect.poll(async () => {
-            const dialogs = (await getMessageBoxCalls(app)).length;
-            const opens = (await getShellOpenExternalCalls(app)).length;
-            return dialogs > dialogsBefore || opens > opensBefore;
-        }, {timeout: 2_000}).toBe(true);
-    } catch {
-        await invokeAllowProtocolDialog(app, url);
-    }
+    await expect.poll(async () => {
+        const dialogs = (await getMessageBoxCalls(app)).length;
+        const opens = (await getShellOpenExternalCalls(app)).length;
+        return dialogs > dialogsBefore || opens > opensBefore;
+    }, {timeout: 10_000, message: `Protocol click must open or prompt for ${url}`}).toBe(true);
 
     if (expectDialog) {
         await expect.poll(
