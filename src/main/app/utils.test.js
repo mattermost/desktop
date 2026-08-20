@@ -106,6 +106,7 @@ describe('main/app/utils', () => {
 
     describe('resizeScreen', () => {
         beforeEach(() => {
+            MainWindow.get.mockReset();
             screen.getAllDisplays.mockReturnValue([{
                 workArea: {
                     x: 400,
@@ -208,6 +209,52 @@ describe('main/app/utils', () => {
             };
             resizeScreen(browserWindow);
             expect(browserWindow.setPosition).toHaveBeenCalledWith(449, 349);
+        });
+
+        it('should keep position when the window midpoint is on a second display', () => {
+            MainWindow.get.mockReturnValue(undefined);
+            screen.getAllDisplays.mockReturnValue([
+                {
+                    workArea: {
+                        x: 0,
+                        y: 0,
+                        width: 1920,
+                        height: 1080,
+                    },
+                },
+                {
+                    workArea: {
+                        x: 1920,
+                        y: 0,
+                        width: 1920,
+                        height: 1080,
+                    },
+                },
+            ]);
+            const browserWindow = {
+                getPosition: () => [2200, 100],
+                getSize: () => [1280, 720],
+                setPosition: jest.fn(),
+                center: jest.fn(),
+                once: jest.fn(),
+            };
+            resizeScreen(browserWindow);
+            expect(browserWindow.setPosition).toHaveBeenCalledWith(2200, 100);
+            expect(browserWindow.center).not.toHaveBeenCalled();
+        });
+
+        it('should center when the secondary display is unplugged and the midpoint is outside remaining displays', () => {
+            MainWindow.get.mockReturnValue(undefined);
+            const browserWindow = {
+                getPosition: () => [2400, 100],
+                getSize: () => [1280, 720],
+                setPosition: jest.fn(),
+                center: jest.fn(),
+                once: jest.fn(),
+            };
+            resizeScreen(browserWindow);
+            expect(browserWindow.setPosition).not.toHaveBeenCalled();
+            expect(browserWindow.center).toHaveBeenCalled();
         });
     });
 

@@ -20,7 +20,13 @@ import {handleShowSettingsModal} from 'main/app/intercom';
 import {openDeepLink} from 'main/app/utils';
 import Diagnostics from 'main/diagnostics';
 import notificationManager from 'main/notifications';
-import {installMessageBoxStub, restoreMessageBoxStub} from 'main/testMessageBoxStub';
+import AllowProtocolDialog from 'main/security/allowProtocolDialog';
+import {
+    installMessageBoxStub,
+    installOpenDialogStub,
+    restoreMessageBoxStub,
+    restoreOpenDialogStub,
+} from 'main/testMessageBoxStub';
 import updateNotifier from 'main/updateNotifier';
 
 import {recordBadgeTestState} from './badgeState';
@@ -54,6 +60,7 @@ export function maybeRegisterE2eHooks(): void {
             TrayIcon: Tray,
             Diagnostics,
             PopoutManager,
+            AllowProtocolDialog,
             updateNotifier,
             setUnreadBadgeSetting,
         },
@@ -63,6 +70,8 @@ export function maybeRegisterE2eHooks(): void {
         simulateNotificationClick,
         installMessageBoxStub,
         restoreMessageBoxStub,
+        installOpenDialogStub,
+        restoreOpenDialogStub,
         clearCertificateErrorCallbacks: () => certificateErrorCallbacks.clear(),
     });
 

@@ -7,9 +7,10 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {demoConfig} from '../../helpers/config';
 import {clearCertificateErrorCallbacks, restoreMessageBox, stubMessageBoxResponses} from '../../helpers/dialog';
-import {closeElectronAppFast} from '../../helpers/electronApp';
 import {launchDirectTestApp} from '../../helpers/directLaunch';
+import {closeElectronApp, closeElectronAppFast} from '../../helpers/electronApp';
 import {waitForErrorView} from '../../helpers/errorView';
+import {buildServerMap} from '../../helpers/serverMap';
 import {evaluateInMainProcess} from '../../helpers/testRefs';
 
 const EXPIRED_CERT_URL = 'https://expired.badssl.com';
@@ -34,6 +35,7 @@ test(
         fs.mkdirSync(userDataDir, {recursive: true});
         fs.writeFileSync(path.join(userDataDir, 'config.json'), JSON.stringify(badConfig));
 
+        let firstAppClosed = false;
         const app = await launchDirectTestApp(userDataDir, badConfig, {
             writeConfig: false,
             extraEnv: {MM_E2E_STUB_MESSAGE_BOX: 'cancel'},
@@ -70,9 +72,45 @@ test(
 
             const certificateStore = JSON.parse(fs.readFileSync(certificateStorePath, 'utf-8')) as Record<string, unknown>;
             expect(Object.keys(certificateStore).length).toBeGreaterThan(0);
-        } finally {
+
             await restoreMessageBox(app).catch(() => {});
-            await closeElectronAppFast(app, userDataDir);
+            await closeElectronApp(app, userDataDir);
+            firstAppClosed = true;
+
+            const relaunchedApp = await launchDirectTestApp(userDataDir, badConfig, {
+                writeConfig: false,
+                extraEnv: {MM_E2E_STUB_MESSAGE_BOX: 'cancel'},
+            });
+            try {
+                // System-clock changes (MM-T2631 step 1) are not automatable; expired.badssl.com
+                // is the stand-in. Cancel-stubbed relaunch proves trust persisted — a new
+                // untrusted cert would be rejected and ErrorView would reappear.
+                await expect.poll(async () => {
+                    const serverMap = await buildServerMap(relaunchedApp);
+                    const entry = serverMap['Expired Cert']?.[0];
+                    if (!entry) {
+                        return false;
+                    }
+                    const url = await entry.win.url().catch(() => '');
+                    return url.includes('expired.badssl.com');
+                }, {
+                    timeout: 45_000,
+                    message: 'Relaunch after trust must load expired.badssl.com without a new cert prompt',
+                }).toBe(true);
+
+                const mainWindow = relaunchedApp.windows().find((window) => window.url().includes('index'));
+                expect(mainWindow, 'Main window must exist after relaunch').toBeDefined();
+                expect(await mainWindow!.$('.ErrorView')).toBeNull();
+                expect(fs.existsSync(certificateStorePath), 'Trusted certificate store must survive relaunch').toBe(true);
+            } finally {
+                await restoreMessageBox(relaunchedApp).catch(() => {});
+                await closeElectronAppFast(relaunchedApp, userDataDir);
+            }
+        } finally {
+            if (!firstAppClosed) {
+                await restoreMessageBox(app).catch(() => {});
+                await closeElectronAppFast(app, userDataDir);
+            }
         }
     },
 );

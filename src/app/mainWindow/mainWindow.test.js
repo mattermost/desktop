@@ -247,6 +247,18 @@ describe('main/windows/mainWindow', () => {
             }));
         });
 
+        it('should set default window size when saved bounds were on a disconnected monitor', () => {
+            fs.readFileSync.mockImplementation(() => '{"x":1920,"y":0,"width":1280,"height":700,"maximized":false,"fullscreen":false}');
+            screen.getDisplayMatching.mockImplementation(() => ({id: 1, scaleFactor: 1, bounds: {x: 0, y: 0, width: 1920, height: 1080}}));
+            isInsideRectangle.mockReturnValue(false);
+            const mainWindow = new MainWindow();
+            mainWindow.init();
+            expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
+                width: DEFAULT_WINDOW_WIDTH,
+                height: DEFAULT_WINDOW_HEIGHT,
+            }));
+        });
+
         it('should reset zoom level and maximize if applicable on ready-to-show', () => {
             const window = {
                 ...baseWindow,

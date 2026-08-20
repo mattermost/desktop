@@ -15,6 +15,10 @@ test.describe('startup/window_reposition', () => {
     test.setTimeout(120_000);
 
     // ── MM-T2636: Reposition Desktop app ───────────────────────────────
+    // Multi-monitor (add a 2nd display, 50% off-screen, unplug) is not
+    // automatable in CI. Geometry for a missing display is covered by
+    // src/main/app/utils.test.js (resizeScreen) and
+    // src/app/mainWindow/mainWindow.test.js (bounds outside screen).
     test('MM-T2636 MM-T1428 MM-T1660 Reposition Desktop app',
         {tag: ['@P2', '@all']},
         async ({}, testInfo) => {
@@ -66,6 +70,25 @@ test.describe('startup/window_reposition', () => {
                 expect(
                     Math.abs(movedBounds!.y - newY),
                     `Window y should be near ${newY}`,
+                ).toBeLessThanOrEqual(50);
+
+                await app.evaluate(() => {
+                    const refs = (global as any).__e2eTestRefs;
+                    const main = refs?.MainWindow?.get?.();
+                    if (!main) {
+                        throw new Error('MainWindow test ref is not available');
+                    }
+                    main.minimize();
+                    main.restore();
+                });
+                const afterMinimizeBounds = await getMainWindowBounds(app);
+                expect(
+                    Math.abs(afterMinimizeBounds!.x - newX),
+                    'Window x should remain near the repositioned x after minimize/restore',
+                ).toBeLessThanOrEqual(50);
+                expect(
+                    Math.abs(afterMinimizeBounds!.y - newY),
+                    'Window y should remain near the repositioned y after minimize/restore',
                 ).toBeLessThanOrEqual(50);
 
                 const savedBounds = {
