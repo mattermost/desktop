@@ -7,10 +7,11 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {demoConfig} from '../../helpers/config';
 import {clearCertificateErrorCallbacks, restoreMessageBox, stubMessageBoxResponses} from '../../helpers/dialog';
-import {closeElectronAppFast} from '../../helpers/electronApp';
 import {launchDirectTestApp} from '../../helpers/directLaunch';
+import {closeElectronApp, closeElectronAppFast} from '../../helpers/electronApp';
 import {waitForErrorView} from '../../helpers/errorView';
-import {evaluateInMainProcess} from '../../helpers/testRefs';
+import {buildServerMap} from '../../helpers/serverMap';
+import {evaluateInMainProcess, isTransientEvaluateError, isTransientNavigationError} from '../../helpers/testRefs';
 
 const EXPIRED_CERT_URL = 'https://expired.badssl.com';
 
@@ -34,6 +35,7 @@ test(
         fs.mkdirSync(userDataDir, {recursive: true});
         fs.writeFileSync(path.join(userDataDir, 'config.json'), JSON.stringify(badConfig));
 
+        let firstAppClosed = false;
         const app = await launchDirectTestApp(userDataDir, badConfig, {
             writeConfig: false,
             extraEnv: {MM_E2E_STUB_MESSAGE_BOX: 'cancel'},
@@ -70,9 +72,54 @@ test(
 
             const certificateStore = JSON.parse(fs.readFileSync(certificateStorePath, 'utf-8')) as Record<string, unknown>;
             expect(Object.keys(certificateStore).length).toBeGreaterThan(0);
-        } finally {
+
             await restoreMessageBox(app).catch(() => {});
-            await closeElectronAppFast(app, userDataDir);
+            await closeElectronApp(app, userDataDir);
+            firstAppClosed = true;
+
+            // ServerManager.reloadServer persist can race Config.save and leave
+            // config.json with an empty servers list. Rewrite the server entry;
+            // certificate.json is left as-is so trust can be verified on relaunch.
+            const relaunchedApp = await launchDirectTestApp(userDataDir, badConfig, {
+                writeConfig: true,
+                extraEnv: {MM_E2E_STUB_MESSAGE_BOX: 'cancel'},
+            });
+            try {
+                // System-clock changes (MM-T2631 step 1) are not automatable; expired.badssl.com
+                // is the stand-in. Cancel-stubbed relaunch proves trust persisted — a new
+                // untrusted cert would be rejected and ErrorView would reappear.
+                await expect.poll(async () => {
+                    try {
+                        const serverMap = await buildServerMap(relaunchedApp);
+                        const entry = serverMap['Expired Cert']?.[0];
+                        if (!entry) {
+                            return '';
+                        }
+                        return await entry.win.url();
+                    } catch (error) {
+                        if (isTransientEvaluateError(error) || isTransientNavigationError(error)) {
+                            return '';
+                        }
+                        throw error;
+                    }
+                }, {
+                    timeout: 45_000,
+                    message: 'Relaunch after trust must load expired.badssl.com without a new cert prompt',
+                }).toMatch(/^https:\/\/expired\.badssl\.com(?:\/|$)/);
+
+                const mainWindow = relaunchedApp.windows().find((window) => window.url().includes('index'));
+                expect(mainWindow, 'Main window must exist after relaunch').toBeDefined();
+                expect(await mainWindow!.$('.ErrorView')).toBeNull();
+                expect(fs.existsSync(certificateStorePath), 'Trusted certificate store must survive relaunch').toBe(true);
+            } finally {
+                await restoreMessageBox(relaunchedApp).catch(() => {});
+                await closeElectronAppFast(relaunchedApp, userDataDir);
+            }
+        } finally {
+            if (!firstAppClosed) {
+                await restoreMessageBox(app).catch(() => {});
+                await closeElectronAppFast(app, userDataDir);
+            }
         }
     },
 );

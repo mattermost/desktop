@@ -4,11 +4,11 @@
 import type {ElectronApplication, Page} from 'playwright';
 
 import {test, expect} from '../../fixtures/index';
-import {demoMattermostConfig} from '../../helpers/config';
+import {demoConfig, demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {openSettingsWindow} from '../../helpers/settingsWindow';
-import {evaluateInMainProcessWithArg} from '../../helpers/testRefs';
+import {evaluateInMainProcess, evaluateInMainProcessWithArg} from '../../helpers/testRefs';
 
 type WindowBounds = {x: number; y: number; width: number; height: number};
 
@@ -137,6 +137,34 @@ async function isMainWindowExpanded(app: ElectronApplication): Promise<boolean> 
     return evaluateMainWindow<boolean>(app, {type: 'isExpanded'});
 }
 
+async function openAndCloseDevTools(app: ElectronApplication): Promise<void> {
+    await evaluateInMainProcess(app, () => {
+        const win = (global as any).__e2eTestRefs?.MainWindow?.get?.();
+        if (!win) {
+            throw new Error('Main window not found');
+        }
+        win.webContents.openDevTools({mode: 'detach'});
+    });
+
+    await expect.poll(
+        () => evaluateInMainProcess(app, () => {
+            return Boolean((global as any).__e2eTestRefs?.MainWindow?.get?.()?.webContents.isDevToolsOpened());
+        }),
+        {timeout: 10_000, message: 'Developer Tools must open'},
+    ).toBe(true);
+
+    await evaluateInMainProcess(app, () => {
+        (global as any).__e2eTestRefs?.MainWindow?.get?.()?.webContents.closeDevTools();
+    });
+
+    await expect.poll(
+        () => evaluateInMainProcess(app, () => {
+            return Boolean((global as any).__e2eTestRefs?.MainWindow?.get?.()?.webContents.isDevToolsOpened());
+        }),
+        {timeout: 10_000, message: 'Developer Tools must close'},
+    ).toBe(false);
+}
+
 async function exerciseWindowChrome(
     electronApp: ElectronApplication,
     mainWindow: Page,
@@ -163,48 +191,88 @@ async function exerciseWindowChrome(
         });
         await settingsWindow.waitForEvent('close', {timeout: 10_000});
     }
+
+    await openAndCloseDevTools(electronApp);
 }
 
 test.describe('startup/window_position', () => {
-    test.use({appConfig: demoMattermostConfig});
     test.setTimeout(180_000);
 
-    test(
-        'MM-T4049 Use app in tiled and full screen position',
-        {tag: ['@P2', '@all']},
-        async ({electronApp, mainWindow, serverMap}) => {
-            if (!hasLoginCredentials()) {
-                test.skip(true, 'MM_TEST_SERVER_URL, MM_TEST_USER_NAME, and MM_TEST_PASSWORD required');
-                return;
-            }
+    test.describe('with Mattermost login', () => {
+        test.use({appConfig: demoMattermostConfig});
 
-            const serverEntry = serverMap[demoMattermostConfig.servers[0].name]?.[0];
-            expect(serverEntry?.win, 'Mattermost server view should exist').toBeTruthy();
+        test(
+            'MM-T4049 Use app in tiled and full screen position',
+            {tag: ['@P2', '@all']},
+            async ({electronApp, mainWindow, serverMap}) => {
+                if (!hasLoginCredentials()) {
+                    test.skip(true, 'MM_TEST_SERVER_URL, MM_TEST_USER_NAME, and MM_TEST_PASSWORD required');
+                    return;
+                }
 
-            await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
-            await loginToMattermost(serverEntry!.win);
-            await mainWindow.waitForSelector('#newTabButton', {timeout: 30_000});
+                const serverEntry = serverMap[demoMattermostConfig.servers[0].name]?.[0];
+                expect(serverEntry?.win, 'Mattermost server view should exist').toBeTruthy();
 
-            const tiledBounds = await tileMainWindowToLeftHalf(electronApp);
-            await exerciseWindowChrome(electronApp, mainWindow);
+                await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
+                await loginToMattermost(serverEntry!.win);
+                await mainWindow.waitForSelector('#newTabButton', {timeout: 30_000});
 
-            const afterTiled = await getMainWindowState(electronApp);
-            expect(afterTiled.isFullScreen).toBe(false);
-            expect(await isMainWindowExpanded(electronApp)).toBe(false);
-            expect(Math.abs(afterTiled.bounds.x - tiledBounds.x)).toBeLessThanOrEqual(5);
-            expect(Math.abs(afterTiled.bounds.y - tiledBounds.y)).toBeLessThanOrEqual(5);
-            expect(Math.abs(afterTiled.bounds.width - tiledBounds.width)).toBeLessThanOrEqual(10);
-            expect(Math.abs(afterTiled.bounds.height - tiledBounds.height)).toBeLessThanOrEqual(10);
+                const tiledBounds = await tileMainWindowToLeftHalf(electronApp);
+                await exerciseWindowChrome(electronApp, mainWindow);
 
-            await enterMainWindowExpanded(electronApp);
-            await exerciseWindowChrome(electronApp, mainWindow, {openSettings: false});
+                const afterTiled = await getMainWindowState(electronApp);
+                expect(afterTiled.isFullScreen).toBe(false);
+                expect(await isMainWindowExpanded(electronApp)).toBe(false);
+                expect(Math.abs(afterTiled.bounds.x - tiledBounds.x)).toBeLessThanOrEqual(5);
+                expect(Math.abs(afterTiled.bounds.y - tiledBounds.y)).toBeLessThanOrEqual(5);
+                expect(Math.abs(afterTiled.bounds.width - tiledBounds.width)).toBeLessThanOrEqual(10);
+                expect(Math.abs(afterTiled.bounds.height - tiledBounds.height)).toBeLessThanOrEqual(10);
 
-            expect(
-                await isMainWindowExpanded(electronApp),
-                process.platform === 'linux' ?
-                    'App must remain expanded to the display work area after tab interactions on Linux' :
-                    'App must remain in full screen after tab and modal interactions',
-            ).toBe(true);
-        },
-    );
+                await enterMainWindowExpanded(electronApp);
+                await exerciseWindowChrome(electronApp, mainWindow, {openSettings: false});
+
+                expect(
+                    await isMainWindowExpanded(electronApp),
+                    process.platform === 'linux' ?
+                        'App must remain expanded to the display work area after tab interactions on Linux' :
+                        'App must remain in full screen after tab and modal interactions',
+                ).toBe(true);
+            },
+        );
+    });
+
+    test.describe('without Mattermost login', () => {
+        test.use({appConfig: demoConfig});
+
+        test(
+            'MM-T4049 tiled and full screen chrome without a live server',
+            {tag: ['@P2', '@all']},
+            async ({electronApp, mainWindow}) => {
+                // OS snap-assist with a second app tiled opposite cannot be automated in CI.
+                // demoConfig may not render #newTabButton (view limit / layout); TopBar is enough.
+                await mainWindow.waitForSelector('.topBar', {timeout: 30_000});
+
+                const tiledBounds = await tileMainWindowToLeftHalf(electronApp);
+                await exerciseWindowChrome(electronApp, mainWindow);
+
+                const afterTiled = await getMainWindowState(electronApp);
+                expect(afterTiled.isFullScreen).toBe(false);
+                expect(await isMainWindowExpanded(electronApp)).toBe(false);
+                expect(Math.abs(afterTiled.bounds.x - tiledBounds.x)).toBeLessThanOrEqual(5);
+                expect(Math.abs(afterTiled.bounds.y - tiledBounds.y)).toBeLessThanOrEqual(5);
+                expect(Math.abs(afterTiled.bounds.width - tiledBounds.width)).toBeLessThanOrEqual(10);
+                expect(Math.abs(afterTiled.bounds.height - tiledBounds.height)).toBeLessThanOrEqual(10);
+
+                await enterMainWindowExpanded(electronApp);
+                await exerciseWindowChrome(electronApp, mainWindow, {openSettings: false});
+
+                expect(
+                    await isMainWindowExpanded(electronApp),
+                    process.platform === 'linux' ?
+                        'App must remain expanded to the display work area after tab interactions on Linux' :
+                        'App must remain in full screen after tab and modal interactions',
+                ).toBe(true);
+            },
+        );
+    });
 });
