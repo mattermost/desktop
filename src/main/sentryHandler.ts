@@ -8,6 +8,7 @@ import {app} from 'electron';
 
 import Config from 'common/config';
 import {Logger} from 'common/log';
+import appVersionManager from 'main/AppVersionManager';
 
 const log = new Logger('SentryHandler');
 
@@ -29,11 +30,13 @@ export class SentryHandler {
         }
 
         const isPrerelease = this.isPrereleaseBuild();
+        const initialScope = this.getInitialScope();
         Sentry.init({
             dsn: sentryDsn,
             sendDefaultPii: false,
             environment: isPrerelease ? 'prerelease' : 'stable',
             attachStacktrace: true,
+            ...(initialScope ? {initialScope} : {}),
         });
 
         this.addSentryContext();
@@ -43,6 +46,24 @@ export class SentryHandler {
 
     flush = () => {
         return Sentry.flush(3000);
+    };
+
+    // Must go through initialScope rather than a later Sentry.setUser call: the session is
+    // started by a default integration during Sentry.init, and its distinct id is read from the
+    // scope at that moment. Setting the user afterwards populates issue counts but leaves release
+    // health without a user.
+    private getInitialScope = () => {
+        try {
+            const installId = appVersionManager.installId;
+            if (!installId) {
+                return undefined;
+            }
+
+            return {user: {id: installId}};
+        } catch (e) {
+            log.warn('failed to resolve install ID, continuing without user attribution', e);
+            return undefined;
+        }
     };
 
     private addSentryContext = () => {

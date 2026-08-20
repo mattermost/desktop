@@ -3,13 +3,17 @@
 // Copyright (c) 2015-2016 Yuya Ochiai
 
 import {ipcMain} from 'electron';
+import {v4 as uuid} from 'uuid';
 
 import {UPDATE_PATHS} from 'common/communication';
 import JsonFileManager from 'common/JsonFileManager';
+import {Logger} from 'common/log';
 import * as Validator from 'common/Validator';
 import {appVersionJson} from 'main/constants';
 
 import type {AppState} from 'types/appState';
+
+const log = new Logger('AppVersionManager');
 
 export class AppVersionManager extends JsonFileManager<AppState> {
     constructor(file: string) {
@@ -51,6 +55,24 @@ export class AppVersionManager extends JsonFileManager<AppState> {
             return new Date(date);
         }
         return null;
+    }
+
+    get installId(): string | undefined {
+        try {
+            const existing = this.getValue('installId');
+            if (existing) {
+                return existing;
+            }
+
+            const generated = uuid();
+            this.setValue('installId', generated).catch((e) => {
+                log.warn('failed to persist installId, a new one will be generated next launch', e);
+            });
+            return generated;
+        } catch (e) {
+            log.warn('failed to resolve installId', e);
+            return undefined;
+        }
     }
 }
 
