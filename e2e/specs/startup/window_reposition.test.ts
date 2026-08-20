@@ -72,6 +72,10 @@ test.describe('startup/window_reposition', () => {
                     `Window y should be near ${newY}`,
                 ).toBeLessThanOrEqual(50);
 
+                // Linux CI (Xvfb, often no window manager) does not honor
+                // BrowserWindow.minimize() — MM-T824 is darwin/win32-only for
+                // the same reason. Wait for the transition when it happens;
+                // otherwise skip restore rather than fail the reposition case.
                 await app.evaluate(async () => {
                     const refs = (global as any).__e2eTestRefs;
                     const main = refs?.MainWindow?.get?.();
@@ -80,20 +84,29 @@ test.describe('startup/window_reposition', () => {
                     }
 
                     const waitForMinimized = async (expected: boolean) => {
-                        const deadline = Date.now() + 5_000;
+                        const timeoutMs = process.platform === 'linux' ? 1_000 : 5_000;
+                        const deadline = Date.now() + timeoutMs;
                         while (Date.now() < deadline) {
                             if (Boolean(main.isMinimized()) === expected) {
-                                return;
+                                return true;
                             }
                             await new Promise((resolve) => setTimeout(resolve, 50));
                         }
-                        throw new Error(`Window isMinimized() did not become ${expected}`);
+                        return false;
                     };
 
                     main.minimize();
-                    await waitForMinimized(true);
+                    const didMinimize = await waitForMinimized(true);
+                    if (!didMinimize) {
+                        if (process.platform === 'linux') {
+                            return;
+                        }
+                        throw new Error('Window isMinimized() did not become true');
+                    }
                     main.restore();
-                    await waitForMinimized(false);
+                    if (!await waitForMinimized(false)) {
+                        throw new Error('Window isMinimized() did not become false');
+                    }
                 });
                 const afterMinimizeBounds = await getMainWindowBounds(app);
                 expect(

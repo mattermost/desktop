@@ -202,18 +202,16 @@ async function openImagePreview(serverWin: ServerView): Promise<boolean> {
             return false;
         }
 
-        // Prefer the visible SizeAwareImage control (11.10+/MM-69174); clicks on the
-        // placeholder button are intentionally ignored until the real image loads.
+        // Mattermost 11.11 dropped onClick from the .file-preview__button wrapper.
+        // SizeAwareImage handles clicks on the loaded <img> only (and ignores
+        // them until load — MM-69174). Clicking the wrapper is a no-op.
         const previewButton = findVisibleLoadedPreviewButton(root);
-        if (previewButton) {
-            previewButton.scrollIntoView({block: 'center', inline: 'center'});
-            previewButton.click();
-            return true;
-        }
-
+        const loadedImg = previewButton?.querySelector('img:not(.image-loading__placeholder)');
         const clickTargets = [
+            isLoadedPreviewImage(loadedImg) ? loadedImg : null,
             ...Array.from(root.querySelectorAll('[aria-label*="' + PREVIEW_FILE_NAME + '" i]')),
             ...Array.from(root.querySelectorAll(LOADED_IMAGE_SELECTOR)),
+            root.querySelector('.post-image__thumbnail'),
             root.querySelector('.post-image .image-loaded-container'),
             root.querySelector('.post-image .small-image__container'),
             root.querySelector('.post-image__image'),
@@ -235,6 +233,7 @@ async function openImagePreview(serverWin: ServerView): Promise<boolean> {
         }
 
         target.scrollIntoView({block: 'center', inline: 'center'});
+        target.focus?.();
         target.click();
         return true;
     `, true);
