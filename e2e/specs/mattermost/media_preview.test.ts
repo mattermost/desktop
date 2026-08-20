@@ -224,7 +224,8 @@ async function openImagePreview(serverWin: ServerView): Promise<boolean> {
                 return isLoadedPreviewImage(target);
             }
             return isPreviewControlVisible(target) &&
-                Boolean(target.querySelector?.('img:not(.image-loading__placeholder)'));
+                Array.from(target.querySelectorAll('img:not(.image-loading__placeholder)')).
+                    some((img) => isLoadedPreviewImage(img));
         });
 
         const target = clickTargets[0];
