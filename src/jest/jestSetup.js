@@ -3,7 +3,10 @@
 
 /* eslint-disable no-undef */
 
-jest.mock('electron', () => require('./electronMock')); // eslint-disable-line global-require
+jest.mock('electron', () => {
+    const electronMock = jest.requireActual('./electronMock');
+    return electronMock.default;
+});
 
 jest.mock('main/constants', () => ({
     configPath: 'configPath',

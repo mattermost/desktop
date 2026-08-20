@@ -1,13 +1,17 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-/* eslint-disable no-undef, import/no-commonjs */
+/* eslint-disable no-undef */
 
 // Stub used by jestSetup so unit tests never `require('electron')` for real.
 // Electron 43+ downloads its binary lazily; parallel Jest workers otherwise
 // race extracting dist/Electron.app (EEXIST) and fail with "failed to install".
 
-module.exports = {
+const primaryDisplay = {
+    workArea: {x: 0, y: 0, width: 1920, height: 1080},
+};
+
+export default {
     app: {
         isReady: jest.fn(() => true),
         getPath: jest.fn(() => '/tmp'),
@@ -50,9 +54,7 @@ module.exports = {
     },
     BrowserWindow: jest.fn(),
     screen: {
-        getPrimaryDisplay: jest.fn(() => ({
-            workArea: {x: 0, y: 0, width: 1920, height: 1080},
-        })),
-        getAllDisplays: jest.fn(() => []),
+        getPrimaryDisplay: jest.fn(() => primaryDisplay),
+        getAllDisplays: jest.fn(() => [primaryDisplay]),
     },
 };
