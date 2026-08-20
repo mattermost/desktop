@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import fs from 'fs';
+import {v4 as uuid} from 'uuid';
 
 import * as Validator from 'common/Validator';
 
@@ -74,6 +75,7 @@ describe('main/AppVersionManager', () => {
             const appVersionManager = new AppVersionManager('somefilename.txt');
 
             expect(appVersionManager.installId).toBe(appVersionManager.installId);
+            expect(uuid).toBeCalledTimes(1);
         });
 
         it('should still return an ID when persisting it fails', async () => {

@@ -8,7 +8,7 @@ import {app} from 'electron';
 
 import Config from 'common/config';
 import {Logger} from 'common/log';
-import appVersionManager from 'main/AppVersionManager';
+import AppVersionManager from 'main/AppVersionManager';
 
 const log = new Logger('SentryHandler');
 
@@ -54,7 +54,7 @@ export class SentryHandler {
     // health without a user.
     private getInitialScope = () => {
         try {
-            const installId = appVersionManager.installId;
+            const installId = AppVersionManager.installId;
             if (!installId) {
                 return undefined;
             }
