@@ -3,6 +3,8 @@
 
 /* eslint-disable no-undef */
 
+jest.mock('electron', () => require('./electronMock')); // eslint-disable-line global-require
+
 jest.mock('main/constants', () => ({
     configPath: 'configPath',
     allowedProtocolFile: 'allowedProtocolFile',
