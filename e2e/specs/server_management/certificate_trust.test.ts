@@ -10,7 +10,6 @@ import {clearCertificateErrorCallbacks, restoreMessageBox, stubMessageBoxRespons
 import {launchDirectTestApp} from '../../helpers/directLaunch';
 import {closeElectronApp, closeElectronAppFast} from '../../helpers/electronApp';
 import {waitForErrorView} from '../../helpers/errorView';
-import {buildServerMap} from '../../helpers/serverMap';
 import {evaluateInMainProcess} from '../../helpers/testRefs';
 
 const EXPIRED_CERT_URL = 'https://expired.badssl.com';
@@ -77,8 +76,11 @@ test(
             await closeElectronApp(app, userDataDir);
             firstAppClosed = true;
 
+            // ServerManager.reloadServer persist can race Config.save and leave
+            // config.json with an empty servers list. Rewrite the server entry;
+            // certificate.json is left as-is so trust can be verified on relaunch.
             const relaunchedApp = await launchDirectTestApp(userDataDir, badConfig, {
-                writeConfig: false,
+                writeConfig: true,
                 extraEnv: {MM_E2E_STUB_MESSAGE_BOX: 'cancel'},
             });
             try {
@@ -86,13 +88,12 @@ test(
                 // is the stand-in. Cancel-stubbed relaunch proves trust persisted — a new
                 // untrusted cert would be rejected and ErrorView would reappear.
                 await expect.poll(async () => {
-                    const serverMap = await buildServerMap(relaunchedApp);
-                    const entry = serverMap['Expired Cert']?.[0];
-                    if (!entry) {
-                        return false;
-                    }
-                    const url = await entry.win.url().catch(() => '');
-                    return url.includes('expired.badssl.com');
+                    return evaluateInMainProcess(relaunchedApp, ({webContents}) => {
+                        return webContents.getAllWebContents().some((contents) => {
+                            const url = contents.getURL() || '';
+                            return url.includes('expired.badssl.com');
+                        });
+                    });
                 }, {
                     timeout: 45_000,
                     message: 'Relaunch after trust must load expired.badssl.com without a new cert prompt',

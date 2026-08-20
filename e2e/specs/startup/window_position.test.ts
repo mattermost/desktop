@@ -249,7 +249,8 @@ test.describe('startup/window_position', () => {
             {tag: ['@P2', '@all']},
             async ({electronApp, mainWindow}) => {
                 // OS snap-assist with a second app tiled opposite cannot be automated in CI.
-                await mainWindow.waitForSelector('#newTabButton', {timeout: 30_000});
+                // demoConfig may not render #newTabButton (view limit / layout); TopBar is enough.
+                await mainWindow.waitForSelector('.topBar', {timeout: 30_000});
 
                 const tiledBounds = await tileMainWindowToLeftHalf(electronApp);
                 await exerciseWindowChrome(electronApp, mainWindow);
