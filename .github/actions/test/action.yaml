@@ -28,3 +28,7 @@ runs:
         ELECTRON_DISABLE_SANDBOX: "1"
       run: |
         npm run test:unit
+    - name: ci/run-ci-utils
+      shell: ${{ inputs.shell }}
+      run: |
+        npm run test:ci-utils
