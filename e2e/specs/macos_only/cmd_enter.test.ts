@@ -17,6 +17,7 @@ test.describe('macos_only/cmd_enter', () => {
 
             const serverWin = serverMap[demoMattermostConfig.servers[0].name][0].win;
             await loginToMattermost(serverWin);
+            await serverWin.waitForSelector('#sidebarItem_off-topic', {timeout: 15_000});
             await serverWin.click('#sidebarItem_off-topic');
             await serverWin.waitForSelector(POST_TEXTBOX_SELECTOR, {timeout: 15_000});
             await typeIntoPostTextbox(serverWin, 'mac line');
