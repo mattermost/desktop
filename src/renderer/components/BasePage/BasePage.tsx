@@ -6,7 +6,6 @@ import React from 'react';
 import ConnectionErrorView from 'renderer/components/ConnectionErrorView';
 import BackgroundImage from 'renderer/components/Images/background';
 import IncompatibleErrorView from 'renderer/components/IncompatibleErrorView';
-import InvalidSiteURLErrorView from 'renderer/components/InvalidSiteURLErrorView';
 import TopBar from 'renderer/components/TopBar';
 
 import './BasePage.scss';
@@ -25,7 +24,6 @@ type Props = {
 export enum ErrorState {
     FAILED = 'failed',
     INCOMPATIBLE = 'incompatible',
-    INVALID_SITE_URL = 'invalid_site_url',
 }
 
 export default function BasePage({
@@ -56,10 +54,6 @@ export default function BasePage({
                 handleLink={window.desktop.openServerExternally}
                 handleUpgradeLink={window.desktop.openServerUpgradeLink}
             />
-        );
-    } else if (errorState === ErrorState.INVALID_SITE_URL) {
-        errorComponent = (
-            <InvalidSiteURLErrorView appName={appName}/>
         );
     }
 

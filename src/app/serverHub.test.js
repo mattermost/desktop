@@ -481,25 +481,6 @@ describe('app/serverViewState', () => {
             expect(result.validatedURL).toBe('https://mainserver.com/');
         });
 
-        it('should not update the users URL when the Site URL cannot be parsed', async () => {
-            ServerInfo.mockImplementation(() => ({
-                pingServer: jest.fn().mockImplementation(() => ({
-                    status: 'OK',
-                })),
-                fetchConfigData: jest.fn().mockImplementation(() => {
-                    return {
-                        serverVersion: '7.8.0',
-                        siteName: 'Mattermost',
-                        siteURL: 'not-a-url',
-                    };
-                }),
-            }));
-
-            const result = await serverViewState.handleServerURLValidation({}, 'https://server.com');
-            expect(result.status).toBe(URLValidationStatus.OK);
-            expect(result.validatedURL).toBe('https://server.com/');
-        });
-
         it('should not update the users URL when the Site URL is blank', async () => {
             ServerInfo.mockImplementation(() => ({
                 pingServer: jest.fn().mockImplementation(() => ({

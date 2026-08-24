@@ -6,7 +6,7 @@
 import {ipcMain} from 'electron';
 
 import AppState from 'common/appState';
-import {BROWSER_HISTORY_PUSH, LOAD_FAILED, LOAD_INVALID_SITE_URL, LOAD_SUCCESS, SERVER_URL_CHANGED, UPDATE_SHORTCUT_MENU, UPDATE_TARGET_URL} from 'common/communication';
+import {BROWSER_HISTORY_PUSH, LOAD_FAILED, SERVER_URL_CHANGED, UPDATE_SHORTCUT_MENU, UPDATE_TARGET_URL} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {MattermostView, ViewType} from 'common/views/MattermostView';
@@ -99,7 +99,6 @@ jest.mock('common/servers/serverManager', () => ({
     getServerLog: jest.fn().mockReturnValue({
         verbose: jest.fn(),
         info: jest.fn(),
-        warn: jest.fn(),
         error: jest.fn(),
         silly: jest.fn(),
     }),
@@ -115,7 +114,6 @@ jest.mock('common/views/viewManager', () => ({
     getViewLog: jest.fn().mockReturnValue({
         info: jest.fn(),
         verbose: jest.fn(),
-        warn: jest.fn(),
         error: jest.fn(),
         silly: jest.fn(),
     }),
@@ -329,21 +327,6 @@ describe('main/views/MattermostWebContentsView', () => {
             mattermostView.loadSuccess('http://server-1.com')();
             jest.runAllTimers();
             expect(mattermostView.maxRetries).toBe(3);
-        });
-
-        it('should show the invalid site URL error when the server reports an unparseable site URL', () => {
-            ServerManager.getRemoteInfo.mockReturnValue({serverVersion: '10.0.0', siteURL: 'not-a-url'});
-            mattermostView.loadSuccess('http://server-1.com')();
-            expect(window.webContents.send).toBeCalledWith(LOAD_INVALID_SITE_URL, mattermostView.id, 'http://server-1.com');
-            expect(window.webContents.send).not.toBeCalledWith(LOAD_SUCCESS, mattermostView.id);
-            expect(mattermostView.emit).toBeCalledWith(LOAD_FAILED, mattermostView.id, 'Invalid site URL', 'http://server-1.com');
-        });
-
-        it('should load successfully when the server reports a valid site URL', () => {
-            ServerManager.getRemoteInfo.mockReturnValue({serverVersion: '10.0.0', siteURL: 'http://server-1.com'});
-            mattermostView.loadSuccess('http://server-1.com')();
-            expect(window.webContents.send).toBeCalledWith(LOAD_SUCCESS, mattermostView.id);
-            expect(window.webContents.send).not.toBeCalledWith(LOAD_INVALID_SITE_URL, mattermostView.id, 'http://server-1.com');
         });
     });
 

@@ -229,36 +229,5 @@ describe('main/app/utils', () => {
             expect(mockServerInfoInstance.fetchRemoteInfo).toHaveBeenCalled();
             expect(ServerManager.updateRemoteInfo).not.toHaveBeenCalled();
         });
-
-        it('should record the server as unvalidated when the site URL cannot be parsed', async () => {
-            const mockServer = new MattermostServer({id: 'server-1', name: 'Test Server', url: 'http://localhost:8065'});
-            const data = {siteURL: 'not-a-url'};
-            const mockServerInfoInstance = {
-                fetchRemoteInfo: jest.fn().mockResolvedValue(data),
-                fetchConfigData: jest.fn(),
-            };
-            ServerInfo.mockImplementation(() => mockServerInfoInstance);
-
-            await updateServerInfos([mockServer]);
-
-            expect(MattermostServer).not.toHaveBeenCalledWith({name: 'temp', url: 'not-a-url'}, false);
-            expect(mockServerInfoInstance.fetchConfigData).not.toHaveBeenCalled();
-            expect(ServerManager.updateRemoteInfo).toHaveBeenCalledWith('server-1', data, false);
-        });
-
-        it('should record the server as validated when the site URL matches', async () => {
-            const mockServer = new MattermostServer({id: 'server-1', name: 'Test Server', url: 'http://localhost:8065'});
-            const data = {siteURL: 'http://localhost:8065'};
-            const mockServerInfoInstance = {
-                fetchRemoteInfo: jest.fn().mockResolvedValue(data),
-                fetchConfigData: jest.fn().mockResolvedValue(data),
-            };
-            ServerInfo.mockImplementation(() => mockServerInfoInstance);
-
-            await updateServerInfos([mockServer]);
-
-            expect(MattermostServer).toHaveBeenCalledWith({name: 'temp', url: 'http://localhost:8065/'}, false);
-            expect(ServerManager.updateRemoteInfo).toHaveBeenCalledWith('server-1', data, true);
-        });
     });
 });

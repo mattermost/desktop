@@ -19,7 +19,6 @@ import {
     CLOSE_SERVERS_DROPDOWN,
     CLOSE_DOWNLOADS_DROPDOWN,
     LOAD_INCOMPATIBLE_SERVER,
-    LOAD_INVALID_SITE_URL,
     SERVER_URL_CHANGED,
     BROWSER_HISTORY_PUSH,
     RELOAD_VIEW,
@@ -443,16 +442,6 @@ export class MattermostWebContentsView extends EventEmitter {
                 return;
             }
             const serverInfo = ServerManager.getRemoteInfo(this.view.serverId);
-
-            // The site URL comes from the server's client configuration, so it cannot be trusted to be a valid URL
-            if (serverInfo?.siteURL && !parseURL(serverInfo.siteURL)) {
-                this.log.warn('server has an invalid site URL configured');
-                this.sendToParentWindow(LOAD_INVALID_SITE_URL, this.id, loadURL.toString());
-                this.emit(LOAD_FAILED, this.id, 'Invalid site URL', loadURL.toString());
-                this.status = Status.ERROR;
-                return;
-            }
-
             if (!serverInfo?.serverVersion || semver.gte(serverInfo.serverVersion, '9.4.0')) {
                 this.log.verbose('finished loading URL');
                 this.sendToParentWindow(LOAD_SUCCESS, this.id);

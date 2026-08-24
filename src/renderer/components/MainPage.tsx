@@ -23,7 +23,6 @@ enum Status {
     FAILED = 0,
     NOSERVERS = -2,
     INCOMPATIBLE = -3,
-    INVALID_SITE_URL = -4,
 }
 
 type Props = {
@@ -240,17 +239,6 @@ class MainPage extends React.PureComponent<Props, State> {
             console.error(`${viewId}: tried to load incompatible server`);
             const statusValue = {
                 status: Status.INCOMPATIBLE,
-                extra: {
-                    url: loadUrl,
-                },
-            };
-            this.updateTabStatus(viewId, statusValue);
-        });
-
-        window.desktop.onLoadInvalidSiteURL((viewId, loadUrl) => {
-            console.error(`${viewId}: server has an invalid site URL configured`);
-            const statusValue = {
-                status: Status.INVALID_SITE_URL,
                 extra: {
                     url: loadUrl,
                 },
@@ -508,8 +496,6 @@ class MainPage extends React.PureComponent<Props, State> {
             errorState = ErrorState.FAILED;
         } else if (tabStatus?.status === Status.INCOMPATIBLE) {
             errorState = ErrorState.INCOMPATIBLE;
-        } else if (tabStatus?.status === Status.INVALID_SITE_URL) {
-            errorState = ErrorState.INVALID_SITE_URL;
         }
 
         return (

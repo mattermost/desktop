@@ -14,7 +14,7 @@ import {MATTERMOST_PROTOCOL} from 'common/constants';
 import {Logger} from 'common/log';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
-import {isValidURI, parseURL} from 'common/utils/url';
+import {isValidURI} from 'common/utils/url';
 import {localizeMessage} from 'main/i18nManager';
 import {ServerInfo} from 'main/server/serverInfo';
 
@@ -169,16 +169,8 @@ export async function updateServerInfos(servers: MattermostServer[]) {
         }
 
         if (data.siteURL) {
-            // The site URL comes from the server's client configuration, so it cannot be trusted to be a valid URL
-            const siteURL = parseURL(data.siteURL);
-            if (!siteURL) {
-                log.warn('updateServerInfos: Received an invalid site URL from the server', {serverId: srv.id});
-                ServerManager.updateRemoteInfo(srv.id, data, false);
-                return;
-            }
-
             // We need to validate the site URL is reachable by pinging the server
-            const tempServer = new MattermostServer({name: 'temp', url: siteURL.toString()}, false);
+            const tempServer = new MattermostServer({name: 'temp', url: data.siteURL}, false);
             const tempServerInfo = new ServerInfo(tempServer);
             try {
                 const tempRemoteInfo = await tempServerInfo.fetchConfigData();
