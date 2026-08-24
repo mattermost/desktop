@@ -63,7 +63,7 @@ const findVisibleLoadedPreviewTarget = (root) => {
             continue;
         }
         const loadedImg = button.querySelector('img:not(.image-loading__placeholder)');
-        if (loadedImg instanceof HTMLImageElement && loadedImg.complete && loadedImg.naturalWidth > 0) {
+        if (isLoadedPreviewImage(loadedImg)) {
             return loadedImg;
         }
     }
