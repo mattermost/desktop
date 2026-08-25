@@ -22,6 +22,13 @@ runs:
       run: |
         npm run i18n-extract -- --desktop-dir .
         git --no-pager diff --exit-code i18n/en.json
+    # Electron 43 dropped its postinstall script and downloads the binary lazily
+    # on the first `require('electron')`. Jest workers each hit that path in
+    # parallel and race extracting dist/Electron.app (EEXIST). Install it once,
+    # single-threaded, before the test run.
+    - name: ci/install-electron-binary
+      shell: ${{ inputs.shell }}
+      run: node node_modules/electron/install.js
     - name: ci/run-unit-ci
       shell: ${{ inputs.shell }}
       env:

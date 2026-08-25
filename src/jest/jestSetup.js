@@ -3,11 +3,6 @@
 
 /* eslint-disable no-undef */
 
-jest.mock('electron', () => {
-    const electronMock = jest.requireActual('./electronMock');
-    return electronMock.default;
-});
-
 jest.mock('main/constants', () => ({
     configPath: 'configPath',
     allowedProtocolFile: 'allowedProtocolFile',
