@@ -21,16 +21,16 @@ import {openDeepLink} from 'main/app/utils';
 import Diagnostics from 'main/diagnostics';
 import notificationManager from 'main/notifications';
 import AllowProtocolDialog from 'main/security/allowProtocolDialog';
+import updateNotifier from 'main/updateNotifier';
+
+import {recordBadgeTestState} from './badgeState';
+import {registerE2eHooks} from './hooks';
 import {
     installMessageBoxStub,
     installOpenDialogStub,
     restoreMessageBoxStub,
     restoreOpenDialogStub,
-} from 'main/testMessageBoxStub';
-import updateNotifier from 'main/updateNotifier';
-
-import {recordBadgeTestState} from './badgeState';
-import {registerE2eHooks} from './hooks';
+} from './messageBoxStub';
 import {simulateNotificationClick} from './notificationClick';
 import {triggerNotificationFrameEffects} from './notificationFrameEffects';
 import {createClickTrayMenuItem} from './trayMenu';
