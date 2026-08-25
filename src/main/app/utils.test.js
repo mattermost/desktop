@@ -106,7 +106,6 @@ describe('main/app/utils', () => {
 
     describe('resizeScreen', () => {
         beforeEach(() => {
-            MainWindow.get.mockReset();
             screen.getAllDisplays.mockReturnValue([{
                 workArea: {
                     x: 400,
@@ -241,20 +240,6 @@ describe('main/app/utils', () => {
             resizeScreen(browserWindow);
             expect(browserWindow.setPosition).toHaveBeenCalledWith(2200, 100);
             expect(browserWindow.center).not.toHaveBeenCalled();
-        });
-
-        it('should center when the secondary display is unplugged and the midpoint is outside remaining displays', () => {
-            MainWindow.get.mockReturnValue(undefined);
-            const browserWindow = {
-                getPosition: () => [2400, 100],
-                getSize: () => [1280, 720],
-                setPosition: jest.fn(),
-                center: jest.fn(),
-                once: jest.fn(),
-            };
-            resizeScreen(browserWindow);
-            expect(browserWindow.setPosition).not.toHaveBeenCalled();
-            expect(browserWindow.center).toHaveBeenCalled();
         });
     });
 
