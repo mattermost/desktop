@@ -67,8 +67,7 @@ test.describe('calls/calls_functionality', () => {
 
             const widgetWindow = await waitForCallsWidgetWindow(electronApp);
             if (!widgetWindow) {
-                test.skip(true, 'Calls plugin/widget not available on this test server');
-                return;
+                throw new Error('Calls widget did not open — is the Calls plugin enabled and media available?');
             }
 
             expect(widgetWindow.url(), 'Widget URL must point to Calls plugin').toContain(
@@ -122,8 +121,7 @@ test.describe('calls/calls_functionality', () => {
 
             const widgetWindow = await waitForCallsWidgetWindow(electronApp, 30_000);
             if (!widgetWindow) {
-                test.skip(true, 'Calls plugin/widget not available on this test server');
-                return;
+                throw new Error('Calls widget did not open — is the Calls plugin enabled and media available?');
             }
 
             // Wait for mute button directly — covers React mount + call connection in one step.
