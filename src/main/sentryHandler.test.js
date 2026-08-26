@@ -166,19 +166,6 @@ describe('main/sentryHandler', () => {
             );
             expect(Sentry.init.mock.calls[0][0]).not.toHaveProperty('initialScope');
         });
-
-        it('should still initialize Sentry when resolving the install ID throws', () => {
-            mockInstallId.mockImplementation(() => {
-                throw new Error('state unreadable');
-            });
-
-            expect(() => sentryHandler.init()).not.toThrow();
-
-            expect(Sentry.init).toHaveBeenCalledWith(
-                expect.objectContaining({dsn: 'https://test@sentry.io/123'}),
-            );
-            expect(Sentry.init.mock.calls[0][0]).not.toHaveProperty('initialScope');
-        });
     });
 
     describe('isPrereleaseBuild', () => {

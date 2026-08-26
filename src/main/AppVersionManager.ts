@@ -27,6 +27,12 @@ export class AppVersionManager extends JsonFileManager<AppState> {
         if (!validatedJSON) {
             this.setJson({});
         }
+
+        if (!this.getValue('installId')) {
+            this.setValue('installId', uuid()).catch((e) => {
+                log.warn('failed to persist install ID, a new one will be generated next launch', e);
+            });
+        }
     };
 
     set lastAppVersion(version) {
@@ -57,22 +63,8 @@ export class AppVersionManager extends JsonFileManager<AppState> {
         return null;
     }
 
-    get installId(): string | undefined {
-        try {
-            const existing = this.getValue('installId');
-            if (existing) {
-                return existing;
-            }
-
-            const generated = uuid();
-            this.setValue('installId', generated).catch((e) => {
-                log.warn('failed to persist installId, a new one will be generated next launch', e);
-            });
-            return generated;
-        } catch (e) {
-            log.warn('failed to resolve installId', e);
-            return undefined;
-        }
+    get installId() {
+        return this.getValue('installId');
     }
 }
 

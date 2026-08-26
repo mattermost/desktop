@@ -30,13 +30,12 @@ export class SentryHandler {
         }
 
         const isPrerelease = this.isPrereleaseBuild();
-        const initialScope = this.getInitialScope();
         Sentry.init({
             dsn: sentryDsn,
             sendDefaultPii: false,
             environment: isPrerelease ? 'prerelease' : 'stable',
             attachStacktrace: true,
-            ...(initialScope ? {initialScope} : {}),
+            ...this.getInitialScope(),
         });
 
         this.addSentryContext();
@@ -48,22 +47,17 @@ export class SentryHandler {
         return Sentry.flush(3000);
     };
 
-    // Must go through initialScope rather than a later Sentry.setUser call: the session is
-    // started by a default integration during Sentry.init, and its distinct id is read from the
-    // scope at that moment. Setting the user afterwards populates issue counts but leaves release
-    // health without a user.
+    // The install ID must go through initialScope rather than a later Sentry.setUser call: the
+    // session is started by a default integration during Sentry.init, and its distinct id is read
+    // from the scope at that moment. Setting the user afterwards populates issue counts but leaves
+    // release health without a user.
     private getInitialScope = () => {
-        try {
-            const installId = AppVersionManager.installId;
-            if (!installId) {
-                return undefined;
-            }
-
-            return {user: {id: installId}};
-        } catch (e) {
-            log.warn('failed to resolve install ID, continuing without user attribution', e);
-            return undefined;
+        const installId = AppVersionManager.installId;
+        if (!installId) {
+            return {};
         }
+
+        return {initialScope: {user: {id: installId}}};
     };
 
     private addSentryContext = () => {

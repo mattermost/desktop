@@ -68,7 +68,7 @@ describe('main/AppVersionManager', () => {
             expect(fs.writeFile).not.toBeCalled();
         });
 
-        it('should be stable across repeated reads within a session', () => {
+        it('should generate the install ID only once', () => {
             fs.readFileSync.mockReturnValue('{}');
             fs.writeFile.mockImplementation((file, data, callback) => callback(null));
 
@@ -88,16 +88,6 @@ describe('main/AppVersionManager', () => {
 
             // A rejected write must not surface as an unhandled rejection.
             await new Promise((resolve) => setImmediate(resolve));
-        });
-
-        it('should return undefined rather than throw when the state is unreadable', () => {
-            fs.readFileSync.mockReturnValue('{}');
-            fs.writeFile.mockImplementation((file, data, callback) => callback(null));
-
-            const appVersionManager = new AppVersionManager('somefilename.txt');
-            appVersionManager.json = null;
-
-            expect(appVersionManager.installId).toBeUndefined();
         });
     });
 });
