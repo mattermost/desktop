@@ -9,6 +9,7 @@ import {test, expect} from '../../fixtures/index';
 import {demoConfig} from '../../helpers/config';
 import {launchDirectTestApp} from '../../helpers/directLaunch';
 import {closeElectronApp, closeElectronAppFast} from '../../helpers/electronApp';
+import {evaluateInMainProcess} from '../../helpers/testRefs';
 
 test.describe('startup/window_reposition', () => {
     test.describe.configure({mode: 'serial'});
@@ -118,39 +119,51 @@ test.describe('startup/window_reposition', () => {
                     'Window y should remain near the repositioned y after minimize/restore',
                 ).toBeLessThanOrEqual(50);
 
-                const savedBounds = {
-                    ...movedBounds,
-                    maximized: false,
-                    fullscreen: false,
+                // The app persists bounds itself via saveWindowState(boundsInfoPath),
+                // reached from MainWindow.onBlur and from onClose on quit
+                // (src/app/mainWindow/mainWindow.ts). Drive blur first, then fall back
+                // to the quit path, and assert what the *app* wrote — previously this
+                // spec wrote bounds-info.json itself, so the check could not fail.
+                const boundsInfoFile = path.join(userDataDir, 'bounds-info.json');
+                const {readFileSync} = await import('fs');
+                const persistedOffset = () => {
+                    try {
+                        const persisted = JSON.parse(readFileSync(boundsInfoFile, 'utf-8'));
+                        return Math.abs(persisted.x - movedBounds!.x) + Math.abs(persisted.y - movedBounds!.y);
+                    } catch {
+                        return Number.MAX_SAFE_INTEGER;
+                    }
                 };
+
+                await evaluateInMainProcess(app, () => {
+                    const main = (global as any).__e2eTestRefs?.MainWindow?.get?.();
+                    if (!main) {
+                        throw new Error('MainWindow test ref is not available');
+                    }
+                    main.focus();
+                    main.blur();
+                });
+
+                // blur() is a no-op without a window manager (Xvfb), so the assertion
+                // lands after the graceful quit, which saves bounds on either path.
                 await closeElectronApp(app, userDataDir);
                 appClosed = true;
 
-                const {writeFileSync} = await import('fs');
-                writeFileSync(
-                    path.join(userDataDir, 'bounds-info.json'),
-                    JSON.stringify(savedBounds),
-                );
+                await expect.poll(persistedOffset, {
+                    timeout: 15_000,
+                    message: 'App must persist the repositioned bounds to bounds-info.json (blur or quit)',
+                }).toBeLessThanOrEqual(10);
 
-                // Linux CI (xvfb) and Windows CI do not reliably restore window
-                // bounds from bounds-info.json on relaunch — see startup/window.test.ts.
-                // Local Linux runs still exercise the relaunch verification path below.
-                if (
-                    (process.platform === 'linux' && process.env.CI) ||
-                    (process.platform === 'win32' && process.env.CI)
-                ) {
-                    const {readFileSync} = await import('fs');
-                    const persisted = JSON.parse(
-                        readFileSync(path.join(userDataDir, 'bounds-info.json'), 'utf-8'),
-                    );
-                    expect(
-                        Math.abs(persisted.x - movedBounds!.x),
-                        'bounds-info.json must persist repositioned x',
-                    ).toBeLessThanOrEqual(5);
-                    expect(
-                        Math.abs(persisted.y - movedBounds!.y),
-                        'bounds-info.json must persist repositioned y',
-                    ).toBeLessThanOrEqual(5);
+                const savedBounds = JSON.parse(readFileSync(boundsInfoFile, 'utf-8'));
+
+                // Restoring those bounds on relaunch needs a window manager that honors
+                // setBounds: Xvfb (Linux CI) and Windows CI do not — see startup/window.test.ts.
+                // Persistence above is asserted on every platform; only the restore half is skipped.
+                if (process.env.CI && (process.platform === 'linux' || process.platform === 'win32')) {
+                    test.info().annotations.push({
+                        type: 'skip-reason',
+                        description: 'Relaunch bounds restore is not reliable under Xvfb / Windows CI window managers',
+                    });
                     return;
                 }
 
