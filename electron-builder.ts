@@ -94,6 +94,11 @@ const config = {
             'flatpak',
         ],
         appId: 'com.Mattermost.Desktop',
+        desktop: {
+            entry: {
+                StartupWMClass: pkg.desktopName,
+            },
+        },
         extraFiles: [
             {
                 filter: [
