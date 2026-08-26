@@ -165,18 +165,43 @@ async function openAndCloseDevTools(app: ElectronApplication): Promise<void> {
     ).toBe(false);
 }
 
+/**
+ * Open a second tab and switch back and forth. When `requireTabs` is set the tab
+ * interaction must actually happen — a missing #newTabButton or second tab fails
+ * the spec instead of silently reducing it to a DevTools-only check. Callers that
+ * cannot guarantee a tab bar pass `requireTabs: false`, and the skip is recorded
+ * as an annotation so the report never implies coverage that did not run.
+ */
 async function exerciseWindowChrome(
     electronApp: ElectronApplication,
     mainWindow: Page,
-    options: {openSettings?: boolean} = {},
+    options: {openSettings?: boolean; requireTabs?: boolean} = {},
 ) {
-    const {openSettings = true} = options;
-    await mainWindow.click('#newTabButton').catch(() => {});
-    await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(1)', {timeout: 15_000}).catch(() => {});
-    const secondTabExists = await mainWindow.$('.TabBar li.serverTabItem:nth-child(2)');
-    if (secondTabExists) {
-        await secondTabExists.click();
-        await mainWindow.click('.TabBar li.serverTabItem:nth-child(1)').catch(() => {});
+    const {openSettings = true, requireTabs = true} = options;
+
+    const newTabButton = await mainWindow.$('#newTabButton');
+    if (requireTabs) {
+        expect(newTabButton, 'MM-T4049 requires #newTabButton to add a second tab').toBeTruthy();
+    }
+
+    if (newTabButton) {
+        await newTabButton.click();
+        await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 15_000}).catch(() => {});
+    }
+
+    const secondTab = await mainWindow.$('.TabBar li.serverTabItem:nth-child(2)');
+    if (requireTabs) {
+        expect(secondTab, 'MM-T4049 requires a second tab to switch between').toBeTruthy();
+    }
+
+    if (secondTab) {
+        await secondTab.click();
+        await mainWindow.click('.TabBar li.serverTabItem:nth-child(1)');
+    } else {
+        test.info().annotations.push({
+            type: 'coverage-gap',
+            description: 'Tab switching skipped: no second tab rendered for this config (window geometry still verified against DevTools)',
+        });
     }
 
     if (openSettings) {
@@ -253,7 +278,7 @@ test.describe('startup/window_position', () => {
                 await mainWindow.waitForSelector('.topBar', {timeout: 30_000});
 
                 const tiledBounds = await tileMainWindowToLeftHalf(electronApp);
-                await exerciseWindowChrome(electronApp, mainWindow);
+                await exerciseWindowChrome(electronApp, mainWindow, {requireTabs: false});
 
                 const afterTiled = await getMainWindowState(electronApp);
                 expect(afterTiled.isFullScreen).toBe(false);
@@ -264,7 +289,7 @@ test.describe('startup/window_position', () => {
                 expect(Math.abs(afterTiled.bounds.height - tiledBounds.height)).toBeLessThanOrEqual(10);
 
                 await enterMainWindowExpanded(electronApp);
-                await exerciseWindowChrome(electronApp, mainWindow, {openSettings: false});
+                await exerciseWindowChrome(electronApp, mainWindow, {openSettings: false, requireTabs: false});
 
                 expect(
                     await isMainWindowExpanded(electronApp),
