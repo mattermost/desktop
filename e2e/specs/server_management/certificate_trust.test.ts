@@ -6,7 +6,7 @@ import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
 import {demoConfig} from '../../helpers/config';
-import {clearCertificateErrorCallbacks, restoreMessageBox, stubMessageBoxResponses} from '../../helpers/dialog';
+import {clearCertificateErrorCallbacks, stubMessageBoxResponses} from '../../helpers/dialog';
 import {launchDirectTestApp} from '../../helpers/directLaunch';
 import {closeElectronApp, closeElectronAppFast} from '../../helpers/electronApp';
 import {waitForErrorView} from '../../helpers/errorView';
@@ -73,7 +73,6 @@ test(
             const certificateStore = JSON.parse(fs.readFileSync(certificateStorePath, 'utf-8')) as Record<string, unknown>;
             expect(Object.keys(certificateStore).length).toBeGreaterThan(0);
 
-            await restoreMessageBox(app).catch(() => {});
             await closeElectronApp(app, userDataDir);
             firstAppClosed = true;
 
@@ -112,12 +111,10 @@ test(
                 expect(await mainWindow!.$('.ErrorView')).toBeNull();
                 expect(fs.existsSync(certificateStorePath), 'Trusted certificate store must survive relaunch').toBe(true);
             } finally {
-                await restoreMessageBox(relaunchedApp).catch(() => {});
                 await closeElectronAppFast(relaunchedApp, userDataDir);
             }
         } finally {
             if (!firstAppClosed) {
-                await restoreMessageBox(app).catch(() => {});
                 await closeElectronAppFast(app, userDataDir);
             }
         }

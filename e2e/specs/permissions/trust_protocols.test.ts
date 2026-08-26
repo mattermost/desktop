@@ -9,7 +9,6 @@ import {demoConfig, demoMattermostConfig} from '../../helpers/config';
 import {
     getMessageBoxCalls,
     stubMessageBoxResponses,
-    restoreMessageBox,
 } from '../../helpers/dialog';
 import {loginToMattermost} from '../../helpers/login';
 import {typeIntoPostTextbox} from '../../helpers/mattermostShell';
@@ -114,7 +113,6 @@ test.describe('permissions/trust_protocols', () => {
                 }
                 expect((await getMessageBoxCalls(electronApp)).length).toBe(dialogsBeforeDefaults);
             } finally {
-                await restoreMessageBox(electronApp).catch(() => {});
                 await restoreShellOpenExternal(electronApp);
             }
         },

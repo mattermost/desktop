@@ -41,9 +41,7 @@ type RegisterE2eHooksOptions = {
     triggerNotificationFrameEffects: (flash: boolean) => void;
     simulateNotificationClick: (payload: SimulateNotificationClickPayload) => void;
     installMessageBoxStub: (responses: MessageBoxResponse[]) => void;
-    restoreMessageBoxStub: () => void;
     installOpenDialogStub: (results: OpenDialogResult[]) => void;
-    restoreOpenDialogStub: () => void;
     clearCertificateErrorCallbacks: () => void;
 };
 
@@ -58,8 +56,6 @@ export function registerE2eHooks(options: RegisterE2eHooksOptions): void {
     setTestField('__e2eNotificationEffects', options.triggerNotificationFrameEffects);
     setTestField('__e2eSimulateNotificationClick', options.simulateNotificationClick);
     setTestField('__e2eStubMessageBoxResponses', options.installMessageBoxStub);
-    setTestField('__e2eRestoreMessageBox', options.restoreMessageBoxStub);
     setTestField('__e2eStubOpenDialogResults', options.installOpenDialogStub);
-    setTestField('__e2eRestoreOpenDialog', options.restoreOpenDialogStub);
     setTestField('__e2eClearCertificateErrorCallbacks', options.clearCertificateErrorCallbacks);
 }

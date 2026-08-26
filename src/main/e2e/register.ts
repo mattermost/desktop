@@ -25,12 +25,7 @@ import updateNotifier from 'main/updateNotifier';
 
 import {recordBadgeTestState} from './badgeState';
 import {registerE2eHooks} from './hooks';
-import {
-    installMessageBoxStub,
-    installOpenDialogStub,
-    restoreMessageBoxStub,
-    restoreOpenDialogStub,
-} from './messageBoxStub';
+import messageBoxStub from './messageBoxStub';
 import {simulateNotificationClick} from './notificationClick';
 import {createClickTrayMenuItem} from './trayMenu';
 
@@ -70,16 +65,14 @@ export function maybeRegisterE2eHooks(): void {
         // MM-T1294 / flash_taskbar cannot pass against a stale duplicate.
         triggerNotificationFrameEffects: flashFrame,
         simulateNotificationClick,
-        installMessageBoxStub,
-        restoreMessageBoxStub,
-        installOpenDialogStub,
-        restoreOpenDialogStub,
+        installMessageBoxStub: messageBoxStub.installMessageBoxStub,
+        installOpenDialogStub: messageBoxStub.installOpenDialogStub,
         clearCertificateErrorCallbacks: () => certificateErrorCallbacks.clear(),
     });
 
     if (process.env.MM_E2E_STUB_MESSAGE_BOX === 'cancel') {
-        installMessageBoxStub([{response: 1}]);
+        messageBoxStub.installMessageBoxStub([{response: 1}]);
     } else if (process.env.MM_E2E_STUB_MESSAGE_BOX === 'trust') {
-        installMessageBoxStub([{response: 0}, {response: 0}]);
+        messageBoxStub.installMessageBoxStub([{response: 0}, {response: 0}]);
     }
 }

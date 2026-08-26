@@ -5,10 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
-import {
-    restoreOpenDialog,
-    stubOpenDialogResults,
-} from '../../helpers/dialog';
+import {stubOpenDialogResults} from '../../helpers/dialog';
 import {
     closeDownloadTestApp,
     launchAppWithDownloadsDir,
@@ -83,7 +80,6 @@ test.describe('settings/download_location', () => {
                 expect(fs.existsSync(path.join(initialDir, filename))).toBe(false);
             } finally {
                 if (app) {
-                    await restoreOpenDialog(app);
                     await closeDownloadTestApp(app, userDataDir, initialDir);
                 }
                 await close();

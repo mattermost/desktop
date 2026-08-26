@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../../fixtures/index';
-import {restoreMessageBox, stubMessageBoxResponses} from '../../helpers/dialog';
+import {stubMessageBoxResponses} from '../../helpers/dialog';
 import {clickApplicationMenuItem} from '../../helpers/menu';
 
 test(
@@ -14,14 +14,10 @@ test(
         const serverButtonText = await mainWindow!.innerText('.ServerDropdownButton');
 
         await stubMessageBoxResponses(electronApp, [{response: 1}]);
-        try {
-            await clickApplicationMenuItem(electronApp, 'view', {labelIncludes: 'Clear All Data'});
-            await expect.poll(
-                () => mainWindow!.innerText('.ServerDropdownButton'),
-                {timeout: 10_000, message: 'Canceling Clear All Data should leave the active server unchanged'},
-            ).toBe(serverButtonText);
-        } finally {
-            await restoreMessageBox(electronApp);
-        }
+        await clickApplicationMenuItem(electronApp, 'view', {labelIncludes: 'Clear All Data'});
+        await expect.poll(
+            () => mainWindow!.innerText('.ServerDropdownButton'),
+            {timeout: 10_000, message: 'Canceling Clear All Data should leave the active server unchanged'},
+        ).toBe(serverButtonText);
     },
 );

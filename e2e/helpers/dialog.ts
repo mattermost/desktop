@@ -8,6 +8,23 @@ type MessageBoxResponse = {
     checkboxChecked?: boolean;
 };
 
+export type OpenDialogResult = {
+    canceled?: boolean;
+    filePaths: string[];
+};
+
+/**
+ * Globals installed in the app's main process by src/main/e2e/hooks.ts, read
+ * back here through app.evaluate. Kept in sync manually with that file.
+ */
+type E2eDialogGlobals = {
+    __e2eStubMessageBoxResponses?: (responses: MessageBoxResponse[]) => void;
+    __e2eStubOpenDialogResults?: (results: OpenDialogResult[]) => void;
+    __e2eMessageBoxCalls?: unknown[];
+    __e2eOpenDialogCalls?: unknown[];
+    __e2eClearCertificateErrorCallbacks?: () => void;
+};
+
 export async function stubMessageBoxResponses(
     app: ElectronApplication,
     responses: MessageBoxResponse[],
@@ -17,27 +34,13 @@ export async function stubMessageBoxResponses(
     }
 
     await app.evaluate((_electron, value) => {
-        const stub = (global as any).__e2eStubMessageBoxResponses as ((responses: MessageBoxResponse[]) => void) | undefined;
+        const stub = (global as E2eDialogGlobals).__e2eStubMessageBoxResponses;
         if (!stub) {
             throw new Error('__e2eStubMessageBoxResponses is not available');
         }
         stub(value);
     }, responses);
 }
-
-export async function restoreMessageBox(app: ElectronApplication): Promise<void> {
-    await app.evaluate(() => {
-        const restore = (global as any).__e2eRestoreMessageBox as (() => void) | undefined;
-        if (restore) {
-            restore();
-        }
-    });
-}
-
-export type OpenDialogResult = {
-    canceled?: boolean;
-    filePaths: string[];
-};
 
 export async function stubOpenDialogResults(
     app: ElectronApplication,
@@ -48,7 +51,7 @@ export async function stubOpenDialogResults(
     }
 
     await app.evaluate((_electron, value) => {
-        const stub = (global as any).__e2eStubOpenDialogResults as ((results: OpenDialogResult[]) => void) | undefined;
+        const stub = (global as E2eDialogGlobals).__e2eStubOpenDialogResults;
         if (!stub) {
             throw new Error('__e2eStubOpenDialogResults is not available');
         }
@@ -56,26 +59,16 @@ export async function stubOpenDialogResults(
     }, results);
 }
 
-export async function restoreOpenDialog(app: ElectronApplication): Promise<void> {
-    await app.evaluate(() => {
-        const restore = (global as any).__e2eRestoreOpenDialog as (() => void) | undefined;
-        if (restore) {
-            restore();
-        }
-    }).catch(() => {});
-}
-
 export async function getMessageBoxCalls(app: ElectronApplication): Promise<unknown[]> {
-    return app.evaluate(() => (global as any).__e2eMessageBoxCalls ?? []);
+    return app.evaluate(() => (global as E2eDialogGlobals).__e2eMessageBoxCalls ?? []);
 }
 
 export async function getOpenDialogCallCount(app: ElectronApplication): Promise<number> {
-    return app.evaluate(() => ((global as any).__e2eOpenDialogCalls as unknown[] | undefined)?.length ?? 0);
+    return app.evaluate(() => (global as E2eDialogGlobals).__e2eOpenDialogCalls?.length ?? 0);
 }
 
 export async function clearCertificateErrorCallbacks(app: ElectronApplication): Promise<void> {
     await app.evaluate(() => {
-        const clear = (global as any).__e2eClearCertificateErrorCallbacks as (() => void) | undefined;
-        clear?.();
+        (global as E2eDialogGlobals).__e2eClearCertificateErrorCallbacks?.();
     });
 }
