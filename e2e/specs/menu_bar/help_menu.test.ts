@@ -14,7 +14,10 @@ test.describe('menu_bar/help_menu', () => {
         async ({electronApp}) => {
             await waitForAppReady(electronApp);
 
-            const canUpgrade = await electronApp.evaluate(() => {
+            // Startup navigation can destroy the main-process execution context right
+            // after waitForAppReady, so every evaluate here goes through
+            // evaluateInMainProcess (retries on 'Execution context was destroyed').
+            const canUpgrade = await evaluateInMainProcess(electronApp, () => {
                 const refs = (global as any).__e2eTestRefs;
                 return Boolean(refs?.Config?.canUpgrade);
             });
@@ -24,7 +27,7 @@ test.describe('menu_bar/help_menu', () => {
                 return;
             }
 
-            await electronApp.evaluate(() => {
+            await evaluateInMainProcess(electronApp, () => {
                 const refs = (global as any).__e2eTestRefs;
                 const updateNotifier = refs?.updateNotifier;
                 if (!updateNotifier) {
@@ -41,19 +44,19 @@ test.describe('menu_bar/help_menu', () => {
                 await clickApplicationMenuItem(electronApp, 'help', {labelIncludes: 'Check for Updates'});
 
                 await expect.poll(async () => {
-                    return electronApp.evaluate(() => {
+                    return evaluateInMainProcess(electronApp, () => {
                         const refs = (global as any).__e2eTestRefs;
                         return refs?.updateNotifier?.__e2eCheckForUpdatesCalls ?? 0;
                     });
                 }, {timeout: 10_000}).toBeGreaterThan(0);
             } finally {
-                await electronApp.evaluate(() => {
+                await evaluateInMainProcess(electronApp, () => {
                     const refs = (global as any).__e2eTestRefs;
                     if (refs?.updateNotifier?.__e2eOriginalCheckForUpdates) {
                         refs.updateNotifier.checkForUpdates = refs.updateNotifier.__e2eOriginalCheckForUpdates;
                         delete refs.updateNotifier.__e2eOriginalCheckForUpdates;
                     }
-                });
+                }).catch(() => {});
             }
         },
     );
@@ -73,14 +76,14 @@ test.describe('menu_bar/help_menu', () => {
             });
             expect(expectedVersionLabel, 'Help menu must expose a Desktop App Version item').not.toBe('');
 
-            await electronApp.evaluate(({clipboard}) => {
+            await evaluateInMainProcess(electronApp, ({clipboard}) => {
                 clipboard.writeText('');
             });
 
             await clickApplicationMenuItem(electronApp, 'help', {labelIncludes: 'Desktop App Version'});
 
             await expect.poll(
-                () => electronApp.evaluate(({clipboard}) => clipboard.readText()),
+                () => evaluateInMainProcess(electronApp, ({clipboard}) => clipboard.readText()),
                 {timeout: 10_000, message: 'Help → Version must copy the desktop version string to the clipboard'},
             ).toBe(expectedVersionLabel);
         },
