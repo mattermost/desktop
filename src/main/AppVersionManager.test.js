@@ -78,7 +78,7 @@ describe('main/AppVersionManager', () => {
             expect(uuid).toBeCalledTimes(1);
         });
 
-        it('should not return an ID when persisting it fails', async () => {
+        it('should keep using the generated ID when persisting it fails', async () => {
             fs.readFileSync.mockReturnValue('{}');
             fs.writeFile.mockImplementation((file, data, callback) => callback(new Error('disk full')));
 
@@ -87,7 +87,8 @@ describe('main/AppVersionManager', () => {
             // A rejected write must not surface as an unhandled rejection.
             await new Promise((resolve) => setImmediate(resolve));
 
-            expect(appVersionManager.installId).toBeUndefined();
+            // Sentry has already read the ID by now, so dropping it here would buy nothing.
+            expect(appVersionManager.installId).toBe('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee');
         });
     });
 });
