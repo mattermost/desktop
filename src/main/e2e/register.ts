@@ -19,7 +19,7 @@ import {certificateErrorCallbacks} from 'main/app/app';
 import {handleShowSettingsModal} from 'main/app/intercom';
 import {openDeepLink} from 'main/app/utils';
 import Diagnostics from 'main/diagnostics';
-import notificationManager from 'main/notifications';
+import notificationManager, {flashFrame} from 'main/notifications';
 import AllowProtocolDialog from 'main/security/allowProtocolDialog';
 import updateNotifier from 'main/updateNotifier';
 
@@ -32,7 +32,6 @@ import {
     restoreOpenDialogStub,
 } from './messageBoxStub';
 import {simulateNotificationClick} from './notificationClick';
-import {triggerNotificationFrameEffects} from './notificationFrameEffects';
 import {createClickTrayMenuItem} from './trayMenu';
 
 /**
@@ -66,7 +65,10 @@ export function maybeRegisterE2eHooks(): void {
         },
         openDeepLink,
         clickTrayMenuItem: createClickTrayMenuItem(createTrayMenu),
-        triggerNotificationFrameEffects,
+
+        // The real gate from main/notifications, not an E2E copy of it, so
+        // MM-T1294 / flash_taskbar cannot pass against a stale duplicate.
+        triggerNotificationFrameEffects: flashFrame,
         simulateNotificationClick,
         installMessageBoxStub,
         restoreMessageBoxStub,

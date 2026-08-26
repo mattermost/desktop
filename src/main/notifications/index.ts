@@ -267,7 +267,11 @@ export async function getDoNotDisturb() {
     return false;
 }
 
-function flashFrame(flash: boolean) {
+/**
+ * Flash the taskbar icon / bounce the dock, subject to the user's notification
+ * settings. Exported so E2E specs drive this exact gate instead of a copy of it.
+ */
+export function flashFrame(flash: boolean) {
     if (process.platform === 'linux' || process.platform === 'win32') {
         if (Config.notifications.flashWindow) {
             MainWindow.get()?.flashFrame(flash);
