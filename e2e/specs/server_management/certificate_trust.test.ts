@@ -76,11 +76,11 @@ test(
             await closeElectronApp(app, userDataDir);
             firstAppClosed = true;
 
-            // ServerManager.reloadServer persist can race Config.save and leave
-            // config.json with an empty servers list. Rewrite the server entry;
-            // certificate.json is left as-is so trust can be verified on relaunch.
+            // Relaunch on whatever the app itself persisted: the server entry must
+            // survive the reloadServer above, and certificate.json must carry the
+            // trust decision across restarts.
             const relaunchedApp = await launchDirectTestApp(userDataDir, badConfig, {
-                writeConfig: true,
+                writeConfig: false,
                 extraEnv: {MM_E2E_STUB_MESSAGE_BOX: 'cancel'},
             });
             try {
