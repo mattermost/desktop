@@ -119,11 +119,17 @@ test.describe('startup/window_reposition', () => {
                     'Window y should remain near the repositioned y after minimize/restore',
                 ).toBeLessThanOrEqual(50);
 
-                // The app persists bounds itself via saveWindowState(boundsInfoPath),
-                // reached from MainWindow.onBlur and from onClose on quit
-                // (src/app/mainWindow/mainWindow.ts). Drive blur first, then fall back
-                // to the quit path, and assert what the *app* wrote — previously this
-                // spec wrote bounds-info.json itself, so the check could not fail.
+                // The app persists bounds itself in MainWindow.onBlur ->
+                // saveWindowState(boundsInfoPath) (src/app/mainWindow/mainWindow.ts).
+                // This spec used to write bounds-info.json itself and then assert on it,
+                // so the check could not fail; assert what the *app* wrote instead.
+                //
+                // Emit 'blur' on the BrowserWindow rather than calling focus()/blur():
+                // those depend on the OS window server actually moving focus, which does
+                // not happen on a CI runner with no active desktop session, and a
+                // real BrowserWindow.blur() on an unfocused window is a no-op. The handler
+                // is registered with browserWindow.on('blur', this.onBlur) and MainWindow.get()
+                // returns that same emitter, so this runs the production save path for real.
                 const boundsInfoFile = path.join(userDataDir, 'bounds-info.json');
                 const {readFileSync} = await import('fs');
                 const persistedOffset = () => {
@@ -140,21 +146,17 @@ test.describe('startup/window_reposition', () => {
                     if (!main) {
                         throw new Error('MainWindow test ref is not available');
                     }
-                    main.focus();
-                    main.blur();
+                    main.emit('blur');
                 });
-
-                // blur() is a no-op without a window manager (Xvfb), so the assertion
-                // lands after the graceful quit, which saves bounds on either path.
-                await closeElectronApp(app, userDataDir);
-                appClosed = true;
 
                 await expect.poll(persistedOffset, {
                     timeout: 15_000,
-                    message: 'App must persist the repositioned bounds to bounds-info.json (blur or quit)',
+                    message: 'App must persist the repositioned bounds to bounds-info.json',
                 }).toBeLessThanOrEqual(10);
 
                 const savedBounds = JSON.parse(readFileSync(boundsInfoFile, 'utf-8'));
+                await closeElectronApp(app, userDataDir);
+                appClosed = true;
 
                 // Restoring those bounds on relaunch needs a window manager that honors
                 // setBounds: Xvfb (Linux CI) and Windows CI do not — see startup/window.test.ts.
