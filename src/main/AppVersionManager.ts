@@ -30,7 +30,10 @@ export class AppVersionManager extends JsonFileManager<AppState> {
 
         if (!this.getValue('installId')) {
             this.setValue('installId', uuid()).catch((e) => {
-                log.warn('failed to persist install ID, a new one will be generated next launch', e);
+                // Only expose an install ID that reached the disk, otherwise Sentry would attribute
+                // this launch to an ID that the next launch won't reuse.
+                delete this.json.installId;
+                log.warn('failed to persist install ID, this launch will not be attributed', e);
             });
         }
     };

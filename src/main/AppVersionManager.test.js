@@ -78,16 +78,16 @@ describe('main/AppVersionManager', () => {
             expect(uuid).toBeCalledTimes(1);
         });
 
-        it('should still return an ID when persisting it fails', async () => {
+        it('should not return an ID when persisting it fails', async () => {
             fs.readFileSync.mockReturnValue('{}');
             fs.writeFile.mockImplementation((file, data, callback) => callback(new Error('disk full')));
 
             const appVersionManager = new AppVersionManager('somefilename.txt');
 
-            expect(appVersionManager.installId).toBe('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee');
-
             // A rejected write must not surface as an unhandled rejection.
             await new Promise((resolve) => setImmediate(resolve));
+
+            expect(appVersionManager.installId).toBeUndefined();
         });
     });
 });
