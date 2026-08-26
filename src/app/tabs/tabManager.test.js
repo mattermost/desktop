@@ -8,6 +8,7 @@ import {ipcMain} from 'electron';
 import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import WebContentsManager from 'app/views/webContentsManager';
+import AppState from 'common/appState';
 import {
     ACTIVE_TAB_CHANGED,
     TAB_ORDER_UPDATED,
@@ -27,7 +28,9 @@ import {
     VIEW_TYPE_ADDED,
     CLEAR_CACHE_AND_RELOAD,
     UPDATE_TARGET_URL,
+    UPDATE_APPSTATE_TOTALS,
 } from 'common/communication';
+import Config from 'common/config';
 import ServerManager from 'common/servers/serverManager';
 import {ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
@@ -108,8 +111,20 @@ jest.mock('common/views/viewManager', () => {
     };
 });
 
+jest.mock('common/appState', () => {
+    const EventEmitter = jest.requireActual('events');
+    const mockAppState = new EventEmitter();
+
+    return {
+        on: jest.fn((event, handler) => mockAppState.on(event, handler)),
+        emit: jest.fn((event, ...args) => mockAppState.emit(event, ...args)),
+        mockAppState,
+    };
+});
+
 jest.mock('common/config', () => ({
     viewLimit: 15,
+    showUnreadsInWindowTitle: false,
 }));
 
 describe('TabManager', () => {
@@ -1283,6 +1298,68 @@ describe('TabManager', () => {
             tabManager.handleWindowClose({sender: {id: 100}});
 
             expect(ViewManager.removeView).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('updateMainWindowTitle', () => {
+        beforeEach(() => {
+            ViewManager.getView.mockReturnValue(mockView);
+            ViewManager.getViewTitle.mockReturnValue('Town Square');
+            ServerManager.getServer.mockReturnValue({id: 'test-server-id', name: 'Test Server', isLoggedIn: true});
+        });
+
+        it('should not show unread information when the setting is disabled', () => {
+            const tabManager = new TabManager();
+            tabManager.activeTabs.set('test-server-id', 'test-view-id');
+
+            AppState.mockAppState.emit(UPDATE_APPSTATE_TOTALS, false, 3, true);
+
+            expect(mockMainWindow.setTitle).toHaveBeenLastCalledWith('Town Square - Test Server - Mattermost');
+        });
+
+        it('should show mentions and unreads when the setting is enabled', () => {
+            Config.showUnreadsInWindowTitle = true;
+            const tabManager = new TabManager();
+            tabManager.activeTabs.set('test-server-id', 'test-view-id');
+
+            AppState.mockAppState.emit(UPDATE_APPSTATE_TOTALS, false, 3, true);
+
+            expect(mockMainWindow.setTitle).toHaveBeenLastCalledWith('(3) * Town Square - Test Server - Mattermost');
+            Config.showUnreadsInWindowTitle = false;
+        });
+
+        it('should show mentions without an asterisk when there are no unreads', () => {
+            Config.showUnreadsInWindowTitle = true;
+            const tabManager = new TabManager();
+            tabManager.activeTabs.set('test-server-id', 'test-view-id');
+
+            AppState.mockAppState.emit(UPDATE_APPSTATE_TOTALS, false, 3, false);
+
+            expect(mockMainWindow.setTitle).toHaveBeenLastCalledWith('(3) Town Square - Test Server - Mattermost');
+            Config.showUnreadsInWindowTitle = false;
+        });
+
+        it('should show unreads without a count when there are no mentions', () => {
+            Config.showUnreadsInWindowTitle = true;
+            const tabManager = new TabManager();
+            tabManager.activeTabs.set('test-server-id', 'test-view-id');
+
+            AppState.mockAppState.emit(UPDATE_APPSTATE_TOTALS, false, 0, true);
+
+            expect(mockMainWindow.setTitle).toHaveBeenLastCalledWith('* Town Square - Test Server - Mattermost');
+            Config.showUnreadsInWindowTitle = false;
+        });
+
+        it('should keep the last unread state when the title is updated for another reason', () => {
+            Config.showUnreadsInWindowTitle = true;
+            const tabManager = new TabManager();
+            tabManager.activeTabs.set('test-server-id', 'test-view-id');
+            AppState.mockAppState.emit(UPDATE_APPSTATE_TOTALS, false, 2, true);
+
+            ViewManager.mockViewManager.emit(VIEW_TITLE_UPDATED, 'test-view-id');
+
+            expect(mockMainWindow.setTitle).toHaveBeenLastCalledWith('(2) * Town Square - Test Server - Mattermost');
+            Config.showUnreadsInWindowTitle = false;
         });
     });
 
