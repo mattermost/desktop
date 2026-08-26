@@ -98,6 +98,11 @@ export async function ensureCallsPlugin(baseUrl: string, token: string): Promise
             method: 'POST',
             body: JSON.stringify({id: CALLS_PLUGIN_ID, version: ''}),
         });
+
+        // Marketplace install leaves the plugin inactive — enable it explicitly.
+        await apiRequest<Record<string, unknown>>(baseUrl, token, `/api/v4/plugins/${CALLS_PLUGIN_ID}/enable`, {
+            method: 'POST',
+        });
     }
 
     // Wait until the plugin is active before reading or writing its config.

@@ -82,10 +82,6 @@ test.describe('calls/slash_commands', () => {
 
             await sendSlashCommand(serverWin, '/call end');
 
-            // /call end opens a confirmation modal — click "End call" to confirm.
-            await serverWin.waitForSelector('#end_call_confirmation', {timeout: 10_000});
-            await serverWin.click('[data-testid="modal-confirm-button"]');
-
             await expect.poll(
                 () => findCallsWidgetWindow(electronApp),
                 {timeout: 30_000, message: 'Calls widget must close after /call end'},
