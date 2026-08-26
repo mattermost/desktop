@@ -57,14 +57,14 @@ const findPreviewFixturePost = () => {
     }
     return null;
 };
-const findVisibleLoadedPreviewButton = (root) => {
+const findVisibleLoadedPreviewTarget = (root) => {
     for (const button of root.querySelectorAll('.file-preview__button')) {
         if (!isPreviewControlVisible(button)) {
             continue;
         }
         const loadedImg = button.querySelector('img:not(.image-loading__placeholder)');
-        if (loadedImg instanceof HTMLImageElement && loadedImg.complete && loadedImg.naturalWidth > 0) {
-            return button;
+        if (isLoadedPreviewImage(loadedImg)) {
+            return loadedImg;
         }
     }
     return null;
@@ -84,9 +84,9 @@ async function waitForLoadedImagePreviewControl(serverWin: ServerView): Promise<
             return false;
         }
 
-        const previewButton = findVisibleLoadedPreviewButton(post);
-        if (previewButton) {
-            previewButton.scrollIntoView({block: 'center'});
+        const previewTarget = findVisibleLoadedPreviewTarget(post);
+        if (previewTarget) {
+            previewTarget.scrollIntoView({block: 'center'});
             return true;
         }
 
@@ -204,11 +204,17 @@ async function openImagePreview(serverWin: ServerView): Promise<boolean> {
 
         // Mattermost 11.11 dropped onClick from the .file-preview__button wrapper.
         // SizeAwareImage handles clicks on the loaded <img> only (and ignores
-        // them until load — MM-69174). Clicking the wrapper is a no-op.
-        const previewButton = findVisibleLoadedPreviewButton(root);
-        const loadedImg = previewButton?.querySelector('img:not(.image-loading__placeholder)');
+        // them until load — MM-69174), so findVisibleLoadedPreviewTarget returns
+        // the loaded <img> rather than its wrapper. Clicking the wrapper is a no-op.
+        const previewTarget = findVisibleLoadedPreviewTarget(root);
+        if (previewTarget) {
+            previewTarget.scrollIntoView({block: 'center', inline: 'center'});
+            previewTarget.focus?.();
+            previewTarget.click();
+            return true;
+        }
+
         const clickTargets = [
-            isLoadedPreviewImage(loadedImg) ? loadedImg : null,
             ...Array.from(root.querySelectorAll('[aria-label*="' + PREVIEW_FILE_NAME + '" i]')),
             ...Array.from(root.querySelectorAll(LOADED_IMAGE_SELECTOR)),
             root.querySelector('.post-image__thumbnail'),
