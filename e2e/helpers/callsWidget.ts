@@ -5,12 +5,17 @@ import type {Page} from '@playwright/test';
 import type {ElectronApplication} from 'playwright';
 
 import {expect} from '../fixtures/index';
-import {CALLS_LEAVE_CALL} from './ipcChannels';
 import type {ServerView} from './serverView';
 
 export function findCallsWidgetWindow(electronApp: ElectronApplication): Page | null {
     return electronApp.windows().find((w) => {
         try {
+            // A page being torn down still appears in windows(). Treat it as gone —
+            // otherwise startCall can bind to a dying widget and later fail with
+            // "Target page, context or browser has been closed".
+            if (w.isClosed()) {
+                return false;
+            }
             const url = w.url();
             return url.includes('/plugins/com.mattermost.calls/standalone/widget.html');
         } catch {
@@ -22,15 +27,19 @@ export function findCallsWidgetWindow(electronApp: ElectronApplication): Page | 
 export async function waitForCallsWidgetWindow(
     electronApp: ElectronApplication,
     timeoutMs = 20_000,
+    excludePage?: Page | null,
 ): Promise<Page | null> {
     const existing = findCallsWidgetWindow(electronApp);
-    if (existing) {
+    if (existing && existing !== excludePage) {
         return existing;
     }
 
     return electronApp.waitForEvent('window', {
         predicate: (w) => {
             try {
+                if (w === excludePage || w.isClosed()) {
+                    return false;
+                }
                 return w.url().includes('/plugins/com.mattermost.calls/standalone/widget.html');
             } catch {
                 return false;
@@ -65,11 +74,16 @@ export async function sendWidgetShortcut(
 }
 
 export async function startCall(electronApp: ElectronApplication, serverWin: ServerView): Promise<Page> {
+    // Any widget still present belongs to a previous call whose teardown has not
+    // finished. Capture it so we never bind to it — a stale page can close mid-setup,
+    // surfacing later as "Target page, context or browser has been closed".
+    const staleWidget = findCallsWidgetWindow(electronApp);
+
     await serverWin.waitForSelector('#post_textbox', {timeout: 10_000});
     await serverWin.type('#post_textbox', '/call start');
     await serverWin.click('[data-testid="SendMessageButton"]');
 
-    const widgetWindow = await waitForCallsWidgetWindow(electronApp, 30_000);
+    const widgetWindow = await waitForCallsWidgetWindow(electronApp, 30_000, staleWidget);
     if (!widgetWindow) {
         throw new Error('Calls widget did not open — is the Calls plugin enabled on this server?');
     }
@@ -102,21 +116,21 @@ export async function closeCallsWidget(
     widgetWindow: Page,
     serverWin?: ServerView,
 ): Promise<void> {
-    const leaveClicked = await widgetWindow.evaluate(() => {
-        const btn = document.querySelector(
-            'button[aria-label*="Leave"], button[aria-label*="leave"], button[aria-label*="End"], button[aria-label*="end"]',
-        ) as HTMLButtonElement | null;
-        if (btn) {
-            btn.click();
-            return true;
-        }
-        return false;
-    });
-
-    if (!leaveClicked) {
-        await electronApp.evaluate(({ipcMain}, channel) => {
-            ipcMain.emit(channel);
-        }, CALLS_LEAVE_CALL);
+    // Leave via the keyboard shortcut, which calls disconnect() directly (see the
+    // "MM Calls - Leave call keyboard shortcut" test).
+    // If the shortcut ever proves unreliable, the faithful alternative is the menu
+    // route used by the Calls plugin's own suite: click #calls-widget-leave-button,
+    // then click "Leave call" inside getByTestId('dropdownmenu').
+    if (!widgetWindow.isClosed()) {
+        const isMac = process.platform === 'darwin';
+        await sendWidgetShortcut(
+            electronApp,
+            'L',
+            isMac ? ['shift', 'meta'] : ['shift', 'control'],
+        ).catch(() => {
+            // Widget disappeared between the isClosed() check and the shortcut; the
+            // poll below is the real assertion.
+        });
     }
 
     await expect.poll(
