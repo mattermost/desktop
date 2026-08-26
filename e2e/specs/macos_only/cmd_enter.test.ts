@@ -4,7 +4,7 @@
 import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
-import {POST_TEXTBOX_SELECTOR, typeIntoPostTextbox} from '../../helpers/mattermostShell';
+import {POST_TEXTBOX_SELECTOR, typeIntoPostTextbox, waitForMattermostShellReady} from '../../helpers/mattermostShell';
 
 test.describe('macos_only/cmd_enter', () => {
     test.use({appConfig: demoMattermostConfig});
@@ -17,6 +17,7 @@ test.describe('macos_only/cmd_enter', () => {
 
             const serverWin = serverMap[demoMattermostConfig.servers[0].name][0].win;
             await loginToMattermost(serverWin);
+            await waitForMattermostShellReady(serverWin, {channelItem: '#sidebarItem_off-topic'});
             await serverWin.click('#sidebarItem_off-topic');
             await serverWin.waitForSelector(POST_TEXTBOX_SELECTOR, {timeout: 15_000});
             await typeIntoPostTextbox(serverWin, 'mac line');

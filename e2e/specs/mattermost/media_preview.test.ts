@@ -57,14 +57,14 @@ const findPreviewFixturePost = () => {
     }
     return null;
 };
-const findVisibleLoadedPreviewButton = (root) => {
+const findVisibleLoadedPreviewTarget = (root) => {
     for (const button of root.querySelectorAll('.file-preview__button')) {
         if (!isPreviewControlVisible(button)) {
             continue;
         }
         const loadedImg = button.querySelector('img:not(.image-loading__placeholder)');
-        if (loadedImg instanceof HTMLImageElement && loadedImg.complete && loadedImg.naturalWidth > 0) {
-            return button;
+        if (isLoadedPreviewImage(loadedImg)) {
+            return loadedImg;
         }
     }
     return null;
@@ -84,9 +84,9 @@ async function waitForLoadedImagePreviewControl(serverWin: ServerView): Promise<
             return false;
         }
 
-        const previewButton = findVisibleLoadedPreviewButton(post);
-        if (previewButton) {
-            previewButton.scrollIntoView({block: 'center'});
+        const previewTarget = findVisibleLoadedPreviewTarget(post);
+        if (previewTarget) {
+            previewTarget.scrollIntoView({block: 'center'});
             return true;
         }
 
@@ -202,12 +202,10 @@ async function openImagePreview(serverWin: ServerView): Promise<boolean> {
             return false;
         }
 
-        // Prefer the visible SizeAwareImage control (11.10+/MM-69174); clicks on the
-        // placeholder button are intentionally ignored until the real image loads.
-        const previewButton = findVisibleLoadedPreviewButton(root);
-        if (previewButton) {
-            previewButton.scrollIntoView({block: 'center', inline: 'center'});
-            previewButton.click();
+        const previewTarget = findVisibleLoadedPreviewTarget(root);
+        if (previewTarget) {
+            previewTarget.scrollIntoView({block: 'center', inline: 'center'});
+            previewTarget.click();
             return true;
         }
 
