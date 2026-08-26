@@ -264,3 +264,4 @@ export const RESET_THEME = 'reset-theme';
 export const SESSION_ATTRIBUTES_MANIFEST_INVALIDATED = 'session-attributes-manifest-invalidated';
 export const SESSION_ATTRIBUTES_RESEND_REQUESTED = 'session-attributes-resend-requested';
 export const SESSION_ATTRIBUTES_FIELD_UPDATED = 'session-attributes-field-updated';
+export const GET_SESSION_ATTRIBUTES = 'get-session-attributes';
