@@ -29,10 +29,6 @@ export class AppVersionManager extends JsonFileManager<AppState> {
         }
 
         if (!this.getValue('installId')) {
-            // SentryHandler reads the install ID synchronously during startup, well before this
-            // write lands, so a launch that fails to persist one still reports under it and won't
-            // reuse it next time. Left alone deliberately: an install that can't write
-            // app-state.json has bigger problems than a rotating ID.
             this.setValue('installId', uuid()).catch((e) => {
                 log.warn('failed to persist install ID, the next launch will generate another', e);
             });

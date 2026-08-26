@@ -47,10 +47,6 @@ export class SentryHandler {
         return Sentry.flush(3000);
     };
 
-    // The install ID must go through initialScope rather than a later Sentry.setUser call: the
-    // session is started by a default integration during Sentry.init, and its distinct id is read
-    // from the scope at that moment. Setting the user afterwards populates issue counts but leaves
-    // release health without a user.
     private getInitialScope = () => {
         const installId = AppVersionManager.installId;
         if (!installId) {
