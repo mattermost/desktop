@@ -66,6 +66,8 @@ export type AppConfig = {
     appLanguage: string;
     logLevel: string;
     viewLimit: number;
+    downloadLocation?: string;
+    useNativeTitleBar?: boolean;
 };
 
 const baseConfig: AppConfig = {

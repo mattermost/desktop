@@ -269,6 +269,65 @@ describe('common/servers/serverManager', () => {
             const reloadedIndex = newOrder.indexOf(reloadedServer.id);
             expect(reloadedIndex).toBe(1);
         });
+
+        it('should never persist an empty server list while reloading', () => {
+            Config.setServers.mockClear();
+            const serverToReload = serverManager.getOrderedServers()[1];
+
+            serverManager.reloadServer(serverToReload.id);
+
+            expect(Config.setServers).toHaveBeenCalled();
+            Config.setServers.mock.calls.forEach(([servers]) => {
+                expect(servers).toHaveLength(3);
+            });
+        });
+
+        it('should keep every server and the current index when reloading the current server', () => {
+            // removeServer hands the current server off to its neighbour before
+            // addServerToMap flips it back, so this is the one path where the
+            // intermediate state is a shorter, non-empty list.
+            Config.setServers.mockClear();
+            const currentServer = serverManager.getOrderedServers()[0];
+            expect(serverManager.getCurrentServerId()).toBe(currentServer.id);
+
+            serverManager.reloadServer(currentServer.id);
+
+            expect(Config.setServers).toHaveBeenCalled();
+            Config.setServers.mock.calls.forEach(([servers]) => {
+                expect(servers).toHaveLength(3);
+            });
+
+            // persistServers() emits in Map insertion order, so the reloaded server
+            // moves to the end of the array. init() sorts by the `order` field, so
+            // that field is what has to survive, not the array position.
+            const [servers, lastActiveServer] = Config.setServers.mock.calls.at(-1);
+            const byOrder = [...servers].sort((a, b) => a.order - b.order);
+            expect(byOrder.map((s) => s.name)).toEqual(['Local Server 1', 'Local Server 2', 'Local Server 3']);
+            expect(lastActiveServer).toBe(0);
+        });
+
+        it('should persist the reloaded server for a single-server config', () => {
+            Config.predefinedServers = [];
+            Config.localServers = [{name: 'Only Server', url: 'http://only.com', order: 0}];
+            Config.lastActiveServer = 0;
+
+            const singleServerManager = new ServerManager();
+            singleServerManager.init();
+            Config.setServers.mockClear();
+
+            const onlyServer = singleServerManager.getOrderedServers()[0];
+            singleServerManager.reloadServer(onlyServer.id);
+
+            // Regression: reloadServer used to persist only the intermediate removal,
+            // leaving config.json with `servers: []` and lastActiveServer: -1.
+            const lastCall = Config.setServers.mock.calls.at(-1);
+            expect(lastCall[0]).toHaveLength(1);
+            expect(lastCall[0][0].name).toBe('Only Server');
+            expect(lastCall[1]).toBe(0);
+            Config.setServers.mock.calls.forEach(([servers]) => {
+                expect(servers).toHaveLength(1);
+            });
+        });
     });
 
     describe('removeServer', () => {
