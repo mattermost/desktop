@@ -285,13 +285,7 @@ export class ServerManager extends EventEmitter {
         const originalIndex = this.serverOrder.findIndex((id) => id === serverId);
 
         // A reload is remove-then-re-add of the same server, so none of the
-        // intermediate steps should reach disk. Persisting the removal on its own
-        // wrote `servers: []` for a single-server config, and the re-add did not
-        // write anything back: addServerToMap is called with persist=false,
-        // updateCurrentServer short-circuits because the id is already current,
-        // and the order is unchanged so updateServerOrder never runs. That left
-        // config.json with no servers. Suppress the intermediate writes and
-        // persist the final state once instead.
+        // intermediate steps should reach disk.
         this.removeServer(serverId, false);
         const newServer = this.addServerToMap(server, wasCurrent, false);
         if (wasCurrent) {
