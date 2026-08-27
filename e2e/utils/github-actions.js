@@ -123,17 +123,7 @@ async function updateInitialOsStatuses({github, context, sha, platforms, include
 
 /**
  * Mark the E2E commit statuses as cancelled/skipped on a SHA.
- *
- * The e2e/<os> contexts are required status checks on master, and a required
- * status only passes on `success` — commit statuses have no "skipped" state.
- * So the state carries the intent:
- *
- *   `error`   — coverage was withdrawn without a decision to skip (E2E/Run
- *               pulled mid-flight). The gate should stay closed.
- *   `success` — a maintainer applied E2E/Override to waive E2E. The gate is
- *               meant to open; the description records that no tests ran.
- *
- * @param {'error'|'failure'|'success'} [params.state]
+ * The e2e/<os> contexts are required checks, so only `success` unblocks merge.
  */
 async function markE2EStatusesCancelled({github, context, sha, reason = CANCELLED_STATUS_DESCRIPTION, state = 'error'}) {
     const description = String(reason).substring(0, 140);
