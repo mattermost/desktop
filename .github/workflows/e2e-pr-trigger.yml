@@ -1,9 +1,8 @@
 name: E2E PR Trigger
 
 # Adds E2E/Run on non-draft PRs to master (Matterwick dispatches e2e-functional.yml).
-# E2E/Override cancels E2E and passes the required e2e/* statuses so the PR can
-# merge; removing it re-arms a real run. Manual E2E/Run removal cancels in-flight
-# runs and leaves e2e/* red, since that withdraws coverage without waiving it.
+# E2E/Override waives E2E and passes the required e2e/* statuses; removing it re-arms.
+# Manual E2E/Run removal cancels in-flight runs and leaves e2e/* red.
 # One job keeps the PR checks list to a single row. Concurrency is keyed by
 # event type so unrelated label bots cannot cancel an in-progress trigger (PR #3891).
 on:
@@ -110,8 +109,6 @@ jobs:
               reason: 'E2E waived (E2E/Override label applied) — no tests ran',
             });
 
-      # Without this, dropping the override would leave the waived-green
-      # statuses standing and E2E would never run again on this SHA.
       - name: Re-arm E2E on E2E/Override removal
         if: >-
           !github.event.pull_request.draft
