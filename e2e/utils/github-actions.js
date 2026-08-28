@@ -123,9 +123,9 @@ async function updateInitialOsStatuses({github, context, sha, platforms, include
 
 /**
  * Mark the E2E commit statuses as cancelled/skipped on a SHA.
- * GitHub commit statuses have no "skipped" state — `error` matches mobile E2E.
+ * The e2e/<os> contexts are required checks, so only `success` unblocks merge.
  */
-async function markE2EStatusesCancelled({github, context, sha, reason = CANCELLED_STATUS_DESCRIPTION}) {
+async function markE2EStatusesCancelled({github, context, sha, reason = CANCELLED_STATUS_DESCRIPTION, state = 'error'}) {
     const description = String(reason).substring(0, 140);
     const targetUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
     const contexts = [...E2E_OS_STATUS_CONTEXTS, ...E2E_POLICY_STATUS_CONTEXTS];
@@ -135,7 +135,7 @@ async function markE2EStatusesCancelled({github, context, sha, reason = CANCELLE
             owner: context.repo.owner,
             repo: context.repo.repo,
             sha,
-            state: 'error',
+            state,
             context: statusContext,
             description,
             target_url: targetUrl,

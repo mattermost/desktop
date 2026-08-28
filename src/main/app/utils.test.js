@@ -209,6 +209,38 @@ describe('main/app/utils', () => {
             resizeScreen(browserWindow);
             expect(browserWindow.setPosition).toHaveBeenCalledWith(449, 349);
         });
+
+        it('should keep position when the window midpoint is on a second display', () => {
+            MainWindow.get.mockReturnValue(undefined);
+            screen.getAllDisplays.mockReturnValue([
+                {
+                    workArea: {
+                        x: 0,
+                        y: 0,
+                        width: 1920,
+                        height: 1080,
+                    },
+                },
+                {
+                    workArea: {
+                        x: 1920,
+                        y: 0,
+                        width: 1920,
+                        height: 1080,
+                    },
+                },
+            ]);
+            const browserWindow = {
+                getPosition: () => [2200, 100],
+                getSize: () => [1280, 720],
+                setPosition: jest.fn(),
+                center: jest.fn(),
+                once: jest.fn(),
+            };
+            resizeScreen(browserWindow);
+            expect(browserWindow.setPosition).toHaveBeenCalledWith(2200, 100);
+            expect(browserWindow.center).not.toHaveBeenCalled();
+        });
     });
 
     describe('updateServerInfos', () => {
@@ -228,6 +260,37 @@ describe('main/app/utils', () => {
 
             expect(mockServerInfoInstance.fetchRemoteInfo).toHaveBeenCalled();
             expect(ServerManager.updateRemoteInfo).not.toHaveBeenCalled();
+        });
+
+        it('should record the server as unvalidated when the site URL cannot be parsed', async () => {
+            const mockServer = new MattermostServer({id: 'server-1', name: 'Test Server', url: 'http://localhost:8065'});
+            const data = {siteURL: 'not-a-url'};
+            const mockServerInfoInstance = {
+                fetchRemoteInfo: jest.fn().mockResolvedValue(data),
+                fetchConfigData: jest.fn(),
+            };
+            ServerInfo.mockImplementation(() => mockServerInfoInstance);
+
+            await updateServerInfos([mockServer]);
+
+            expect(MattermostServer).not.toHaveBeenCalledWith({name: 'temp', url: 'not-a-url'}, false);
+            expect(mockServerInfoInstance.fetchConfigData).not.toHaveBeenCalled();
+            expect(ServerManager.updateRemoteInfo).toHaveBeenCalledWith('server-1', data, false);
+        });
+
+        it('should record the server as validated when the site URL matches', async () => {
+            const mockServer = new MattermostServer({id: 'server-1', name: 'Test Server', url: 'http://localhost:8065'});
+            const data = {siteURL: 'http://localhost:8065'};
+            const mockServerInfoInstance = {
+                fetchRemoteInfo: jest.fn().mockResolvedValue(data),
+                fetchConfigData: jest.fn().mockResolvedValue(data),
+            };
+            ServerInfo.mockImplementation(() => mockServerInfoInstance);
+
+            await updateServerInfos([mockServer]);
+
+            expect(MattermostServer).toHaveBeenCalledWith({name: 'temp', url: 'http://localhost:8065/'}, false);
+            expect(ServerManager.updateRemoteInfo).toHaveBeenCalledWith('server-1', data, true);
         });
     });
 });

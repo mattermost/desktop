@@ -180,8 +180,9 @@ export class ServerManager extends EventEmitter {
 
         this.remoteInfo.set(serverId, remoteInfo);
 
-        if (remoteInfo.siteURL && server.url.toString() !== new URL(remoteInfo.siteURL).toString() && isSiteURLValidated) {
-            server.updateURL(remoteInfo.siteURL);
+        const siteURL = remoteInfo.siteURL ? parseURL(remoteInfo.siteURL) : undefined;
+        if (siteURL && server.url.toString() !== siteURL.toString() && isSiteURLValidated) {
+            server.updateURL(siteURL);
             this.servers.set(serverId, server);
             this.emit(SERVER_URL_CHANGED, serverId);
             this.persistServers();
@@ -216,16 +217,18 @@ export class ServerManager extends EventEmitter {
         this.emit(SERVER_THEME_CHANGED, serverId);
     };
 
-    updateServerOrder = (serverOrder: string[]) => {
+    updateServerOrder = (serverOrder: string[], persist = true) => {
         log.debug('updateServerOrder', {serverOrder});
 
         this.serverOrder = serverOrder;
-        this.persistServers();
+        if (persist) {
+            this.persistServers();
+        }
         this.emit(SERVER_ORDER_UPDATED, serverOrder);
     };
 
     // Remove setCurrentServer method since we only need to persist changes when switching or removing servers
-    updateCurrentServer = (serverId: string) => {
+    updateCurrentServer = (serverId: string, persist = true) => {
         log.debug('updateCurrentServer', {serverId});
 
         if (this.currentServerId === serverId) {
@@ -234,10 +237,12 @@ export class ServerManager extends EventEmitter {
 
         this.currentServerId = serverId;
         this.emit(SERVER_SWITCHED, serverId);
-        this.persistServers();
+        if (persist) {
+            this.persistServers();
+        }
     };
 
-    removeServer = (serverId: string) => {
+    removeServer = (serverId: string, persist = true) => {
         log.debug('removeServer', {serverId});
 
         const server = this.servers.get(serverId);
@@ -260,11 +265,13 @@ export class ServerManager extends EventEmitter {
         this.servers.delete(serverId);
 
         if (nextServer) {
-            this.updateCurrentServer(nextServer);
+            this.updateCurrentServer(nextServer, persist);
         }
 
         this.emit(SERVER_REMOVED, server);
-        this.persistServers();
+        if (persist) {
+            this.persistServers();
+        }
     };
 
     reloadServer = (serverId: string) => {
@@ -277,10 +284,12 @@ export class ServerManager extends EventEmitter {
         const wasCurrent = this.currentServerId === serverId;
         const originalIndex = this.serverOrder.findIndex((id) => id === serverId);
 
-        this.removeServer(serverId);
+        // A reload is remove-then-re-add of the same server, so none of the
+        // intermediate steps should reach disk.
+        this.removeServer(serverId, false);
         const newServer = this.addServerToMap(server, wasCurrent, false);
         if (wasCurrent) {
-            this.updateCurrentServer(newServer.id);
+            this.updateCurrentServer(newServer.id, false);
         }
 
         // Move the serverId back to its original position in serverOrder using updateServerOrder
@@ -289,8 +298,10 @@ export class ServerManager extends EventEmitter {
             const newOrder = [...this.serverOrder];
             newOrder.splice(newIdx, 1);
             newOrder.splice(originalIndex, 0, newServer.id);
-            this.updateServerOrder(newOrder);
+            this.updateServerOrder(newOrder, false);
         }
+
+        this.persistServers();
     };
 
     init = () => {

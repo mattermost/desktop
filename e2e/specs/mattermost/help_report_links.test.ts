@@ -32,6 +32,9 @@ test.describe('mattermost/help_report_links', () => {
             await loginToMattermost(serverEntry!.win);
             await serverEntry!.win.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
 
+            // Native Help always uses shell.openExternal for http(s) URLs, including
+            // in-server channel links. Switching to a channel in-app is the webapp
+            // Main menu, not the desktop Help menu. System Console help-text is webapp.
             await stubShellOpenExternal(electronApp);
             try {
                 await patchHelpMenuRemoteInfo(electronApp, {

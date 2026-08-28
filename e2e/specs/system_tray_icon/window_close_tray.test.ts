@@ -3,7 +3,7 @@
 
 import {test, expect} from '../../fixtures/index';
 import {demoConfig, type AppConfig} from '../../helpers/config';
-import {restoreMessageBox, stubMessageBoxResponses} from '../../helpers/dialog';
+import {stubMessageBoxResponses} from '../../helpers/dialog';
 import {evaluateInMainProcess} from '../../helpers/testRefs';
 import {isMainWindowVisible} from '../../helpers/tray';
 
@@ -26,22 +26,18 @@ test.describe('system_tray_icon/window_close_tray', () => {
             ).toBe(true);
 
             await stubMessageBoxResponses(electronApp, [{response: 1}]);
-            try {
-                await evaluateInMainProcess(electronApp, () => {
-                    const refs = (global as any).__e2eTestRefs;
-                    if (!refs) {
-                        throw new Error('__e2eTestRefs missing (NODE_ENV must be test)');
-                    }
-                    refs.MainWindow.get()?.close();
-                });
+            await evaluateInMainProcess(electronApp, () => {
+                const refs = (global as any).__e2eTestRefs;
+                if (!refs) {
+                    throw new Error('__e2eTestRefs missing (NODE_ENV must be test)');
+                }
+                refs.MainWindow.get()?.close();
+            });
 
-                await expect.poll(
-                    () => electronApp.windows().some((window) => window.url().includes('index')),
-                    {timeout: 10_000, message: 'App should remain running after declining quit'},
-                ).toBe(true);
-            } finally {
-                await restoreMessageBox(electronApp);
-            }
+            await expect.poll(
+                () => electronApp.windows().some((window) => window.url().includes('index')),
+                {timeout: 10_000, message: 'App should remain running after declining quit'},
+            ).toBe(true);
         },
     );
 });

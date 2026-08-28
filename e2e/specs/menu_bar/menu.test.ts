@@ -33,7 +33,13 @@ test.describe('menu/menu', () => {
         async ({electronApp, mainWindow}) => {
             expect(mainWindow).toBeDefined();
 
-            await clickApplicationMenuItem(electronApp, 'window', {label: 'Show Servers'});
+            // Real Ctrl+Shift+S / Cmd+Ctrl+S into the native menu bar is not
+            // reliable in headless CI. Match the accelerator, then click the item.
+            const showServersAccelerator = process.platform === 'darwin' ? 'Cmd+Ctrl+S' : 'Ctrl+Shift+S';
+            await clickApplicationMenuItem(electronApp, 'window', {
+                label: 'Show Servers',
+                accelerator: showServersAccelerator,
+            });
 
             const dropdownWindow = electronApp.windows().find((w) => w.url().includes('dropdown')) ??
                 await electronApp.waitForEvent('window', {
