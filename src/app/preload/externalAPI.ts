@@ -55,6 +55,13 @@ import {
     POPOUT_CLOSED,
     WINDOW_CLOSE,
     UPDATE_POPOUT_TITLE_TEMPLATE,
+    GET_DESKTOP_THEME_CAPABILITIES,
+    GET_SYSTEM_APPEARANCE,
+    SYSTEM_APPEARANCE_INVALIDATED,
+    REGISTER_DESKTOP_THEME_SURFACE,
+    DESKTOP_THEME_SURFACE_STATE_CHANGED,
+    APPLY_DESKTOP_THEME,
+    RELEASE_DESKTOP_THEME_SURFACE,
 } from 'common/communication';
 
 import type {ExternalAPI} from 'types/externalAPI';
@@ -103,6 +110,13 @@ const desktopAPI: DesktopAPI = {
     updateTheme: (theme) => ipcRenderer.send(UPDATE_THEME, theme),
     getDarkMode: () => ipcRenderer.invoke(GET_DARK_MODE),
     onDarkModeChanged: (listener) => createListener(DARK_MODE_CHANGE, listener),
+    getDesktopThemeCapabilities: () => ipcRenderer.invoke(GET_DESKTOP_THEME_CAPABILITIES),
+    getSystemAppearance: () => ipcRenderer.invoke(GET_SYSTEM_APPEARANCE),
+    onSystemAppearanceInvalidated: (listener) => createListener(SYSTEM_APPEARANCE_INVALIDATED, listener),
+    registerDesktopThemeSurface: () => ipcRenderer.invoke(REGISTER_DESKTOP_THEME_SURFACE),
+    onDesktopThemeSurfaceStateChanged: (listener) => createListener(DESKTOP_THEME_SURFACE_STATE_CHANGED, listener),
+    applyDesktopTheme: (request) => ipcRenderer.invoke(APPLY_DESKTOP_THEME, request),
+    releaseDesktopThemeSurface: (surfaceId) => ipcRenderer.invoke(RELEASE_DESKTOP_THEME_SURFACE, surfaceId),
 
     // Calls
     joinCall: (opts) => ipcRenderer.invoke(CALLS_JOIN_CALL, opts),
@@ -228,31 +242,36 @@ contextBridge.executeInMainWorld({
 });
 
 function getThemeValues() {
+    ipcRenderer.send(UPDATE_SERVER_THEME, readThemeValues());
+}
+
+function readThemeValues() {
     const style = window.getComputedStyle(document.body);
-    ipcRenderer.send(UPDATE_SERVER_THEME, {
-        sidebarBg: style.getPropertyValue('--sidebar-bg'),
-        sidebarText: style.getPropertyValue('--sidebar-text'),
-        sidebarUnreadText: style.getPropertyValue('--sidebar-unread-text'),
-        sidebarTextHoverBg: style.getPropertyValue('--sidebar-text-hover-bg'),
-        sidebarTextActiveBorder: style.getPropertyValue('--sidebar-text-active-border'),
-        sidebarTextActiveColor: style.getPropertyValue('--sidebar-text-active-color'),
-        sidebarHeaderBg: style.getPropertyValue('--sidebar-header-bg'),
-        sidebarTeamBarBg: style.getPropertyValue('--sidebar-team-bar-bg'),
-        sidebarHeaderTextColor: style.getPropertyValue('--sidebar-header-text-color'),
-        onlineIndicator: style.getPropertyValue('--online-indicator'),
-        awayIndicator: style.getPropertyValue('--away-indicator'),
-        dndIndicator: style.getPropertyValue('--dnd-indicator'),
-        mentionBg: style.getPropertyValue('--mention-bg'),
-        mentionColor: style.getPropertyValue('--mention-color'),
-        centerChannelBg: style.getPropertyValue('--center-channel-bg'),
-        centerChannelColor: style.getPropertyValue('--center-channel-color'),
-        newMessageSeparator: style.getPropertyValue('--new-message-separator'),
-        linkColor: style.getPropertyValue('--link-color'),
-        buttonBg: style.getPropertyValue('--button-bg'),
-        buttonColor: style.getPropertyValue('--button-color'),
-        errorTextColor: style.getPropertyValue('--error-text'),
-        mentionHighlightBg: style.getPropertyValue('--mention-highlight-bg'),
-        mentionHighlightLink: style.getPropertyValue('--mention-highlight-link'),
-        codeTheme: style.getPropertyValue('--code-theme'),
-    });
+    const readProperty = (name: string) => style.getPropertyValue(name).trim();
+    return {
+        sidebarBg: readProperty('--sidebar-bg'),
+        sidebarText: readProperty('--sidebar-text'),
+        sidebarUnreadText: readProperty('--sidebar-unread-text'),
+        sidebarTextHoverBg: readProperty('--sidebar-text-hover-bg'),
+        sidebarTextActiveBorder: readProperty('--sidebar-text-active-border'),
+        sidebarTextActiveColor: readProperty('--sidebar-text-active-color'),
+        sidebarHeaderBg: readProperty('--sidebar-header-bg'),
+        sidebarTeamBarBg: readProperty('--sidebar-team-bar-bg'),
+        sidebarHeaderTextColor: readProperty('--sidebar-header-text-color'),
+        onlineIndicator: readProperty('--online-indicator'),
+        awayIndicator: readProperty('--away-indicator'),
+        dndIndicator: readProperty('--dnd-indicator'),
+        mentionBg: readProperty('--mention-bg'),
+        mentionColor: readProperty('--mention-color'),
+        centerChannelBg: readProperty('--center-channel-bg'),
+        centerChannelColor: readProperty('--center-channel-color'),
+        newMessageSeparator: readProperty('--new-message-separator'),
+        linkColor: readProperty('--link-color'),
+        buttonBg: readProperty('--button-bg'),
+        buttonColor: readProperty('--button-color'),
+        errorTextColor: readProperty('--error-text'),
+        mentionHighlightBg: readProperty('--mention-highlight-bg'),
+        mentionHighlightLink: readProperty('--mention-highlight-link'),
+        codeTheme: readProperty('--code-theme'),
+    };
 }

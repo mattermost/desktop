@@ -259,6 +259,13 @@ export const UPDATE_THEME = 'update-theme';
 export const UPDATE_SERVER_THEME = 'update-server-theme';
 export const SERVER_THEME_CHANGED = 'server-theme-changed';
 export const RESET_THEME = 'reset-theme';
+export const GET_DESKTOP_THEME_CAPABILITIES = 'get-desktop-theme-capabilities';
+export const GET_SYSTEM_APPEARANCE = 'get-system-appearance';
+export const SYSTEM_APPEARANCE_INVALIDATED = 'system-appearance-invalidated';
+export const REGISTER_DESKTOP_THEME_SURFACE = 'register-desktop-theme-surface';
+export const DESKTOP_THEME_SURFACE_STATE_CHANGED = 'desktop-theme-surface-state-changed';
+export const APPLY_DESKTOP_THEME = 'apply-desktop-theme';
+export const RELEASE_DESKTOP_THEME_SURFACE = 'release-desktop-theme-surface';
 
 // Session attributes events
 export const SESSION_ATTRIBUTES_MANIFEST_INVALIDATED = 'session-attributes-manifest-invalidated';

@@ -3,6 +3,8 @@
 
 import Joi from 'joi';
 
+import type {DesktopShellTheme, DesktopThemeApplyRequest} from '@mattermost/desktop-api';
+
 import {Logger} from 'common/log';
 import {isValidURL} from 'common/utils/url';
 
@@ -375,19 +377,23 @@ function validateAgainstSchema<T>(data: T, schema: Joi.ObjectSchema<T> | Joi.Arr
 export function ipcValidate<E, A extends unknown[], R>(
     handler: (event: E, ...args: A) => R,
     schemas: Joi.Schema[],
+    options: {throwOnError?: boolean} = {},
 ): (event: E, ...args: A) => R {
     return (event: E, ...args: A) => {
         for (let i = 0; i < schemas.length; i++) {
             const {error} = schemas[i].validate(args[i]);
             if (error) {
                 log.error(`IPC validation failed at argument ${i}: ${error.message}`);
+                if (options.throwOnError) {
+                    throw new Error('Invalid IPC arguments');
+                }
                 return undefined as R;
             }
         }
         return handler(event, ...args);
     };
 }
-export const themeSchema = Joi.object({
+const themeFields = {
     sidebarBg: Joi.string().allow(''),
     sidebarText: Joi.string().allow(''),
     sidebarUnreadText: Joi.string().allow(''),
@@ -412,8 +418,32 @@ export const themeSchema = Joi.object({
     mentionHighlightBg: Joi.string().allow(''),
     mentionHighlightLink: Joi.string().allow(''),
     codeTheme: Joi.string().allow(''),
+};
+
+export const themeSchema = Joi.object({
+    ...themeFields,
     isUsingSystemTheme: Joi.boolean(),
 }).unknown(true);
+
+const opaqueDesktopThemeIdSchema = Joi.string().min(1).max(256).required().strict();
+export const desktopShellThemeSchema = Joi.object<DesktopShellTheme>(themeFields).
+    fork(Object.keys(themeFields), (schema) => (schema as Joi.StringSchema).max(256).required()).
+    keys({
+        centerChannelBg: Joi.string().pattern(/^#[0-9a-f]{6}$/i).required(),
+    }).
+    unknown(false);
+
+export const desktopThemeApplyRequestSchema = Joi.object<DesktopThemeApplyRequest>({
+    surfaceId: opaqueDesktopThemeIdSchema,
+    leaseId: opaqueDesktopThemeIdSchema,
+    sequence: Joi.number().integer().min(1).max(Number.MAX_SAFE_INTEGER).required(),
+    directive: Joi.object({
+        mode: Joi.string().valid('fixed', 'system').required(),
+        shellTheme: desktopShellThemeSchema.required(),
+    }).unknown(false).required(),
+}).unknown(false).strict().required();
+
+export const desktopThemeSurfaceIdSchema = opaqueDesktopThemeIdSchema;
 
 export const popoutViewPropsSchema = Joi.object({
     titleTemplate: Joi.string(),

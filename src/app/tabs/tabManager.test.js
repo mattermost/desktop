@@ -31,6 +31,7 @@ import {
 import ServerManager from 'common/servers/serverManager';
 import {ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
+import ThemeManager from 'main/themeManager';
 
 import {TabManager} from './tabManager';
 
@@ -112,6 +113,13 @@ jest.mock('common/config', () => ({
     viewLimit: 15,
 }));
 
+jest.mock('main/themeManager', () => ({
+    setCommittedMainViewResolver: jest.fn(),
+    handleCommittedMainViewChanged: jest.fn(),
+    handleDesktopThemeViewInvalidated: jest.fn(),
+    handleDesktopThemeViewTypeChanged: jest.fn(),
+}));
+
 describe('TabManager', () => {
     const mockWebContentsView = {
         on: jest.fn(),
@@ -127,6 +135,7 @@ describe('TabManager', () => {
         reload: jest.fn(),
         currentURL: 'https://test.com',
         serverId: 'test-server-id',
+        isDestroyed: jest.fn(() => false),
         isErrored: jest.fn(() => false),
         needsLoadingScreen: jest.fn(() => false),
     };
@@ -173,6 +182,47 @@ describe('TabManager', () => {
 
         ServerManager.getCurrentServerId.mockReturnValue('test-server-id');
         ServerManager.getServer.mockReturnValue(mockServer);
+    });
+
+    describe('committed main view', () => {
+        it('injects a resolver for the committed visible tab', () => {
+            const tabManager = new TabManager();
+            const resolver = ThemeManager.setCommittedMainViewResolver.mock.calls.at(-1)[0];
+            tabManager.currentVisibleTab = 'test-view-id';
+
+            const committedMainView = resolver();
+
+            expect(committedMainView.viewId).toBe('test-view-id');
+            expect(committedMainView.webContents).toBeDefined();
+        });
+
+        it('does not resolve an absent, invalid, or destroyed tab', () => {
+            const tabManager = new TabManager();
+            const resolver = ThemeManager.setCommittedMainViewResolver.mock.calls.at(-1)[0];
+
+            expect(resolver()).toBeUndefined();
+
+            tabManager.currentVisibleTab = 'test-view-id';
+            ViewManager.getView.mockReturnValue({...mockView, type: ViewType.WINDOW});
+            expect(resolver()).toBeUndefined();
+
+            ViewManager.getView.mockReturnValue(mockView);
+            WebContentsManager.getView.mockReturnValue({...mockWebContentsView, isDestroyed: () => true});
+            expect(resolver()).toBeUndefined();
+        });
+
+        it('publishes the owner gap before committing a replacement', () => {
+            const tabManager = new TabManager();
+            const observedOwners = [];
+            tabManager.currentVisibleTab = 'old-view-id';
+            ThemeManager.handleCommittedMainViewChanged.
+                mockImplementationOnce(() => observedOwners.push(tabManager.currentVisibleTab)).
+                mockImplementationOnce(() => observedOwners.push(tabManager.currentVisibleTab));
+
+            tabManager.setActiveTab('test-view-id');
+
+            expect(observedOwners).toEqual([undefined, 'test-view-id']);
+        });
     });
 
     describe('getOrderedTabsForServer', () => {
@@ -579,6 +629,18 @@ describe('TabManager', () => {
             expect(tabManager.tabOrder.get('test-server-id')).toEqual(['tab2', 'tab3']);
             expect(emitSpy).toHaveBeenCalledWith(TAB_REMOVED, 'test-server-id', 'tab1');
         });
+
+        it('clears the committed view when its removal has no replacement', () => {
+            const tabManager = new TabManager();
+            tabManager.tabOrder.set('test-server-id', ['only-tab-id']);
+            tabManager.activeTabs.set('test-server-id', 'only-tab-id');
+            tabManager.currentVisibleTab = 'only-tab-id';
+
+            ViewManager.mockViewManager.emit(VIEW_REMOVED, 'only-tab-id', 'test-server-id');
+
+            expect(tabManager.currentVisibleTab).toBeUndefined();
+            expect(ThemeManager.handleCommittedMainViewChanged).toHaveBeenCalled();
+        });
     });
 
     describe('handleViewUpdated', () => {
@@ -780,6 +842,7 @@ describe('TabManager', () => {
 
             expect(mockMainWindow.contentView.removeChildView).toHaveBeenCalledWith(mockView.getWebContentsView());
             expect(tabManager.currentVisibleTab).toBeUndefined();
+            expect(ThemeManager.handleCommittedMainViewChanged).toHaveBeenCalled();
         });
 
         it('should do nothing if no current visible tab', () => {
@@ -841,6 +904,7 @@ describe('TabManager', () => {
 
             // Verify switchToNextTabIfNecessary was called
             expect(switchToNextTabSpy).toHaveBeenCalledWith('test-tab-id', 'test-server-id');
+            expect(ThemeManager.handleDesktopThemeViewInvalidated).not.toHaveBeenCalled();
         });
 
         it('should not handle non-TAB type removal', () => {
@@ -1081,6 +1145,7 @@ describe('TabManager', () => {
 
             // Verify switchToTab was called
             expect(switchToTabSpy).toHaveBeenCalledWith('new-tab-id');
+            expect(ThemeManager.handleDesktopThemeViewTypeChanged).toHaveBeenCalledWith('new-tab-id', ViewType.TAB);
         });
 
         it('should not handle non-TAB type addition', () => {
@@ -1100,6 +1165,17 @@ describe('TabManager', () => {
             // Verify no tab-related actions were taken
             expect(tabManager.tabOrder.get('test-server-id')).toBeUndefined();
             expect(emitSpy).not.toHaveBeenCalledWith(TAB_ADDED, expect.any(String), expect.any(String));
+            expect(ThemeManager.handleDesktopThemeViewTypeChanged).toHaveBeenCalledWith('new-window-id', ViewType.WINDOW);
+        });
+
+        it('clears a committed view after it becomes a window', () => {
+            const tabManager = new TabManager();
+            tabManager.currentVisibleTab = 'converted-view-id';
+
+            ViewManager.mockViewManager.emit(VIEW_TYPE_ADDED, 'converted-view-id', ViewType.WINDOW);
+
+            expect(tabManager.currentVisibleTab).toBeUndefined();
+            expect(ThemeManager.handleCommittedMainViewChanged).toHaveBeenCalled();
         });
 
         it('should handle addition when view does not exist', () => {

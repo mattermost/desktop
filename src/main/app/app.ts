@@ -13,6 +13,8 @@ import {parseURL} from 'common/utils/url';
 import {localizeMessage} from 'main/i18nManager';
 import CertificateStore from 'main/security/certificateStore';
 import sentryHandler from 'main/sentryHandler';
+import SystemAppearanceMonitor from 'main/systemAppearanceMonitor';
+import ThemeManager from 'main/themeManager';
 
 import {getDeeplinkingURL, openDeepLink, resizeScreen} from './utils';
 
@@ -86,6 +88,9 @@ export function handleAppWillFinishLaunching() {
 
 export function handleAppBeforeQuit() {
     log.debug('handleAppBeforeQuit');
+
+    ThemeManager.shutdown();
+    SystemAppearanceMonitor.destroy();
 
     // Make sure tray icon gets removed if the user exits via CTRL-Q
     sentryHandler.flush();

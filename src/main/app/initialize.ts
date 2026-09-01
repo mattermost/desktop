@@ -62,6 +62,9 @@ import PermissionsManager from 'main/security/permissionsManager';
 import PreAuthManager from 'main/security/preAuthManager';
 import sentryHandler from 'main/sentryHandler';
 import SessionAttributesManager from 'main/sessionAttributes/sessionAttributesManager';
+import {createSystemAppearanceAdapter} from 'main/systemAppearanceAdapter';
+import SystemAppearanceMonitor from 'main/systemAppearanceMonitor';
+import ThemeManager from 'main/themeManager';
 import updateNotifier from 'main/updateNotifier';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 
@@ -283,6 +286,8 @@ function initializeInterCommunicationEventListeners() {
 
 async function initializeAfterAppReady() {
     maybeRegisterE2eHooks();
+    SystemAppearanceMonitor.replaceAdapter(createSystemAppearanceAdapter());
+    ThemeManager.initializeLifecycle();
 
     // Block all NTLM/Negotiate requests by default
     session.defaultSession.allowNTLMCredentialsForDomains('');

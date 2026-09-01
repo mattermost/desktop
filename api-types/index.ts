@@ -39,6 +39,129 @@ export type Theme = {
 
     isUsingSystemTheme: boolean;
 }
+export type DesktopThemeProtocolCapabilities = {
+    protocolVersion: 1;
+}
+export type SystemAppearanceUnknownReason =
+    | 'unsupported'
+    | 'unavailable'
+    | 'invalid'
+    | 'error'
+    | 'unstable';
+export type SystemAppearanceSnapshot =
+    | {
+        revision: number;
+        status: 'known';
+        value: 'light' | 'dark';
+    }
+    | {
+        revision: number;
+        status: 'unknown';
+        reason: SystemAppearanceUnknownReason;
+    };
+export type SystemAppearanceInvalidation = {
+    revision: number;
+    previousValueStatus: 'stale' | 'invalid';
+}
+export type DesktopThemeMainStandbyReason =
+    | 'not-current'
+    | 'desktop-sync-disabled'
+    | 'screen-locked'
+    | 'system-suspended'
+    | 'apply-failed'
+    | 'theme-reset-failed';
+export type DesktopThemeSurfaceState =
+    | {
+        revision: number;
+        scope: 'main-tab';
+        status: 'standby';
+        reason: DesktopThemeMainStandbyReason;
+    }
+    | {
+        revision: number;
+        scope: 'main-tab';
+        status: 'granted';
+        leaseId: string;
+    }
+    | {
+        revision: number;
+        scope: 'popout';
+        status: 'ineligible';
+        reason: 'not-main-tab';
+    };
+export type DesktopThemeSurfaceRegistration = {
+    surfaceId: string;
+    state: DesktopThemeSurfaceState;
+}
+export type DesktopThemeSurfaceStateEvent = {
+    surfaceId: string;
+    state: DesktopThemeSurfaceState;
+}
+export type DesktopShellTheme = Omit<Theme, 'isUsingSystemTheme'>;
+export type DesktopThemeDirective = {
+    mode: 'fixed' | 'system';
+    shellTheme: DesktopShellTheme;
+}
+export type DesktopThemeApplyRequest = {
+    surfaceId: string;
+    leaseId: string;
+    sequence: number;
+    directive: DesktopThemeDirective;
+}
+export type DesktopThemeRejectReason =
+    | 'unknown-surface'
+    | 'not-owner'
+    | 'stale-lease'
+    | 'stale-sequence'
+    | 'invalid-document'
+    | 'desktop-sync-disabled'
+    | 'screen-locked'
+    | 'system-suspended';
+export type DesktopThemeFailureReason =
+    | 'native-theme-update'
+    | 'desktop-shell-update'
+    | 'theme-reset';
+export type DesktopThemeApplyResult =
+    | {
+        status: 'applied';
+        surfaceId: string;
+        leaseId: string;
+        sequence: number;
+    }
+    | {
+        status: 'rejected';
+        surfaceId: string;
+        leaseId: string;
+        sequence: number;
+        reason: DesktopThemeRejectReason;
+    }
+    | {
+        status: 'failed';
+        surfaceId: string;
+        leaseId: string;
+        sequence: number;
+        reason: DesktopThemeFailureReason;
+    };
+export type DesktopThemeReleaseResult =
+    | {status: 'released'}
+    | {status: 'stale'};
+export type DesktopThemeProtocolV1 = {
+    getDesktopThemeCapabilities: () => Promise<DesktopThemeProtocolCapabilities | undefined>;
+    getSystemAppearance: () => Promise<SystemAppearanceSnapshot | undefined>;
+    onSystemAppearanceInvalidated: (
+        listener: (event: SystemAppearanceInvalidation) => void,
+    ) => () => void;
+    registerDesktopThemeSurface: () => Promise<DesktopThemeSurfaceRegistration | undefined>;
+    onDesktopThemeSurfaceStateChanged: (
+        listener: (event: DesktopThemeSurfaceStateEvent) => void,
+    ) => () => void;
+    applyDesktopTheme: (
+        request: DesktopThemeApplyRequest,
+    ) => Promise<DesktopThemeApplyResult>;
+    releaseDesktopThemeSurface: (
+        surfaceId: string,
+    ) => Promise<DesktopThemeReleaseResult>;
+}
 export type PopoutViewProps = {
     titleTemplate?: string;
     isRHS?: boolean;
@@ -54,7 +177,7 @@ export type SessionAttributeField = {
     };
 };
 
-export type DesktopAPI = {
+export type DesktopAPI = DesktopThemeProtocolV1 & {
 
     // Initialization
     isDev: () => Promise<boolean>;

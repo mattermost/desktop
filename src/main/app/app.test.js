@@ -28,6 +28,12 @@ jest.mock('main/app/utils', () => ({
 jest.mock('main/sentryHandler', () => ({
     flush: jest.fn(),
 }));
+jest.mock('main/systemAppearanceMonitor', () => ({
+    destroy: jest.fn(),
+}));
+jest.mock('main/themeManager', () => ({
+    shutdown: jest.fn(),
+}));
 jest.mock('main/updateNotifier', () => ({}));
 
 jest.mock('main/security/certificateStore', () => ({

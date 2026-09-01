@@ -1,12 +1,16 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
+import type {IpcMainEvent, IpcMainInvokeEvent, WebContents, WebFrameMain} from 'electron';
 import {ipcMain, nativeTheme, session, shell} from 'electron';
 import isDev from 'electron-is-dev';
 import Joi from 'joi';
 
-import type {Theme} from '@mattermost/desktop-api';
+import type {
+    DesktopThemeApplyRequest,
+    SystemAppearanceInvalidation,
+    Theme,
+} from '@mattermost/desktop-api';
 
 import popoutMenu from 'app/popoutMenu';
 import WebContentsEventManager from 'app/views/webContentEvents';
@@ -26,31 +30,55 @@ import {
     OPEN_POPOUT_MENU,
     UPDATE_SERVER_THEME,
     DARK_MODE_CHANGE,
+    GET_DESKTOP_THEME_CAPABILITIES,
+    GET_SYSTEM_APPEARANCE,
+    REGISTER_DESKTOP_THEME_SURFACE,
+    APPLY_DESKTOP_THEME,
+    RELEASE_DESKTOP_THEME_SURFACE,
+    SYSTEM_APPEARANCE_INVALIDATED,
     UPDATE_THEME,
 } from 'common/communication';
 import Config from 'common/config';
 import {DEFAULT_CHANGELOG_LINK} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
-import {ipcValidate, themeSchema} from 'common/Validator';
+import {getFormattedPathName, isInternalURL, parseURL} from 'common/utils/url';
+import {
+    desktopThemeApplyRequestSchema,
+    desktopThemeSurfaceIdSchema,
+    ipcValidate,
+    themeSchema,
+} from 'common/Validator';
 import {ViewType, type MattermostView} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import {flushCookiesStore} from 'main/app/utils';
 import PermissionsManager from 'main/security/permissionsManager';
+import SystemAppearanceMonitor from 'main/systemAppearanceMonitor';
+import type {DesktopThemeDocument} from 'main/themeManager';
 import ThemeManager from 'main/themeManager';
 
 import {MattermostWebContentsView} from './MattermostWebContentsView';
 
 const log = new Logger('WebContentsManager');
 
+type DesktopThemeDocumentEvent = Pick<IpcMainEvent | IpcMainInvokeEvent, 'sender' | 'senderFrame'>;
+
+export type AuthenticatedDesktopThemeDocument = DesktopThemeDocument & {
+    viewId: string;
+    serverId: string;
+    viewType: ViewType;
+};
+
 export class WebContentsManager {
     private webContentsViews: Map<string, MattermostWebContentsView>;
     private webContentsIdToView: Map<number, MattermostWebContentsView>;
     private focusedWebContentsView?: string;
+    private appearanceConsumers: Map<WebFrameMain, DesktopThemeDocument>;
 
     constructor() {
         this.webContentsViews = new Map();
         this.webContentsIdToView = new Map();
+        this.appearanceConsumers = new Map();
 
         ipcMain.handle(GET_VIEW_INFO_FOR_TEST, this.handleGetViewInfoForTest);
         ipcMain.handle(GET_IS_DEV_MODE, () => isDev);
@@ -68,6 +96,13 @@ export class WebContentsManager {
         ipcMain.on(OPEN_POPOUT_MENU, this.handleOpenPopoutMenu);
         ipcMain.on(UPDATE_SERVER_THEME, ipcValidate(this.handleUpdateServerTheme, [themeSchema.required()]));
         ipcMain.on(UPDATE_THEME, ipcValidate(this.handleUpdateTheme, [themeSchema.required()]));
+        ipcMain.handle(GET_DESKTOP_THEME_CAPABILITIES, this.handleGetDesktopThemeCapabilities);
+        ipcMain.handle(GET_SYSTEM_APPEARANCE, this.handleGetSystemAppearance);
+        ipcMain.handle(REGISTER_DESKTOP_THEME_SURFACE, this.handleRegisterDesktopThemeSurface);
+        ipcMain.handle(APPLY_DESKTOP_THEME, ipcValidate(this.handleApplyDesktopTheme, [desktopThemeApplyRequestSchema], {throwOnError: true}));
+        ipcMain.handle(RELEASE_DESKTOP_THEME_SURFACE, ipcValidate(this.handleReleaseDesktopThemeSurface, [desktopThemeSurfaceIdSchema], {throwOnError: true}));
+
+        SystemAppearanceMonitor.subscribeInvalidation(this.handleSystemAppearanceInvalidated);
 
         if (process.platform !== 'linux') {
             nativeTheme.on('updated', this.handleDarkModeChanged);
@@ -89,6 +124,45 @@ export class WebContentsManager {
 
     getViewByWebContentsId = (webContentsId: number) => {
         return this.webContentsIdToView.get(webContentsId);
+    };
+
+    getAuthenticatedDesktopThemeDocument = (event: DesktopThemeDocumentEvent): AuthenticatedDesktopThemeDocument | undefined => {
+        const view = this.getViewByWebContentsId(event.sender.id);
+        if (!view || view.isDestroyed()) {
+            return undefined;
+        }
+
+        const webContents = view.getWebContentsView().webContents;
+        const frame = event.senderFrame;
+        if (webContents !== event.sender || !frame || frame.isDestroyed() || frame.detached || frame !== webContents.mainFrame) {
+            return undefined;
+        }
+
+        const mattermostView = ViewManager.getView(view.id);
+        if (!mattermostView || mattermostView.serverId !== view.serverId) {
+            return undefined;
+        }
+
+        const server = ServerManager.getServer(mattermostView.serverId);
+        const frameURL = parseURL(frame.url);
+        if (!server || !frameURL || frame.origin !== frameURL.origin || !isInternalURL(frameURL, server.url)) {
+            return undefined;
+        }
+
+        const serverPath = getFormattedPathName(server.url.pathname);
+        const framePath = getFormattedPathName(frameURL.pathname);
+        if (!framePath.startsWith(serverPath)) {
+            return undefined;
+        }
+
+        return {
+            viewId: mattermostView.id,
+            serverId: mattermostView.serverId,
+            viewType: mattermostView.type,
+            webContents,
+            frame,
+            scope: mattermostView.type === ViewType.TAB ? 'main-tab' : 'popout',
+        };
     };
 
     getFocusedView = (): MattermostWebContentsView | undefined => {
@@ -117,7 +191,9 @@ export class WebContentsManager {
         webContentsView.load(view.getLoadingURL());
 
         this.addViewToMap(webContentsView);
-        WebContentsEventManager.addWebContentsEventListeners(webContentsView.getWebContentsView().webContents);
+        const webContents = webContentsView.getWebContentsView().webContents;
+        this.addDesktopThemeLifecycleListeners(webContents);
+        WebContentsEventManager.addWebContentsEventListeners(webContents);
         return webContentsView;
     };
 
@@ -131,6 +207,7 @@ export class WebContentsManager {
         view.destroy();
         this.webContentsViews.delete(viewId);
         this.webContentsIdToView.delete(view.webContentsId);
+        ThemeManager.handleDesktopThemeViewInvalidated(viewId);
     };
 
     clearCacheAndReloadView = (viewId: string) => {
@@ -302,27 +379,104 @@ export class WebContentsManager {
     };
 
     private handleUpdateServerTheme = (event: IpcMainEvent, theme: Theme) => {
-        const view = this.getViewByWebContentsId(event.sender.id);
-        if (!view) {
+        const document = this.getAuthenticatedDesktopThemeDocument(event);
+        if (!document || document.viewType === ViewType.WINDOW) {
             return;
         }
-        if (ViewManager.getView(view.id)?.type === ViewType.WINDOW) {
-            return;
-        }
-        ServerManager.updateTheme(view.serverId, theme);
+        const legacyTheme = {...theme, isUsingSystemTheme: false};
+        ServerManager.updateTheme(document.serverId, legacyTheme);
     };
 
     private handleUpdateTheme = (event: IpcMainEvent, theme: Theme) => {
-        const view = this.getViewByWebContentsId(event.sender.id);
-        if (!view) {
+        const document = this.getAuthenticatedDesktopThemeDocument(event);
+        if (!document || ThemeManager.isDesktopThemeDocumentCutover(document)) {
             return;
         }
-        const viewType = ViewManager.getView(view.id)?.type;
-        if (viewType === ViewType.WINDOW) {
-            ThemeManager.updatePopoutTheme(view.id, theme);
+        if (document.viewType === ViewType.WINDOW) {
+            ThemeManager.updatePopoutTheme(document.viewId, theme);
         } else {
-            ServerManager.updateTheme(view.serverId, theme);
+            ServerManager.updateTheme(document.serverId, theme);
         }
+    };
+
+    private handleGetDesktopThemeCapabilities = (event: IpcMainInvokeEvent) => {
+        if (!this.getAuthenticatedDesktopThemeDocument(event)) {
+            return undefined;
+        }
+        return {protocolVersion: 1 as const};
+    };
+
+    private handleGetSystemAppearance = (event: IpcMainInvokeEvent) => {
+        const document = this.getAuthenticatedDesktopThemeDocument(event);
+        if (!document) {
+            return undefined;
+        }
+        this.appearanceConsumers.set(document.frame, document);
+        return SystemAppearanceMonitor.getSystemAppearance();
+    };
+
+    private handleRegisterDesktopThemeSurface = (event: IpcMainInvokeEvent) => {
+        const document = this.getAuthenticatedDesktopThemeDocument(event);
+        if (!document) {
+            return undefined;
+        }
+        this.appearanceConsumers.set(document.frame, document);
+        return ThemeManager.registerDesktopThemeSurface(document);
+    };
+
+    private handleApplyDesktopTheme = (event: IpcMainInvokeEvent, request: DesktopThemeApplyRequest) => {
+        const document = this.getAuthenticatedDesktopThemeDocument(event);
+        if (!document) {
+            return {
+                status: 'rejected' as const,
+                surfaceId: request.surfaceId,
+                leaseId: request.leaseId,
+                sequence: request.sequence,
+                reason: 'invalid-document' as const,
+            };
+        }
+        return ThemeManager.applyDesktopTheme(document, request);
+    };
+
+    private handleReleaseDesktopThemeSurface = (event: IpcMainInvokeEvent, surfaceId: string) => {
+        const document = this.getAuthenticatedDesktopThemeDocument(event);
+        if (!document) {
+            return {status: 'stale' as const};
+        }
+        return ThemeManager.releaseDesktopThemeSurface(document, surfaceId);
+    };
+
+    private handleSystemAppearanceInvalidated = (invalidation: SystemAppearanceInvalidation) => {
+        this.appearanceConsumers.forEach((document, frame) => {
+            if (document.webContents.isDestroyed() || frame.isDestroyed() || frame.detached || document.webContents.mainFrame !== frame) {
+                this.appearanceConsumers.delete(frame);
+                return;
+            }
+            try {
+                frame.send(SYSTEM_APPEARANCE_INVALIDATED, invalidation);
+            } catch {
+                this.appearanceConsumers.delete(frame);
+            }
+        });
+    };
+
+    private addDesktopThemeLifecycleListeners = (webContents: WebContents) => {
+        webContents.on('did-start-navigation', (details) => {
+            if (details.isMainFrame && !details.isSameDocument) {
+                this.handleDesktopThemeDocumentInvalidated(webContents, details.frame ?? undefined);
+            }
+        });
+        webContents.on('render-process-gone', () => this.handleDesktopThemeDocumentInvalidated(webContents));
+        webContents.on('destroyed', () => this.handleDesktopThemeDocumentInvalidated(webContents));
+    };
+
+    private handleDesktopThemeDocumentInvalidated = (webContents: WebContents, frame?: WebFrameMain) => {
+        this.appearanceConsumers.forEach((document, consumerFrame) => {
+            if (document.webContents === webContents && (!frame || consumerFrame === frame)) {
+                this.appearanceConsumers.delete(consumerFrame);
+            }
+        });
+        ThemeManager.handleDesktopThemeDocumentInvalidated(webContents, frame);
     };
 
     private handleDarkModeChanged = () => {

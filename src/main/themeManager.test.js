@@ -58,6 +58,7 @@ jest.mock('common/views/viewManager', () => {
     return {
         on: jest.fn((event, handler) => mockViewManager.on(event, handler)),
         emit: jest.fn((event, ...args) => mockViewManager.emit(event, ...args)),
+        getView: jest.fn(),
         getViewsByServerId: jest.fn(),
         mockViewManager,
     };
@@ -75,17 +76,31 @@ describe('ThemeManager', () => {
 
         mockWebContents = new EventEmitter();
         mockWebContents.send = jest.fn();
+        mockWebContents.isDestroyed = jest.fn(() => false);
         mockWebContents.id = 1;
+        mockWebContents.mainFrame = {
+            detached: false,
+            isDestroyed: jest.fn(() => false),
+            send: jest.fn(),
+        };
 
         mockWebContents2 = new EventEmitter();
         mockWebContents2.send = jest.fn();
+        mockWebContents2.isDestroyed = jest.fn(() => false);
         mockWebContents2.id = 2;
+        mockWebContents2.mainFrame = {
+            detached: false,
+            isDestroyed: jest.fn(() => false),
+            send: jest.fn(),
+        };
 
         // Mock getAllServers to return empty array by default
         ServerManager.getAllServers.mockReturnValue([]);
+        ServerManager.getServer.mockReturnValue({id: 'server-id'});
 
         // Mock ViewManager.getViewsByServerId to return empty array by default
         ViewManager.getViewsByServerId.mockReturnValue([]);
+        ViewManager.getView.mockReturnValue(undefined);
 
         themeManager = new ThemeManager();
     });
@@ -319,6 +334,92 @@ describe('ThemeManager', () => {
 
             expect(mockWebContents.send).toHaveBeenCalledWith(UPDATE_THEME, mockTheme);
             expect(mockWebContents2.send).toHaveBeenCalledWith(UPDATE_THEME, mockTheme);
+        });
+
+        it('uses the cached legacy theme with a committed view resolver', async () => {
+            const mockTheme = {centerChannelBg: '#111111', isUsingSystemTheme: false};
+            ServerManager.getCurrentServerId.mockReturnValue('owner-server-id');
+            ServerManager.getServer.mockReturnValue({id: 'owner-server-id', theme: mockTheme});
+            ViewManager.getView.mockReturnValue({
+                id: 'owner-view-id',
+                serverId: 'owner-server-id',
+                type: 'tab',
+            });
+            themeManager.setCommittedMainViewResolver(() => ({
+                viewId: 'owner-view-id',
+                webContents: mockWebContents,
+            }));
+
+            expect(mockWebContents.send).toHaveBeenLastCalledWith(UPDATE_THEME, mockTheme);
+            expect(mockWebContents.mainFrame.send).not.toHaveBeenCalled();
+        });
+
+        it('resets while there is no committed visible view', async () => {
+            themeManager.setCommittedMainViewResolver(() => undefined);
+            await themeManager.brokerTransition;
+
+            expect(mockWebContents.send).toHaveBeenLastCalledWith(RESET_THEME);
+        });
+
+        it('keeps the shell reset when theme syncing is disabled', async () => {
+            const Config = require('common/config');
+            Config.themeSyncing = false;
+            ServerManager.getServer.mockReturnValue({
+                theme: {centerChannelBg: '#111111', isUsingSystemTheme: false},
+            });
+            ViewManager.getView.mockReturnValue({
+                id: 'owner-view-id',
+                serverId: 'owner-server-id',
+                type: 'tab',
+            });
+
+            try {
+                themeManager.setCommittedMainViewResolver(() => ({
+                    viewId: 'owner-view-id',
+                    webContents: mockWebContents,
+                }));
+                await themeManager.brokerTransition;
+
+                expect(mockWebContents.send).toHaveBeenLastCalledWith(RESET_THEME);
+            } finally {
+                Config.themeSyncing = true;
+            }
+        });
+    });
+
+    describe('isCommittedMainView', () => {
+        it('matches the exact committed view and WebContents', () => {
+            ViewManager.getView.mockReturnValue({
+                id: 'owner-view-id',
+                serverId: 'server-id',
+                type: 'tab',
+            });
+            themeManager.setCommittedMainViewResolver(() => ({
+                viewId: 'owner-view-id',
+                webContents: mockWebContents,
+            }));
+
+            expect(themeManager.isCommittedMainView({
+                viewId: 'owner-view-id',
+                webContents: mockWebContents,
+            })).toBe(true);
+            expect(themeManager.isCommittedMainView({
+                viewId: 'background-view-id',
+                webContents: mockWebContents2,
+            })).toBe(false);
+            expect(themeManager.isCommittedMainView({
+                viewId: 'owner-view-id',
+                webContents: mockWebContents2,
+            })).toBe(false);
+        });
+
+        it('does not infer exact ownership before the resolver is installed', () => {
+            ServerManager.getCurrentServerId.mockReturnValue('server-id');
+
+            expect(themeManager.isCommittedMainView({
+                viewId: 'owner-view-id',
+                webContents: mockWebContents,
+            })).toBe(false);
         });
     });
 

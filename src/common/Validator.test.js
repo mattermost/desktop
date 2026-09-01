@@ -325,6 +325,18 @@ describe('common/Validator', () => {
             expect(handler).not.toHaveBeenCalled();
         });
 
+        it('throws on invalid arguments when requested', () => {
+            const handler = jest.fn();
+            const wrapped = Validator.ipcValidate(
+                handler,
+                [Joi.string().required()],
+                {throwOnError: true},
+            );
+
+            expect(() => wrapped(event, 42)).toThrow('Invalid IPC arguments');
+            expect(handler).not.toHaveBeenCalled();
+        });
+
         it('drops the call when a required object arg is null', () => {
             const handler = jest.fn();
             const wrapped = Validator.ipcValidate(handler, [Joi.object().required()]);
@@ -383,6 +395,61 @@ describe('common/Validator', () => {
 
             expect(wrapped(event, 'Title', 'Body', '', '', '', false, '')).toBe('ok');
             expect(handler).toHaveBeenCalledWith(event, 'Title', 'Body', '', '', '', false, '');
+        });
+    });
+
+    describe('desktopThemeApplyRequestSchema', () => {
+        const shellTheme = {
+            sidebarBg: '#111111',
+            sidebarText: '#ffffff',
+            sidebarUnreadText: '#ffffff',
+            sidebarTextHoverBg: '#222222',
+            sidebarTextActiveBorder: '#333333',
+            sidebarTextActiveColor: '#ffffff',
+            sidebarHeaderBg: '#111111',
+            sidebarTeamBarBg: '#111111',
+            sidebarHeaderTextColor: '#ffffff',
+            onlineIndicator: '#00ff00',
+            awayIndicator: '#ffff00',
+            dndIndicator: '#ff0000',
+            mentionBg: '#333333',
+            mentionColor: '#ffffff',
+            centerChannelBg: '#123456',
+            centerChannelColor: '#ffffff',
+            newMessageSeparator: '#ff0000',
+            linkColor: '#0000ff',
+            buttonBg: '#0000ff',
+            buttonColor: '#ffffff',
+            errorTextColor: '#ff0000',
+            mentionHighlightBg: '#333333',
+            mentionHighlightLink: '#0000ff',
+            codeTheme: 'monokai',
+        };
+        const request = {
+            surfaceId: 'surface-id',
+            leaseId: 'lease-id',
+            sequence: 1,
+            directive: {
+                mode: 'system',
+                shellTheme,
+            },
+        };
+
+        it('accepts a complete bounded directive', () => {
+            expect(Validator.desktopThemeApplyRequestSchema.validate(request).error).toBeUndefined();
+        });
+
+        it.each([
+            undefined,
+            {...request, unexpected: true},
+            {...request, sequence: 0},
+            {...request, sequence: '1'},
+            {...request, directive: {...request.directive, unexpected: true}},
+            {...request, directive: {...request.directive, shellTheme: {...shellTheme, centerChannelBg: 'red'}}},
+            {...request, directive: {...request.directive, shellTheme: {...shellTheme, unexpected: true}}},
+            {...request, directive: {...request.directive, shellTheme: {...shellTheme, sidebarBg: undefined}}},
+        ])('rejects malformed or extended directives', (invalidRequest) => {
+            expect(Validator.desktopThemeApplyRequestSchema.validate(invalidRequest).error).toBeDefined();
         });
     });
 });

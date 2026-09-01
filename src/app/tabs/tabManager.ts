@@ -45,6 +45,7 @@ import ServerManager from 'common/servers/serverManager';
 import type {MattermostView} from 'common/views/MattermostView';
 import {ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
+import ThemeManager, {type CommittedMainView} from 'main/themeManager';
 import {getAdjustedWindowBoundaries, getWindowBoundaries} from 'main/utils';
 
 import type {UniqueView} from 'types/config';
@@ -62,6 +63,8 @@ export class TabManager extends EventEmitter {
         this.activeTabs = new Map();
         this.tabOrder = new Map();
         this.tabListeners = new Map();
+
+        ThemeManager.setCommittedMainViewResolver(this.resolveCommittedMainView);
 
         MainWindow.on(MAIN_WINDOW_RESIZED, this.handleSetCurrentTabViewBounds);
         MainWindow.on(MAIN_WINDOW_FOCUSED, this.focusCurrentTab);
@@ -268,6 +271,9 @@ export class TabManager extends EventEmitter {
 
     private handleViewRemoved = (viewId: string, serverId: string) => {
         this.switchToNextTabIfNecessary(viewId, serverId);
+        if (this.currentVisibleTab === viewId) {
+            this.removeCurrentVisibleTab();
+        }
         this.unregisterTab(viewId, serverId);
         WebContentsManager.removeView(viewId);
     };
@@ -300,6 +306,7 @@ export class TabManager extends EventEmitter {
     };
 
     private handleViewTypeAdded = (viewId: string, type: ViewType) => {
+        ThemeManager.handleDesktopThemeViewTypeChanged(viewId, type);
         if (type === ViewType.TAB) {
             const view = ViewManager.getView(viewId);
             const webContentsView = WebContentsManager.getView(viewId);
@@ -311,6 +318,9 @@ export class TabManager extends EventEmitter {
                 this.setupTab(view, webContentsView);
                 this.switchToTab(viewId);
             }
+        } else if (this.currentVisibleTab === viewId) {
+            this.currentVisibleTab = undefined;
+            ThemeManager.handleCommittedMainViewChanged();
         }
     };
 
@@ -398,6 +408,7 @@ export class TabManager extends EventEmitter {
         view.getWebContentsView().setBounds(getWindowBoundaries(mainWindow));
         this.removeCurrentVisibleTab();
         this.currentVisibleTab = viewId;
+        ThemeManager.handleCommittedMainViewChanged();
 
         if (view.needsLoadingScreen()) {
             MainWindow.window?.showLoadingScreen(() => ModalManager.isModalDisplayed());
@@ -416,6 +427,7 @@ export class TabManager extends EventEmitter {
                 mainWindow.contentView.removeChildView(view.getWebContentsView());
             }
             this.currentVisibleTab = undefined;
+            ThemeManager.handleCommittedMainViewChanged();
         }
     };
 
@@ -437,6 +449,7 @@ export class TabManager extends EventEmitter {
             }
             if (this.currentVisibleTab === viewId) {
                 this.currentVisibleTab = undefined;
+                ThemeManager.handleCommittedMainViewChanged();
             }
             MainWindow.window?.fadeLoadingScreen();
         }
@@ -538,6 +551,27 @@ export class TabManager extends EventEmitter {
         }
         const title = `${ViewManager.getViewTitle(currentActiveTab.id)}${server.isLoggedIn ? ` - ${server.name}` : ''} - ${app.name}`;
         MainWindow.get()?.setTitle(title);
+    };
+
+    private resolveCommittedMainView = (): CommittedMainView | undefined => {
+        if (!this.currentVisibleTab) {
+            return undefined;
+        }
+
+        const view = ViewManager.getView(this.currentVisibleTab);
+        if (!view || view.type !== ViewType.TAB || !ServerManager.getServer(view.serverId)) {
+            return undefined;
+        }
+
+        const webContentsView = WebContentsManager.getView(view.id);
+        if (!webContentsView || webContentsView.isDestroyed()) {
+            return undefined;
+        }
+
+        return {
+            viewId: view.id,
+            webContents: webContentsView.getWebContentsView().webContents,
+        };
     };
 }
 

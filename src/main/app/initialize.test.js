@@ -84,6 +84,15 @@ jest.mock('electron', () => ({
 jest.mock('main/performanceMonitor', () => ({
     init: jest.fn(),
 }));
+jest.mock('main/systemAppearanceAdapter', () => ({
+    createSystemAppearanceAdapter: jest.fn(() => ({})),
+}));
+jest.mock('main/systemAppearanceMonitor', () => ({
+    replaceAdapter: jest.fn(),
+}));
+jest.mock('main/themeManager', () => ({
+    initializeLifecycle: jest.fn(),
+}));
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
     setLocale: jest.fn(),

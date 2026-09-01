@@ -5,8 +5,11 @@ import {ipcMain, session} from 'electron';
 
 import AppState from 'common/appState';
 import ServerManager from 'common/servers/serverManager';
+import {ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import {flushCookiesStore} from 'main/app/utils';
+import SystemAppearanceMonitor from 'main/systemAppearanceMonitor';
+import ThemeManager from 'main/themeManager';
 
 import {WebContentsManager} from './webContentsManager';
 
@@ -57,7 +60,8 @@ jest.mock('common/utils/url', () => ({
             return null;
         }
     },
-    getFormattedPathName: (pathname) => (pathname.length ? pathname : '/'),
+    getFormattedPathName: (pathname) => (pathname.endsWith('/') ? pathname : `${pathname}/`),
+    isInternalURL: (targetURL, currentURL) => targetURL.host === currentURL.host && targetURL.protocol === currentURL.protocol,
     equalUrlsIgnoringSubpath: jest.fn(),
 }));
 
@@ -93,6 +97,21 @@ jest.mock('main/performanceMonitor', () => ({
     registerView: jest.fn(),
 }));
 
+jest.mock('main/systemAppearanceMonitor', () => ({
+    getSystemAppearance: jest.fn(),
+    subscribeInvalidation: jest.fn(),
+}));
+
+jest.mock('main/themeManager', () => ({
+    applyDesktopTheme: jest.fn(),
+    handleDesktopThemeDocumentInvalidated: jest.fn(),
+    handleDesktopThemeViewInvalidated: jest.fn(),
+    isDesktopThemeDocumentCutover: jest.fn(() => false),
+    registerDesktopThemeSurface: jest.fn(),
+    releaseDesktopThemeSurface: jest.fn(),
+    updatePopoutTheme: jest.fn(),
+}));
+
 jest.mock('common/views/viewManager', () => ({
     getViewLog: jest.fn(),
     getView: jest.fn(),
@@ -118,6 +137,7 @@ jest.mock('common/servers/serverManager', () => {
         lookupServerByURL: jest.fn(),
         getRemoteInfo: jest.fn(),
         getServer: jest.fn(),
+        updateTheme: jest.fn(),
         on: jest.fn((event, handler) => mockServerManager.on(event, handler)),
         emit: jest.fn((event, ...args) => mockServerManager.emit(event, ...args)),
         setLoggedIn: jest.fn(),
@@ -205,6 +225,164 @@ describe('app/views/webContentsManager', () => {
         it('should return undefined when webContentsId does not exist', () => {
             const result = webContentsManager.getViewByWebContentsId(999);
             expect(result).toBeUndefined();
+        });
+    });
+
+    describe('getAuthenticatedDesktopThemeDocument', () => {
+        const webContentsManager = new WebContentsManager();
+        const frame = {
+            detached: false,
+            isDestroyed: jest.fn().mockReturnValue(false),
+            origin: 'https://mattermost.example.com',
+            url: 'https://mattermost.example.com/workspace/channels/town-square',
+        };
+        const webContents = {id: 123, mainFrame: frame};
+        const mockView = {
+            id: 'test-view',
+            serverId: 'server-1',
+            isDestroyed: jest.fn().mockReturnValue(false),
+            getWebContentsView: jest.fn(() => ({webContents})),
+        };
+        const mattermostView = {
+            id: 'test-view',
+            serverId: 'server-1',
+            type: ViewType.TAB,
+        };
+        const server = {
+            id: 'server-1',
+            url: new URL('https://mattermost.example.com/workspace'),
+        };
+
+        beforeEach(() => {
+            webContentsManager.webContentsIdToView = new Map([[123, mockView]]);
+            frame.detached = false;
+            frame.isDestroyed.mockReturnValue(false);
+            frame.origin = 'https://mattermost.example.com';
+            frame.url = 'https://mattermost.example.com/workspace/channels/town-square';
+            webContents.mainFrame = frame;
+            mockView.isDestroyed.mockReturnValue(false);
+            mockView.getWebContentsView.mockReturnValue({webContents});
+            ViewManager.getView.mockReturnValue(mattermostView);
+            ServerManager.getServer.mockReturnValue(server);
+            ThemeManager.isDesktopThemeDocumentCutover.mockReturnValue(false);
+        });
+
+        afterEach(() => {
+            webContentsManager.webContentsIdToView = new Map();
+            jest.clearAllMocks();
+        });
+
+        it('authenticates the mapped live main-frame document', () => {
+            const result = webContentsManager.getAuthenticatedDesktopThemeDocument({sender: webContents, senderFrame: frame});
+
+            expect(result).toEqual({
+                viewId: 'test-view',
+                serverId: 'server-1',
+                viewType: ViewType.TAB,
+                webContents,
+                frame,
+                scope: 'main-tab',
+            });
+        });
+
+        it('rejects a sender whose mapped view is stale', () => {
+            mockView.isDestroyed.mockReturnValue(true);
+
+            expect(webContentsManager.getAuthenticatedDesktopThemeDocument({sender: webContents, senderFrame: frame})).toBeUndefined();
+
+            mockView.isDestroyed.mockReturnValue(false);
+            mockView.getWebContentsView.mockReturnValue({webContents: {id: 123, mainFrame: frame}});
+
+            expect(webContentsManager.getAuthenticatedDesktopThemeDocument({sender: webContents, senderFrame: frame})).toBeUndefined();
+        });
+
+        it('rejects a missing, destroyed, detached, or non-main frame', () => {
+            expect(webContentsManager.getAuthenticatedDesktopThemeDocument({sender: webContents, senderFrame: null})).toBeUndefined();
+
+            frame.isDestroyed.mockReturnValue(true);
+            expect(webContentsManager.getAuthenticatedDesktopThemeDocument({sender: webContents, senderFrame: frame})).toBeUndefined();
+
+            frame.isDestroyed.mockReturnValue(false);
+            frame.detached = true;
+            expect(webContentsManager.getAuthenticatedDesktopThemeDocument({sender: webContents, senderFrame: frame})).toBeUndefined();
+
+            frame.detached = false;
+            expect(webContentsManager.getAuthenticatedDesktopThemeDocument({
+                sender: webContents,
+                senderFrame: {...frame},
+            })).toBeUndefined();
+        });
+
+        it('rejects a view whose current metadata no longer matches', () => {
+            ViewManager.getView.mockReturnValue(undefined);
+            expect(webContentsManager.getAuthenticatedDesktopThemeDocument({sender: webContents, senderFrame: frame})).toBeUndefined();
+
+            ViewManager.getView.mockReturnValue({...mattermostView, serverId: 'server-2'});
+            expect(webContentsManager.getAuthenticatedDesktopThemeDocument({sender: webContents, senderFrame: frame})).toBeUndefined();
+        });
+
+        it('rejects a document outside the configured origin or server subpath', () => {
+            frame.origin = 'https://attacker.example.com';
+            expect(webContentsManager.getAuthenticatedDesktopThemeDocument({sender: webContents, senderFrame: frame})).toBeUndefined();
+
+            frame.origin = 'https://mattermost.example.com';
+            frame.url = 'https://mattermost.example.com/workspace-other/channels/town-square';
+            expect(webContentsManager.getAuthenticatedDesktopThemeDocument({sender: webContents, senderFrame: frame})).toBeUndefined();
+
+            frame.url = 'https://attacker.example.com/workspace/channels/town-square';
+            frame.origin = 'https://attacker.example.com';
+            expect(webContentsManager.getAuthenticatedDesktopThemeDocument({sender: webContents, senderFrame: frame})).toBeUndefined();
+        });
+
+        it('delegates v1 operations only after document authentication', async () => {
+            const event = {sender: webContents, senderFrame: frame};
+            const request = {
+                surfaceId: 'surface-id',
+                leaseId: 'lease-id',
+                sequence: 1,
+                directive: {mode: 'system', shellTheme: {}},
+            };
+            ThemeManager.registerDesktopThemeSurface.mockResolvedValue({surfaceId: 'surface-id'});
+            ThemeManager.applyDesktopTheme.mockResolvedValue({status: 'applied'});
+            ThemeManager.releaseDesktopThemeSurface.mockResolvedValue({status: 'released'});
+            SystemAppearanceMonitor.getSystemAppearance.mockResolvedValue({revision: 1, status: 'known', value: 'light'});
+
+            await expect(webContentsManager.handleGetSystemAppearance(event)).resolves.toMatchObject({status: 'known', value: 'light'});
+            await webContentsManager.handleRegisterDesktopThemeSurface(event);
+            await webContentsManager.handleApplyDesktopTheme(event, request);
+            await webContentsManager.handleReleaseDesktopThemeSurface(event, 'surface-id');
+
+            expect(ThemeManager.registerDesktopThemeSurface).toHaveBeenCalledWith(expect.objectContaining({viewId: 'test-view', frame}));
+            expect(ThemeManager.applyDesktopTheme).toHaveBeenCalledWith(expect.objectContaining({viewId: 'test-view', frame}), request);
+            expect(ThemeManager.releaseDesktopThemeSurface).toHaveBeenCalledWith(expect.objectContaining({viewId: 'test-view', frame}), 'surface-id');
+        });
+
+        it('returns a frame rejection without delegating an unauthenticated apply', async () => {
+            const request = {
+                surfaceId: 'surface-id',
+                leaseId: 'lease-id',
+                sequence: 1,
+                directive: {mode: 'system', shellTheme: {}},
+            };
+
+            expect(webContentsManager.handleApplyDesktopTheme({sender: webContents, senderFrame: null}, request)).toMatchObject({
+                status: 'rejected',
+                reason: 'invalid-document',
+            });
+            expect(ThemeManager.applyDesktopTheme).not.toHaveBeenCalled();
+        });
+
+        it('stores legacy updates only while the frame remains legacy', () => {
+            const event = {sender: webContents, senderFrame: frame};
+            const theme = {centerChannelBg: '#111111'};
+
+            webContentsManager.handleUpdateTheme(event, theme);
+            expect(ServerManager.updateTheme).toHaveBeenCalled();
+
+            ThemeManager.isDesktopThemeDocumentCutover.mockReturnValue(true);
+            ServerManager.updateTheme.mockClear();
+            webContentsManager.handleUpdateTheme(event, theme);
+            expect(ServerManager.updateTheme).not.toHaveBeenCalled();
         });
     });
 

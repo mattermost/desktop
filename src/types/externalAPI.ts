@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import type {DesktopThemeSurfaceStateEvent, SystemAppearanceInvalidation} from '@mattermost/desktop-api';
+
 export interface ExternalAPI {
     createListener(event: 'user-activity-update', listener: (
         userIsActive: boolean,
@@ -27,6 +29,8 @@ export interface ExternalAPI {
     createListener(event: 'calls-widget-open-user-settings', listener: () => void): () => void;
     createListener(event: 'metrics-send', listener: (metricsMap: Map<string, {cpu?: number; memory?: number}>) => void): () => void;
     createListener(event: 'dark-mode-change', listener: (darkMode: boolean) => void): () => void;
+    createListener(event: 'system-appearance-invalidated', listener: (event: SystemAppearanceInvalidation) => void): () => void;
+    createListener(event: 'desktop-theme-surface-state-changed', listener: (event: DesktopThemeSurfaceStateEvent) => void): () => void;
     createListener(event: 'message-from-parent', listener: (channel: string, ...args: unknown[]) => void): () => void;
     createListener(event: 'message-from-popout', listener: (id: string, channel: string, ...args: unknown[]) => void): () => void;
     createListener(event: 'popout-closed', listener: (id: string) => void): () => void;
