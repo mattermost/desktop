@@ -3,7 +3,7 @@
 import fs from 'fs';
 import path from 'path';
 
-import {shell} from 'electron';
+import {app, shell} from 'electron';
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
 import Config from 'common/config';
@@ -29,6 +29,7 @@ jest.mock('electron', () => {
         app: {
             getAppPath: jest.fn(),
             getPath: jest.fn(() => '/valid/downloads/path'),
+            startAccessingSecurityScopedResource: jest.fn(),
         },
         WebContentsView: jest.fn().mockImplementation(() => ({
             webContents: {
@@ -74,6 +75,7 @@ jest.mock('fs', () => ({
     existsSync: jest.fn().mockReturnValue(false),
     readFileSync: jest.fn().mockImplementation((text) => text),
     writeFile: jest.fn(),
+    copyFileSync: jest.fn(),
 }));
 jest.mock('macos-notification-state', () => ({
     getDoNotDisturb: jest.fn(),
@@ -252,6 +254,88 @@ describe('main/downloadsManager', () => {
         expect(Object.keys(dl.downloads).includes('invalid_file4.txt')).toBe(false);
         expect(Object.keys(dl.downloads).includes('invalid_file5.txt')).toBe(false);
         expect(Object.keys(dl.downloads).includes('invalid_file6.txt')).toBe(false);
+    });
+
+    describe('doneEventController', () => {
+        const bookmarkedItem = {
+            ...item,
+            savePath: '/temp/file.txt',
+        };
+
+        const setupBookmark = (dl) => {
+            path.parse.mockImplementation(() => ({base: 'file.txt'}));
+            path.resolve.mockImplementation((...args) => args.join('/'));
+            dl.open = true;
+            dl.bookmarks.set('file.txt', {originalPath: locationMock, bookmark: 'some-bookmark'});
+        };
+
+        it('should copy the downloaded file to its bookmarked location', async () => {
+            const dl = new DownloadsManager({});
+            setupBookmark(dl);
+            const stopAccessing = jest.fn();
+            app.startAccessingSecurityScopedResource.mockReturnValue(stopAccessing);
+
+            await dl.doneEventController({}, 'completed', bookmarkedItem, {id: 0});
+
+            expect(fs.copyFileSync).toHaveBeenCalledWith('/valid/downloads/path/file.txt', locationMock);
+            expect(stopAccessing).toHaveBeenCalled();
+            expect(dl.downloads['file.txt'].state).toBe('completed');
+            expect(dl.downloads['file.txt'].location).toBe(locationMock);
+        });
+
+        it('MM-70565 - should not throw when the downloaded file cannot be copied', async () => {
+            const dl = new DownloadsManager({});
+            setupBookmark(dl);
+            const stopAccessing = jest.fn();
+            app.startAccessingSecurityScopedResource.mockReturnValue(stopAccessing);
+            fs.copyFileSync.mockImplementation(() => {
+                throw new Error('ENOENT: no such file or directory');
+            });
+
+            await expect(dl.doneEventController({}, 'completed', bookmarkedItem, {id: 0})).resolves.not.toThrow();
+
+            expect(stopAccessing).toHaveBeenCalled();
+            expect(dl.downloads['file.txt'].state).toBe('interrupted');
+            expect(dl.bookmarks.has('file.txt')).toBe(false);
+        });
+
+        it('MM-70565 - should not throw when the bookmark cannot be accessed', async () => {
+            const dl = new DownloadsManager({});
+            setupBookmark(dl);
+            app.startAccessingSecurityScopedResource.mockImplementation(() => {
+                throw new Error('invalid bookmark');
+            });
+
+            await expect(dl.doneEventController({}, 'completed', bookmarkedItem, {id: 0})).resolves.not.toThrow();
+
+            expect(fs.copyFileSync).not.toHaveBeenCalled();
+            expect(dl.downloads['file.txt'].state).toBe('interrupted');
+        });
+
+        it('MM-70565 - should not throw when an interrupted download cannot be copied', async () => {
+            const dl = new DownloadsManager({});
+            setupBookmark(dl);
+            app.startAccessingSecurityScopedResource.mockReturnValue(jest.fn());
+            fs.copyFileSync.mockImplementation(() => {
+                throw new Error('ENOENT: no such file or directory');
+            });
+
+            await expect(dl.doneEventController({}, 'cancelled', bookmarkedItem, {id: 0})).resolves.not.toThrow();
+
+            expect(dl.downloads['file.txt'].state).toBe('interrupted');
+        });
+
+        it('should not attempt to copy anything for downloads without a bookmark', async () => {
+            const dl = new DownloadsManager({});
+            path.parse.mockImplementation(() => ({base: 'file.txt'}));
+            dl.open = true;
+
+            await dl.doneEventController({}, 'completed', bookmarkedItem, {id: 0});
+
+            expect(fs.copyFileSync).not.toHaveBeenCalled();
+            expect(app.startAccessingSecurityScopedResource).not.toHaveBeenCalled();
+            expect(dl.downloads['file.txt'].state).toBe('completed');
+        });
     });
 
     it('should remove updates if they are disabled', () => {
