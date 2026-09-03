@@ -383,11 +383,20 @@ describe('main/app/initialize', () => {
                 expect(callback).toHaveBeenCalledWith({});
             });
 
-            it('does not cancel requests from non-server web contents', async () => {
+            it('cancels requests from non-server web contents to local/private targets', async () => {
                 const handler = await getRegisteredHandler();
                 const callback = jest.fn();
 
                 await handler({url: 'http://127.0.0.1:7777/secret', webContentsId: 999, resourceType: 'xhr'}, callback);
+
+                expect(callback).toHaveBeenCalledWith({cancel: true});
+            });
+
+            it('allows requests from non-server web contents to public targets', async () => {
+                const handler = await getRegisteredHandler();
+                const callback = jest.fn();
+
+                await handler({url: 'https://8.8.8.8/resource', webContentsId: 999, resourceType: 'xhr'}, callback);
 
                 expect(callback).toHaveBeenCalledWith({});
             });
@@ -403,7 +412,7 @@ describe('main/app/initialize', () => {
 
             it('allows the request when the policy check throws', async () => {
                 const handler = await getRegisteredHandler();
-                jest.requireMock('app/views/webContentsManager').getViewByWebContentsId.mockImplementation(() => {
+                jest.requireMock('common/servers/serverManager').getAllServers.mockImplementation(() => {
                     throw new Error('boom');
                 });
                 const callback = jest.fn();
