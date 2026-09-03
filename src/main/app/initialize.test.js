@@ -8,6 +8,7 @@ import {app, session} from 'electron';
 import NavigationManager from 'app/navigationManager';
 import Config from 'common/config';
 import parseArgs from 'main/ParseArgs';
+import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
 
 import {initialize} from './initialize';
 import {clearAppCache, getDeeplinkingURL, wasUpdated} from './utils';
@@ -105,9 +106,13 @@ jest.mock('electron-devtools-installer', () => {
 const isDev = false;
 jest.mock('electron-is-dev', () => isDev);
 
-jest.mock('common/constants', () => ({
-    MATTERMOST_PROTOCOL: 'mattermost',
-}));
+jest.mock('common/constants', () => {
+    const original = jest.requireActual('common/constants');
+    return {
+        ...original,
+        MATTERMOST_PROTOCOL: 'mattermost',
+    };
+});
 
 jest.mock('app/serverHub', () => ({
     init: jest.fn(),
@@ -122,6 +127,14 @@ jest.mock('common/config', () => ({
 jest.mock('main/security/allowProtocolDialog', () => ({
     init: jest.fn(),
 }));
+jest.mock('main/security/localNetworkAccess', () => {
+    const actual = jest.requireActual('main/security/localNetworkAccess');
+    return {
+        __esModule: true,
+        ...actual,
+        default: actual.default,
+    };
+});
 jest.mock('main/app/app', () => ({}));
 jest.mock('main/app/config', () => ({
     handleConfigUpdate: jest.fn(),
@@ -164,11 +177,6 @@ jest.mock('main/notifications', () => ({
     getDoNotDisturb: jest.fn(),
 }));
 jest.mock('main/ParseArgs', () => jest.fn());
-jest.mock('common/servers/serverManager', () => ({
-    reloadFromConfig: jest.fn(),
-    getAllServers: jest.fn(),
-    on: jest.fn(),
-}));
 jest.mock('app/system/tray/tray', () => ({
     refreshImages: jest.fn(),
     setup: jest.fn(),
@@ -178,10 +186,6 @@ jest.mock('main/UserActivityMonitor', () => ({
     startMonitoring: jest.fn(),
 }));
 jest.mock('app/callsWidgetWindow', () => ({}));
-jest.mock('app/views/webContentsManager', () => ({
-    getViewByWebContentsId: jest.fn(),
-    handleDeepLink: jest.fn(),
-}));
 jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
     show: jest.fn(),
@@ -357,9 +361,10 @@ describe('main/app/initialize', () => {
 
             const getRegisteredHandler = async () => {
                 const ServerManager = jest.requireMock('common/servers/serverManager');
-                const WebContentsManager = jest.requireMock('app/views/webContentsManager');
+                const mockedLocalNetworkAccessManager = jest.mocked(LocalNetworkAccessManager);
                 ServerManager.getAllServers.mockReturnValue([{url: new URL('http://127.0.0.1:8065')}]);
-                WebContentsManager.getViewByWebContentsId.mockImplementation((id) => (id === SERVER_WEBCONTENTS_ID ? {id} : undefined));
+                mockedLocalNetworkAccessManager.clear();
+                mockedLocalNetworkAccessManager.registerWebContents({id: SERVER_WEBCONTENTS_ID});
                 await initialize();
                 const calls = session.defaultSession.webRequest.onBeforeRequest.mock.calls;
                 return calls[calls.length - 1][0];
@@ -403,9 +408,7 @@ describe('main/app/initialize', () => {
 
             it('allows the request when the policy check throws', async () => {
                 const handler = await getRegisteredHandler();
-                jest.requireMock('app/views/webContentsManager').getViewByWebContentsId.mockImplementation(() => {
-                    throw new Error('boom');
-                });
+                jest.spyOn(jest.mocked(LocalNetworkAccessManager), 'shouldCancelLocalNetworkRequest').mockRejectedValueOnce(new Error('boom'));
                 const callback = jest.fn();
 
                 await handler({url: 'http://127.0.0.1:7777/secret', webContentsId: SERVER_WEBCONTENTS_ID, resourceType: 'xhr'}, callback);

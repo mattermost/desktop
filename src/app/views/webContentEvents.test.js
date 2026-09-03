@@ -9,6 +9,7 @@ import NavigationManager from 'app/navigationManager';
 import WebContentsManager from 'app/views/webContentsManager';
 import {getLevel} from 'common/log';
 import ContextMenu from 'main/contextMenu';
+import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
 
 import PluginsPopUpsManager from './pluginsPopUps';
 import {WebContentsEventManager} from './webContentEvents';
@@ -41,6 +42,14 @@ jest.mock('common/views/viewManager', () => ({
 jest.mock('app/views/pluginsPopUps', () => ({
     handleNewWindow: jest.fn(() => ({action: 'allow'})),
     generateHandleCreateWindow: jest.fn(() => jest.fn()),
+}));
+
+jest.mock('main/security/localNetworkAccess', () => ({
+    __esModule: true,
+    default: {
+        registerWebContents: jest.fn(),
+        unregisterWebContents: jest.fn(),
+    },
 }));
 
 jest.mock('main/utils', () => ({
@@ -440,6 +449,7 @@ describe('main/views/webContentsEvents', () => {
         it('should open popup window for plugins', () => {
             expect(newWindow({url: 'http://server-1.com/plugins/myplugin/login'})).toStrictEqual({action: 'deny'});
             expect(webContentsEventManager.popupWindow).toBeTruthy();
+            expect(jest.mocked(LocalNetworkAccessManager.registerWebContents)).toHaveBeenCalled();
         });
 
         it('should open popup window for managed resources', () => {
@@ -463,6 +473,7 @@ describe('main/views/webContentsEvents', () => {
                 show: jest.fn(),
                 loadURL: jest.fn(),
                 webContents: {
+                    id: 99,
                     on: jest.fn(),
                     setWindowOpenHandler: jest.fn(),
                 },
@@ -476,6 +487,7 @@ describe('main/views/webContentsEvents', () => {
             expect(closedCallback).toBeDefined();
 
             closedCallback();
+            expect(jest.mocked(LocalNetworkAccessManager.unregisterWebContents)).toHaveBeenCalledWith(99);
             expect(mockContextMenu.dispose).toHaveBeenCalled();
         });
     });

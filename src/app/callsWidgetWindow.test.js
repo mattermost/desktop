@@ -25,6 +25,7 @@ import {
 import urlUtils from 'common/utils/url';
 import ViewManager from 'common/views/viewManager';
 import PermissionsManager from 'main/security/permissionsManager';
+import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
 import {
     resetScreensharePermissionsMacOS,
     openScreensharePermissionsSettingsMacOS,
@@ -80,6 +81,13 @@ jest.mock('app/serverHub', () => ({
 jest.mock('main/performanceMonitor', () => ({
     registerView: jest.fn(),
     unregisterView: jest.fn(),
+}));
+jest.mock('main/security/localNetworkAccess', () => ({
+    __esModule: true,
+    default: {
+        registerWebContents: jest.fn(),
+        unregisterWebContents: jest.fn(),
+    },
 }));
 jest.mock('common/views/viewManager', () => ({
     getView: jest.fn(),
@@ -514,7 +522,9 @@ describe('main/windows/callsWidgetWindow', () => {
         let frameFinishedLoadListener;
         const popOut = {
             on: (event, listener) => {
-                closedListener = listener;
+                if (event === 'closed') {
+                    closedListener = listener;
+                }
             },
             webContents: {
                 on: (event, listener) => {
@@ -554,6 +564,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
         expect(callsWidgetWindow.popOut).toBe(popOut);
         expect(WebContentsEventManager.addWebContentsEventListeners).toHaveBeenCalledWith(popOut.webContents);
+        expect(jest.mocked(LocalNetworkAccessManager.registerWebContents)).toHaveBeenCalledWith(popOut.webContents);
         expect(redirectListener).toBeDefined();
         expect(frameFinishedLoadListener).toBeDefined();
         expect(mockContextMenuReload).toHaveBeenCalledTimes(1);
@@ -567,6 +578,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
         closedListener();
         expect(callsWidgetWindow.popOut).not.toBeDefined();
+        expect(jest.mocked(LocalNetworkAccessManager.unregisterWebContents)).toHaveBeenCalledWith('webContentsId');
         expect(mockContextMenuDispose).toHaveBeenCalled();
 
         // Verify widget visibility has been toggled
