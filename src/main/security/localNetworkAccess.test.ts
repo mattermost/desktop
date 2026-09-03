@@ -22,6 +22,7 @@ describe('main/security/localNetworkAccess', () => {
 
     beforeEach(() => {
         emptyLookup.mockClear();
+        WebContentsManager.getViewByWebContentsId.mockClear();
         WebContentsManager.getViewByWebContentsId.mockImplementation((webContentsId: number) => (webContentsId === 1 ? {id: 1} : undefined));
         ServerManager.getAllServers.mockReturnValue([{url: new URL('http://127.0.0.1:8065')}]);
     });
@@ -123,14 +124,95 @@ describe('main/security/localNetworkAccess', () => {
             )).resolves.toBe(false);
         });
 
-        it('allows requests that belong to a known non-server web contents', async () => {
+        it('blocks local/private requests from web contents that are not registered views', async () => {
             await expect(shouldCancelLocalNetworkRequest(
                 {
                     url: 'http://127.0.0.1:7777/secret',
                     webContentsId: 2,
                 },
                 emptyLookup,
+            )).resolves.toBe(true);
+        });
+
+        it('blocks local/private requests from unregistered web contents across ranges and protocols', async () => {
+            const urls = [
+                'http://10.0.0.5/admin',
+                'http://192.168.1.10/router',
+                'http://172.16.0.1/internal',
+                'http://169.254.169.254/latest/meta-data',
+                'http://localhost:7777/secret',
+                'http://[::1]:7777/secret',
+                'ws://127.0.0.1:9000',
+                'wss://192.168.1.10/socket',
+            ];
+
+            for (const url of urls) {
+                await expect(shouldCancelLocalNetworkRequest({url, webContentsId: 2}, emptyLookup)).resolves.toBe(true);
+            }
+        });
+
+        it('blocks unregistered web contents requests to hostnames that resolve to private addresses', async () => {
+            const lookup = jest.fn().mockResolvedValue([{address: '10.0.0.5'}]);
+
+            await expect(shouldCancelLocalNetworkRequest(
+                {
+                    url: 'http://internal.example.com',
+                    webContentsId: 2,
+                },
+                lookup,
+            )).resolves.toBe(true);
+        });
+
+        it('allows unregistered web contents requests to the configured server origin', async () => {
+            await expect(shouldCancelLocalNetworkRequest(
+                {
+                    url: 'http://127.0.0.1:8065/plugins/com.mattermost.calls/standalone/widget.html',
+                    webContentsId: 2,
+                },
+                emptyLookup,
             )).resolves.toBe(false);
+
+            await expect(shouldCancelLocalNetworkRequest(
+                {
+                    url: 'ws://127.0.0.1:8065/api/v4/websocket',
+                    webContentsId: 2,
+                },
+                emptyLookup,
+            )).resolves.toBe(false);
+        });
+
+        it('allows unregistered web contents requests to public targets', async () => {
+            const lookup = jest.fn().mockResolvedValue([{address: '8.8.8.8'}]);
+
+            await expect(shouldCancelLocalNetworkRequest(
+                {
+                    url: 'https://mattermost.com',
+                    webContentsId: 2,
+                },
+                lookup,
+            )).resolves.toBe(false);
+        });
+
+        it('blocks local/private requests to a different port on the configured server host', async () => {
+            await expect(shouldCancelLocalNetworkRequest(
+                {
+                    url: 'http://127.0.0.1:8066/secret',
+                    webContentsId: 2,
+                },
+                emptyLookup,
+            )).resolves.toBe(true);
+        });
+
+        it('does not consult the web contents registry to make a decision', async () => {
+            await expect(shouldCancelLocalNetworkRequest(
+                {
+                    url: 'http://127.0.0.1:7777/secret',
+                    webContentsId: 2,
+                },
+                emptyLookup,
+            )).resolves.toBe(true);
+
+            expect(WebContentsManager.getViewByWebContentsId).not.toHaveBeenCalled();
         });
 
         it('blocks unowned requests to local/private targets', async () => {

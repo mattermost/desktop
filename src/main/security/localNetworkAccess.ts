@@ -4,7 +4,6 @@
 import dns from 'dns/promises';
 import {BlockList, isIP} from 'net';
 
-import WebContentsManager from 'app/views/webContentsManager';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
 
@@ -39,10 +38,6 @@ export async function shouldCancelLocalNetworkRequest(
     details: LocalNetworkRequestDetails,
     lookup: LookupFunction = defaultLookup,
 ): Promise<boolean> {
-    if (details.webContentsId && !WebContentsManager.getViewByWebContentsId(details.webContentsId)) {
-        return false;
-    }
-
     const serverURLs = ServerManager.getAllServers().map((server) => server.url);
     return shouldBlockLocalNetworkRequest(details.url, serverURLs, lookup);
 }
