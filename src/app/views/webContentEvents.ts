@@ -34,11 +34,11 @@ import {
 import ViewManager from 'common/views/viewManager';
 import ContextMenu from 'main/contextMenu';
 import {localizeMessage} from 'main/i18nManager';
+import allowProtocolDialog from 'main/security/allowProtocolDialog';
+import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
+import {composeUserAgent} from 'main/utils';
 
 import {generateHandleConsoleMessage, generateWillFrameNavigate, isCustomProtocol, isMattermostProtocol} from './webContentEventsCommon';
-
-import allowProtocolDialog from '../../main/security/allowProtocolDialog';
-import {composeUserAgent} from '../../main/utils';
 
 const log = new Logger('WebContentsEventManager');
 
@@ -244,6 +244,7 @@ export class WebContentsEventManager {
                     };
 
                     popup = this.popupWindow.win;
+                    LocalNetworkAccessManager.registerWebContents(popup.webContents);
                     popup.webContents.on('will-redirect', (event, url) => {
                         const parsedURL = parseURL(url);
                         if (!parsedURL) {
@@ -258,7 +259,9 @@ export class WebContentsEventManager {
                     popup.webContents.on('will-navigate', this.generateWillNavigate(popup.webContents.id));
                     popup.webContents.on('will-frame-navigate', generateWillFrameNavigate(this.log(popup.webContents.id)));
                     popup.webContents.setWindowOpenHandler(this.denyNewWindow);
+                    const popupWebContentsId = popup.webContents.id;
                     popup.once('closed', () => {
+                        LocalNetworkAccessManager.unregisterWebContents(popupWebContentsId);
                         if (this.popupWindow?.contextMenu) {
                             this.popupWindow.contextMenu.dispose();
                         }
