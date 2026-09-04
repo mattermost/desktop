@@ -7,10 +7,11 @@ import type {
     WebContentsWillNavigateEventParams,
     WebContentsWillRedirectEventParams,
 } from 'electron';
-import {BrowserWindow, dialog, shell} from 'electron';
+import {BrowserWindow, shell} from 'electron';
 
 import CallsWidgetWindow from 'app/callsWidgetWindow';
 import MainWindow from 'app/mainWindow/mainWindow';
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import NavigationManager from 'app/navigationManager';
 import PluginsPopUpsManager from 'app/views/pluginsPopUps';
 import WebContentsManager from 'app/views/webContentsManager';
@@ -146,7 +147,7 @@ export class WebContentsEventManager {
             const parsedURL = parseURL(details.url);
             if (!parsedURL) {
                 this.log(webContentsId).warn(`Ignoring invalid URL: ${details.url}`);
-                dialog.showErrorBox(
+                MessageModal.showErrorModal(
                     localizeMessage('main.webContentEvents.invalidLinkTitle', 'Invalid Link'),
                     localizeMessage(
                         'main.webContentEvents.invalidLinkDescription',

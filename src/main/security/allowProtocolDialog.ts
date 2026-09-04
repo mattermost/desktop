@@ -4,8 +4,9 @@
 
 import fs from 'fs';
 
-import {dialog, shell} from 'electron';
+import {shell} from 'electron';
 
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import buildConfig from 'common/config/buildConfig';
 import {Logger} from 'common/log';
 import {parseURL} from 'common/utils/url';
@@ -82,7 +83,7 @@ export class AllowProtocolDialog {
             if (!mainWindow) {
                 return;
             }
-            const {response} = await dialog.showMessageBox(mainWindow, {
+            const {response} = await MessageModal.showMessageModal({
                 title: localizeMessage('main.allowProtocolDialog.title', 'Non http(s) protocol'),
                 message: localizeMessage('main.allowProtocolDialog.message', '{protocol} link requires an external application.', {protocol}),
                 detail: localizeMessage('main.allowProtocolDialog.detail', 'The requested link is {URL}. Do you want to continue?', {URL: url}),
@@ -94,7 +95,6 @@ export class AllowProtocolDialog {
                     localizeMessage('label.no', 'No'),
                 ],
                 cancelId: 2,
-                noLink: true,
             });
 
             switch (response) {

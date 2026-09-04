@@ -3,8 +3,9 @@
 
 'use strict';
 
-import {dialog, shell, BrowserWindow} from 'electron';
+import {BrowserWindow, shell} from 'electron';
 
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import NavigationManager from 'app/navigationManager';
 import WebContentsManager from 'app/views/webContentsManager';
 import {getLevel} from 'common/log';
@@ -18,14 +19,17 @@ import allowProtocolDialog from '../../main/security/allowProtocolDialog';
 
 jest.mock('electron', () => ({
     app: {},
-    dialog: {
-        showErrorBox: jest.fn(),
-    },
     shell: {
         openExternal: jest.fn(),
     },
     BrowserWindow: jest.fn(),
     session: {},
+}));
+jest.mock('app/mainWindow/modals/messageModal', () => ({
+    __esModule: true,
+    default: {
+        showErrorModal: jest.fn(),
+    },
 }));
 jest.mock('main/contextMenu', () => jest.fn());
 jest.mock('app/mainWindow/mainWindow', () => ({
@@ -262,7 +266,7 @@ describe('main/views/webContentsEvents', () => {
         });
         it('should deny and show dialog on bad URL', () => {
             expect(newWindow({url: 'a-bad<url'})).toStrictEqual({action: 'deny'});
-            expect(dialog.showErrorBox).toHaveBeenCalled();
+            expect(MessageModal.showErrorModal).toHaveBeenCalled();
         });
 
         it('should open URLs with non-standard characters externally', () => {
@@ -302,7 +306,7 @@ describe('main/views/webContentsEvents', () => {
             it('should reject UNC paths with no scheme and show dialog', () => {
                 const uncPath = String.raw`\\server\share\file.exe`;
                 expect(newWindow({url: uncPath})).toStrictEqual({action: 'deny'});
-                expect(dialog.showErrorBox).toHaveBeenCalled();
+                expect(MessageModal.showErrorModal).toHaveBeenCalled();
                 expect(shell.openExternal).not.toBeCalled();
                 expect(allowProtocolDialog.handleDialogEvent).not.toBeCalled();
             });
@@ -316,21 +320,21 @@ describe('main/views/webContentsEvents', () => {
 
             it('should reject URLs with literal null bytes and show dialog', () => {
                 expect(newWindow({url: 'customproto:///path\x00malicious'})).toStrictEqual({action: 'deny'});
-                expect(dialog.showErrorBox).toHaveBeenCalled();
+                expect(MessageModal.showErrorModal).toHaveBeenCalled();
                 expect(shell.openExternal).not.toBeCalled();
                 expect(allowProtocolDialog.handleDialogEvent).not.toBeCalled();
             });
 
             it('should reject URLs with percent-encoded null bytes and show dialog', () => {
                 expect(newWindow({url: 'customproto:///path%00malicious'})).toStrictEqual({action: 'deny'});
-                expect(dialog.showErrorBox).toHaveBeenCalled();
+                expect(MessageModal.showErrorModal).toHaveBeenCalled();
                 expect(shell.openExternal).not.toBeCalled();
                 expect(allowProtocolDialog.handleDialogEvent).not.toBeCalled();
             });
 
             it('should reject completely malformed URIs with no scheme and show dialog', () => {
                 expect(newWindow({url: 'not-a-url-at-all'})).toStrictEqual({action: 'deny'});
-                expect(dialog.showErrorBox).toHaveBeenCalled();
+                expect(MessageModal.showErrorModal).toHaveBeenCalled();
                 expect(shell.openExternal).not.toBeCalled();
                 expect(allowProtocolDialog.handleDialogEvent).not.toBeCalled();
             });
@@ -338,7 +342,7 @@ describe('main/views/webContentsEvents', () => {
             it('should reject oversized URLs from window.open and show dialog', () => {
                 const oversizedURL = `http://example.com/${'A'.repeat(1000000)}`;
                 expect(newWindow({url: oversizedURL})).toStrictEqual({action: 'deny'});
-                expect(dialog.showErrorBox).toHaveBeenCalled();
+                expect(MessageModal.showErrorModal).toHaveBeenCalled();
                 expect(shell.openExternal).not.toBeCalled();
                 expect(allowProtocolDialog.handleDialogEvent).not.toBeCalled();
             });

@@ -1,0 +1,22 @@
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+.MessageModal {
+    .MessageModal__message {
+        font-weight: 600;
+        white-space: pre-wrap;
+    }
+
+    .MessageModal__detail {
+        color: rgba(var(--center-channel-color-rgb), 0.75);
+        white-space: pre-wrap;
+    }
+
+    .MessageModal__checkbox {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 12px;
+        font-weight: 400;
+    }
+}

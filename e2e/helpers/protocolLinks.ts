@@ -5,7 +5,7 @@ import type {ElectronApplication} from 'playwright';
 
 import {expect} from '../fixtures/index';
 
-import {getMessageBoxCalls} from './dialog';
+import {isMessageModalOpen} from './dialog';
 import type {ServerView} from './serverView';
 import {getShellOpenExternalCalls} from './shell';
 import {evaluateInMainProcess, evaluateInMainProcessWithArg} from './testRefs';
@@ -54,7 +54,9 @@ export async function clickProtocolLink(win: ServerView, href: string): Promise<
 
 /**
  * Dispatch a custom protocol through WebContentsEventManager via a real link click.
- * Click failures propagate so a broken renderer path fails the spec.
+ * Click failures propagate so a broken renderer path fails the spec. When a trust
+ * modal is expected, the caller must answer it via answerMessageModal; the protocol
+ * handler stays pending until then.
  */
 export async function triggerCustomProtocol(
     app: ElectronApplication,
@@ -63,21 +65,20 @@ export async function triggerCustomProtocol(
     options?: {expectDialog?: boolean},
 ): Promise<void> {
     const expectDialog = options?.expectDialog ?? false;
-    const dialogsBefore = (await getMessageBoxCalls(app)).length;
     const opensBefore = (await getShellOpenExternalCalls(app)).length;
 
     await clickProtocolLink(win, url);
 
-    await expect.poll(async () => {
-        const dialogs = (await getMessageBoxCalls(app)).length;
-        const opens = (await getShellOpenExternalCalls(app)).length;
-        return dialogs > dialogsBefore || opens > opensBefore;
-    }, {timeout: 10_000, message: `Protocol click must open or prompt for ${url}`}).toBe(true);
-
     if (expectDialog) {
         await expect.poll(
-            async () => (await getMessageBoxCalls(app)).length,
-            {timeout: 10_000, message: `Protocol dialog must appear for ${url}`},
-        ).toBeGreaterThan(dialogsBefore);
+            () => isMessageModalOpen(app),
+            {timeout: 10_000, message: `Protocol trust modal must appear for ${url}`},
+        ).toBe(true);
+    } else {
+        await expect.poll(
+            async () => (await getShellOpenExternalCalls(app)).length,
+            {timeout: 10_000, message: `${url} must open without a trust modal`},
+        ).toBeGreaterThan(opensBefore);
+        expect(isMessageModalOpen(app)).toBe(false);
     }
 }

@@ -10,7 +10,6 @@ import type {
     WebContents} from 'electron';
 import {
     app,
-    dialog,
     ipcMain,
     shell,
     systemPreferences,
@@ -18,6 +17,7 @@ import {
 
 import CallsWidgetWindow from 'app/callsWidgetWindow';
 import MainWindow from 'app/mainWindow/mainWindow';
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import WebContentsManager from 'app/views/webContentsManager';
 import {
     GET_MEDIA_ACCESS_STATUS,
@@ -206,7 +206,7 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
                 }
 
                 // Show the dialog to ask the user
-                dialog.showMessageBox(mainWindow, {
+                MessageModal.showMessageModal({
                     title: localizeMessage('main.permissionsManager.checkPermission.dialog.title', 'Permission Requested'),
                     message: localizeMessage(`main.permissionsManager.checkPermission.dialog.message.${permission}`, '{appName} ({url}) is requesting the "{permission}" permission.', {appName: app.name, url: dialogOrigin, permission, externalURL: details.externalURL}),
                     detail: localizeMessage(`main.permissionsManager.checkPermission.dialog.detail.${permission}`, 'Would you like to grant {appName} this permission?', {appName: app.name}),
@@ -216,6 +216,7 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
                         localizeMessage('label.denyPermanently', 'Deny Permanently'),
                         localizeMessage('label.allow', 'Allow'),
                     ],
+                    cancelId: 0,
                 }).then(({response}) => {
                     // Save their response
                     const newPermission = {

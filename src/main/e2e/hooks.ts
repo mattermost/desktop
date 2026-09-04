@@ -5,8 +5,6 @@ import {setTestField} from 'common/utils/util';
 
 import type {SimulateNotificationClickPayload} from './notificationClick';
 
-type MessageBoxResponse = {response: number};
-
 type OpenDialogResult = {
     canceled?: boolean;
     filePaths: string[];
@@ -40,7 +38,6 @@ type RegisterE2eHooksOptions = {
     clickTrayMenuItem: (label: string) => void;
     triggerNotificationFrameEffects: (flash: boolean) => void;
     simulateNotificationClick: (payload: SimulateNotificationClickPayload) => void;
-    installMessageBoxStub: (responses: MessageBoxResponse[]) => void;
     installOpenDialogStub: (results: OpenDialogResult[]) => void;
     clearCertificateErrorCallbacks: () => void;
 };
@@ -55,7 +52,6 @@ export function registerE2eHooks(options: RegisterE2eHooksOptions): void {
     setTestField('__e2eClickTrayMenuItem', options.clickTrayMenuItem);
     setTestField('__e2eNotificationEffects', options.triggerNotificationFrameEffects);
     setTestField('__e2eSimulateNotificationClick', options.simulateNotificationClick);
-    setTestField('__e2eStubMessageBoxResponses', options.installMessageBoxStub);
     setTestField('__e2eStubOpenDialogResults', options.installOpenDialogStub);
     setTestField('__e2eClearCertificateErrorCallbacks', options.clearCertificateErrorCallbacks);
 }
