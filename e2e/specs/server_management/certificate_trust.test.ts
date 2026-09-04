@@ -63,17 +63,26 @@ test(
 
             const certificateStorePath = path.join(userDataDir, 'certificate.json');
 
-            await expect.poll(async () => {
-                const mainWindow = app.windows().find((window) => window.url().includes('index'));
-                const errorView = await mainWindow?.$('.ErrorView');
-                return errorView === null && fs.existsSync(certificateStorePath);
-            }, {
-                timeout: 45_000,
-                message: 'Trusted certificate should persist to certificate.json and clear ErrorView',
+            // Trust is applied synchronously the instant "Trust Insecure Certificate"
+            // is clicked, so certificate.json appears quickly. Check it on its own so a
+            // failure here means the modal answering broke, not the network reload.
+            await expect.poll(() => fs.existsSync(certificateStorePath), {
+                timeout: 15_000,
+                message: 'Trusted certificate should persist to certificate.json',
             }).toBe(true);
 
             const certificateStore = JSON.parse(fs.readFileSync(certificateStorePath, 'utf-8')) as Record<string, unknown>;
             expect(Object.keys(certificateStore).length).toBeGreaterThan(0);
+
+            // The reload to expired.badssl clearing the ErrorView depends on the live
+            // network, so give it its own longer poll.
+            await expect.poll(() => {
+                const mainWindow = app.windows().find((window) => window.url().includes('index'));
+                return mainWindow?.$('.ErrorView');
+            }, {
+                timeout: 45_000,
+                message: 'ErrorView should clear after trusting the certificate',
+            }).toBeNull();
 
             await closeElectronApp(app, userDataDir);
             firstAppClosed = true;
