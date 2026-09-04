@@ -3,10 +3,9 @@
 
 import type {ElectronApplication} from 'playwright';
 
-type MessageBoxResponse = {
-    response: number;
-    checkboxChecked?: boolean;
-};
+import {waitForWindow} from './electronApp';
+
+const MESSAGE_MODAL_URL_FRAGMENT = 'message.html';
 
 export type OpenDialogResult = {
     canceled?: boolean;
@@ -18,29 +17,10 @@ export type OpenDialogResult = {
  * back here through app.evaluate. Kept in sync manually with that file.
  */
 type E2eDialogGlobals = {
-    __e2eStubMessageBoxResponses?: (responses: MessageBoxResponse[]) => void;
     __e2eStubOpenDialogResults?: (results: OpenDialogResult[]) => void;
-    __e2eMessageBoxCalls?: unknown[];
     __e2eOpenDialogCalls?: unknown[];
     __e2eClearCertificateErrorCallbacks?: () => void;
 };
-
-export async function stubMessageBoxResponses(
-    app: ElectronApplication,
-    responses: MessageBoxResponse[],
-): Promise<void> {
-    if (responses.length === 0) {
-        throw new Error('stubMessageBoxResponses requires at least one response');
-    }
-
-    await app.evaluate((_electron, value) => {
-        const stub = (global as E2eDialogGlobals).__e2eStubMessageBoxResponses;
-        if (!stub) {
-            throw new Error('__e2eStubMessageBoxResponses is not available');
-        }
-        stub(value);
-    }, responses);
-}
 
 export async function stubOpenDialogResults(
     app: ElectronApplication,
@@ -59,10 +39,6 @@ export async function stubOpenDialogResults(
     }, results);
 }
 
-export async function getMessageBoxCalls(app: ElectronApplication): Promise<unknown[]> {
-    return app.evaluate(() => (global as E2eDialogGlobals).__e2eMessageBoxCalls ?? []);
-}
-
 export async function getOpenDialogCallCount(app: ElectronApplication): Promise<number> {
     return app.evaluate(() => (global as E2eDialogGlobals).__e2eOpenDialogCalls?.length ?? 0);
 }
@@ -70,5 +46,27 @@ export async function getOpenDialogCallCount(app: ElectronApplication): Promise<
 export async function clearCertificateErrorCallbacks(app: ElectronApplication): Promise<void> {
     await app.evaluate(() => {
         (global as E2eDialogGlobals).__e2eClearCertificateErrorCallbacks?.();
+    });
+}
+
+/**
+ * The former native message boxes are now custom modals rendered as a
+ * WebContentsView (mattermost-desktop://renderer/message.html). Its footer
+ * buttons render in declaration order, so `response` is the zero-based index of
+ * the button to click, matching the old dialog.showMessageBox response index.
+ */
+export async function answerMessageModal(app: ElectronApplication, response: number, timeout = 10_000): Promise<void> {
+    const modal = await waitForWindow(app, MESSAGE_MODAL_URL_FRAGMENT, timeout);
+    await modal.click(`.Modal__button >> nth=${response}`);
+    await modal.waitForEvent('close').catch(() => {});
+}
+
+export function isMessageModalOpen(app: ElectronApplication): boolean {
+    return app.windows().some((window) => {
+        try {
+            return window.url().includes(MESSAGE_MODAL_URL_FRAGMENT);
+        } catch {
+            return false;
+        }
     });
 }

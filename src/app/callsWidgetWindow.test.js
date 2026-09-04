@@ -110,6 +110,13 @@ jest.mock('app/mainWindow/modals/modalManager', () => ({
     on: jest.fn(),
 }));
 
+jest.mock('app/mainWindow/modals/messageModal', () => ({
+    __esModule: true,
+    default: {
+        showErrorModal: jest.fn(),
+    },
+}));
+
 jest.mock('app/tabs/tabManager', () => ({
     on: jest.fn(),
     switchToTab: jest.fn(),

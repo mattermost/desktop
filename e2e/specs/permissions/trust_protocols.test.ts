@@ -6,10 +6,7 @@ import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
 import {demoConfig, demoMattermostConfig} from '../../helpers/config';
-import {
-    getMessageBoxCalls,
-    stubMessageBoxResponses,
-} from '../../helpers/dialog';
+import {answerMessageModal} from '../../helpers/dialog';
 import {loginToMattermost} from '../../helpers/login';
 import {typeIntoPostTextbox} from '../../helpers/mattermostShell';
 import {triggerCustomProtocol, waitForDefaultProtocolsAllowed} from '../../helpers/protocolLinks';
@@ -60,8 +57,8 @@ test.describe('permissions/trust_protocols', () => {
             await waitForDefaultProtocolsAllowed(electronApp);
             await stubShellOpenExternal(electronApp);
             try {
-                await stubMessageBoxResponses(electronApp, [{response: 1}]);
                 await triggerCustomProtocol(electronApp, serverWin, SPOTIFY_URL, {expectDialog: true});
+                await answerMessageModal(electronApp, 1); // Yes (Save spotify: as allowed)
 
                 await expect.poll(
                     () => getShellOpenExternalCalls(electronApp),
@@ -73,36 +70,28 @@ test.describe('permissions/trust_protocols', () => {
                     {timeout: 10_000, message: 'Save must persist spotify: to allowedProtocols.json'},
                 ).toContain('spotify:');
 
-                const dialogsAfterSave = (await getMessageBoxCalls(electronApp)).length;
                 await stubShellOpenExternal(electronApp);
                 await triggerCustomProtocol(electronApp, serverWin, SPOTIFY_URL, {expectDialog: false});
                 await expect.poll(
                     () => getShellOpenExternalCalls(electronApp),
                     {timeout: 10_000, message: 'A saved protocol must open without showing the trust dialog again'},
                 ).toContain(SPOTIFY_URL);
-                expect((await getMessageBoxCalls(electronApp)).length).toBe(dialogsAfterSave);
 
-                await stubMessageBoxResponses(electronApp, [{response: 2}]);
                 await stubShellOpenExternal(electronApp);
-                const dialogsBeforeNo = (await getMessageBoxCalls(electronApp)).length;
                 await triggerCustomProtocol(electronApp, serverWin, STEAM_URL, {expectDialog: true});
-                await expect.poll(
-                    async () => (await getMessageBoxCalls(electronApp)).length,
-                    {timeout: 10_000},
-                ).toBeGreaterThan(dialogsBeforeNo);
+                await answerMessageModal(electronApp, 2); // No
                 expect(await getShellOpenExternalCalls(electronApp)).not.toContain(STEAM_URL);
                 expect(readAllowedProtocols(protocolsFile)).not.toContain('steam:');
 
-                await stubMessageBoxResponses(electronApp, [{response: 0}]);
                 await stubShellOpenExternal(electronApp);
                 await triggerCustomProtocol(electronApp, serverWin, STEAM_URL, {expectDialog: true});
+                await answerMessageModal(electronApp, 0); // Yes
                 await expect.poll(
                     () => getShellOpenExternalCalls(electronApp),
                     {timeout: 10_000, message: 'Yes without Save must still open the protocol'},
                 ).toContain(STEAM_URL);
                 expect(readAllowedProtocols(protocolsFile)).not.toContain('steam:');
 
-                const dialogsBeforeDefaults = (await getMessageBoxCalls(electronApp)).length;
                 await stubShellOpenExternal(electronApp);
                 for (const url of DEFAULT_PROTOCOL_URLS) {
                     await triggerCustomProtocol(electronApp, serverWin, url, {expectDialog: false});
@@ -111,7 +100,6 @@ test.describe('permissions/trust_protocols', () => {
                         {timeout: 10_000, message: `${url} must open without a trust dialog`},
                     ).toContain(url);
                 }
-                expect((await getMessageBoxCalls(electronApp)).length).toBe(dialogsBeforeDefaults);
             } finally {
                 await restoreShellOpenExternal(electronApp);
             }

@@ -188,6 +188,13 @@ jest.mock('app/mainWindow/mainWindow', () => ({
     sendToRenderer: jest.fn(),
     on: jest.fn(),
 }));
+jest.mock('app/mainWindow/modals/messageModal', () => ({
+    __esModule: true,
+    default: {
+        showMessageModal: jest.fn(),
+        showErrorModal: jest.fn(),
+    },
+}));
 
 jest.mock('app/views/webContentsManager', () => ({
     on: jest.fn(),

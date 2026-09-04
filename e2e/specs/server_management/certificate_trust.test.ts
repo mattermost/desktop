@@ -6,7 +6,7 @@ import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
 import {demoConfig} from '../../helpers/config';
-import {clearCertificateErrorCallbacks, stubMessageBoxResponses} from '../../helpers/dialog';
+import {answerMessageModal, clearCertificateErrorCallbacks} from '../../helpers/dialog';
 import {launchDirectTestApp} from '../../helpers/directLaunch';
 import {closeElectronApp, closeElectronAppFast} from '../../helpers/electronApp';
 import {waitForErrorView} from '../../helpers/errorView';
@@ -38,14 +38,13 @@ test(
         let firstAppClosed = false;
         const app = await launchDirectTestApp(userDataDir, badConfig, {
             writeConfig: false,
-            extraEnv: {MM_E2E_STUB_MESSAGE_BOX: 'cancel'},
         });
 
         try {
+            await answerMessageModal(app, 1, 45_000); // Cancel Connection on the launch cert prompt
             await waitForErrorView(app);
 
             await clearCertificateErrorCallbacks(app);
-            await stubMessageBoxResponses(app, [{response: 0}, {response: 0}]);
 
             await evaluateInMainProcess(app, () => {
                 const refs = (global as any).__e2eTestRefs;
@@ -58,6 +57,9 @@ test(
                 }
                 refs.ServerManager.reloadServer(server.id);
             }, {timeoutMs: 30_000});
+
+            await answerMessageModal(app, 0, 45_000); // More Details
+            await answerMessageModal(app, 0, 45_000); // Trust Insecure Certificate
 
             const certificateStorePath = path.join(userDataDir, 'certificate.json');
 
@@ -81,12 +83,11 @@ test(
             // trust decision across restarts.
             const relaunchedApp = await launchDirectTestApp(userDataDir, badConfig, {
                 writeConfig: false,
-                extraEnv: {MM_E2E_STUB_MESSAGE_BOX: 'cancel'},
             });
             try {
                 // System-clock changes (MM-T2631 step 1) are not automatable; expired.badssl.com
-                // is the stand-in. Cancel-stubbed relaunch proves trust persisted — a new
-                // untrusted cert would be rejected and ErrorView would reappear.
+                // is the stand-in. The relaunch proves trust persisted — a new untrusted cert
+                // would prompt again and ErrorView would reappear.
                 await expect.poll(async () => {
                     try {
                         const serverMap = await buildServerMap(relaunchedApp);

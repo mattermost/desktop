@@ -2,10 +2,11 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent, Rectangle, Event, IpcMainInvokeEvent, WebContentsWillRedirectEventParams} from 'electron';
-import {BrowserWindow, desktopCapturer, dialog, ipcMain, systemPreferences} from 'electron';
+import {BrowserWindow, desktopCapturer, ipcMain, systemPreferences} from 'electron';
 import Joi from 'joi';
 
 import MainWindow from 'app/mainWindow/mainWindow';
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import NavigationManager from 'app/navigationManager';
 import TabManager from 'app/tabs/tabManager';
 import type {MattermostWebContentsView} from 'app/views/MattermostWebContentsView';
@@ -569,7 +570,7 @@ export class CallsWidgetWindow {
 
             // We only want to show the error message once to avoid spamming the user with dialog boxes
             if (!this.seenErrorMessage) {
-                dialog.showErrorBox(
+                MessageModal.showErrorModal(
                     localizeMessage('callsWidgetWindow.cannotStartCall.title', 'Cannot Start Call'),
                     localizeMessage('callsWidgetWindow.cannotStartCall.message', 'There is an in-progress call on another server that must be ended before joining a new call.'),
                 );

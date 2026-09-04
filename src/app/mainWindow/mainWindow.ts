@@ -4,7 +4,7 @@
 import fs from 'fs';
 
 import type {BrowserWindowConstructorOptions, Event, Input, BrowserWindow, IpcMainEvent} from 'electron';
-import {app, dialog, ipcMain, screen} from 'electron';
+import {app, ipcMain, screen} from 'electron';
 import {EventEmitter} from 'events';
 
 import BaseWindow from 'app/windows/baseWindow';
@@ -24,6 +24,8 @@ import {
     MAIN_WINDOW_CREATED,
     MAIN_WINDOW_RESIZED,
     MAIN_WINDOW_FOCUSED,
+    MAIN_WINDOW_MINIMIZE_TO_TRAY,
+    MAIN_WINDOW_CLOSE_CONFIRM,
     EMIT_CONFIGURATION,
     EXIT_FULLSCREEN,
     SERVER_LOGGED_IN_CHANGED,
@@ -43,7 +45,6 @@ import * as Validator from 'common/Validator';
 import ViewManager from 'common/views/viewManager';
 import {boundsInfoPath} from 'main/constants';
 import {registerMainWindowE2EReadiness} from 'main/e2e/appReady';
-import {localizeMessage} from 'main/i18nManager';
 import performanceMonitor from 'main/performanceMonitor';
 import ThemeManager from 'main/themeManager';
 import {isInsideRectangle, isKDE} from 'main/utils';
@@ -310,37 +311,12 @@ export class MainWindow extends EventEmitter {
                     if (Config.alwaysMinimize) {
                         hideWindow(this.win.browserWindow);
                     } else {
-                        dialog.showMessageBox(this.win.browserWindow, {
-                            title: localizeMessage('main.windows.mainWindow.minimizeToTray.dialog.title', 'Minimize to Tray'),
-                            message: localizeMessage('main.windows.mainWindow.minimizeToTray.dialog.message', '{appName} will continue to run in the system tray. This can be disabled in Settings.', {appName: app.name}),
-                            type: 'info',
-                            checkboxChecked: true,
-                            checkboxLabel: localizeMessage('main.windows.mainWindow.minimizeToTray.dialog.checkboxLabel', 'Don\'t show again'),
-                        }).then((result: {response: number; checkboxChecked: boolean}) => {
-                            Config.set('alwaysMinimize', result.checkboxChecked);
-                            hideWindow(this.win?.browserWindow);
-                        });
+                        this.emit(MAIN_WINDOW_MINIMIZE_TO_TRAY);
                     }
                 } else if (Config.alwaysClose) {
                     app.quit();
                 } else {
-                    dialog.showMessageBox(this.win.browserWindow, {
-                        title: localizeMessage('main.windows.mainWindow.closeApp.dialog.title', 'Close Application'),
-                        message: localizeMessage('main.windows.mainWindow.closeApp.dialog.message', 'Are you sure you want to quit?'),
-                        detail: localizeMessage('main.windows.mainWindow.closeApp.dialog.detail', 'You will no longer receive notifications for messages. If you want to leave {appName} running in the system tray, you can enable this in Settings.', {appName: app.name}),
-                        type: 'question',
-                        buttons: [
-                            localizeMessage('label.yes', 'Yes'),
-                            localizeMessage('label.no', 'No'),
-                        ],
-                        checkboxChecked: true,
-                        checkboxLabel: localizeMessage('main.windows.mainWindow.closeApp.dialog.checkboxLabel', 'Don\'t ask again'),
-                    }).then((result: {response: number; checkboxChecked: boolean}) => {
-                        Config.set('alwaysClose', result.checkboxChecked && result.response === 0);
-                        if (result.response === 0) {
-                            app.quit();
-                        }
-                    });
+                    this.emit(MAIN_WINDOW_CLOSE_CONFIRM);
                 }
                 break;
             case 'darwin':
