@@ -57,8 +57,15 @@ export async function clearCertificateErrorCallbacks(app: ElectronApplication): 
  */
 export async function answerMessageModal(app: ElectronApplication, response: number, timeout = 10_000): Promise<void> {
     const modal = await waitForWindow(app, MESSAGE_MODAL_URL_FRAGMENT, timeout);
-    await modal.click(`.Modal__button >> nth=${response}`);
-    await modal.waitForEvent('close').catch(() => {});
+    const button = modal.locator('.Modal__button').nth(response);
+    await button.waitFor({state: 'visible', timeout});
+
+    // Clicking dismisses the modal, which tears down its WebContentsView. Fire a
+    // DOM click rather than a Playwright click so we don't race actionability
+    // retries against the fade-in/teardown ("element is not stable" followed by
+    // "Target page has been closed").
+    await button.evaluate((el) => (el as HTMLElement).click());
+    await modal.waitForEvent('close', {timeout}).catch(() => {});
 }
 
 export function isMessageModalOpen(app: ElectronApplication): boolean {
