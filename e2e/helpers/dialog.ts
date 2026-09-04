@@ -3,6 +3,8 @@
 
 import type {ElectronApplication} from 'playwright';
 
+import {expect} from '../fixtures/index';
+
 import {waitForWindow} from './electronApp';
 
 const MESSAGE_MODAL_URL_FRAGMENT = 'message.html';
@@ -65,7 +67,11 @@ export async function answerMessageModal(app: ElectronApplication, response: num
     // retries against the fade-in/teardown ("element is not stable" followed by
     // "Target page has been closed").
     await button.evaluate((el) => (el as HTMLElement).click());
-    await modal.waitForEvent('close', {timeout}).catch(() => {});
+
+    // Wait until this modal's page is fully gone before returning, so a following
+    // answerMessageModal (e.g. the certificate flow's two sequential modals) can't
+    // re-grab this closing modal instead of the next one.
+    await expect.poll(() => modal.isClosed(), {timeout}).toBe(true);
 }
 
 export function isMessageModalOpen(app: ElectronApplication): boolean {
