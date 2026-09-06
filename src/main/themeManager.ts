@@ -146,11 +146,9 @@ export class ThemeManager {
                         return {surfaceId: replaced.surfaceId, state: replaced.state};
                     }
                 } else if (
-                    replaced.state.scope === 'main-tab' &&
-                    replaced.state.status === 'standby' &&
-                    replaced.state.reason === 'theme-reset-failed'
+                    this.isDesktopThemeResetFailed(replaced)
                 ) {
-                    if (this.activeDesktopThemeLease || !this.resetDesktopOutput()) {
+                    if (!this.recoverDesktopThemeOutput()) {
                         return {surfaceId: replaced.surfaceId, state: replaced.state};
                     }
                 }
@@ -236,7 +234,10 @@ export class ThemeManager {
             if (wasActive && !this.revokeDesktopThemeLease('not-current')) {
                 throw new Error('Failed to release Desktop theme output');
             }
-            if (!wasActive && this.isCommittedMainView(registration) && !this.resetDesktopOutput()) {
+            if (!wasActive && this.isDesktopThemeResetFailed(registration) && !this.recoverDesktopThemeOutput()) {
+                throw new Error('Failed to release Desktop theme output');
+            }
+            if (!wasActive && !this.isDesktopThemeResetFailed(registration) && this.isCommittedMainView(registration) && !this.resetDesktopOutput()) {
                 this.setDesktopThemeStandby(registration, 'theme-reset-failed');
                 throw new Error('Failed to release Desktop theme output');
             }
@@ -257,11 +258,7 @@ export class ThemeManager {
         this.scheduleBrokerTransition(() => {
             const registrations = [...this.desktopThemeSurfaces.values()].filter((registration) => registration.viewId === viewId);
             registrations.forEach((registration) => {
-                const wasActive = this.activeDesktopThemeLease?.registration === registration;
-                this.removeDesktopThemeSurface(registration);
-                if (wasActive) {
-                    this.revokeDesktopThemeLease('not-current');
-                }
+                this.retireDesktopThemeSurface(registration);
             });
             this.cutoverDocuments.delete(viewId);
         });
@@ -278,7 +275,7 @@ export class ThemeManager {
             const registrationForFrame = this.desktopThemeSurfaceByFrame.get(document.frame);
             let registration = isSameDesktopThemeDocument(registrationForFrame, document) ? registrationForFrame : undefined;
             if (registration && this.isDesktopThemeRegistrationFailed(registration)) {
-                this.removeDesktopThemeSurface(registration);
+                this.retireDesktopThemeSurface(registration);
                 registration = undefined;
             }
             if (scope === 'popout' && registration && this.activeDesktopThemeLease?.registration === registration) {
@@ -526,6 +523,10 @@ export class ThemeManager {
             if (this.activeDesktopThemeLease?.registration === candidate) {
                 return;
             }
+            if (!this.recoverDesktopThemeOutput()) {
+                this.setDesktopThemeStandby(candidate, 'theme-reset-failed');
+                return;
+            }
 
             const leaseId = this.createId();
             this.activeDesktopThemeLease = {
@@ -574,16 +575,43 @@ export class ThemeManager {
             (registration.state.reason === 'apply-failed' || registration.state.reason === 'theme-reset-failed');
     };
 
+    private isDesktopThemeResetFailed = (registration: DesktopThemeSurface) => {
+        return registration.state.scope === 'main-tab' &&
+            registration.state.status === 'standby' &&
+            registration.state.reason === 'theme-reset-failed';
+    };
+
+    private recoverDesktopThemeOutput = () => {
+        const failedRegistrations = [...this.desktopThemeSurfaces.values()].filter(this.isDesktopThemeResetFailed);
+        if (failedRegistrations.length === 0) {
+            return true;
+        }
+
+        const activeLease = this.activeDesktopThemeLease;
+        if (activeLease ? !activeLease.directive : !this.resetDesktopOutput()) {
+            return false;
+        }
+
+        failedRegistrations.forEach(this.removeDesktopThemeSurface);
+        return true;
+    };
+
+    private retireDesktopThemeSurface = (registration: DesktopThemeSurface) => {
+        const wasActive = this.activeDesktopThemeLease?.registration === registration;
+        if (wasActive && !this.revokeDesktopThemeLease('not-current')) {
+            return false;
+        }
+        if (!wasActive && this.isDesktopThemeResetFailed(registration) && !this.recoverDesktopThemeOutput()) {
+            return false;
+        }
+        this.removeDesktopThemeSurface(registration);
+        return true;
+    };
+
     private removeDesktopThemeDocumentSurfaces = (webContents: WebContents, frame?: WebFrameMain) => {
         const registrations = [...this.desktopThemeSurfaces.values()].filter((registration) =>
             registration.webContents === webContents && (!frame || registration.frame === frame));
-        registrations.forEach((registration) => {
-            const wasActive = this.activeDesktopThemeLease?.registration === registration;
-            this.removeDesktopThemeSurface(registration);
-            if (wasActive) {
-                this.revokeDesktopThemeLease('not-current');
-            }
-        });
+        registrations.forEach(this.retireDesktopThemeSurface);
     };
 
     private removeDesktopThemeDocumentCutover = (webContents: WebContents, frame?: WebFrameMain) => {

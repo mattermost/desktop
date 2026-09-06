@@ -268,6 +268,26 @@ describe('Desktop theme broker', () => {
         await expect(manager.releaseDesktopThemeSurface(owner, registration.surfaceId)).resolves.toEqual({status: 'stale'});
     });
 
+    it('retries a failed reset when a former owner releases', async () => {
+        const shell = createDocument('internal-shell');
+        manager.registerMainWindowView(shell.webContents);
+        const registration = await manager.registerDesktopThemeSurface(owner);
+        jest.mocked(shell.webContents.send).mockImplementation((channel) => {
+            if (channel === RESET_THEME) {
+                throw new Error('send failed');
+            }
+        });
+
+        manager.setCommittedMainViewResolver(() => undefined);
+        await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
+        expect(latestSurfaceState(owner, registration.surfaceId)).toMatchObject({status: 'standby', reason: 'theme-reset-failed'});
+
+        jest.mocked(shell.webContents.send).mockImplementation(() => undefined);
+        jest.mocked(shell.webContents.send).mockClear();
+        await expect(manager.releaseDesktopThemeSurface(owner, registration.surfaceId)).resolves.toEqual({status: 'released'});
+        expect(shell.webContents.send).toHaveBeenCalledWith(RESET_THEME);
+    });
+
     it('keeps the cached legacy path until the current document registers', async () => {
         const shell = createDocument('internal-shell');
         manager.registerMainWindowView(shell.webContents);
@@ -334,7 +354,7 @@ describe('Desktop theme broker', () => {
         expect(replacement.state).toMatchObject({status: 'granted'});
     });
 
-    it('does not reset the current owner when a failed background surface registers again', async () => {
+    it('retires failed background evidence without resetting the current owner', async () => {
         const shell = createDocument('internal-shell');
         const replacementOwner = createDocument('replacement-view');
         manager.registerMainWindowView(shell.webContents);
@@ -361,11 +381,56 @@ describe('Desktop theme broker', () => {
 
         jest.mocked(shell.webContents.send).mockClear();
         const failedRetry = await manager.registerDesktopThemeSurface(owner);
-        expect(failedRetry).toEqual({
-            surfaceId: registration.surfaceId,
-            state: expect.objectContaining({status: 'standby', reason: 'theme-reset-failed'}),
-        });
+        expect(failedRetry.surfaceId).not.toBe(registration.surfaceId);
+        expect(failedRetry.state).toMatchObject({status: 'standby', reason: 'not-current'});
         expect(shell.webContents.send).not.toHaveBeenCalledWith(RESET_THEME);
+    });
+
+    it('recovers failed output before granting a different owner', async () => {
+        const shell = createDocument('internal-shell');
+        const replacementOwner = createDocument('replacement-view');
+        manager.registerMainWindowView(shell.webContents);
+        const registration = await manager.registerDesktopThemeSurface(owner);
+        jest.mocked(shell.webContents.send).mockImplementation((channel) => {
+            if (channel === RESET_THEME) {
+                throw new Error('send failed');
+            }
+        });
+
+        manager.setCommittedMainViewResolver(() => ({viewId: replacementOwner.viewId, webContents: replacementOwner.webContents}));
+        await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
+        expect(latestSurfaceState(owner, registration.surfaceId)).toMatchObject({status: 'standby', reason: 'theme-reset-failed'});
+
+        const blockedReplacement = await manager.registerDesktopThemeSurface(replacementOwner);
+        expect(blockedReplacement.state).toMatchObject({status: 'standby', reason: 'theme-reset-failed'});
+
+        jest.mocked(shell.webContents.send).mockImplementation(() => undefined);
+        jest.mocked(shell.webContents.send).mockClear();
+        const replacement = await manager.registerDesktopThemeSurface(replacementOwner);
+        expect(shell.webContents.send).toHaveBeenCalledWith(RESET_THEME);
+        expect(replacement.state).toMatchObject({status: 'granted'});
+        await expect(manager.releaseDesktopThemeSurface(owner, registration.surfaceId)).resolves.toEqual({status: 'stale'});
+    });
+
+    it('retains failed output evidence through document invalidation', async () => {
+        const shell = createDocument('internal-shell');
+        manager.registerMainWindowView(shell.webContents);
+        const registration = await manager.registerDesktopThemeSurface(owner);
+        jest.mocked(shell.webContents.send).mockImplementation((channel) => {
+            if (channel === RESET_THEME) {
+                throw new Error('send failed');
+            }
+        });
+
+        manager.handleDesktopThemeDocumentInvalidated(owner.webContents, owner.frame);
+        await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
+        expect(latestSurfaceState(owner, registration.surfaceId)).toMatchObject({status: 'standby', reason: 'theme-reset-failed'});
+
+        jest.mocked(shell.webContents.send).mockImplementation(() => undefined);
+        jest.mocked(shell.webContents.send).mockClear();
+        const replacement = await manager.registerDesktopThemeSurface(owner);
+        expect(shell.webContents.send).toHaveBeenCalledWith(RESET_THEME);
+        expect(replacement.state).toMatchObject({status: 'granted'});
     });
 
     it('does not revive a failed registration across view scope changes', async () => {
