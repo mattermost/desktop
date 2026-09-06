@@ -426,12 +426,8 @@ export const themeSchema = Joi.object({
 }).unknown(true);
 
 const opaqueDesktopThemeIdSchema = Joi.string().min(1).max(256).required().strict();
-const desktopShellThemeColorFields = Object.keys(themeFields).filter((field) => field !== 'codeTheme');
-export const desktopShellThemeSchema = Joi.object<DesktopShellTheme>({
-    ...themeFields,
-    codeTheme: Joi.string().max(256).required().strict(),
-}).
-    fork(desktopShellThemeColorFields, () => Joi.string().pattern(/^#[0-9a-f]{6}$/i).required().strict()).
+export const desktopShellThemeSchema = Joi.object<DesktopShellTheme>(themeFields).
+    fork(Object.keys(themeFields), (schema) => (schema as Joi.StringSchema).max(256).required()).
     unknown(false);
 
 export const desktopThemeApplyRequestSchema = Joi.object<DesktopThemeApplyRequest>({

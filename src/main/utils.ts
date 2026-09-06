@@ -13,6 +13,7 @@ import {app} from 'electron';
 
 import {MAILTO_PREFIX} from 'common/constants';
 import {TAB_BAR_HEIGHT} from 'common/utils/constants';
+import {parseThemeColor} from 'common/utils/theme';
 
 import type {Args} from 'types/args';
 
@@ -147,17 +148,17 @@ export function isKDE() {
 }
 
 export function isLightColor(color: string) {
-    const hexColor = Number('0x' + color.slice(1));
-
-    const r = hexColor >> 16;
-    const g = (hexColor >> 8) & 255;
-    const b = hexColor & 255;
+    const components = parseThemeColor(color);
+    if (!components) {
+        return false;
+    }
+    const {red, green, blue} = components;
 
     // HSP equation from http://alienryderflex.com/hsp.html
     const hsp = Math.sqrt(
-        (0.299 * (r * r)) +
-        (0.587 * (g * g)) +
-        (0.114 * (b * b)),
+        (0.299 * (red * red)) +
+        (0.587 * (green * green)) +
+        (0.114 * (blue * blue)),
     );
 
     // Using the HSP value, determine whether the color is light or dark

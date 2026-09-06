@@ -6,6 +6,8 @@ import type {IntlShape} from 'react-intl';
 
 import type {Theme} from '@mattermost/desktop-api';
 
+import {parseThemeColor} from 'common/utils/theme';
+
 import type {DownloadedItem} from 'types/downloads';
 
 import {Constants} from './constants';
@@ -200,9 +202,9 @@ const resetTheme = () => {
     document.body.style.removeProperty('--code-theme');
 };
 
-function toRgbValues(hexStr: string): string {
-    const rgbaStr = `${parseInt(hexStr.substring(1, 3), 16)}, ${parseInt(hexStr.substring(3, 5), 16)}, ${parseInt(hexStr.substring(5, 7), 16)}`;
-    return rgbaStr;
+function toRgbValues(color: string): string {
+    const components = parseThemeColor(color);
+    return components ? `${components.red}, ${components.green}, ${components.blue}` : '';
 }
 
 export {

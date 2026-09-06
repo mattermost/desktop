@@ -1,13 +1,23 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {isRoutableAddress} from './utils';
+import {isLightColor, isRoutableAddress} from './utils';
 
 jest.mock('electron', () => ({
     app: {},
 }));
 
 describe('main/utils', () => {
+    describe('isLightColor', () => {
+        it.each(['#ffffff', '#fff', 'rgb(255,255,255)', 'rgba(255,255,255,0.5)'])('identifies %s as light', (color) => {
+            expect(isLightColor(color)).toBe(true);
+        });
+
+        it.each(['#000000', '#000', 'rgb(0,0,0)', 'invalid'])('identifies %s as dark', (color) => {
+            expect(isLightColor(color)).toBe(false);
+        });
+    });
+
     describe('isRoutableAddress', () => {
         describe('IPv4', () => {
             it('accepts a public address', () => {
