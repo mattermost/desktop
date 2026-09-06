@@ -316,6 +316,40 @@ describe('Desktop theme broker', () => {
         expect(replacement.state).toMatchObject({status: 'granted'});
     });
 
+    it('does not reset the current owner when a failed background surface registers again', async () => {
+        const shell = createDocument('internal-shell');
+        const replacementOwner = createDocument('replacement-view');
+        manager.registerMainWindowView(shell.webContents);
+        const registration = await manager.registerDesktopThemeSurface(owner);
+        jest.mocked(shell.webContents.send).mockImplementation((channel) => {
+            if (channel === RESET_THEME) {
+                throw new Error('send failed');
+            }
+        });
+
+        manager.setCommittedMainViewResolver(() => ({viewId: replacementOwner.viewId, webContents: replacementOwner.webContents}));
+        await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
+        expect(latestSurfaceState(owner, registration.surfaceId)).toMatchObject({status: 'standby', reason: 'theme-reset-failed'});
+
+        jest.mocked(shell.webContents.send).mockImplementation(() => undefined);
+        const replacement = await manager.registerDesktopThemeSurface(replacementOwner);
+        const leaseId = replacement.state.status === 'granted' ? replacement.state.leaseId : '';
+        await expect(manager.applyDesktopTheme(replacementOwner, {
+            surfaceId: replacement.surfaceId,
+            leaseId,
+            sequence: 1,
+            directive: {mode: 'fixed', shellTheme},
+        })).resolves.toMatchObject({status: 'applied'});
+
+        jest.mocked(shell.webContents.send).mockClear();
+        const failedRetry = await manager.registerDesktopThemeSurface(owner);
+        expect(failedRetry).toEqual({
+            surfaceId: registration.surfaceId,
+            state: expect.objectContaining({status: 'standby', reason: 'theme-reset-failed'}),
+        });
+        expect(shell.webContents.send).not.toHaveBeenCalledWith(RESET_THEME);
+    });
+
     it('does not revive a failed registration across view scope changes', async () => {
         let viewType = ViewType.TAB;
         jest.mocked(ViewManager.getView).mockImplementation((viewId) => ({

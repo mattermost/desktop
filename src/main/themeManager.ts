@@ -148,10 +148,11 @@ export class ThemeManager {
                 } else if (
                     replaced.state.scope === 'main-tab' &&
                     replaced.state.status === 'standby' &&
-                    replaced.state.reason === 'theme-reset-failed' &&
-                    !this.resetDesktopOutput()
+                    replaced.state.reason === 'theme-reset-failed'
                 ) {
-                    return {surfaceId: replaced.surfaceId, state: replaced.state};
+                    if (this.activeDesktopThemeLease || !this.resetDesktopOutput()) {
+                        return {surfaceId: replaced.surfaceId, state: replaced.state};
+                    }
                 }
                 this.removeDesktopThemeSurface(replaced);
             }
