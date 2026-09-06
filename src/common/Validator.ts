@@ -6,6 +6,7 @@ import Joi from 'joi';
 import type {DesktopShellTheme, DesktopThemeApplyRequest} from '@mattermost/desktop-api';
 
 import {Logger} from 'common/log';
+import {parseThemeColor} from 'common/utils/theme';
 import {isValidURL} from 'common/utils/url';
 
 import type {AppState} from 'types/appState';
@@ -428,6 +429,11 @@ export const themeSchema = Joi.object({
 const opaqueDesktopThemeIdSchema = Joi.string().min(1).max(256).required().strict();
 export const desktopShellThemeSchema = Joi.object<DesktopShellTheme>(themeFields).
     fork(Object.keys(themeFields), (schema) => (schema as Joi.StringSchema).max(256).required()).
+    keys({
+        centerChannelBg: Joi.string().max(256).required().strict().custom((value, helpers) => (
+            parseThemeColor(value) ? value : helpers.error('string.pattern.base')
+        )),
+    }).
     unknown(false);
 
 export const desktopThemeApplyRequestSchema = Joi.object<DesktopThemeApplyRequest>({

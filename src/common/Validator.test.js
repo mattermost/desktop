@@ -457,6 +457,7 @@ describe('common/Validator', () => {
             {...request, sequence: 0},
             {...request, sequence: '1'},
             {...request, directive: {...request.directive, unexpected: true}},
+            {...request, directive: {...request.directive, shellTheme: {...shellTheme, centerChannelBg: 'red'}}},
             {...request, directive: {...request.directive, shellTheme: {...shellTheme, unexpected: true}}},
             {...request, directive: {...request.directive, shellTheme: {...shellTheme, sidebarBg: undefined}}},
         ])('rejects malformed or extended directives', (invalidRequest) => {
