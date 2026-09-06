@@ -42,6 +42,7 @@ describe('createSystemAppearanceAdapter', () => {
         adapter.subscribeInvalidation(jest.fn());
 
         await expect(adapter.read()).resolves.toEqual(expected);
+        expect(systemPreferences.getUserDefault).toHaveBeenCalledWith('AppleInterfaceStyle', 'string');
     });
 
     it('is unavailable when live invalidation cannot be subscribed', async () => {

@@ -6,9 +6,11 @@ import {app, dialog} from 'electron';
 import MainWindow from 'app/mainWindow/mainWindow';
 import WebContentsManager from 'app/views/webContentsManager';
 import ServerManager from 'common/servers/serverManager';
-import {handleAppActivate, handleAppWillFinishLaunching, handleAppCertificateError, certificateErrorCallbacks} from 'main/app/app';
+import {handleAppActivate, handleAppBeforeQuit, handleAppWillFinishLaunching, handleAppCertificateError, certificateErrorCallbacks} from 'main/app/app';
 import {getDeeplinkingURL, openDeepLink} from 'main/app/utils';
 import CertificateStore from 'main/security/certificateStore';
+import SystemAppearanceMonitor from 'main/systemAppearanceMonitor';
+import ThemeManager from 'main/themeManager';
 
 jest.mock('electron', () => ({
     app: {
@@ -46,7 +48,9 @@ jest.mock('main/security/certificateStore', () => ({
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
-jest.mock('app/system/tray/tray', () => ({}));
+jest.mock('app/system/tray/tray', () => ({
+    destroy: jest.fn(),
+}));
 jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
     show: jest.fn(),
@@ -66,6 +70,15 @@ jest.mock('common/views/viewManager', () => ({
 }));
 
 describe('main/app/app', () => {
+    describe('handleAppBeforeQuit', () => {
+        it('shuts down theme lifecycle state', () => {
+            handleAppBeforeQuit();
+
+            expect(ThemeManager.shutdown).toHaveBeenCalled();
+            expect(SystemAppearanceMonitor.destroy).toHaveBeenCalled();
+        });
+    });
+
     describe('handleAppActivate', () => {
         afterEach(() => {
             jest.resetAllMocks();

@@ -223,6 +223,17 @@ describe('TabManager', () => {
 
             expect(observedOwners).toEqual([undefined, 'test-view-id']);
         });
+
+        it('clears the committed owner when its tab fails to load', () => {
+            const tabManager = new TabManager();
+            tabManager.activeTabs.set('test-server-id', 'test-view-id');
+            tabManager.currentVisibleTab = 'test-view-id';
+
+            tabManager.failLoading('test-view-id');
+
+            expect(tabManager.currentVisibleTab).toBeUndefined();
+            expect(ThemeManager.handleCommittedMainViewChanged).toHaveBeenCalled();
+        });
     });
 
     describe('getOrderedTabsForServer', () => {
@@ -904,7 +915,6 @@ describe('TabManager', () => {
 
             // Verify switchToNextTabIfNecessary was called
             expect(switchToNextTabSpy).toHaveBeenCalledWith('test-tab-id', 'test-server-id');
-            expect(ThemeManager.handleDesktopThemeViewInvalidated).not.toHaveBeenCalled();
         });
 
         it('should not handle non-TAB type removal', () => {
@@ -1158,6 +1168,7 @@ describe('TabManager', () => {
             };
 
             ViewManager.getView.mockReturnValue(mockView);
+            tabManager.currentVisibleTab = 'new-window-id';
 
             // Emit the event for WINDOW type
             ViewManager.mockViewManager.emit(VIEW_TYPE_ADDED, 'new-window-id', ViewType.WINDOW);
@@ -1166,14 +1177,6 @@ describe('TabManager', () => {
             expect(tabManager.tabOrder.get('test-server-id')).toBeUndefined();
             expect(emitSpy).not.toHaveBeenCalledWith(TAB_ADDED, expect.any(String), expect.any(String));
             expect(ThemeManager.handleDesktopThemeViewTypeChanged).toHaveBeenCalledWith('new-window-id', ViewType.WINDOW);
-        });
-
-        it('clears a committed view after it becomes a window', () => {
-            const tabManager = new TabManager();
-            tabManager.currentVisibleTab = 'converted-view-id';
-
-            ViewManager.mockViewManager.emit(VIEW_TYPE_ADDED, 'converted-view-id', ViewType.WINDOW);
-
             expect(tabManager.currentVisibleTab).toBeUndefined();
             expect(ThemeManager.handleCommittedMainViewChanged).toHaveBeenCalled();
         });

@@ -8,6 +8,9 @@ import {app, session} from 'electron';
 import NavigationManager from 'app/navigationManager';
 import Config from 'common/config';
 import parseArgs from 'main/ParseArgs';
+import {createSystemAppearanceAdapter} from 'main/systemAppearanceAdapter';
+import SystemAppearanceMonitor from 'main/systemAppearanceMonitor';
+import ThemeManager from 'main/themeManager';
 
 import {initialize} from './initialize';
 import {clearAppCache, getDeeplinkingURL, wasUpdated} from './utils';
@@ -269,6 +272,7 @@ describe('main/app/initialize', () => {
     });
     beforeEach(() => {
         parseArgs.mockReturnValue({});
+        createSystemAppearanceAdapter.mockReturnValue({});
         Config.once.mockImplementation((event, cb) => {
             if (event === 'update') {
                 cb();
@@ -299,8 +303,14 @@ describe('main/app/initialize', () => {
         global.process = originalProcess;
     });
 
-    it('should initialize without errors', async () => {
+    it('should initialize the theme lifecycle', async () => {
+        const adapter = {};
+        createSystemAppearanceAdapter.mockReturnValue(adapter);
+
         await initialize();
+
+        expect(SystemAppearanceMonitor.replaceAdapter).toHaveBeenCalledWith(adapter);
+        expect(ThemeManager.initializeLifecycle).toHaveBeenCalled();
     });
 
     describe('initializeArgs', () => {

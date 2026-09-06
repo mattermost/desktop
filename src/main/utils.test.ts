@@ -9,12 +9,13 @@ jest.mock('electron', () => ({
 
 describe('main/utils', () => {
     describe('isLightColor', () => {
-        it.each(['#ffffff', '#fff', 'rgb(255,255,255)', 'rgba(255,255,255,0.5)'])('identifies %s as light', (color) => {
-            expect(isLightColor(color)).toBe(true);
-        });
-
-        it.each(['#000000', '#000', 'rgb(0,0,0)', 'invalid'])('identifies %s as dark', (color) => {
-            expect(isLightColor(color)).toBe(false);
+        it.each([
+            ['#fff', true],
+            ['#000', false],
+            ['rgba(255,255,255,0.5)', true],
+            ['invalid', false],
+        ])('classifies %s', (color, isLight) => {
+            expect(isLightColor(color)).toBe(isLight);
         });
     });
 

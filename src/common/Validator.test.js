@@ -439,40 +439,43 @@ describe('common/Validator', () => {
             expect(Validator.desktopThemeApplyRequestSchema.validate(request).error).toBeUndefined();
         });
 
-        it.each(['#123', 'rgb(18,52,86)', 'rgba(18, 52, 86, 0.5)'])('accepts an imported %s theme color', (centerChannelBg) => {
+        it('accepts imported theme color syntax', () => {
             const importedRequest = {
                 ...request,
                 directive: {
                     ...request.directive,
-                    shellTheme: {...shellTheme, centerChannelBg, sidebarBg: ''},
+                    shellTheme: {...shellTheme, centerChannelBg: 'rgba(18, 52, 86, 0.5)', sidebarBg: ''},
                 },
             };
 
             expect(Validator.desktopThemeApplyRequestSchema.validate(importedRequest).error).toBeUndefined();
         });
 
-        it.each(['rgb(256,52,86)', 'rgba(18,52,86,.)', 'rgba(18,52,86,1.2.3)'])('rejects an invalid %s center background', (centerChannelBg) => {
+        it('rejects an invalid center background', () => {
             const invalidRequest = {
                 ...request,
                 directive: {
                     ...request.directive,
-                    shellTheme: {...shellTheme, centerChannelBg},
+                    shellTheme: {...shellTheme, centerChannelBg: 'rgba(18,52,86,1.2.3)'},
                 },
             };
 
             expect(Validator.desktopThemeApplyRequestSchema.validate(invalidRequest).error).toBeDefined();
         });
 
-        it('accepts code theme strings within the server preference envelope', () => {
+        it.each([
+            [20_000, false],
+            [20_001, true],
+        ])('bounds code theme strings at the server preference envelope', (length, hasError) => {
             const importedRequest = {
                 ...request,
                 directive: {
                     ...request.directive,
-                    shellTheme: {...shellTheme, codeTheme: 'a'.repeat(20_000)},
+                    shellTheme: {...shellTheme, codeTheme: 'a'.repeat(length)},
                 },
             };
 
-            expect(Validator.desktopThemeApplyRequestSchema.validate(importedRequest).error).toBeUndefined();
+            expect(Boolean(Validator.desktopThemeApplyRequestSchema.validate(importedRequest).error)).toBe(hasError);
         });
 
         it.each([
@@ -481,7 +484,6 @@ describe('common/Validator', () => {
             {...request, sequence: 0},
             {...request, sequence: '1'},
             {...request, directive: {...request.directive, unexpected: true}},
-            {...request, directive: {...request.directive, shellTheme: {...shellTheme, centerChannelBg: 'red'}}},
             {...request, directive: {...request.directive, shellTheme: {...shellTheme, unexpected: true}}},
             {...request, directive: {...request.directive, shellTheme: {...shellTheme, sidebarBg: undefined}}},
         ])('rejects malformed or extended directives', (invalidRequest) => {

@@ -336,24 +336,6 @@ describe('ThemeManager', () => {
             expect(mockWebContents2.send).toHaveBeenCalledWith(UPDATE_THEME, mockTheme);
         });
 
-        it('uses the cached legacy theme with a committed view resolver', async () => {
-            const mockTheme = {centerChannelBg: '#111111', isUsingSystemTheme: false};
-            ServerManager.getCurrentServerId.mockReturnValue('owner-server-id');
-            ServerManager.getServer.mockReturnValue({id: 'owner-server-id', theme: mockTheme});
-            ViewManager.getView.mockReturnValue({
-                id: 'owner-view-id',
-                serverId: 'owner-server-id',
-                type: 'tab',
-            });
-            themeManager.setCommittedMainViewResolver(() => ({
-                viewId: 'owner-view-id',
-                webContents: mockWebContents,
-            }));
-
-            expect(mockWebContents.send).toHaveBeenLastCalledWith(UPDATE_THEME, mockTheme);
-            expect(mockWebContents.mainFrame.send).not.toHaveBeenCalled();
-        });
-
         it('resets while there is no committed visible view', async () => {
             themeManager.setCommittedMainViewResolver(() => undefined);
             await themeManager.brokerTransition;

@@ -122,6 +122,20 @@ describe('SystemAppearanceMonitor', () => {
         expect(listener).toHaveBeenCalledWith({revision: 2, previousValueStatus: 'invalid'});
     });
 
+    it('destroys its adapter subscription and listeners once', () => {
+        const {adapter, invalidate, unsubscribe} = createAdapter(jest.fn(async (): Promise<PlatformAppearanceRead> => ({status: 'known', value: 'light'})));
+        const monitor = new SystemAppearanceMonitor(adapter);
+        const listener = jest.fn();
+        monitor.subscribeInvalidation(listener);
+
+        monitor.destroy();
+        monitor.destroy();
+        invalidate();
+
+        expect(unsubscribe).toHaveBeenCalledTimes(1);
+        expect(listener).not.toHaveBeenCalled();
+    });
+
     it.each([
         [async () => ({status: 'known', value: 'blue'}), 'invalid'],
         [async () => Promise.reject(new Error('read failed')), 'error'],

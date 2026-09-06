@@ -4,6 +4,11 @@
 import {ipcMain, session} from 'electron';
 
 import AppState from 'common/appState';
+import {
+    APPLY_DESKTOP_THEME,
+    RELEASE_DESKTOP_THEME_SURFACE,
+    SYSTEM_APPEARANCE_INVALIDATED,
+} from 'common/communication';
 import ServerManager from 'common/servers/serverManager';
 import {ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
@@ -347,11 +352,13 @@ describe('app/views/webContentsManager', () => {
             ThemeManager.releaseDesktopThemeSurface.mockResolvedValue({status: 'released'});
             SystemAppearanceMonitor.getSystemAppearance.mockResolvedValue({revision: 1, status: 'known', value: 'light'});
 
+            expect(webContentsManager.handleGetDesktopThemeCapabilities(event)).toEqual({protocolVersion: 1});
             await expect(webContentsManager.handleGetSystemAppearance(event)).resolves.toMatchObject({status: 'known', value: 'light'});
             await webContentsManager.handleRegisterDesktopThemeSurface(event);
             await webContentsManager.handleApplyDesktopTheme(event, request);
             await webContentsManager.handleReleaseDesktopThemeSurface(event, 'surface-id');
 
+            expect(webContentsManager.appearanceConsumers.get(frame)).toMatchObject({viewId: 'test-view', frame});
             expect(ThemeManager.registerDesktopThemeSurface).toHaveBeenCalledWith(expect.objectContaining({viewId: 'test-view', frame}));
             expect(ThemeManager.applyDesktopTheme).toHaveBeenCalledWith(expect.objectContaining({viewId: 'test-view', frame}), request);
             expect(ThemeManager.releaseDesktopThemeSurface).toHaveBeenCalledWith(expect.objectContaining({viewId: 'test-view', frame}), 'surface-id');
@@ -383,6 +390,28 @@ describe('app/views/webContentsManager', () => {
             ServerManager.updateTheme.mockClear();
             webContentsManager.handleUpdateTheme(event, theme);
             expect(ServerManager.updateTheme).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('desktop theme IPC validation', () => {
+        beforeEach(() => {
+            ipcMain.handle.mockClear();
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('rejects malformed mutation requests before delegation', () => {
+            const webContentsManager = new WebContentsManager();
+            const applyHandler = ipcMain.handle.mock.calls.find(([channel]) => channel === APPLY_DESKTOP_THEME)[1];
+            const releaseHandler = ipcMain.handle.mock.calls.find(([channel]) => channel === RELEASE_DESKTOP_THEME_SURFACE)[1];
+
+            expect(() => applyHandler({}, {})).toThrow('Invalid IPC arguments');
+            expect(() => releaseHandler({}, '')).toThrow('Invalid IPC arguments');
+            expect(SystemAppearanceMonitor.subscribeInvalidation).toHaveBeenLastCalledWith(webContentsManager.handleSystemAppearanceInvalidated);
+            expect(ThemeManager.applyDesktopTheme).not.toHaveBeenCalled();
+            expect(ThemeManager.releaseDesktopThemeSurface).not.toHaveBeenCalled();
         });
     });
 
@@ -424,6 +453,34 @@ describe('app/views/webContentsManager', () => {
             handlers['did-frame-navigate']({}, 'https://mattermost.example.com', 200, 'OK', false);
 
             expect(ThemeManager.handleDesktopThemeDocumentInvalidated).not.toHaveBeenCalled();
+        });
+
+        it('notifies live appearance consumers and retires stale ones', () => {
+            const liveFrame = {detached: false, isDestroyed: jest.fn(() => false), send: jest.fn()};
+            const liveWebContents = {isDestroyed: jest.fn(() => false), mainFrame: liveFrame};
+            const staleFrame = {detached: true, isDestroyed: jest.fn(() => false), send: jest.fn()};
+            const staleWebContents = {isDestroyed: jest.fn(() => false), mainFrame: staleFrame};
+            const throwingFrame = {
+                detached: false,
+                isDestroyed: jest.fn(() => false),
+                send: jest.fn(() => {
+                    throw new Error('send failed');
+                }),
+            };
+            const throwingWebContents = {isDestroyed: jest.fn(() => false), mainFrame: throwingFrame};
+            const invalidation = {revision: 2, previousValueStatus: 'stale'};
+            webContentsManager.appearanceConsumers = new Map([
+                [liveFrame, {webContents: liveWebContents, frame: liveFrame}],
+                [staleFrame, {webContents: staleWebContents, frame: staleFrame}],
+                [throwingFrame, {webContents: throwingWebContents, frame: throwingFrame}],
+            ]);
+
+            webContentsManager.handleSystemAppearanceInvalidated(invalidation);
+
+            expect(liveFrame.send).toHaveBeenCalledWith(SYSTEM_APPEARANCE_INVALIDATED, invalidation);
+            expect(webContentsManager.appearanceConsumers.has(liveFrame)).toBe(true);
+            expect(webContentsManager.appearanceConsumers.has(staleFrame)).toBe(false);
+            expect(webContentsManager.appearanceConsumers.has(throwingFrame)).toBe(false);
         });
     });
 
@@ -524,6 +581,7 @@ describe('app/views/webContentsManager', () => {
             expect(mockView.destroy).toHaveBeenCalled();
             expect(webContentsManager.webContentsViews.has('test-view')).toBe(false);
             expect(webContentsManager.webContentsIdToView.has(123)).toBe(false);
+            expect(ThemeManager.handleDesktopThemeViewInvalidated).toHaveBeenCalledWith('test-view');
         });
 
         it('should do nothing when view does not exist', () => {
