@@ -414,7 +414,8 @@ describe('app/views/webContentsManager', () => {
             expect(ThemeManager.handleDesktopThemeDocumentInvalidated).toHaveBeenCalledWith(webContents, undefined);
         });
 
-        it('retains the current document when navigation is cancelled', () => {
+        it('does not observe pre-commit navigation attempts', () => {
+            expect(handlers['did-start-navigation']).toBeUndefined();
             expect(webContentsManager.appearanceConsumers.has(frame)).toBe(true);
             expect(ThemeManager.handleDesktopThemeDocumentInvalidated).not.toHaveBeenCalled();
         });
