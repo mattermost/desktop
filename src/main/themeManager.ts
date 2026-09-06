@@ -588,12 +588,42 @@ export class ThemeManager {
         }
 
         const activeLease = this.activeDesktopThemeLease;
-        if (activeLease ? !activeLease.directive : !this.resetDesktopOutput()) {
+        if (activeLease) {
+            if (!activeLease.directive) {
+                return false;
+            }
+        } else if (!this.resetDesktopOutput() || !this.restoreCurrentLegacyDesktopOutput()) {
             return false;
         }
 
         failedRegistrations.forEach(this.removeDesktopThemeSurface);
         return true;
+    };
+
+    private restoreCurrentLegacyDesktopOutput = () => {
+        if (!Config.themeSyncing) {
+            return true;
+        }
+
+        const committedMainView = this.resolveCommittedMainView();
+        const document = committedMainView && this.getCommittedDesktopThemeDocument(committedMainView);
+        if (!committedMainView || (document && this.isDesktopThemeDocumentCutover(document))) {
+            return true;
+        }
+
+        const serverId = ServerManager.getCurrentServerId();
+        const theme = serverId ? ServerManager.getServer(serverId)?.theme : undefined;
+        if (!theme) {
+            return true;
+        }
+
+        let nativeSource: 'system' | 'light' | 'dark' = 'system';
+        if (!theme.isUsingSystemTheme) {
+            nativeSource = isLightColor(theme.centerChannelBg || '#fff') ? 'light' : 'dark';
+        }
+        const nativeRestored = this.setNativeThemeSource(nativeSource);
+        const shellRestored = this.publishDesktopShellTheme(theme);
+        return nativeRestored && shellRestored;
     };
 
     private retireDesktopThemeSurface = (registration: DesktopThemeSurface) => {

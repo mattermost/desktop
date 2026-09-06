@@ -288,6 +288,40 @@ describe('Desktop theme broker', () => {
         expect(shell.webContents.send).toHaveBeenCalledWith(RESET_THEME);
     });
 
+    it('restores the current legacy owner after recovering failed V1 output', async () => {
+        const shell = createDocument('internal-shell');
+        const legacyOwner = createDocument('legacy-view');
+        const legacyTheme = {...shellTheme, centerChannelBg: '#eeeeee', isUsingSystemTheme: false};
+        manager.registerMainWindowView(shell.webContents);
+        jest.mocked(ServerManager.getCurrentServerId).mockReturnValue('server-id');
+        jest.mocked(ServerManager.getServer).mockReturnValue({id: 'server-id', theme: legacyTheme} as never);
+        const registration = await manager.registerDesktopThemeSurface(owner);
+        const leaseId = registration.state.status === 'granted' ? registration.state.leaseId : '';
+        await manager.applyDesktopTheme(owner, {
+            surfaceId: registration.surfaceId,
+            leaseId,
+            sequence: 1,
+            directive: {mode: 'fixed', shellTheme},
+        });
+        jest.mocked(shell.webContents.send).mockImplementation((channel) => {
+            if (channel === RESET_THEME) {
+                throw new Error('send failed');
+            }
+        });
+
+        manager.setCommittedMainViewResolver(() => ({viewId: legacyOwner.viewId, webContents: legacyOwner.webContents}));
+        await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
+        expect(latestSurfaceState(owner, registration.surfaceId)).toMatchObject({status: 'standby', reason: 'theme-reset-failed'});
+
+        jest.mocked(shell.webContents.send).mockImplementation(() => undefined);
+        manager.handleCommittedMainViewChanged();
+        jest.mocked(shell.webContents.send).mockClear();
+        await manager.releaseDesktopThemeSurface(owner, registration.surfaceId);
+
+        expect(shell.webContents.send).toHaveBeenCalledWith(RESET_THEME);
+        expect(shell.webContents.send).toHaveBeenLastCalledWith(UPDATE_THEME, legacyTheme);
+    });
+
     it('keeps the cached legacy path until the current document registers', async () => {
         const shell = createDocument('internal-shell');
         manager.registerMainWindowView(shell.webContents);
