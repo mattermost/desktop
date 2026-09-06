@@ -204,6 +204,30 @@ describe('Desktop theme broker', () => {
         })).resolves.toMatchObject({status: 'applied'});
     });
 
+    it('retains failed reset evidence while a view becomes a popout', async () => {
+        let viewType = ViewType.TAB;
+        jest.mocked(ViewManager.getView).mockImplementation((viewId) => ({
+            id: viewId,
+            serverId: 'server-id',
+            type: viewType,
+        }) as never);
+        const shell = createDocument('internal-shell');
+        manager.registerMainWindowView(shell.webContents);
+        const registration = await manager.registerDesktopThemeSurface(owner);
+        jest.mocked(shell.webContents.send).mockImplementation((channel) => {
+            if (channel === RESET_THEME) {
+                throw new Error('send failed');
+            }
+        });
+
+        viewType = ViewType.WINDOW;
+        manager.handleDesktopThemeViewTypeChanged(owner.viewId, viewType);
+        await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
+
+        expect(latestSurfaceState(owner, registration.surfaceId)).toMatchObject({scope: 'main-tab', status: 'standby', reason: 'theme-reset-failed'});
+        expect(manager.isDesktopThemeDocumentCutover({...owner, scope: 'popout'})).toBe(true);
+    });
+
     it('applies a directive once and rejects duplicate sequence numbers', async () => {
         const shell = createDocument('internal-shell');
         manager.registerMainWindowView(shell.webContents);

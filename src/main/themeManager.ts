@@ -279,7 +279,9 @@ export class ThemeManager {
                 registration = undefined;
             }
             if (scope === 'popout' && registration && this.activeDesktopThemeLease?.registration === registration) {
-                this.revokeDesktopThemeLease('not-current');
+                if (!this.revokeDesktopThemeLease('not-current')) {
+                    registration = undefined;
+                }
             }
 
             this.cutoverDocuments.set(viewId, {...document, scope});
