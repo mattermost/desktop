@@ -463,7 +463,13 @@ export class WebContentsManager {
     private addDesktopThemeLifecycleListeners = (webContents: WebContents) => {
         webContents.on('did-start-navigation', (details) => {
             if (details.isMainFrame && !details.isSameDocument) {
-                this.handleDesktopThemeDocumentInvalidated(webContents, details.frame ?? undefined);
+                this.removeDesktopThemeAppearanceConsumers(webContents, details.frame ?? undefined);
+                ThemeManager.handleDesktopThemeDocumentNavigationStarted(webContents, details.frame ?? undefined);
+            }
+        });
+        webContents.on('did-frame-navigate', (_event, _url, _httpResponseCode, _httpStatusText, isMainFrame) => {
+            if (isMainFrame) {
+                ThemeManager.handleDesktopThemeDocumentNavigationCompleted(webContents);
             }
         });
         webContents.on('render-process-gone', () => this.handleDesktopThemeDocumentInvalidated(webContents));
@@ -471,12 +477,16 @@ export class WebContentsManager {
     };
 
     private handleDesktopThemeDocumentInvalidated = (webContents: WebContents, frame?: WebFrameMain) => {
+        this.removeDesktopThemeAppearanceConsumers(webContents, frame);
+        ThemeManager.handleDesktopThemeDocumentInvalidated(webContents, frame);
+    };
+
+    private removeDesktopThemeAppearanceConsumers = (webContents: WebContents, frame?: WebFrameMain) => {
         this.appearanceConsumers.forEach((document, consumerFrame) => {
             if (document.webContents === webContents && (!frame || consumerFrame === frame)) {
                 this.appearanceConsumers.delete(consumerFrame);
             }
         });
-        ThemeManager.handleDesktopThemeDocumentInvalidated(webContents, frame);
     };
 
     private handleDarkModeChanged = () => {

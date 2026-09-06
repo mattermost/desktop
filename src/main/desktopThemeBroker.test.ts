@@ -299,9 +299,13 @@ describe('Desktop theme broker', () => {
         expect(latestSurfaceState(owner).leaseId).not.toBe(firstLease);
     });
 
-    it('invalidates a document generation without allowing delayed cleanup to remove its replacement', async () => {
+    it('keeps legacy authority suppressed until a replacement document commits', async () => {
         const first = await manager.registerDesktopThemeSurface(owner);
-        manager.handleDesktopThemeDocumentInvalidated(owner.webContents, owner.frame);
+        manager.handleDesktopThemeDocumentNavigationStarted(owner.webContents, owner.frame);
+        await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
+        expect(manager.isDesktopThemeDocumentCutover(owner)).toBe(true);
+
+        manager.handleDesktopThemeDocumentNavigationCompleted(owner.webContents);
         await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
         expect(manager.isDesktopThemeDocumentCutover(owner)).toBe(false);
 

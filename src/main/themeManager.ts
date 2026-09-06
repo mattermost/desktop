@@ -235,23 +235,22 @@ export class ThemeManager {
         });
     };
 
+    handleDesktopThemeDocumentNavigationStarted = (webContents: WebContents, frame?: WebFrameMain) => {
+        this.scheduleBrokerTransition(() => {
+            this.removeDesktopThemeDocumentSurfaces(webContents, frame);
+        });
+    };
+
+    handleDesktopThemeDocumentNavigationCompleted = (webContents: WebContents) => {
+        this.scheduleBrokerTransition(() => {
+            this.removeDesktopThemeDocumentCutover(webContents);
+        });
+    };
+
     handleDesktopThemeDocumentInvalidated = (webContents: WebContents, frame?: WebFrameMain) => {
         this.scheduleBrokerTransition(() => {
-            const registrations = [...this.desktopThemeSurfaces.values()].filter((registration) =>
-                registration.webContents === webContents && (!frame || registration.frame === frame));
-            registrations.forEach((registration) => {
-                const wasActive = this.activeDesktopThemeLease?.registration === registration;
-                this.removeDesktopThemeSurface(registration);
-                if (wasActive) {
-                    this.revokeDesktopThemeLease('not-current');
-                }
-            });
-
-            [...this.cutoverDocuments.entries()].forEach(([viewId, document]) => {
-                if (document.webContents === webContents && (!frame || document.frame === frame)) {
-                    this.cutoverDocuments.delete(viewId);
-                }
-            });
+            this.removeDesktopThemeDocumentSurfaces(webContents, frame);
+            this.removeDesktopThemeDocumentCutover(webContents, frame);
         });
     };
 
@@ -555,6 +554,26 @@ export class ThemeManager {
             this.setDesktopThemeStandby(lease.registration, 'theme-reset-failed');
         }
         return released;
+    };
+
+    private removeDesktopThemeDocumentSurfaces = (webContents: WebContents, frame?: WebFrameMain) => {
+        const registrations = [...this.desktopThemeSurfaces.values()].filter((registration) =>
+            registration.webContents === webContents && (!frame || registration.frame === frame));
+        registrations.forEach((registration) => {
+            const wasActive = this.activeDesktopThemeLease?.registration === registration;
+            this.removeDesktopThemeSurface(registration);
+            if (wasActive) {
+                this.revokeDesktopThemeLease('not-current');
+            }
+        });
+    };
+
+    private removeDesktopThemeDocumentCutover = (webContents: WebContents, frame?: WebFrameMain) => {
+        [...this.cutoverDocuments.entries()].forEach(([viewId, document]) => {
+            if (document.webContents === webContents && (!frame || document.frame === frame)) {
+                this.cutoverDocuments.delete(viewId);
+            }
+        });
     };
 
     private failDesktopThemeApply = (
