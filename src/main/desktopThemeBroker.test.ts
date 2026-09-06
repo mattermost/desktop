@@ -292,6 +292,28 @@ describe('Desktop theme broker', () => {
         expect(replacement.state.status === 'granted' && replacement.state.leaseId).not.toBe(firstLease);
     });
 
+    it('does not replace an active registration when its reset fails', async () => {
+        const shell = createDocument('internal-shell');
+        manager.registerMainWindowView(shell.webContents);
+        const registration = await manager.registerDesktopThemeSurface(owner);
+        jest.mocked(shell.webContents.send).mockImplementation((channel) => {
+            if (channel === RESET_THEME) {
+                throw new Error('send failed');
+            }
+        });
+
+        const failedReplacement = await manager.registerDesktopThemeSurface(owner);
+
+        expect(failedReplacement.surfaceId).toBe(registration.surfaceId);
+        expect(failedReplacement.state).toMatchObject({status: 'standby', reason: 'theme-reset-failed'});
+        expect(latestSurfaceState(owner, registration.surfaceId)).toMatchObject({status: 'standby', reason: 'theme-reset-failed'});
+
+        jest.mocked(shell.webContents.send).mockImplementation(() => undefined);
+        const replacement = await manager.registerDesktopThemeSurface(owner);
+        expect(replacement.surfaceId).not.toBe(registration.surfaceId);
+        expect(replacement.state).toMatchObject({status: 'granted'});
+    });
+
     it('does not revive a failed registration across view scope changes', async () => {
         let viewType = ViewType.TAB;
         jest.mocked(ViewManager.getView).mockImplementation((viewId) => ({

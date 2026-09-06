@@ -141,10 +141,12 @@ export class ThemeManager {
 
             const replaced = this.desktopThemeSurfaceByFrame.get(document.frame);
             if (replaced) {
-                this.removeDesktopThemeSurface(replaced);
                 if (this.activeDesktopThemeLease?.registration === replaced) {
-                    this.revokeDesktopThemeLease('not-current');
+                    if (!this.revokeDesktopThemeLease('not-current')) {
+                        return {surfaceId: replaced.surfaceId, state: replaced.state};
+                    }
                 }
+                this.removeDesktopThemeSurface(replaced);
             }
 
             this.cutoverDocuments.set(document.viewId, document);
