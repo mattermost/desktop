@@ -233,13 +233,14 @@ export class ThemeManager {
             }
 
             const wasActive = this.activeDesktopThemeLease?.registration === registration;
-            this.removeDesktopThemeSurface(registration);
             if (wasActive && !this.revokeDesktopThemeLease('not-current')) {
                 throw new Error('Failed to release Desktop theme output');
             }
             if (!wasActive && this.isCommittedMainView(registration) && !this.resetDesktopOutput()) {
+                this.setDesktopThemeStandby(registration, 'theme-reset-failed');
                 throw new Error('Failed to release Desktop theme output');
             }
+            this.removeDesktopThemeSurface(registration);
 
             return {status: 'released'};
         });

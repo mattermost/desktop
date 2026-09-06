@@ -250,6 +250,24 @@ describe('Desktop theme broker', () => {
         expect(nativeTheme.themeSource).toBe('system');
     });
 
+    it('retains a registration until release resets Desktop output', async () => {
+        const shell = createDocument('internal-shell');
+        manager.registerMainWindowView(shell.webContents);
+        const registration = await manager.registerDesktopThemeSurface(owner);
+        jest.mocked(shell.webContents.send).mockImplementation((channel) => {
+            if (channel === RESET_THEME) {
+                throw new Error('send failed');
+            }
+        });
+
+        await expect(manager.releaseDesktopThemeSurface(owner, registration.surfaceId)).rejects.toThrow('Failed to release Desktop theme output');
+        expect(latestSurfaceState(owner, registration.surfaceId)).toMatchObject({status: 'standby', reason: 'theme-reset-failed'});
+
+        jest.mocked(shell.webContents.send).mockImplementation(() => undefined);
+        await expect(manager.releaseDesktopThemeSurface(owner, registration.surfaceId)).resolves.toEqual({status: 'released'});
+        await expect(manager.releaseDesktopThemeSurface(owner, registration.surfaceId)).resolves.toEqual({status: 'stale'});
+    });
+
     it('keeps the cached legacy path until the current document registers', async () => {
         const shell = createDocument('internal-shell');
         manager.registerMainWindowView(shell.webContents);
