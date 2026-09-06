@@ -324,6 +324,19 @@ describe('Desktop theme broker', () => {
         expect(latestSurfaceState(owner, replacement.surfaceId)).toMatchObject({status: 'granted'});
     });
 
+    it('does not clear cutover when the replacement registers during navigation commit', async () => {
+        await manager.registerDesktopThemeSurface(owner);
+        manager.handleDesktopThemeDocumentNavigationStarted(owner.webContents, owner.frame);
+        await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
+
+        const replacement = await manager.registerDesktopThemeSurface(owner);
+        manager.handleDesktopThemeDocumentNavigationCompleted(owner.webContents);
+        await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
+
+        expect(manager.isDesktopThemeDocumentCutover(owner)).toBe(true);
+        expect(latestSurfaceState(owner, replacement.surfaceId)).toMatchObject({status: 'granted'});
+    });
+
     it('has no owner after the committed view loses its server', async () => {
         const registration = await manager.registerDesktopThemeSurface(owner);
         jest.mocked(ServerManager.getServer).mockReturnValue(undefined);

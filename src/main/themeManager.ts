@@ -243,7 +243,14 @@ export class ThemeManager {
 
     handleDesktopThemeDocumentNavigationCompleted = (webContents: WebContents) => {
         this.scheduleBrokerTransition(() => {
-            this.removeDesktopThemeDocumentCutover(webContents);
+            [...this.cutoverDocuments.entries()].forEach(([viewId, document]) => {
+                if (
+                    document.webContents === webContents &&
+                    !isSameDesktopThemeDocument(this.desktopThemeSurfaceByFrame.get(document.frame), document)
+                ) {
+                    this.cutoverDocuments.delete(viewId);
+                }
+            });
         });
     };
 
