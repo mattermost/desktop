@@ -496,14 +496,23 @@ export class ThemeManager {
         const standbyReason = this.currentStandbyReason();
 
         [...this.desktopThemeSurfaces.values()].forEach((registration) => {
-            if (registration.scope === 'main-tab' && registration !== candidate) {
+            if (registration.scope === 'main-tab' && registration !== candidate && !this.isDesktopThemeRegistrationFailed(registration)) {
                 this.setDesktopThemeStandby(registration, standbyReason === 'not-current' ? 'not-current' : standbyReason);
             }
         });
 
         const lease = this.activeDesktopThemeLease;
         if (lease && (lease.registration !== candidate || !Config.themeSyncing || this.lifecycleBlockers.size > 0)) {
-            this.revokeDesktopThemeLease(standbyReason);
+            if (!this.revokeDesktopThemeLease(standbyReason)) {
+                if (candidate && candidate !== lease.registration) {
+                    this.setDesktopThemeStandby(candidate, 'theme-reset-failed');
+                }
+                return;
+            }
+        }
+
+        if (candidate && this.isDesktopThemeRegistrationFailed(candidate)) {
+            return;
         }
 
         if (candidate && (!Config.themeSyncing || this.lifecycleBlockers.size > 0)) {
@@ -556,6 +565,12 @@ export class ThemeManager {
         return released;
     };
 
+    private isDesktopThemeRegistrationFailed = (registration: DesktopThemeSurface) => {
+        return registration.state.scope === 'main-tab' &&
+            registration.state.status === 'standby' &&
+            (registration.state.reason === 'apply-failed' || registration.state.reason === 'theme-reset-failed');
+    };
+
     private removeDesktopThemeDocumentSurfaces = (webContents: WebContents, frame?: WebFrameMain) => {
         const registrations = [...this.desktopThemeSurfaces.values()].filter((registration) =>
             registration.webContents === webContents && (!frame || registration.frame === frame));
@@ -582,8 +597,8 @@ export class ThemeManager {
         reason: DesktopThemeFailureReason,
     ): DesktopThemeApplyResult => {
         this.activeDesktopThemeLease = undefined;
-        this.setDesktopThemeStandby(lease.registration, 'apply-failed');
         const rolledBack = this.resetDesktopOutput();
+        this.setDesktopThemeStandby(lease.registration, rolledBack ? 'apply-failed' : 'theme-reset-failed');
         return {
             status: 'failed',
             surfaceId: request.surfaceId,

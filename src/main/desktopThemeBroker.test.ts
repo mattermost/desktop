@@ -231,6 +231,11 @@ describe('Desktop theme broker', () => {
         })).resolves.toMatchObject({status: 'failed', reason: 'desktop-shell-update'});
         expect(nativeTheme.themeSource).toBe('system');
         expect(latestSurfaceState(owner)).toMatchObject({status: 'standby', reason: 'apply-failed'});
+
+        jest.mocked(shell.webContents.send).mockImplementation(() => undefined);
+        manager.handleCommittedMainViewChanged();
+        await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
+        expect(latestSurfaceState(owner)).toMatchObject({status: 'standby', reason: 'apply-failed'});
     });
 
     it('releases a registration without restoring legacy authority in that frame', async () => {
@@ -261,7 +266,7 @@ describe('Desktop theme broker', () => {
         expect(nativeTheme.themeSource).toBe('light');
     });
 
-    it('recovers from release failure only after a causal transition', async () => {
+    it('requires a fresh registration after a release failure', async () => {
         const shell = createDocument('internal-shell');
         manager.registerMainWindowView(shell.webContents);
         const registration = await manager.registerDesktopThemeSurface(owner);
@@ -279,8 +284,11 @@ describe('Desktop theme broker', () => {
         jest.mocked(shell.webContents.send).mockImplementation(() => undefined);
         manager.setCommittedMainViewResolver(() => ({viewId: owner.viewId, webContents: owner.webContents}));
         await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
-        expect(latestSurfaceState(owner)).toMatchObject({status: 'granted'});
-        expect(latestSurfaceState(owner).leaseId).not.toBe(firstLease);
+        expect(latestSurfaceState(owner)).toMatchObject({status: 'standby', reason: 'theme-reset-failed'});
+
+        const replacement = await manager.registerDesktopThemeSurface(owner);
+        expect(replacement.state).toMatchObject({status: 'granted'});
+        expect(replacement.state.status === 'granted' && replacement.state.leaseId).not.toBe(firstLease);
     });
 
     it('revokes for shell-sync disablement and grants a fresh lease when re-enabled', async () => {
