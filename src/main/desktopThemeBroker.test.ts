@@ -368,32 +368,24 @@ describe('Desktop theme broker', () => {
         expect(latestSurfaceState(owner, registration.surfaceId).leaseId).not.toBe(firstLease);
     });
 
-    it('keeps legacy authority suppressed until a replacement document commits', async () => {
+    it('invalidates the current document when its replacement commits', async () => {
         const first = await manager.registerDesktopThemeSurface(owner);
-        manager.handleDesktopThemeDocumentNavigationStarted(owner.webContents, owner.frame);
-        await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
+        const leaseId = first.state.status === 'granted' ? first.state.leaseId : '';
         expect(manager.isDesktopThemeDocumentCutover(owner)).toBe(true);
+        await expect(manager.applyDesktopTheme(owner, {
+            surfaceId: first.surfaceId,
+            leaseId,
+            sequence: 1,
+            directive: {mode: 'fixed', shellTheme},
+        })).resolves.toMatchObject({status: 'applied'});
 
-        manager.handleDesktopThemeDocumentNavigationCompleted(owner.webContents);
+        manager.handleDesktopThemeDocumentInvalidated(owner.webContents, owner.frame);
         await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
         expect(manager.isDesktopThemeDocumentCutover(owner)).toBe(false);
 
         const replacement = await manager.registerDesktopThemeSurface(owner);
         expect(replacement.surfaceId).not.toBe(first.surfaceId);
         await expect(manager.releaseDesktopThemeSurface(owner, first.surfaceId)).resolves.toEqual({status: 'stale'});
-        expect(latestSurfaceState(owner, replacement.surfaceId)).toMatchObject({status: 'granted'});
-    });
-
-    it('does not clear cutover when the replacement registers during navigation commit', async () => {
-        await manager.registerDesktopThemeSurface(owner);
-        manager.handleDesktopThemeDocumentNavigationStarted(owner.webContents, owner.frame);
-        await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
-
-        const replacement = await manager.registerDesktopThemeSurface(owner);
-        manager.handleDesktopThemeDocumentNavigationCompleted(owner.webContents);
-        await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
-
-        expect(manager.isDesktopThemeDocumentCutover(owner)).toBe(true);
         expect(latestSurfaceState(owner, replacement.surfaceId)).toMatchObject({status: 'granted'});
     });
 

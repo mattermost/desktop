@@ -461,15 +461,9 @@ export class WebContentsManager {
     };
 
     private addDesktopThemeLifecycleListeners = (webContents: WebContents) => {
-        webContents.on('did-start-navigation', (details) => {
-            if (details.isMainFrame && !details.isSameDocument) {
-                this.removeDesktopThemeAppearanceConsumers(webContents, details.frame ?? undefined);
-                ThemeManager.handleDesktopThemeDocumentNavigationStarted(webContents, details.frame ?? undefined);
-            }
-        });
         webContents.on('did-frame-navigate', (_event, _url, _httpResponseCode, _httpStatusText, isMainFrame) => {
             if (isMainFrame) {
-                ThemeManager.handleDesktopThemeDocumentNavigationCompleted(webContents);
+                this.handleDesktopThemeDocumentInvalidated(webContents);
             }
         });
         webContents.on('render-process-gone', () => this.handleDesktopThemeDocumentInvalidated(webContents));

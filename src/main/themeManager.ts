@@ -237,25 +237,6 @@ export class ThemeManager {
         });
     };
 
-    handleDesktopThemeDocumentNavigationStarted = (webContents: WebContents, frame?: WebFrameMain) => {
-        this.scheduleBrokerTransition(() => {
-            this.removeDesktopThemeDocumentSurfaces(webContents, frame);
-        });
-    };
-
-    handleDesktopThemeDocumentNavigationCompleted = (webContents: WebContents) => {
-        this.scheduleBrokerTransition(() => {
-            [...this.cutoverDocuments.entries()].forEach(([viewId, document]) => {
-                if (
-                    document.webContents === webContents &&
-                    !isSameDesktopThemeDocument(this.desktopThemeSurfaceByFrame.get(document.frame), document)
-                ) {
-                    this.cutoverDocuments.delete(viewId);
-                }
-            });
-        });
-    };
-
     handleDesktopThemeDocumentInvalidated = (webContents: WebContents, frame?: WebFrameMain) => {
         this.scheduleBrokerTransition(() => {
             this.removeDesktopThemeDocumentSurfaces(webContents, frame);

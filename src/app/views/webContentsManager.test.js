@@ -105,8 +105,6 @@ jest.mock('main/systemAppearanceMonitor', () => ({
 jest.mock('main/themeManager', () => ({
     applyDesktopTheme: jest.fn(),
     handleDesktopThemeDocumentInvalidated: jest.fn(),
-    handleDesktopThemeDocumentNavigationCompleted: jest.fn(),
-    handleDesktopThemeDocumentNavigationStarted: jest.fn(),
     handleDesktopThemeViewInvalidated: jest.fn(),
     isDesktopThemeDocumentCutover: jest.fn(() => false),
     registerDesktopThemeSurface: jest.fn(),
@@ -407,25 +405,24 @@ describe('app/views/webContentsManager', () => {
             jest.clearAllMocks();
         });
 
-        it('retains cutover through navigation until the replacement document commits', () => {
-            handlers['did-start-navigation']({isMainFrame: true, isSameDocument: false, frame});
-
-            expect(webContentsManager.appearanceConsumers.has(frame)).toBe(false);
-            expect(ThemeManager.handleDesktopThemeDocumentNavigationStarted).toHaveBeenCalledWith(webContents, frame);
-            expect(ThemeManager.handleDesktopThemeDocumentNavigationCompleted).not.toHaveBeenCalled();
+        it('retires the current document when its replacement commits', () => {
+            expect(webContentsManager.appearanceConsumers.has(frame)).toBe(true);
 
             handlers['did-frame-navigate']({}, 'https://mattermost.example.com', 200, 'OK', true);
 
-            expect(ThemeManager.handleDesktopThemeDocumentNavigationCompleted).toHaveBeenCalledWith(webContents);
+            expect(webContentsManager.appearanceConsumers.has(frame)).toBe(false);
+            expect(ThemeManager.handleDesktopThemeDocumentInvalidated).toHaveBeenCalledWith(webContents, undefined);
         });
 
-        it('ignores same-document and subframe navigations', () => {
-            handlers['did-start-navigation']({isMainFrame: true, isSameDocument: true, frame});
-            handlers['did-start-navigation']({isMainFrame: false, isSameDocument: false, frame});
+        it('retains the current document when navigation is cancelled', () => {
+            expect(webContentsManager.appearanceConsumers.has(frame)).toBe(true);
+            expect(ThemeManager.handleDesktopThemeDocumentInvalidated).not.toHaveBeenCalled();
+        });
+
+        it('ignores subframe navigations', () => {
             handlers['did-frame-navigate']({}, 'https://mattermost.example.com', 200, 'OK', false);
 
-            expect(ThemeManager.handleDesktopThemeDocumentNavigationStarted).not.toHaveBeenCalled();
-            expect(ThemeManager.handleDesktopThemeDocumentNavigationCompleted).not.toHaveBeenCalled();
+            expect(ThemeManager.handleDesktopThemeDocumentInvalidated).not.toHaveBeenCalled();
         });
     });
 
