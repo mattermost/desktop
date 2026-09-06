@@ -144,6 +144,30 @@ describe('Desktop theme broker', () => {
         expect(popoutRegistration.state).toMatchObject({scope: 'popout', status: 'ineligible', reason: 'not-main-tab'});
     });
 
+    it('keeps a cutover popout shell aligned with a legacy main owner', async () => {
+        const mainShell = createDocument('internal-shell');
+        const popoutDocument = createDocument('popout-view', 'popout');
+        const popoutShell = createDocument('popout-shell');
+        const legacyTheme = {...shellTheme, centerChannelBg: '#eeeeee', isUsingSystemTheme: false};
+        manager.registerMainWindowView(mainShell.webContents);
+        await manager.registerDesktopThemeSurface(popoutDocument);
+        manager.registerPopoutView(popoutShell.webContents, popoutDocument.viewId);
+        jest.mocked(ServerManager.getCurrentServerId).mockReturnValue('server-id');
+        jest.mocked(ServerManager.getServer).mockReturnValue({id: 'server-id', theme: legacyTheme} as never);
+
+        jest.mocked(mainShell.webContents.send).mockClear();
+        jest.mocked(popoutShell.webContents.send).mockClear();
+        manager.handleCommittedMainViewChanged();
+
+        expect(mainShell.webContents.send).toHaveBeenLastCalledWith(UPDATE_THEME, legacyTheme);
+        expect(popoutShell.webContents.send).toHaveBeenLastCalledWith(UPDATE_THEME, legacyTheme);
+
+        (Config as {themeSyncing: boolean}).themeSyncing = false;
+        manager.handleCommittedMainViewChanged();
+        expect(mainShell.webContents.send).toHaveBeenLastCalledWith(RESET_THEME);
+        expect(popoutShell.webContents.send).toHaveBeenLastCalledWith(RESET_THEME);
+    });
+
     it('preserves a surface while its view moves between the main window and a popout', async () => {
         let viewType = ViewType.TAB;
         jest.mocked(ViewManager.getView).mockImplementation((viewId) => ({

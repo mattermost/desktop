@@ -380,26 +380,20 @@ export class ThemeManager {
     private updateLegacyMainViews = () => {
         if (!Config.themeSyncing) {
             this.resetThemeSource();
-            this.mainWindowViews.forEach((view) => {
-                view.send(RESET_THEME);
-            });
+            this.sendToDesktopShellTargets(RESET_THEME);
             return;
         }
 
         const serverId = ServerManager.getCurrentServerId();
         if (!serverId) {
             this.resetThemeSource();
-            this.mainWindowViews.forEach((view) => {
-                view.send(RESET_THEME);
-            });
+            this.sendToDesktopShellTargets(RESET_THEME);
             return;
         }
         const server = ServerManager.getServer(serverId);
         if (!server || !server.theme) {
             this.resetThemeSource();
-            this.mainWindowViews.forEach((view) => {
-                view.send(RESET_THEME);
-            });
+            this.sendToDesktopShellTargets(RESET_THEME);
             return;
         }
         if (!server.theme.isUsingSystemTheme) {
@@ -408,9 +402,7 @@ export class ThemeManager {
                 nativeTheme.themeSource = themeSource;
             }
         }
-        this.mainWindowViews.forEach((view) => {
-            view.send(UPDATE_THEME, server.theme);
-        });
+        this.publishDesktopShellTheme(server.theme);
     };
 
     private updatePopoutViews = (viewId: string) => {
