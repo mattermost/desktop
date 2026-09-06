@@ -439,7 +439,7 @@ describe('common/Validator', () => {
             expect(Validator.desktopThemeApplyRequestSchema.validate(request).error).toBeUndefined();
         });
 
-        it.each(['#123', 'rgb(18,52,86)', 'rgba(18,52,86,0.5)'])('accepts an imported %s theme color', (centerChannelBg) => {
+        it.each(['#123', 'rgb(18,52,86)', 'rgba(18, 52, 86, 0.5)'])('accepts an imported %s theme color', (centerChannelBg) => {
             const importedRequest = {
                 ...request,
                 directive: {
@@ -449,6 +449,18 @@ describe('common/Validator', () => {
             };
 
             expect(Validator.desktopThemeApplyRequestSchema.validate(importedRequest).error).toBeUndefined();
+        });
+
+        it.each(['rgb(256,52,86)', 'rgba(18,52,86,.)', 'rgba(18,52,86,1.2.3)'])('rejects an invalid %s center background', (centerChannelBg) => {
+            const invalidRequest = {
+                ...request,
+                directive: {
+                    ...request.directive,
+                    shellTheme: {...shellTheme, centerChannelBg},
+                },
+            };
+
+            expect(Validator.desktopThemeApplyRequestSchema.validate(invalidRequest).error).toBeDefined();
         });
 
         it('accepts code theme strings within the server preference envelope', () => {

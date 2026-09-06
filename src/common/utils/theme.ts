@@ -1,16 +1,22 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-const rgbPattern = /^rgba?\((\d+),(\d+),(\d+)(?:,([\d.]+))?\)$/;
+const rgbPattern = /^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/;
+const rgbaPattern = /^rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*((?:\d+(?:\.\d+)?|\.\d+))\s*\)$/;
 const hexPattern = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i;
 
 export function parseThemeColor(color: string) {
-    const rgb = rgbPattern.exec(color);
+    const rgb = rgbPattern.exec(color) ?? rgbaPattern.exec(color);
     if (rgb) {
+        const components = rgb.slice(1, 4).map((component) => parseInt(component, 10));
+        const alpha = rgb[4] === undefined ? 1 : parseFloat(rgb[4]);
+        if (components.some((component) => component > 255) || alpha > 1) {
+            return undefined;
+        }
         return {
-            red: parseInt(rgb[1], 10),
-            green: parseInt(rgb[2], 10),
-            blue: parseInt(rgb[3], 10),
+            red: components[0],
+            green: components[1],
+            blue: components[2],
         };
     }
 

@@ -10,11 +10,22 @@ describe('parseThemeColor', () => {
         ['#abc', {red: 170, green: 187, blue: 204}],
         ['rgb(18,52,86)', {red: 18, green: 52, blue: 86}],
         ['rgba(18,52,86,0.5)', {red: 18, green: 52, blue: 86}],
+        ['rgba(18, 52, 86, .5)', {red: 18, green: 52, blue: 86}],
     ])('parses %s', (color, expected) => {
         expect(parseThemeColor(color)).toEqual(expected);
     });
 
-    it.each(['', 'red', '#12', 'rgb(1,2)', 'rgba(1,2,3,bad)'])('rejects %s', (color) => {
+    it.each([
+        '',
+        'red',
+        '#12',
+        'rgb(1,2)',
+        'rgb(256,2,3)',
+        'rgba(1,2,3,bad)',
+        'rgba(1,2,3,.)',
+        'rgba(1,2,3,1.2)',
+        'rgba(1,2,3,1.2.3)',
+    ])('rejects %s', (color) => {
         expect(parseThemeColor(color)).toBeUndefined();
     });
 });
