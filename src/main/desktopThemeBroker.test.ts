@@ -292,6 +292,44 @@ describe('Desktop theme broker', () => {
         expect(replacement.state.status === 'granted' && replacement.state.leaseId).not.toBe(firstLease);
     });
 
+    it('does not revive a failed registration across view scope changes', async () => {
+        let viewType = ViewType.TAB;
+        jest.mocked(ViewManager.getView).mockImplementation((viewId) => ({
+            id: viewId,
+            serverId: 'server-id',
+            type: viewType,
+        }) as never);
+        const shell = createDocument('internal-shell');
+        manager.registerMainWindowView(shell.webContents);
+        const registration = await manager.registerDesktopThemeSurface(owner);
+        const leaseId = registration.state.status === 'granted' ? registration.state.leaseId : '';
+        jest.mocked(shell.webContents.send).mockImplementation((channel) => {
+            if (channel === UPDATE_THEME) {
+                throw new Error('send failed');
+            }
+        });
+        await manager.applyDesktopTheme(owner, {
+            surfaceId: registration.surfaceId,
+            leaseId,
+            sequence: 1,
+            directive: {mode: 'fixed', shellTheme},
+        });
+
+        viewType = ViewType.WINDOW;
+        manager.handleDesktopThemeViewTypeChanged(owner.viewId, viewType);
+        viewType = ViewType.TAB;
+        manager.handleDesktopThemeViewTypeChanged(owner.viewId, viewType);
+        await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
+
+        expect(latestSurfaceState(owner, registration.surfaceId)).toMatchObject({status: 'standby', reason: 'apply-failed'});
+        await expect(manager.applyDesktopTheme(owner, {
+            surfaceId: registration.surfaceId,
+            leaseId,
+            sequence: 2,
+            directive: {mode: 'fixed', shellTheme},
+        })).resolves.toMatchObject({status: 'rejected', reason: 'unknown-surface'});
+    });
+
     it('revokes for shell-sync disablement and grants a fresh lease when re-enabled', async () => {
         const registration = await manager.registerDesktopThemeSurface(owner);
         const firstLease = registration.state.status === 'granted' ? registration.state.leaseId : '';

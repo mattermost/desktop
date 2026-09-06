@@ -284,7 +284,11 @@ export class ThemeManager {
             }
 
             const registrationForFrame = this.desktopThemeSurfaceByFrame.get(document.frame);
-            const registration = isSameDesktopThemeDocument(registrationForFrame, document) ? registrationForFrame : undefined;
+            let registration = isSameDesktopThemeDocument(registrationForFrame, document) ? registrationForFrame : undefined;
+            if (registration && this.isDesktopThemeRegistrationFailed(registration)) {
+                this.removeDesktopThemeSurface(registration);
+                registration = undefined;
+            }
             if (scope === 'popout' && registration && this.activeDesktopThemeLease?.registration === registration) {
                 this.revokeDesktopThemeLease('not-current');
             }
