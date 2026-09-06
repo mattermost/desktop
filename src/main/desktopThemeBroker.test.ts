@@ -95,8 +95,9 @@ function createDocument(viewId: string, scope: DesktopThemeDocument['scope'] = '
     return {viewId, scope, frame, webContents};
 }
 
-function latestSurfaceState(document: DesktopThemeDocument) {
-    const calls = jest.mocked(document.frame.send).mock.calls.filter(([channel]) => channel === DESKTOP_THEME_SURFACE_STATE_CHANGED);
+function latestSurfaceState(document: DesktopThemeDocument, surfaceId: string) {
+    const calls = jest.mocked(document.frame.send).mock.calls.filter(([channel, event]) =>
+        channel === DESKTOP_THEME_SURFACE_STATE_CHANGED && event.surfaceId === surfaceId);
     return calls.at(-1)?.[1].state;
 }
 
@@ -156,7 +157,7 @@ describe('Desktop theme broker', () => {
         viewType = ViewType.WINDOW;
         manager.handleDesktopThemeViewTypeChanged(owner.viewId, viewType);
         await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
-        expect(latestSurfaceState(owner)).toMatchObject({scope: 'popout', status: 'ineligible', reason: 'not-main-tab'});
+        expect(latestSurfaceState(owner, registration.surfaceId)).toMatchObject({scope: 'popout', status: 'ineligible', reason: 'not-main-tab'});
         await expect(manager.applyDesktopTheme(owner, {
             surfaceId: registration.surfaceId,
             leaseId: firstLeaseId,
@@ -167,7 +168,7 @@ describe('Desktop theme broker', () => {
         viewType = ViewType.TAB;
         manager.handleDesktopThemeViewTypeChanged(owner.viewId, viewType);
         await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
-        const restoredState = latestSurfaceState(owner);
+        const restoredState = latestSurfaceState(owner, registration.surfaceId);
         expect(restoredState).toMatchObject({scope: 'main-tab', status: 'granted'});
         expect(restoredState.leaseId).not.toBe(firstLeaseId);
 
@@ -199,17 +200,17 @@ describe('Desktop theme broker', () => {
 
     it('revokes and resets before granting a replacement owner', async () => {
         const replacement = createDocument('replacement-view');
-        await manager.registerDesktopThemeSurface(owner);
-        await manager.registerDesktopThemeSurface(replacement);
+        const ownerRegistration = await manager.registerDesktopThemeSurface(owner);
+        const replacementRegistration = await manager.registerDesktopThemeSurface(replacement);
 
         manager.setCommittedMainViewResolver(() => undefined);
         await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
-        expect(latestSurfaceState(owner)).toMatchObject({status: 'standby', reason: 'not-current'});
+        expect(latestSurfaceState(owner, ownerRegistration.surfaceId)).toMatchObject({status: 'standby', reason: 'not-current'});
         expect(nativeTheme.themeSource).toBe('system');
 
         manager.setCommittedMainViewResolver(() => ({viewId: replacement.viewId, webContents: replacement.webContents}));
         await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
-        expect(latestSurfaceState(replacement)).toMatchObject({status: 'granted'});
+        expect(latestSurfaceState(replacement, replacementRegistration.surfaceId)).toMatchObject({status: 'granted'});
     });
 
     it('rolls back and revokes when shell publication fails', async () => {
@@ -230,12 +231,12 @@ describe('Desktop theme broker', () => {
             directive: {mode: 'fixed', shellTheme},
         })).resolves.toMatchObject({status: 'failed', reason: 'desktop-shell-update'});
         expect(nativeTheme.themeSource).toBe('system');
-        expect(latestSurfaceState(owner)).toMatchObject({status: 'standby', reason: 'apply-failed'});
+        expect(latestSurfaceState(owner, registration.surfaceId)).toMatchObject({status: 'standby', reason: 'apply-failed'});
 
         jest.mocked(shell.webContents.send).mockImplementation(() => undefined);
         manager.handleCommittedMainViewChanged();
         await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
-        expect(latestSurfaceState(owner)).toMatchObject({status: 'standby', reason: 'apply-failed'});
+        expect(latestSurfaceState(owner, registration.surfaceId)).toMatchObject({status: 'standby', reason: 'apply-failed'});
     });
 
     it('releases a registration without restoring legacy authority in that frame', async () => {
@@ -279,12 +280,12 @@ describe('Desktop theme broker', () => {
 
         manager.setCommittedMainViewResolver(() => undefined);
         await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
-        expect(latestSurfaceState(owner)).toMatchObject({status: 'standby', reason: 'theme-reset-failed'});
+        expect(latestSurfaceState(owner, registration.surfaceId)).toMatchObject({status: 'standby', reason: 'theme-reset-failed'});
 
         jest.mocked(shell.webContents.send).mockImplementation(() => undefined);
         manager.setCommittedMainViewResolver(() => ({viewId: owner.viewId, webContents: owner.webContents}));
         await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
-        expect(latestSurfaceState(owner)).toMatchObject({status: 'standby', reason: 'theme-reset-failed'});
+        expect(latestSurfaceState(owner, registration.surfaceId)).toMatchObject({status: 'standby', reason: 'theme-reset-failed'});
 
         const replacement = await manager.registerDesktopThemeSurface(owner);
         expect(replacement.state).toMatchObject({status: 'granted'});
@@ -298,13 +299,13 @@ describe('Desktop theme broker', () => {
         (Config as {themeSyncing: boolean}).themeSyncing = false;
         manager.handleCommittedMainViewChanged();
         await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
-        expect(latestSurfaceState(owner)).toMatchObject({status: 'standby', reason: 'desktop-sync-disabled'});
+        expect(latestSurfaceState(owner, registration.surfaceId)).toMatchObject({status: 'standby', reason: 'desktop-sync-disabled'});
 
         (Config as {themeSyncing: boolean}).themeSyncing = true;
         manager.handleCommittedMainViewChanged();
         await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
-        expect(latestSurfaceState(owner)).toMatchObject({status: 'granted'});
-        expect(latestSurfaceState(owner).leaseId).not.toBe(firstLease);
+        expect(latestSurfaceState(owner, registration.surfaceId)).toMatchObject({status: 'granted'});
+        expect(latestSurfaceState(owner, registration.surfaceId).leaseId).not.toBe(firstLease);
     });
 
     it('keeps legacy authority suppressed until a replacement document commits', async () => {
@@ -320,16 +321,16 @@ describe('Desktop theme broker', () => {
         const replacement = await manager.registerDesktopThemeSurface(owner);
         expect(replacement.surfaceId).not.toBe(first.surfaceId);
         await expect(manager.releaseDesktopThemeSurface(owner, first.surfaceId)).resolves.toEqual({status: 'stale'});
-        expect(latestSurfaceState(owner)).toMatchObject({status: 'granted'});
+        expect(latestSurfaceState(owner, replacement.surfaceId)).toMatchObject({status: 'granted'});
     });
 
     it('has no owner after the committed view loses its server', async () => {
-        await manager.registerDesktopThemeSurface(owner);
+        const registration = await manager.registerDesktopThemeSurface(owner);
         jest.mocked(ServerManager.getServer).mockReturnValue(undefined);
         manager.handleCommittedMainViewChanged();
         await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
 
-        expect(latestSurfaceState(owner)).toMatchObject({status: 'standby', reason: 'not-current'});
+        expect(latestSurfaceState(owner, registration.surfaceId)).toMatchObject({status: 'standby', reason: 'not-current'});
         expect(nativeTheme.themeSource).toBe('system');
     });
 
@@ -342,16 +343,16 @@ describe('Desktop theme broker', () => {
         listener('lock-screen')();
         listener('suspend')();
         await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
-        expect(latestSurfaceState(owner)).toMatchObject({status: 'standby', reason: 'screen-locked'});
+        expect(latestSurfaceState(owner, registration.surfaceId)).toMatchObject({status: 'standby', reason: 'screen-locked'});
 
         listener('unlock-screen')();
         await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
-        expect(latestSurfaceState(owner)).toMatchObject({status: 'standby', reason: 'system-suspended'});
+        expect(latestSurfaceState(owner, registration.surfaceId)).toMatchObject({status: 'standby', reason: 'system-suspended'});
 
         listener('resume')();
         await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
-        expect(latestSurfaceState(owner)).toMatchObject({status: 'granted'});
-        expect(latestSurfaceState(owner).leaseId).not.toBe(firstLease);
+        expect(latestSurfaceState(owner, registration.surfaceId)).toMatchObject({status: 'granted'});
+        expect(latestSurfaceState(owner, registration.surfaceId).leaseId).not.toBe(firstLease);
         expect(SystemAppearanceMonitor.invalidate).toHaveBeenCalledTimes(4);
     });
 });
