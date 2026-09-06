@@ -337,13 +337,16 @@ describe('Desktop theme broker', () => {
         await (manager as unknown as {brokerTransition: Promise<void>}).brokerTransition;
         expect(latestSurfaceState(owner, registration.surfaceId)).toMatchObject({status: 'standby', reason: 'theme-reset-failed'});
 
-        jest.mocked(shell.webContents.send).mockImplementation(() => undefined);
         manager.handleCommittedMainViewChanged();
         jest.mocked(shell.webContents.send).mockClear();
-        await manager.releaseDesktopThemeSurface(owner, registration.surfaceId);
+        await expect(manager.releaseDesktopThemeSurface(owner, registration.surfaceId)).rejects.toThrow('Failed to release Desktop theme output');
 
         expect(shell.webContents.send).toHaveBeenCalledWith(RESET_THEME);
         expect(shell.webContents.send).toHaveBeenLastCalledWith(UPDATE_THEME, legacyTheme);
+        expect(latestSurfaceState(owner, registration.surfaceId)).toMatchObject({status: 'standby', reason: 'theme-reset-failed'});
+
+        jest.mocked(shell.webContents.send).mockImplementation(() => undefined);
+        await expect(manager.releaseDesktopThemeSurface(owner, registration.surfaceId)).resolves.toEqual({status: 'released'});
     });
 
     it('keeps the cached legacy path until the current document registers', async () => {

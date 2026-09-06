@@ -584,8 +584,12 @@ export class ThemeManager {
             if (!activeLease.directive) {
                 return false;
             }
-        } else if (!this.resetDesktopOutput() || !this.restoreCurrentLegacyDesktopOutput()) {
-            return false;
+        } else {
+            const outputReset = this.resetDesktopOutput();
+            const legacyOutputRestored = this.restoreCurrentLegacyDesktopOutput();
+            if (!outputReset || !legacyOutputRestored) {
+                return false;
+            }
         }
 
         failedRegistrations.forEach(this.removeDesktopThemeSurface);
