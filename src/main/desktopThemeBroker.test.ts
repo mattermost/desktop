@@ -309,7 +309,9 @@ describe('Desktop theme broker', () => {
         expect(latestSurfaceState(owner, registration.surfaceId)).toMatchObject({status: 'standby', reason: 'theme-reset-failed'});
 
         jest.mocked(shell.webContents.send).mockImplementation(() => undefined);
+        jest.mocked(shell.webContents.send).mockClear();
         const replacement = await manager.registerDesktopThemeSurface(owner);
+        expect(shell.webContents.send).toHaveBeenCalledWith(RESET_THEME);
         expect(replacement.surfaceId).not.toBe(registration.surfaceId);
         expect(replacement.state).toMatchObject({status: 'granted'});
     });

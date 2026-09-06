@@ -145,6 +145,13 @@ export class ThemeManager {
                     if (!this.revokeDesktopThemeLease('not-current')) {
                         return {surfaceId: replaced.surfaceId, state: replaced.state};
                     }
+                } else if (
+                    replaced.state.scope === 'main-tab' &&
+                    replaced.state.status === 'standby' &&
+                    replaced.state.reason === 'theme-reset-failed' &&
+                    !this.resetDesktopOutput()
+                ) {
+                    return {surfaceId: replaced.surfaceId, state: replaced.state};
                 }
                 this.removeDesktopThemeSurface(replaced);
             }
