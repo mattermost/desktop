@@ -451,6 +451,18 @@ describe('common/Validator', () => {
             expect(Validator.desktopThemeApplyRequestSchema.validate(importedRequest).error).toBeUndefined();
         });
 
+        it('accepts code theme strings within the server preference envelope', () => {
+            const importedRequest = {
+                ...request,
+                directive: {
+                    ...request.directive,
+                    shellTheme: {...shellTheme, codeTheme: 'a'.repeat(20_000)},
+                },
+            };
+
+            expect(Validator.desktopThemeApplyRequestSchema.validate(importedRequest).error).toBeUndefined();
+        });
+
         it.each([
             undefined,
             {...request, unexpected: true},

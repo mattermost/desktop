@@ -430,6 +430,7 @@ const opaqueDesktopThemeIdSchema = Joi.string().min(1).max(256).required().stric
 export const desktopShellThemeSchema = Joi.object<DesktopShellTheme>(themeFields).
     fork(Object.keys(themeFields), (schema) => (schema as Joi.StringSchema).max(256).required()).
     keys({
+        codeTheme: Joi.string().max(20_000).required().strict(),
         centerChannelBg: Joi.string().max(256).required().strict().custom((value, helpers) => (
             parseThemeColor(value) ? value : helpers.error('string.pattern.base')
         )),
