@@ -439,6 +439,18 @@ describe('common/Validator', () => {
             expect(Validator.desktopThemeApplyRequestSchema.validate(request).error).toBeUndefined();
         });
 
+        it.each(Object.keys(shellTheme).filter((field) => field !== 'codeTheme'))('rejects a malformed %s color', (field) => {
+            const invalidRequest = {
+                ...request,
+                directive: {
+                    ...request.directive,
+                    shellTheme: {...shellTheme, [field]: 'red'},
+                },
+            };
+
+            expect(Validator.desktopThemeApplyRequestSchema.validate(invalidRequest).error).toBeDefined();
+        });
+
         it.each([
             undefined,
             {...request, unexpected: true},
