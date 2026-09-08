@@ -141,13 +141,16 @@ export class FindBar {
     open = (target: WebContents, viewBounds: Rectangle) => {
         log.debug('open');
 
-        if (this.target && this.target !== target) {
+        const targetChanged = this.target !== target;
+        if (this.target && targetChanged) {
             this.stopFind();
             this.unbindTarget();
         }
 
         this.target = target;
-        this.target.on('found-in-page', this.onFoundInPage);
+        if (targetChanged) {
+            this.target.on('found-in-page', this.onFoundInPage);
+        }
         this.setBounds(viewBounds);
 
         if (!this.isViewInFront()) {

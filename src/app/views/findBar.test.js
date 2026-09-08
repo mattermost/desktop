@@ -106,6 +106,19 @@ describe('app/views/findBar', () => {
             expect(findBar.view.webContents.send).toHaveBeenCalledWith(FIND_BAR_FOCUS);
         });
 
+        it('should not stack found-in-page listeners when reopening the same target', () => {
+            const parent = createParentWindow();
+            const target = createTargetWebContents();
+            const findBar = new FindBar(parent);
+
+            findBar.open(target, viewBounds);
+            findBar.open(target, viewBounds);
+
+            expect(target.on).toHaveBeenCalledTimes(1);
+            expect(target.off).not.toHaveBeenCalled();
+            expect(target.stopFindInPage).not.toHaveBeenCalled();
+        });
+
         it('should stop findInPage and hide when closed', () => {
             const parent = createParentWindow();
             const target = createTargetWebContents();

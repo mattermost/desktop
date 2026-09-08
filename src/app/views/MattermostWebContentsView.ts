@@ -98,6 +98,7 @@ export class MattermostWebContentsView extends EventEmitter {
             }
         });
         this.webContentsView.webContents.on('did-navigate-in-page', this.handleDidNavigateInPage);
+        this.webContentsView.webContents.on('did-navigate', this.closeFindBarIfNotApplicable);
         this.webContentsView.webContents.on('page-title-updated', (_, newTitle) => this.handlePageTitleUpdated(newTitle));
         this.webContentsView.webContents.on('devtools-focused', this.emitShortcutMenuUpdate);
         this.webContentsView.webContents.on('devtools-closed', this.emitShortcutMenuUpdate);
