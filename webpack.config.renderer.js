@@ -27,6 +27,7 @@ module.exports = merge(base, {
         loadingScreen: './src/renderer/modals/loadingScreen/index.tsx',
         welcomeScreen: './src/renderer/modals/welcomeScreen/welcomeScreen.tsx',
         popout: './src/renderer/popout.tsx',
+        findBar: './src/renderer/modals/findBar/findBar.tsx',
     },
     output: {
         path: process.env.NODE_ENV === 'test' ? path.resolve(__dirname, 'e2e/dist/renderer') : path.resolve(__dirname, 'dist/renderer'),
@@ -128,6 +129,12 @@ module.exports = merge(base, {
             template: 'src/renderer/index.html',
             chunks: ['popout'],
             filename: 'popout.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Find',
+            template: 'src/renderer/index.html',
+            chunks: ['findBar'],
+            filename: 'findBar.html',
         }),
         new MiniCssExtractPlugin({
             filename: 'styles.[contenthash].css',

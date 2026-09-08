@@ -15,6 +15,7 @@ import {updateServerInfos} from 'main/app/utils';
 import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
 import {getServerAPI} from 'main/server/serverAPI';
 
+import {closeFindBar, openFindBar, updateFindBarBounds} from './findBar';
 import {MattermostWebContentsView} from './MattermostWebContentsView';
 
 import ContextMenu from '../../main/contextMenu';
@@ -34,8 +35,11 @@ jest.mock('electron', () => ({
             off: jest.fn(),
             reload: jest.fn(),
             getTitle: () => 'title',
-            getURL: () => 'http://server-1.com',
+            getURL: jest.fn(() => 'http://server-1.com'),
             send: jest.fn(),
+            sendInputEvent: jest.fn(),
+            findInPage: jest.fn(),
+            stopFindInPage: jest.fn(),
             openDevTools: jest.fn(),
             closeDevTools: jest.fn(),
             isDevToolsOpened: jest.fn(),
@@ -48,6 +52,8 @@ jest.mock('electron', () => ({
             },
             isDestroyed: jest.fn(() => false),
         },
+        getBounds: jest.fn(() => ({x: 0, y: 40, width: 1280, height: 760})),
+        setBounds: jest.fn(),
     })),
     ipcMain: {
         on: jest.fn(),
@@ -68,6 +74,11 @@ jest.mock('common/appState', () => ({
     clear: jest.fn(),
     updateMentions: jest.fn(),
     updateExpired: jest.fn(),
+}));
+jest.mock('./findBar', () => ({
+    openFindBar: jest.fn(),
+    closeFindBar: jest.fn(),
+    updateFindBarBounds: jest.fn(),
 }));
 jest.mock('./webContentEvents', () => ({
     addWebContentsEventListeners: jest.fn(),
@@ -733,6 +744,61 @@ describe('main/views/MattermostWebContentsView', () => {
             } finally {
                 Object.defineProperty(process, 'platform', {value: originalPlatform, configurable: true});
             }
+        });
+    });
+
+    describe('openFind', () => {
+        const window = {on: jest.fn(), off: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
+        let mattermostView;
+
+        beforeEach(() => {
+            jest.clearAllMocks();
+            ServerManager.getServer.mockReturnValue(server);
+            mattermostView = new MattermostWebContentsView(view, {}, window);
+        });
+
+        it('should remap Ctrl+Shift+F on channel pages', () => {
+            mattermostView.webContentsView.webContents.getURL.mockReturnValue('http://server-1.com/team/channels/town-square');
+
+            mattermostView.openFind();
+
+            expect(openFindBar).not.toHaveBeenCalled();
+            expect(mattermostView.webContentsView.webContents.sendInputEvent).toHaveBeenCalledWith({
+                type: 'keyDown',
+                keyCode: 'F',
+                modifiers: [process.platform === 'darwin' ? 'cmd' : 'ctrl', 'shift'],
+            });
+        });
+
+        it('should open the find bar on integrations pages', () => {
+            mattermostView.webContentsView.webContents.getURL.mockReturnValue('http://server-1.com/team/integrations/bots');
+
+            mattermostView.openFind();
+
+            expect(openFindBar).toHaveBeenCalledWith(
+                window,
+                mattermostView.webContentsView.webContents,
+                {x: 0, y: 40, width: 1280, height: 760},
+            );
+            expect(mattermostView.webContentsView.webContents.sendInputEvent).not.toHaveBeenCalled();
+        });
+
+        it('should close the find bar when navigating away from a find-in-page URL', () => {
+            mattermostView.webContentsView.webContents.getURL.mockReturnValue('http://server-1.com/team/integrations/bots');
+            mattermostView.openFind();
+            expect(openFindBar).toHaveBeenCalled();
+
+            mattermostView.webContentsView.webContents.getURL.mockReturnValue('http://server-1.com/team/channels/town-square');
+            const didNavigate = mattermostView.webContentsView.webContents.on.mock.calls.find(([eventName]) => eventName === 'did-navigate-in-page');
+            didNavigate[1]();
+
+            expect(closeFindBar).toHaveBeenCalledWith(window, mattermostView.webContentsView.webContents);
+        });
+
+        it('should update find bar bounds when the view is resized', () => {
+            const bounds = {x: 0, y: 40, width: 800, height: 600};
+            mattermostView.setBounds(bounds);
+            expect(updateFindBarBounds).toHaveBeenCalledWith(window, mattermostView.webContentsView.webContents, bounds);
         });
     });
 });
