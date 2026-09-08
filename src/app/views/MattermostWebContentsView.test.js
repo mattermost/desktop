@@ -808,6 +808,20 @@ describe('main/views/MattermostWebContentsView', () => {
             expect(closeFindBar).toHaveBeenCalledWith(window, mattermostView.webContentsView.webContents);
         });
 
+        it('should close the find bar on a full document navigation between find-in-page URLs', () => {
+            mattermostView.webContentsView.webContents.getURL.mockReturnValue('http://server-1.com/team/integrations/bots');
+            mattermostView.openFind();
+            expect(openFindBar).toHaveBeenCalled();
+            closeFindBar.mockClear();
+
+            mattermostView.webContentsView.webContents.getURL.mockReturnValue('http://server-1.com/team/emoji');
+            const didNavigate = mattermostView.webContentsView.webContents.on.mock.calls.find(([eventName]) => eventName === 'did-navigate');
+            expect(didNavigate).toBeDefined();
+            didNavigate[1]();
+
+            expect(closeFindBar).toHaveBeenCalledWith(window, mattermostView.webContentsView.webContents);
+        });
+
         it('should update find bar bounds when the view is resized', () => {
             const bounds = {x: 0, y: 40, width: 800, height: 600};
             mattermostView.setBounds(bounds);
