@@ -6,12 +6,11 @@ import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
 import {demoConfig} from '../../helpers/config';
-import {answerMessageModal, clearCertificateErrorCallbacks} from '../../helpers/dialog';
+import {answerMessageModal} from '../../helpers/dialog';
 import {launchDirectTestApp} from '../../helpers/directLaunch';
 import {closeElectronApp, closeElectronAppFast} from '../../helpers/electronApp';
-import {waitForErrorView} from '../../helpers/errorView';
 import {buildServerMap} from '../../helpers/serverMap';
-import {evaluateInMainProcess, isTransientEvaluateError, isTransientNavigationError} from '../../helpers/testRefs';
+import {isTransientEvaluateError, isTransientNavigationError} from '../../helpers/testRefs';
 
 const EXPIRED_CERT_URL = 'https://expired.badssl.com';
 
@@ -41,23 +40,9 @@ test(
         });
 
         try {
-            await answerMessageModal(app, 1, 45_000); // Cancel Connection on the launch cert prompt
-            await waitForErrorView(app);
-
-            await clearCertificateErrorCallbacks(app);
-
-            await evaluateInMainProcess(app, () => {
-                const refs = (global as any).__e2eTestRefs;
-                if (!refs) {
-                    throw new Error('__e2eTestRefs missing (NODE_ENV must be test)');
-                }
-                const server = refs.ServerManager.getOrderedServers()?.[0];
-                if (!server) {
-                    throw new Error('No server available to reload');
-                }
-                refs.ServerManager.reloadServer(server.id);
-            }, {timeoutMs: 30_000});
-
+            // Answer the launch cert prompt directly. The old test cancelled here and
+            // reloaded only because its single-mode message-box stub forced every
+            // dialog to "cancel"; per-modal answering lets us trust on first load.
             await answerMessageModal(app, 0, 45_000); // More Details
             await answerMessageModal(app, 0, 45_000); // Trust Insecure Certificate
 
@@ -74,8 +59,8 @@ test(
             const certificateStore = JSON.parse(fs.readFileSync(certificateStorePath, 'utf-8')) as Record<string, unknown>;
             expect(Object.keys(certificateStore).length).toBeGreaterThan(0);
 
-            // The reload to expired.badssl clearing the ErrorView depends on the live
-            // network, so give it its own longer poll.
+            // Trust triggers a reload of expired.badssl, which clears the ErrorView once
+            // it loads; that depends on the live network, so give it its own longer poll.
             await expect.poll(() => {
                 const mainWindow = app.windows().find((window) => window.url().includes('index'));
                 return mainWindow?.$('.ErrorView');
