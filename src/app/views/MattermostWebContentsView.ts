@@ -33,6 +33,7 @@ import {updateServerInfos} from 'main/app/utils';
 import DeveloperMode from 'main/developerMode';
 import {localizeMessage} from 'main/i18nManager';
 import performanceMonitor from 'main/performanceMonitor';
+import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
 import {getServerAPI} from 'main/server/serverAPI';
 
 import WebContentsEventManager from './webContentEvents';
@@ -79,6 +80,7 @@ export class MattermostWebContentsView extends EventEmitter {
         };
         this.atRoot = true;
         this.webContentsView = new WebContentsView(this.options);
+        LocalNetworkAccessManager.registerWebContents(this.webContentsView.webContents);
         this.resetLoadingStatus();
 
         this.log = ViewManager.getViewLog(this.id, 'MattermostWebContentsView');
@@ -224,6 +226,7 @@ export class MattermostWebContentsView extends EventEmitter {
         WebContentsEventManager.removeWebContentsListeners(this.webContentsId);
         AppState.clear(this.id);
         performanceMonitor.unregisterView(this.webContentsView.webContents.id);
+        LocalNetworkAccessManager.unregisterWebContents(this.webContentsId);
         if (this.parentWindow) {
             this.parentWindow.contentView.removeChildView(this.webContentsView);
         }
