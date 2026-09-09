@@ -333,24 +333,22 @@ export class ServerViewState {
         }
 
         // If the URL doesn't match the Site URL, set the URL to the correct one
-        if (remoteInfo.siteURL && remoteURL.toString() !== new URL(remoteInfo.siteURL).toString()) {
-            const parsedSiteURL = parseURL(remoteInfo.siteURL);
-            if (parsedSiteURL) {
-                // Check the Site URL as well to see if it's already pre-configured
-                const existingServer = ServerManager.lookupViewByURL(parsedSiteURL, true);
-                if (existingServer && existingServer.server.id !== currentId) {
-                    return {status: URLValidationStatus.URLExists, existingServerName: existingServer.server.name, validatedURL: existingServer.server.url.toString()};
-                }
+        const parsedSiteURL = remoteInfo.siteURL ? parseURL(remoteInfo.siteURL) : undefined;
+        if (parsedSiteURL && remoteURL.toString() !== parsedSiteURL.toString()) {
+            // Check the Site URL as well to see if it's already pre-configured
+            const existingServer = ServerManager.lookupViewByURL(parsedSiteURL, true);
+            if (existingServer && existingServer.server.id !== currentId) {
+                return {status: URLValidationStatus.URLExists, existingServerName: existingServer.server.name, validatedURL: existingServer.server.url.toString()};
+            }
 
-                // If we can't reach the remote Site URL, there's probably a configuration issue
-                const remoteSiteURLInfo = await this.testRemoteServer(parsedSiteURL);
-                if (!remoteSiteURLInfo) {
-                    return {status: URLValidationStatus.URLNotMatched, serverVersion: remoteInfo.serverVersion, serverName: remoteServerName, validatedURL: remoteURL.toString()};
-                }
+            // If we can't reach the remote Site URL, there's probably a configuration issue
+            const remoteSiteURLInfo = await this.testRemoteServer(parsedSiteURL);
+            if (!remoteSiteURLInfo) {
+                return {status: URLValidationStatus.URLNotMatched, serverVersion: remoteInfo.serverVersion, serverName: remoteServerName, validatedURL: remoteURL.toString()};
             }
 
             // Otherwise fix it for them and return
-            return {status: URLValidationStatus.URLUpdated, serverVersion: remoteInfo.serverVersion, serverName: remoteServerName, validatedURL: remoteInfo.siteURL};
+            return {status: URLValidationStatus.URLUpdated, serverVersion: remoteInfo.serverVersion, serverName: remoteServerName, validatedURL: parsedSiteURL.toString()};
         }
 
         return {status: URLValidationStatus.OK, serverVersion: remoteInfo.serverVersion, serverName: remoteServerName, validatedURL: remoteURL.toString()};

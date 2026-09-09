@@ -370,8 +370,9 @@ export class ServerManager extends EventEmitter {
             return false;
         }
 
-        if (remoteInfo.siteURL && server.url.toString() !== new URL(remoteInfo.siteURL).toString()) {
-            server.updateURL(remoteInfo.siteURL);
+        const siteURL = remoteInfo.siteURL ? parseURL(remoteInfo.siteURL) : undefined;
+        if (siteURL && server.url.toString() !== siteURL.toString()) {
+            server.updateURL(siteURL);
             this.servers.set(serverId, server);
             return true;
         }

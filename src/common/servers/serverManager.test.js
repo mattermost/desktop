@@ -40,6 +40,13 @@ describe('common/servers/serverManager', () => {
             serverManager.viewOrder = new Map([['server-1', ['view-1', 'view-2', 'view-3']]]);
             serverManager.persistServers = jest.fn();
             Utils.isVersionGreaterThanOrEqualTo.mockImplementation((version) => version === '6.0.0');
+            parseURL.mockImplementation((url) => {
+                try {
+                    return new URL(url);
+                } catch (e) {
+                    return undefined;
+                }
+            });
         });
 
         it('should not save when there is nothing to update', () => {
@@ -62,6 +69,18 @@ describe('common/servers/serverManager', () => {
             }]]));
 
             expect(serverManager.servers.get('server-1').url.toString()).toBe('http://server-2.com/');
+        });
+
+        it('should not throw or update server URL when the site URL cannot be parsed', () => {
+            expect(() => serverManager.updateRemoteInfos(new Map([['server-1', {
+                siteURL: 'not-a-url',
+                serverVersion: '6.0.0',
+                hasPlaybooks: true,
+                hasFocalboard: true,
+            }]]))).not.toThrow();
+
+            expect(serverManager.servers.get('server-1').url.toString()).toBe('http://server-1.com/');
+            expect(serverManager.persistServers).not.toHaveBeenCalled();
         });
     });
 
