@@ -10,6 +10,13 @@ import RadioSetting from './RadioSetting';
 
 import './NotificationSetting.scss';
 
+/**
+ * Settings component for notifications, supporting dock bounce / taskbar flash,
+ * default direct message sound selection, and per-channel or per-user sound overrides.
+ *
+ * @param props - Component props containing the save callback, current notification settings, and full config.
+ * @returns The rendered notification settings section.
+ */
 export default function NotificationSetting({
     onSave,
     value,
@@ -83,7 +90,14 @@ export default function NotificationSetting({
                                         className='NotificationSetting__overrideItem'
                                     >
                                         <span className='NotificationSetting__overrideChannel'>{channel}</span>
-                                        <span className='NotificationSetting__overrideSound'>{sound}</span>
+                                        <span className='NotificationSetting__overrideSound'>
+                                            {sound === 'None' ? (
+                                                <FormattedMessage
+                                                    id='renderer.components.settingsPage.sound.none'
+                                                    defaultMessage='None (Silent)'
+                                                />
+                                            ) : sound}
+                                        </span>
                                         <button
                                             type='button'
                                             className='btn btn-tertiary btn-danger btn-sm'
@@ -126,7 +140,12 @@ export default function NotificationSetting({
                                 value={newChannelSound}
                                 onChange={(e) => setNewChannelSound(e.target.value)}
                             >
-                                <option value='None'>{'None (Silent)'}</option>
+                                <option value='None'>
+                                    <FormattedMessage
+                                        id='renderer.components.settingsPage.sound.none'
+                                        defaultMessage='None (Silent)'
+                                    />
+                                </option>
                                 <option value='Ding'>{'Ding'}</option>
                                 <option value='Bing'>{'Bing'}</option>
                                 <option value='Crackle'>{'Crackle'}</option>

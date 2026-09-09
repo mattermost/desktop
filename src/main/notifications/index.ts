@@ -24,6 +24,45 @@ import {NewVersionNotification, UpgradeNotification} from './Upgrade';
 
 const log = new Logger('Notifications');
 
+/**
+ * Checks if a notification URL matches a configured channel or user key.
+ * Compares against discrete URL path segments to prevent prefix collisions
+ * (e.g., 'town' matching 'town-square', or 'ann' matching 'anna').
+ *
+ * @param urlStr - The target notification URL.
+ * @param key - The channel name, channel ID, or username configured by the user.
+ * @returns True if the key matches a valid channel or message segment in the URL.
+ */
+export function matchesNotificationRoute(urlStr: string, key: string): boolean {
+    if (!key) {
+        return false;
+    }
+
+    try {
+        const parsed = new URL(urlStr, 'http://localhost');
+        const segments = parsed.pathname.split('/').filter(Boolean);
+        const cleanKey = key.replace(/^@/, '').toLowerCase();
+
+        for (let i = 0; i < segments.length; i++) {
+            const seg = segments[i];
+            const cleanSeg = seg.replace(/^@/, '').toLowerCase();
+
+            if (cleanSeg === cleanKey) {
+                if (seg.startsWith('@')) {
+                    return true;
+                }
+                if (i > 0 && (segments[i - 1] === 'channels' || segments[i - 1] === 'messages')) {
+                    return true;
+                }
+            }
+        }
+    } catch {
+        return false;
+    }
+
+    return false;
+}
+
 class NotificationManager {
     private mentionsPerChannel?: Map<string, Mention>;
     private allActiveNotifications?: Map<string, Notification>;
@@ -44,6 +83,20 @@ class NotificationManager {
         });
     }
 
+    /**
+     * Displays a desktop notification for a mention or message, respecting DND,
+     * view priority, and custom notification sound configuration.
+     *
+     * @param title - Notification title.
+     * @param body - Notification message body text.
+     * @param channelId - ID of the originating channel.
+     * @param teamId - ID of the team.
+     * @param url - Deep link URL to the channel/message.
+     * @param silent - Whether the notification should be silent.
+     * @param webcontents - The WebContents instance sending the notification.
+     * @param soundName - The default sound name from the webapp.
+     * @returns A status object describing whether the notification was shown or the reason it was skipped.
+     */
     public async displayMention(title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, soundName: string) {
         log.debug('displayMention', {silent, soundName});
 
@@ -77,7 +130,14 @@ class NotificationManager {
         let finalSilent = silent;
 
         if (url) {
-            const isDM = url.includes('/messages/');
+            const isDM = (() => {
+                try {
+                    const parsed = new URL(url, 'http://localhost');
+                    return parsed.pathname.split('/').filter(Boolean).includes('messages');
+                } catch {
+                    return url.includes('/messages/');
+                }
+            })();
             let customSound: string | undefined;
 
             if (Config.channelNotificationSounds) {
@@ -85,7 +145,7 @@ class NotificationManager {
                     customSound = Config.channelNotificationSounds[channelId];
                 } else {
                     for (const [key, sound] of Object.entries(Config.channelNotificationSounds)) {
-                        if (key && (url.includes(`/@${key.replace(/^@/, '')}`) || url.includes(`/messages/${key}`) || url.includes(`/channels/${key}`))) {
+                        if (matchesNotificationRoute(url, key)) {
                             customSound = sound;
                             break;
                         }

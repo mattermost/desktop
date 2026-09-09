@@ -40,8 +40,8 @@
     font-size: 14px;
     background-color: var(--center-channel-bg);
     color: var(--center-channel-color);
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
-    border-radius: 4px;
+    border: var(--border-dark);
+    border-radius: var(--radius-s);
     outline: none;
     cursor: pointer;
     min-width: 180px;
@@ -68,8 +68,8 @@
 }
 
 .NotificationSetting__overridesList {
-    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
-    border-radius: 4px;
+    border: var(--border-light);
+    border-radius: var(--radius-s);
     background-color: rgba(var(--center-channel-color-rgb), 0.02);
     margin-bottom: 16px;
     max-height: 150px;
@@ -131,8 +131,8 @@
         font-size: 14px;
         background-color: var(--center-channel-bg);
         color: var(--center-channel-color);
-        border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
-        border-radius: 4px;
+        border: var(--border-dark);
+        border-radius: var(--radius-s);
         outline: none;
 
         &:focus {
@@ -149,6 +149,6 @@
         font-size: 13px;
         height: auto;
         line-height: normal;
-        border-radius: 4px;
+        border-radius: var(--radius-s);
     }
 }
