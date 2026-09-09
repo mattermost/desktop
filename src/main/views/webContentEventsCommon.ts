@@ -44,6 +44,27 @@ export function isCustomProtocol(url: URL) {
     return url.protocol !== 'http:' && url.protocol !== 'https:' && url.protocol !== `${scheme}:`;
 }
 
+// Subframes only guard against custom protocols launching external handlers; loopback/private
+// access is handled by the session request filter (main/localNetworkAccess). Allowing
+// http(s) here keeps ordinary embeds (YouTube, plugin iframes) working.
+const ALLOWED_SUBFRAME_PROTOCOLS = new Set(['http:', 'https:']);
+
+// Protocol-less document URLs for programmatic and srcdoc iframes.
+const ALLOWED_SUBFRAME_URLS = new Set(['about:blank', 'about:srcdoc']);
+
+export function isAllowedSubframeNavigation(rawURL?: string): boolean {
+    if (!rawURL || ALLOWED_SUBFRAME_URLS.has(rawURL)) {
+        return true;
+    }
+
+    const parsedURL = parseURL(rawURL);
+    if (!parsedURL) {
+        return false;
+    }
+
+    return ALLOWED_SUBFRAME_PROTOCOLS.has(parsedURL.protocol);
+}
+
 export function isMattermostProtocol(url: URL) {
     const scheme = protocols && protocols[0] && protocols[0].schemes && protocols[0].schemes[0];
     return url.protocol === `${scheme}:`;

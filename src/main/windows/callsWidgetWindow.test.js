@@ -17,6 +17,7 @@ import {
     CALLS_PLUGIN_ID,
 } from 'common/utils/constants';
 import urlUtils from 'common/utils/url';
+import LocalNetworkAccessManager from 'main/localNetworkAccess';
 import PermissionsManager from 'main/permissionsManager';
 import {
     resetScreensharePermissionsMacOS,
@@ -73,6 +74,13 @@ jest.mock('app/serverViewState', () => ({
 jest.mock('main/performanceMonitor', () => ({
     registerView: jest.fn(),
     unregisterView: jest.fn(),
+}));
+jest.mock('main/localNetworkAccess', () => ({
+    __esModule: true,
+    default: {
+        registerWebContents: jest.fn(),
+        unregisterWebContents: jest.fn(),
+    },
 }));
 jest.mock('main/views/viewManager', () => ({
     getView: jest.fn(),
@@ -336,6 +344,38 @@ describe('main/windows/callsWidgetWindow', () => {
         expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith(CALLS_WIDGET_SHARE_SCREEN, 'sourceId', true);
     });
 
+    describe('handleCallsLeave', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+
+        beforeEach(() => {
+            callsWidgetWindow.close = jest.fn();
+            callsWidgetWindow.mainView = {webContentsId: 'mainViewID'};
+            callsWidgetWindow.win = {webContents: {id: 'widgetID'}, isDestroyed: () => false};
+            callsWidgetWindow.popOut = undefined;
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+            delete callsWidgetWindow.mainView;
+            delete callsWidgetWindow.win;
+        });
+
+        it('should not close when the sender is a different server', () => {
+            callsWidgetWindow.handleCallsLeave({sender: {id: 'otherServerID'}});
+            expect(callsWidgetWindow.close).not.toHaveBeenCalled();
+        });
+
+        it('should close when the sender is the calls widget', () => {
+            callsWidgetWindow.handleCallsLeave({sender: {id: 'widgetID'}});
+            expect(callsWidgetWindow.close).toHaveBeenCalled();
+        });
+
+        it('should close when the sender is the main view of the call', () => {
+            callsWidgetWindow.handleCallsLeave({sender: {id: 'mainViewID'}});
+            expect(callsWidgetWindow.close).toHaveBeenCalled();
+        });
+    });
+
     describe('onPopOutOpen', () => {
         const callsWidgetWindow = new CallsWidgetWindow();
 
@@ -450,6 +490,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
         expect(callsWidgetWindow.popOut).toBe(popOut);
         expect(WebContentsEventManager.addWebContentsEventListeners).toHaveBeenCalledWith(popOut.webContents);
+        expect(jest.mocked(LocalNetworkAccessManager.registerWebContents)).toHaveBeenCalledWith(popOut.webContents);
         expect(redirectListener).toBeDefined();
         expect(frameFinishedLoadListener).toBeDefined();
         expect(mockContextMenuReload).toHaveBeenCalledTimes(1);
@@ -463,6 +504,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
         closedListener();
         expect(callsWidgetWindow.popOut).not.toBeDefined();
+        expect(jest.mocked(LocalNetworkAccessManager.unregisterWebContents)).toHaveBeenCalledWith('webContentsId');
         expect(mockContextMenuDispose).toHaveBeenCalled();
 
         // Verify widget visibility has been toggled

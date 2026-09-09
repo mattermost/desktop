@@ -49,6 +49,7 @@ import CriticalErrorHandler from 'main/CriticalErrorHandler';
 import DeveloperMode from 'main/developerMode';
 import downloadsManager from 'main/downloadsManager';
 import i18nManager from 'main/i18nManager';
+import LocalNetworkAccessManager from 'main/localNetworkAccess';
 import NonceManager from 'main/nonceManager';
 import {getDoNotDisturb} from 'main/notifications';
 import parseArgs from 'main/ParseArgs';
@@ -329,6 +330,26 @@ async function initializeAfterAppReady() {
 
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;
+    defaultSession.webRequest.onBeforeRequest(async (details, callback) => {
+        try {
+            const shouldCancel = await LocalNetworkAccessManager.shouldCancelLocalNetworkRequest(details);
+
+            if (shouldCancel) {
+                log.warn('Blocked server content from accessing local or private network URL', {
+                    resourceType: details.resourceType,
+                    origin: parseURL(details.url)?.origin,
+                    webContentsId: details.webContentsId,
+                });
+                callback({cancel: true});
+                return;
+            }
+        } catch (error) {
+            log.warn('Error while checking local network request policy', {error});
+        }
+
+        callback({});
+    });
+
     defaultSession.webRequest.onHeadersReceived((details, callback) => {
         const url = parseURL(details.url);
         if (url?.protocol === 'mattermost-desktop:' && url?.pathname.endsWith('html')) {

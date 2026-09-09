@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {WebContents, Event} from 'electron';
+import type {WebContents, Event, WebContentsWillFrameNavigateEventParams} from 'electron';
 import {BrowserWindow, dialog, shell} from 'electron';
 
 import Config from 'common/config';
@@ -24,12 +24,13 @@ import {
 } from 'common/utils/url';
 import ContextMenu from 'main/contextMenu';
 import {localizeMessage} from 'main/i18nManager';
+import LocalNetworkAccessManager from 'main/localNetworkAccess';
 import PluginsPopUpsManager from 'main/views/pluginsPopUps';
 import ViewManager from 'main/views/viewManager';
 import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
 import MainWindow from 'main/windows/mainWindow';
 
-import {generateHandleConsoleMessage, isCustomProtocol, isMattermostProtocol} from './webContentEventsCommon';
+import {generateHandleConsoleMessage, isAllowedSubframeNavigation, isCustomProtocol, isMattermostProtocol} from './webContentEventsCommon';
 
 import allowProtocolDialog from '../allowProtocolDialog';
 import {composeUserAgent} from '../utils';
@@ -101,6 +102,23 @@ export class WebContentsEventManager {
             }
 
             this.log(webContentsId).info('Prevented desktop from navigating to external URL');
+            event.preventDefault();
+        };
+    };
+
+    private generateWillFrameNavigate = (webContentsId: number) => {
+        return (event: Event<WebContentsWillFrameNavigateEventParams>) => {
+            // will-frame-navigate also fires for the main frame; defer that to will-navigate
+            // so the policy (and any protocol dialog) does not run twice.
+            if (event.isMainFrame) {
+                return;
+            }
+
+            if (isAllowedSubframeNavigation(event.url)) {
+                return;
+            }
+
+            this.log(webContentsId).debug('Prevented subframe from navigating to a blocked protocol');
             event.preventDefault();
         };
     };
@@ -216,6 +234,7 @@ export class WebContentsEventManager {
                     };
 
                     popup = this.popupWindow.win;
+                    LocalNetworkAccessManager.registerWebContents(popup.webContents);
                     popup.webContents.on('will-redirect', (event, url) => {
                         const parsedURL = parseURL(url);
                         if (!parsedURL) {
@@ -228,8 +247,11 @@ export class WebContentsEventManager {
                         }
                     });
                     popup.webContents.on('will-navigate', this.generateWillNavigate(popup.webContents.id));
+                    popup.webContents.on('will-frame-navigate', this.generateWillFrameNavigate(popup.webContents.id));
                     popup.webContents.setWindowOpenHandler(this.denyNewWindow);
+                    const popupWebContentsId = popup.webContents.id;
                     popup.once('closed', () => {
+                        LocalNetworkAccessManager.unregisterWebContents(popupWebContentsId);
                         this.popupWindow = undefined;
                     });
 
@@ -280,7 +302,9 @@ export class WebContentsEventManager {
         }
 
         const willNavigate = this.generateWillNavigate(contents.id);
+        const willFrameNavigate = this.generateWillFrameNavigate(contents.id);
         contents.on('will-navigate', willNavigate);
+        contents.on('will-frame-navigate', willFrameNavigate);
 
         const spellcheck = Config.useSpellChecker;
         const newWindow = this.generateNewWindowListener(contents.id, spellcheck);
@@ -298,6 +322,7 @@ export class WebContentsEventManager {
         const removeWebContentsListeners = () => {
             try {
                 contents.removeListener('will-navigate', willNavigate);
+                contents.removeListener('will-frame-navigate', willFrameNavigate);
                 contents.removeListener('console-message', consoleMessage);
                 removeListeners?.(contents);
             } catch (e) {
