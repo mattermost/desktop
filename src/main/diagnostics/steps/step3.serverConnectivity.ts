@@ -36,7 +36,7 @@ const run = async (logger: MainLogger): Promise<DiagnosticStepResponse> => {
         return {
             message: `${stepName} finished successfully`,
             succeeded: true,
-            payload: servers,
+            payload: servers.map((server) => ({...server, preAuthSecret: undefined})),
         };
     } catch (error) {
         logger.warn(`Diagnostics ${stepName} Failure`, {error});
