@@ -25,6 +25,7 @@ import {
     SERVER_ADDED,
     SERVER_REMOVED,
     SERVER_URL_CHANGED,
+    TRUSTED_NTLM_SERVERS_UPDATED,
 } from 'common/communication';
 import {ModalConstants} from 'common/constants';
 import {Logger} from 'common/log';
@@ -33,6 +34,7 @@ import ServerManager from 'common/servers/serverManager';
 import {URLValidationStatus} from 'common/utils/constants';
 import {isMagicLinkUrl, isValidURI, isValidURL, parseURL} from 'common/utils/url';
 import PermissionsManager from 'main/security/permissionsManager';
+import TrustedNTLMServers from 'main/security/trustedNTLMServers';
 import {ServerInfo} from 'main/server/serverInfo';
 import {getLocalPreload} from 'main/utils';
 
@@ -62,6 +64,7 @@ export class ServerHub {
         ServerManager.on(SERVER_REMOVED, this.handleServerCleanup);
         ServerManager.on(SERVER_URL_CHANGED, this.updateAuthServerAllowlist);
         ServerManager.on(SERVER_ADDED, this.handleServerAdded);
+        TrustedNTLMServers.on(TRUSTED_NTLM_SERVERS_UPDATED, this.updateAuthServerAllowlist);
     }
 
     private handleServerAdded = () => {
@@ -516,7 +519,8 @@ export class ServerHub {
         const hostnames = ServerManager.getAllServers().
             map((server) => server.url.hostname).
             filter(Boolean);
-        session.defaultSession.allowNTLMCredentialsForDomains(hostnames.join(','));
+        const trustedHostnames = TrustedNTLMServers.getHostnames();
+        session.defaultSession.allowNTLMCredentialsForDomains([...hostnames, ...trustedHostnames].join(','));
     };
 
     private handleGetLastActive = () => {

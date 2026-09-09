@@ -208,6 +208,7 @@ export const SERVER_SWITCHED = 'server-switched';
 export const SERVER_LOGGED_IN_CHANGED = 'server-logged-in-changed';
 export const SERVER_ORDER_UPDATED = 'server-order-updated';
 export const SERVER_PRE_AUTH_SECRET_CHANGED = 'server-pre-auth-secret-changed';
+export const TRUSTED_NTLM_SERVERS_UPDATED = 'trusted-ntlm-servers-updated';
 
 // View Manager Events
 export const VIEW_CREATED = 'view-created';

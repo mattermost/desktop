@@ -9,6 +9,7 @@ import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {URLValidationStatus} from 'common/utils/constants';
 import PermissionsManager from 'main/security/permissionsManager';
+import TrustedNTLMServers from 'main/security/trustedNTLMServers';
 import {ServerInfo} from 'main/server/serverInfo';
 import {getLocalPreload} from 'main/utils';
 
@@ -75,6 +76,13 @@ jest.mock('common/views/viewManager', () => ({
 jest.mock('main/security/permissionsManager', () => ({
     getForServer: jest.fn(),
     setForServer: jest.fn(),
+}));
+jest.mock('main/security/trustedNTLMServers', () => ({
+    __esModule: true,
+    default: {
+        getHostnames: jest.fn(() => []),
+        on: jest.fn(),
+    },
 }));
 jest.mock('main/secureStorage', () => ({
     setSecret: jest.fn(),
@@ -617,6 +625,18 @@ describe('app/serverViewState', () => {
 
         beforeEach(() => {
             session.defaultSession.allowNTLMCredentialsForDomains.mockClear();
+            TrustedNTLMServers.getHostnames.mockReturnValue([]);
+        });
+
+        it('should include user-trusted external hostnames in the allowlist', () => {
+            ServerManager.getAllServers.mockReturnValue([
+                {url: new URL('https://server-1.com')},
+            ]);
+            TrustedNTLMServers.getHostnames.mockReturnValue(['ntlm.example.org']);
+            const hub = new ServerHub();
+            hub.updateAuthServerAllowlist();
+            expect(session.defaultSession.allowNTLMCredentialsForDomains).
+                toHaveBeenCalledWith('server-1.com,ntlm.example.org');
         });
 
         it('should set the allowlist to the configured server hostnames', () => {

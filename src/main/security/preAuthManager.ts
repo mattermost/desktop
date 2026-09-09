@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {type Certificate, type WebContents, type Event, app, type AuthenticationResponseDetails, type AuthInfo} from 'electron';
+import {type Certificate, type WebContents, type Event, app, dialog, type AuthenticationResponseDetails, type AuthInfo, type BrowserWindow} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
@@ -12,7 +12,9 @@ import {Logger} from 'common/log';
 import type {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {isTrustedURL as isTrustedURLHelper, parseURL} from 'common/utils/url';
+import {localizeMessage} from 'main/i18nManager';
 import secureStorage from 'main/secureStorage';
+import TrustedNTLMServers from 'main/security/trustedNTLMServers';
 import {getLocalPreload} from 'main/utils';
 
 import type {LoginModalData} from 'types/auth';
@@ -25,6 +27,8 @@ const preAuthModalHtml = 'mattermost-desktop://renderer/preAuthHeaderModal.html'
 const html = 'mattermost-desktop://renderer/certificateModal.html';
 
 export class PreAuthManager {
+    private inflightTrustPrompts = new Map<string, Promise<boolean>>();
+
     constructor() {
         app.on('select-client-certificate', this.handleClientCert);
         app.on('login', this.handleBasicAuth);
@@ -174,15 +178,52 @@ export class PreAuthManager {
         log.debug('handleBasicAuth');
         event.preventDefault();
 
-        if (!this.isTrustedURL(request.url)) {
-            log.info('URL is not trusted. Skipping basic auth');
-            return;
-        }
-
         const mainWindow = MainWindow.get();
         if (!mainWindow) {
             return;
         }
+
+        // Requests to a configured server's own domain are always allowed.
+        if (this.isTrustedURL(request.url)) {
+            this.popLoginModal(request, authInfo, mainWindow, callback);
+            return;
+        }
+
+        // Integrated authentication (NTLM/Negotiate) against a domain that isn't
+        // a configured server is blocked by default. Let the user explicitly
+        // trust the domain so login can proceed.
+        if (!this.isIntegratedAuth(authInfo)) {
+            log.info('URL is not trusted. Skipping basic auth');
+            return;
+        }
+
+        const parsedURL = parseURL(request.url);
+        if (!parsedURL) {
+            return;
+        }
+
+        if (TrustedNTLMServers.isTrusted(parsedURL)) {
+            this.popLoginModal(request, authInfo, mainWindow, callback);
+            return;
+        }
+
+        this.confirmTrustExternalAuth(parsedURL, mainWindow).then((trusted) => {
+            if (!trusted) {
+                log.info('User declined to trust external authentication domain', {host: parsedURL.host});
+                callback();
+                return;
+            }
+            TrustedNTLMServers.add(parsedURL);
+            this.popLoginModal(request, authInfo, mainWindow, callback);
+        });
+    };
+
+    private popLoginModal = (
+        request: AuthenticationResponseDetails,
+        authInfo: AuthInfo,
+        mainWindow: BrowserWindow,
+        callback: (username?: string, password?: string) => void,
+    ) => {
         const modalKey = authInfo.isProxy ? `${ModalConstants.PROXY_LOGIN_MODAL}-${authInfo.host}` : `${ModalConstants.LOGIN_MODAL}-${request.url}`;
         const modalPromise = ModalManager.addModal<LoginModalData, {username: string; password: string}>(
             modalKey, loginModalHtml, preload, {request, authInfo}, mainWindow);
@@ -195,6 +236,38 @@ export class PreAuthManager {
                 callback();
             });
         }
+    };
+
+    private isIntegratedAuth = (authInfo: AuthInfo): boolean => {
+        const scheme = authInfo.scheme?.toLowerCase();
+        return scheme === 'ntlm' || scheme === 'negotiate';
+    };
+
+    private confirmTrustExternalAuth = (parsedURL: URL, mainWindow: BrowserWindow): Promise<boolean> => {
+        // Avoid stacking duplicate dialogs when several challenges for the same
+        // host arrive at once.
+        const inflight = this.inflightTrustPrompts.get(parsedURL.hostname);
+        if (inflight) {
+            return inflight;
+        }
+
+        const promise = dialog.showMessageBox(mainWindow, {
+            title: localizeMessage('main.preAuthManager.trustExternalAuth.dialog.title', 'Authentication Requested'),
+            message: localizeMessage('main.preAuthManager.trustExternalAuth.dialog.message', '{appName} is being asked to sign in to "{host}", which is not one of your configured servers.', {appName: app.name, host: parsedURL.host}),
+            detail: localizeMessage('main.preAuthManager.trustExternalAuth.dialog.detail', 'Only allow this if you trust "{host}". {appName} will remember your choice for this domain.', {appName: app.name, host: parsedURL.host}),
+            type: 'question',
+            buttons: [
+                localizeMessage('label.cancel', 'Cancel'),
+                localizeMessage('label.allow', 'Allow'),
+            ],
+            cancelId: 0,
+            defaultId: 0,
+        }).then(({response}) => response === 1).finally(() => {
+            this.inflightTrustPrompts.delete(parsedURL.hostname);
+        });
+
+        this.inflightTrustPrompts.set(parsedURL.hostname, promise);
+        return promise;
     };
 
     private isTrustedURL = (url: string): boolean => {

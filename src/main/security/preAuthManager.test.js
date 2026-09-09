@@ -3,11 +3,14 @@
 
 'use strict';
 
+import {dialog} from 'electron';
+
 import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import ServerManager from 'common/servers/serverManager';
 import secureStorage from 'main/secureStorage';
 import {PreAuthManager} from 'main/security/preAuthManager';
+import TrustedNTLMServers from 'main/security/trustedNTLMServers';
 
 jest.mock('common/utils/url', () => {
     const actualUrl = jest.requireActual('common/utils/url');
@@ -22,8 +25,26 @@ jest.mock('electron', () => ({
     app: {
         getPath: jest.fn(),
         on: jest.fn(),
+        name: 'Mattermost',
     },
     ipcMain: {
+        on: jest.fn(),
+    },
+    dialog: {
+        showMessageBox: jest.fn(),
+    },
+}));
+
+jest.mock('main/i18nManager', () => ({
+    localizeMessage: (id, defaultMessage) => defaultMessage,
+}));
+
+jest.mock('main/security/trustedNTLMServers', () => ({
+    __esModule: true,
+    default: {
+        isTrusted: jest.fn(),
+        add: jest.fn(),
+        getHostnames: jest.fn(),
         on: jest.fn(),
     },
 }));
@@ -303,6 +324,59 @@ describe('main/preAuthManager', () => {
             // Wait for the promise to resolve/reject
             await expect(promise).rejects.toThrow(error);
             expect(callback).toBeCalledWith();
+        });
+
+        describe('external integrated auth', () => {
+            beforeEach(() => {
+                ServerManager.lookupServerByURL.mockReturnValue(undefined);
+                TrustedNTLMServers.isTrusted.mockReturnValue(false);
+                TrustedNTLMServers.add.mockClear();
+                dialog.showMessageBox.mockClear();
+                ModalManager.addModal.mockClear();
+            });
+
+            it('should skip non-integrated auth on an untrusted domain', () => {
+                const callback = jest.fn();
+                preAuthManager.handleBasicAuth({preventDefault: jest.fn()}, {id: 1}, {url: 'http://external.com/'},
+                    {isProxy: false, host: 'external.com', scheme: 'basic'}, callback);
+                expect(dialog.showMessageBox).not.toBeCalled();
+                expect(ModalManager.addModal).not.toBeCalled();
+                expect(callback).not.toBeCalled();
+            });
+
+            it('should prompt then trust and pop login modal when the user allows NTLM', async () => {
+                const promise = Promise.resolve({response: 1});
+                dialog.showMessageBox.mockReturnValue(promise);
+                const callback = jest.fn();
+                preAuthManager.handleBasicAuth({preventDefault: jest.fn()}, {id: 1}, {url: 'http://external.com/'},
+                    {isProxy: false, host: 'external.com', scheme: 'ntlm'}, callback);
+                await promise;
+                await new Promise((resolve) => setTimeout(resolve, 0));
+                expect(TrustedNTLMServers.add).toBeCalled();
+                expect(ModalManager.addModal).toBeCalled();
+            });
+
+            it('should cancel login when the user declines the domain', async () => {
+                const promise = Promise.resolve({response: 0});
+                dialog.showMessageBox.mockReturnValue(promise);
+                const callback = jest.fn();
+                preAuthManager.handleBasicAuth({preventDefault: jest.fn()}, {id: 1}, {url: 'http://external.com/'},
+                    {isProxy: false, host: 'external.com', scheme: 'negotiate'}, callback);
+                await promise;
+                await new Promise((resolve) => setTimeout(resolve, 0));
+                expect(TrustedNTLMServers.add).not.toBeCalled();
+                expect(ModalManager.addModal).not.toBeCalled();
+                expect(callback).toBeCalledWith();
+            });
+
+            it('should pop login modal without prompting when the domain is already trusted', () => {
+                TrustedNTLMServers.isTrusted.mockReturnValue(true);
+                const callback = jest.fn();
+                preAuthManager.handleBasicAuth({preventDefault: jest.fn()}, {id: 1}, {url: 'http://external.com/'},
+                    {isProxy: false, host: 'external.com', scheme: 'ntlm'}, callback);
+                expect(dialog.showMessageBox).not.toBeCalled();
+                expect(ModalManager.addModal).toBeCalled();
+            });
         });
     });
 
