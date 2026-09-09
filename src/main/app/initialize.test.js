@@ -7,6 +7,7 @@ import {app, session} from 'electron';
 
 import Config from 'common/config';
 import ServerManager from 'common/servers/serverManager';
+import LocalNetworkAccessManager from 'main/localNetworkAccess';
 import parseArgs from 'main/ParseArgs';
 import ViewManager from 'main/views/viewManager';
 
@@ -287,7 +288,8 @@ describe('main/app/initialize', () => {
 
             const getRegisteredHandler = async () => {
                 ServerManager.getAllServers.mockReturnValue([{url: new URL('http://127.0.0.1:8065')}]);
-                ViewManager.getViewByWebContentsId.mockImplementation((id) => (id === SERVER_WEBCONTENTS_ID ? {id} : undefined));
+                LocalNetworkAccessManager.clear();
+                LocalNetworkAccessManager.registerWebContents({id: SERVER_WEBCONTENTS_ID});
                 await initialize();
                 return mockOnBeforeRequestHandler;
             };
@@ -330,9 +332,7 @@ describe('main/app/initialize', () => {
 
             it('allows the request when the policy check throws', async () => {
                 const handler = await getRegisteredHandler();
-                ViewManager.getViewByWebContentsId.mockImplementation(() => {
-                    throw new Error('boom');
-                });
+                jest.spyOn(LocalNetworkAccessManager, 'shouldCancelLocalNetworkRequest').mockRejectedValueOnce(new Error('boom'));
                 const callback = jest.fn();
 
                 await handler({url: 'http://127.0.0.1:7777/secret', webContentsId: SERVER_WEBCONTENTS_ID, resourceType: 'xhr'}, callback);

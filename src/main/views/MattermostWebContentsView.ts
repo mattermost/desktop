@@ -26,6 +26,7 @@ import {isInternalURL, parseURL} from 'common/utils/url';
 import {TAB_MESSAGING, type MattermostView} from 'common/views/View';
 import {updateServerInfos} from 'main/app/utils';
 import DeveloperMode from 'main/developerMode';
+import LocalNetworkAccessManager from 'main/localNetworkAccess';
 import performanceMonitor from 'main/performanceMonitor';
 import {getServerAPI} from 'main/server/serverAPI';
 import MainWindow from 'main/windows/mainWindow';
@@ -75,6 +76,7 @@ export class MattermostWebContentsView extends EventEmitter {
         this.loggedIn = false;
         this.atRoot = true;
         this.webContentsView = new WebContentsView(this.options);
+        LocalNetworkAccessManager.registerWebContents(this.webContentsView.webContents);
         this.resetLoadingStatus();
 
         this.log = ServerManager.getViewLog(this.id, 'MattermostWebContentsView');
@@ -258,6 +260,7 @@ export class MattermostWebContentsView extends EventEmitter {
         WebContentsEventManager.removeWebContentsListeners(this.webContentsId);
         AppState.clear(this.id);
         performanceMonitor.unregisterView(this.webContentsView.webContents.id);
+        LocalNetworkAccessManager.unregisterWebContents(this.webContentsId);
         MainWindow.get()?.contentView.removeChildView(this.webContentsView);
         this.webContentsView.webContents.close();
 

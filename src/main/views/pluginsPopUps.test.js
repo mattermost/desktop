@@ -5,6 +5,7 @@ import {shell} from 'electron';
 
 import ServerViewState from 'app/serverViewState';
 import {parseURL} from 'common/utils/url';
+import LocalNetworkAccessManager from 'main/localNetworkAccess';
 import ViewManager from 'main/views/viewManager';
 
 import PluginsPopUpsManager from './pluginsPopUps';
@@ -47,6 +48,14 @@ jest.mock('../allowProtocolDialog', () => ({
     handleDialogEvent: jest.fn(),
 }));
 
+jest.mock('main/localNetworkAccess', () => ({
+    __esModule: true,
+    default: {
+        registerWebContents: jest.fn(),
+        unregisterWebContents: jest.fn(),
+    },
+}));
+
 describe('PluginsPopUpsManager', () => {
     afterEach(() => {
         jest.resetAllMocks();
@@ -84,6 +93,7 @@ describe('PluginsPopUpsManager', () => {
         expect(win.webContents.setWindowOpenHandler).toHaveBeenCalledWith(handlers['window-open']);
 
         expect(win.once).toHaveBeenCalledWith('closed', handlers.closed);
+        expect(jest.mocked(LocalNetworkAccessManager.registerWebContents)).toHaveBeenCalledWith(win.webContents);
 
         expect(mockContextMenuReload).toHaveBeenCalledTimes(1);
 
@@ -149,6 +159,7 @@ describe('PluginsPopUpsManager', () => {
 
         // Close
         handlers.closed();
+        expect(jest.mocked(LocalNetworkAccessManager.unregisterWebContents)).toHaveBeenCalledWith(45);
         expect(mockContextMenuDispose).toHaveBeenCalledTimes(1);
 
         // Verify the popout reference has been deleted

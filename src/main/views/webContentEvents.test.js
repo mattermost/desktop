@@ -7,6 +7,7 @@ import {shell, BrowserWindow, dialog} from 'electron';
 
 import {getLevel} from 'common/log';
 import ContextMenu from 'main/contextMenu';
+import LocalNetworkAccessManager from 'main/localNetworkAccess';
 import ViewManager from 'main/views/viewManager';
 
 import PluginsPopUpsManager from './pluginsPopUps';
@@ -43,6 +44,14 @@ jest.mock('main/views/viewManager', () => ({
 jest.mock('main/views/pluginsPopUps', () => ({
     handleNewWindow: jest.fn(() => ({action: 'allow'})),
     generateHandleCreateWindow: jest.fn(() => jest.fn()),
+}));
+
+jest.mock('main/localNetworkAccess', () => ({
+    __esModule: true,
+    default: {
+        registerWebContents: jest.fn(),
+        unregisterWebContents: jest.fn(),
+    },
 }));
 
 jest.mock('../utils', () => ({
@@ -272,6 +281,7 @@ describe('main/views/webContentsEvents', () => {
         it('should open popup window for plugins', () => {
             expect(newWindow({url: 'http://server-1.com/plugins/myplugin/login'})).toStrictEqual({action: 'deny'});
             expect(webContentsEventManager.popupWindow).toBeTruthy();
+            expect(jest.mocked(LocalNetworkAccessManager.registerWebContents)).toHaveBeenCalled();
         });
 
         it('should open popup window for managed resources', () => {

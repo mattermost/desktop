@@ -24,6 +24,7 @@ import {
 } from 'common/utils/url';
 import ContextMenu from 'main/contextMenu';
 import {localizeMessage} from 'main/i18nManager';
+import LocalNetworkAccessManager from 'main/localNetworkAccess';
 import PluginsPopUpsManager from 'main/views/pluginsPopUps';
 import ViewManager from 'main/views/viewManager';
 import CallsWidgetWindow from 'main/windows/callsWidgetWindow';
@@ -233,6 +234,7 @@ export class WebContentsEventManager {
                     };
 
                     popup = this.popupWindow.win;
+                    LocalNetworkAccessManager.registerWebContents(popup.webContents);
                     popup.webContents.on('will-redirect', (event, url) => {
                         const parsedURL = parseURL(url);
                         if (!parsedURL) {
@@ -247,7 +249,9 @@ export class WebContentsEventManager {
                     popup.webContents.on('will-navigate', this.generateWillNavigate(popup.webContents.id));
                     popup.webContents.on('will-frame-navigate', this.generateWillFrameNavigate(popup.webContents.id));
                     popup.webContents.setWindowOpenHandler(this.denyNewWindow);
+                    const popupWebContentsId = popup.webContents.id;
                     popup.once('closed', () => {
+                        LocalNetworkAccessManager.unregisterWebContents(popupWebContentsId);
                         this.popupWindow = undefined;
                     });
 

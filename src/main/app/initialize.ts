@@ -49,7 +49,7 @@ import CriticalErrorHandler from 'main/CriticalErrorHandler';
 import DeveloperMode from 'main/developerMode';
 import downloadsManager from 'main/downloadsManager';
 import i18nManager from 'main/i18nManager';
-import {shouldCancelLocalNetworkRequest} from 'main/localNetworkAccess';
+import LocalNetworkAccessManager from 'main/localNetworkAccess';
 import NonceManager from 'main/nonceManager';
 import {getDoNotDisturb} from 'main/notifications';
 import parseArgs from 'main/ParseArgs';
@@ -332,7 +332,7 @@ async function initializeAfterAppReady() {
     const defaultSession = session.defaultSession;
     defaultSession.webRequest.onBeforeRequest(async (details, callback) => {
         try {
-            const shouldCancel = await shouldCancelLocalNetworkRequest(details);
+            const shouldCancel = await LocalNetworkAccessManager.shouldCancelLocalNetworkRequest(details);
 
             if (shouldCancel) {
                 log.warn('Blocked server content from accessing local or private network URL', {
