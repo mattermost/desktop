@@ -155,6 +155,8 @@ describe('main/notifications', () => {
                 bounceIcon: false,
                 bounceIconType: 'informational',
             };
+            Config.channelNotificationSounds = {};
+            Config.dmNotificationSound = '';
             MainWindow.get.mockReturnValue(mainWindow);
 
             // Setup mocks for the notification flow
@@ -181,6 +183,8 @@ describe('main/notifications', () => {
                 bounceIcon: false,
                 bounceIconType: 'informational',
             };
+            Config.channelNotificationSounds = {};
+            Config.dmNotificationSound = '';
         });
 
         it('should do nothing when Notification is not supported', async () => {
@@ -523,6 +527,40 @@ describe('main/notifications', () => {
                 {id: 1} as WebContents, 'None',
             );
             expect(MainWindow.sendToRenderer).not.toHaveBeenCalledWith(PLAY_SOUND, expect.anything());
+        });
+
+        it('should play custom sound for DM when dmNotificationSound is configured', async () => {
+            Config.dmNotificationSound = 'Ripple';
+            await NotificationManager.displayMention(
+                'test', 'test body', 'channel_id', 'team_id',
+                'http://server-1.com/team_id/messages/@alice', false,
+                {id: 1} as WebContents, 'Ding',
+            );
+            expect(MainWindow.sendToRenderer).toHaveBeenCalledWith(PLAY_SOUND, 'Ripple');
+        });
+
+        it('should play custom sound for specific channel when channelNotificationSounds is configured by channelId', async () => {
+            Config.channelNotificationSounds = {
+                channel_id: 'Upstairs',
+            };
+            await NotificationManager.displayMention(
+                'test', 'test body', 'channel_id', 'team_id',
+                'http://server-1.com/team_id/channels/town-square', false,
+                {id: 1} as WebContents, 'Ding',
+            );
+            expect(MainWindow.sendToRenderer).toHaveBeenCalledWith(PLAY_SOUND, 'Upstairs');
+        });
+
+        it('should play custom sound for specific channel/user when channelNotificationSounds is configured by username in URL', async () => {
+            Config.channelNotificationSounds = {
+                '@alice': 'Hello',
+            };
+            await NotificationManager.displayMention(
+                'test', 'test body', 'channel_id', 'team_id',
+                'http://server-1.com/team_id/messages/@alice', false,
+                {id: 1} as WebContents, 'Ding',
+            );
+            expect(MainWindow.sendToRenderer).toHaveBeenCalledWith(PLAY_SOUND, 'Hello');
         });
 
         describe('notification failed events', () => {

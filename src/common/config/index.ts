@@ -176,6 +176,12 @@ export class Config extends EventEmitter {
     get notifications() {
         return this.combinedData?.notifications ?? defaultPreferences.notifications;
     }
+    get channelNotificationSounds() {
+        return this.combinedData?.channelNotificationSounds ?? defaultPreferences.channelNotificationSounds;
+    }
+    get dmNotificationSound() {
+        return this.combinedData?.dmNotificationSound ?? defaultPreferences.dmNotificationSound;
+    }
     get showUnreadBadge() {
         return this.combinedData?.showUnreadBadge ?? defaultPreferences.showUnreadBadge;
     }

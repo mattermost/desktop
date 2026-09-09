@@ -1,0 +1,154 @@
+.NotificationSetting__divider {
+    height: 1px;
+    background-color: rgba(var(--center-channel-color-rgb), 0.08);
+    margin: 24px 0;
+    width: 100%;
+}
+
+.NotificationSetting__section {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+
+    .NotificationSetting__sectionTitle {
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 20px;
+        margin-top: 0;
+        margin-bottom: 16px;
+        color: var(--center-channel-color);
+    }
+}
+
+.NotificationSetting__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    width: 100%;
+
+    .NotificationSetting__label {
+        font-size: 14px;
+        color: var(--center-channel-color);
+        font-weight: normal;
+        margin: 0;
+    }
+}
+
+.NotificationSetting__select {
+    padding: 8px 12px;
+    font-size: 14px;
+    background-color: var(--center-channel-bg);
+    color: var(--center-channel-color);
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+    min-width: 180px;
+
+    &:focus {
+        border-color: var(--button-bg);
+    }
+}
+
+.NotificationSetting__subSection {
+    display: flex;
+    flex-direction: column;
+    margin-top: 12px;
+    width: 100%;
+
+    .NotificationSetting__subTitle {
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 18px;
+        margin-top: 0;
+        margin-bottom: 12px;
+        color: rgba(var(--center-channel-color-rgb), 0.72);
+    }
+}
+
+.NotificationSetting__overridesList {
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    border-radius: 4px;
+    background-color: rgba(var(--center-channel-color-rgb), 0.02);
+    margin-bottom: 16px;
+    max-height: 150px;
+    overflow-y: auto;
+    width: 100%;
+}
+
+.NotificationSetting__overrideItem {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.06);
+
+    &:last-child {
+        border-bottom: none;
+    }
+
+    .NotificationSetting__overrideChannel {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--center-channel-color);
+        margin-right: auto;
+    }
+
+    .NotificationSetting__overrideSound {
+        font-size: 13px;
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+        margin-right: 16px;
+    }
+
+    .btn.btn-tertiary.btn-danger {
+        padding: 4px 8px;
+        font-size: 12px;
+        height: auto;
+        line-height: normal;
+
+        &:not(:hover) {
+            background-color: transparent;
+        }
+    }
+}
+
+.NotificationSetting__noOverrides {
+    font-size: 13px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    margin-bottom: 16px;
+    font-style: italic;
+}
+
+.NotificationSetting__addOverrideForm {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+
+    .NotificationSetting__input {
+        flex: 1;
+        padding: 8px 12px;
+        font-size: 14px;
+        background-color: var(--center-channel-bg);
+        color: var(--center-channel-color);
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+        border-radius: 4px;
+        outline: none;
+
+        &:focus {
+            border-color: var(--button-bg);
+        }
+    }
+
+    .NotificationSetting__select {
+        min-width: 140px;
+    }
+
+    .btn.btn-primary {
+        padding: 8px 16px;
+        font-size: 13px;
+        height: auto;
+        line-height: normal;
+        border-radius: 4px;
+    }
+}

@@ -73,11 +73,46 @@ class NotificationManager {
             return {status: 'not_sent', reason: 'view_should_not_notify'};
         }
 
+        let finalSoundName = soundName;
+        let finalSilent = silent;
+
+        if (url) {
+            const isDM = url.includes('/messages/');
+            let customSound: string | undefined;
+
+            if (Config.channelNotificationSounds) {
+                if (Config.channelNotificationSounds[channelId]) {
+                    customSound = Config.channelNotificationSounds[channelId];
+                } else {
+                    for (const [key, sound] of Object.entries(Config.channelNotificationSounds)) {
+                        if (key && (url.includes(`/@${key.replace(/^@/, '')}`) || url.includes(`/messages/${key}`) || url.includes(`/channels/${key}`))) {
+                            customSound = sound;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!customSound && isDM && Config.dmNotificationSound) {
+                customSound = Config.dmNotificationSound;
+            }
+
+            if (customSound) {
+                if (customSound === 'None') {
+                    finalSilent = true;
+                    finalSoundName = 'None';
+                } else {
+                    finalSilent = false;
+                    finalSoundName = customSound;
+                }
+            }
+        }
+
         const options = {
             title: `${serverName}: ${title}`,
             body,
-            silent,
-            soundName,
+            silent: finalSilent,
+            soundName: finalSoundName,
         };
 
         if (!await PermissionsManager.doPermissionRequest(webcontents.id, 'notifications', {requestingUrl: server.url.toString(), isMainFrame: false})) {

@@ -68,6 +68,8 @@ export type ConfigV4 = {
     skippedVersions?: string[];
     useNativeTitleBar?: boolean;
     trustedEmbeddedMediaOrigins?: TrustedEmbeddedMediaOrigin[];
+    channelNotificationSounds?: Record<string, string>;
+    dmNotificationSound?: string;
 }
 
 export type ConfigV3 = Omit<ConfigV4,
