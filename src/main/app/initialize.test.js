@@ -6,11 +6,14 @@ import path from 'path';
 import {app, session} from 'electron';
 
 import Config from 'common/config';
+import ServerManager from 'common/servers/serverManager';
 import parseArgs from 'main/ParseArgs';
 import ViewManager from 'main/views/viewManager';
 
 import {initialize} from './initialize';
 import {clearAppCache, getDeeplinkingURL, wasUpdated} from './utils';
+
+let mockOnBeforeRequestHandler;
 
 jest.mock('fs', () => ({
     accessSync: jest.fn(),
@@ -65,6 +68,9 @@ jest.mock('electron', () => ({
     session: {
         defaultSession: {
             webRequest: {
+                onBeforeRequest: jest.fn((handler) => {
+                    mockOnBeforeRequestHandler = handler;
+                }),
                 onHeadersReceived: jest.fn(),
             },
             setSpellCheckerDictionaryDownloadURL: jest.fn(),
@@ -274,6 +280,65 @@ describe('main/app/initialize', () => {
             });
 
             expect(ViewManager.handleDeepLink).toHaveBeenCalledWith('mattermost://server-1.com');
+        });
+
+        describe('local network request filter (onBeforeRequest)', () => {
+            const SERVER_WEBCONTENTS_ID = 1;
+
+            const getRegisteredHandler = async () => {
+                ServerManager.getAllServers.mockReturnValue([{url: new URL('http://127.0.0.1:8065')}]);
+                ViewManager.getViewByWebContentsId.mockImplementation((id) => (id === SERVER_WEBCONTENTS_ID ? {id} : undefined));
+                await initialize();
+                return mockOnBeforeRequestHandler;
+            };
+
+            it('cancels server-view requests to local/private targets (via webContentsId)', async () => {
+                const handler = await getRegisteredHandler();
+                const callback = jest.fn();
+
+                await handler({url: 'http://127.0.0.1:7777/secret', webContentsId: SERVER_WEBCONTENTS_ID, resourceType: 'xhr'}, callback);
+
+                expect(callback).toHaveBeenCalledWith({cancel: true});
+            });
+
+            it('allows requests to the configured server origin', async () => {
+                const handler = await getRegisteredHandler();
+                const callback = jest.fn();
+
+                await handler({url: 'http://127.0.0.1:8065/api/v4/system/ping', webContentsId: SERVER_WEBCONTENTS_ID, resourceType: 'xhr'}, callback);
+
+                expect(callback).toHaveBeenCalledWith({});
+            });
+
+            it('does not cancel requests from non-server web contents', async () => {
+                const handler = await getRegisteredHandler();
+                const callback = jest.fn();
+
+                await handler({url: 'http://127.0.0.1:7777/secret', webContentsId: 999, resourceType: 'xhr'}, callback);
+
+                expect(callback).toHaveBeenCalledWith({});
+            });
+
+            it('cancels unowned requests to local/private targets', async () => {
+                const handler = await getRegisteredHandler();
+                const callback = jest.fn();
+
+                await handler({url: 'http://127.0.0.1:7777/secret', resourceType: 'xhr'}, callback);
+
+                expect(callback).toHaveBeenCalledWith({cancel: true});
+            });
+
+            it('allows the request when the policy check throws', async () => {
+                const handler = await getRegisteredHandler();
+                ViewManager.getViewByWebContentsId.mockImplementation(() => {
+                    throw new Error('boom');
+                });
+                const callback = jest.fn();
+
+                await handler({url: 'http://127.0.0.1:7777/secret', webContentsId: SERVER_WEBCONTENTS_ID, resourceType: 'xhr'}, callback);
+
+                expect(callback).toHaveBeenCalledWith({});
+            });
         });
     });
 });
