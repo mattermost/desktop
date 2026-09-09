@@ -319,7 +319,7 @@ const definition: (intl: IntlShape) => Promise<SettingsDefinition> = async (intl
                         subLabel: (
                             <FormattedMessage
                                 id='renderer.components.settingsPage.showUnreadsInWindowTitle.description'
-                                defaultMessage='If enabled, a mention count and an unread marker are added to the start of the window title'
+                                defaultMessage='Adds a mention count and an unread indicator (*) to the start of the window title'
                             />
                         ),
                     },
