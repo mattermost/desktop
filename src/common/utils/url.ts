@@ -37,6 +37,10 @@ export const isInternalURL = (targetURL: URL, currentURL: URL, ignoreScheme?: bo
         return false;
     }
 
+    if (!ignoreScheme && targetURL.protocol !== currentURL.protocol) {
+        return false;
+    }
+
     if (!equalUrlsWithSubpath(targetURL, currentURL, ignoreScheme) && !(targetURL.pathname || '/').startsWith(currentURL.pathname)) {
         return false;
     }
