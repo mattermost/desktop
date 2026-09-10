@@ -100,6 +100,7 @@ describe('main/server/serverChannels', () => {
 
             const result = await hasServerAuthCookies(new URL('https://sub.mattermost.com'), mockSession);
             expect(result).toBe(true);
+            expect(mockSession.cookies.get).toHaveBeenCalledWith({url: 'https://sub.mattermost.com/'});
         });
 
         it('should return false when a required cookie is missing', async () => {
@@ -206,6 +207,58 @@ describe('main/server/serverChannels', () => {
             jest.mocked(net.request).mockReturnValue(mockReq as unknown as Electron.ClientRequest);
 
             await expect(postServerJSON(new URL('https://example.com/api'), {})).rejects.toThrow('Bad status code 500');
+        });
+
+        it('should properly concatenate multi-chunk response with UTF-8 characters across chunk boundaries', async () => {
+            const rawJson = JSON.stringify({name: 'René François'});
+            const fullBuffer = Buffer.from(rawJson, 'utf8');
+            const splitIndex = fullBuffer.indexOf(Buffer.from('é', 'utf8')) + 1;
+            const chunk1 = fullBuffer.subarray(0, splitIndex);
+            const chunk2 = fullBuffer.subarray(splitIndex);
+
+            const mockReq = {
+                setHeader: jest.fn(),
+                on: jest.fn().mockImplementation((event, cb) => {
+                    if (event === 'response') {
+                        cb({
+                            statusCode: 200,
+                            on: jest.fn().mockImplementation((resEvent: string, resCb: (chunk?: Buffer) => void) => {
+                                if (resEvent === 'data') {
+                                    resCb(chunk1);
+                                    resCb(chunk2);
+                                } else if (resEvent === 'end') {
+                                    resCb();
+                                }
+                            }),
+                        });
+                    }
+                }),
+                write: jest.fn(),
+                end: jest.fn(),
+            };
+            jest.mocked(net.request).mockReturnValue(mockReq as unknown as Electron.ClientRequest);
+
+            const result = await postServerJSON<{name: string}>(new URL('https://example.com/api'), {});
+            expect(result).toEqual({name: 'René François'});
+        });
+
+        it('should call req.abort() and reject with timeout error on timeout', async () => {
+            jest.useFakeTimers();
+            const mockReq = {
+                setHeader: jest.fn(),
+                on: jest.fn(),
+                write: jest.fn(),
+                end: jest.fn(),
+                abort: jest.fn(),
+            };
+            jest.mocked(net.request).mockReturnValue(mockReq as unknown as Electron.ClientRequest);
+
+            const promise = postServerJSON(new URL('https://example.com/api'), {}, undefined, 1000);
+            jest.advanceTimersByTime(1000);
+
+            await expect(promise).rejects.toThrow('Timeout posting to https://example.com/api');
+            expect(mockReq.abort).toHaveBeenCalled();
+            jest.useRealTimers();
         });
     });
 

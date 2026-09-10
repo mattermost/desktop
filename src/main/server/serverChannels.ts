@@ -66,12 +66,11 @@ export async function hasServerAuthCookies(serverUrl: URL, requestSession?: Sess
         return false;
     }
     try {
-        const cookies = await targetSession.cookies.get({});
-        const filtered = cookies.filter((c) => c.domain && serverUrl.toString().indexOf(c.domain) >= 0);
+        const cookies = await targetSession.cookies.get({url: serverUrl.toString()});
         return Boolean(
-            filtered.find((c) => c.name === COOKIE_NAME_USER_ID) &&
-            filtered.find((c) => c.name === COOKIE_NAME_CSRF) &&
-            filtered.find((c) => c.name === COOKIE_NAME_AUTH_TOKEN),
+            cookies.find((c) => c.name === COOKIE_NAME_USER_ID) &&
+            cookies.find((c) => c.name === COOKIE_NAME_CSRF) &&
+            cookies.find((c) => c.name === COOKIE_NAME_AUTH_TOKEN),
         );
     } catch (e) {
         log.error(`Error checking cookies for ${serverUrl.toString()}`, e);
@@ -135,9 +134,8 @@ export function postServerJSON<T>(
     }
 
     return new Promise((resolve, reject) => {
-        const timer = setTimeout(() => {
-            reject(new Error(`Timeout posting to ${url.toString()}`));
-        }, timeoutMs);
+        let timer: NodeJS.Timeout | undefined;
+        let isTimedOut = false;
 
         try {
             const req = net.request({
@@ -147,6 +145,12 @@ export function postServerJSON<T>(
                 useSessionCookies: true,
             });
 
+            timer = setTimeout(() => {
+                isTimedOut = true;
+                req.abort();
+                reject(new Error(`Timeout posting to ${url.toString()}`));
+            }, timeoutMs);
+
             req.setHeader('Content-Type', 'application/json');
             if (csrfToken) {
                 req.setHeader('X-CSRF-Token', csrfToken);
@@ -155,14 +159,14 @@ export function postServerJSON<T>(
 
             req.on('response', (response: Electron.IncomingMessage) => {
                 if (response.statusCode >= 200 && response.statusCode < 300) {
-                    let raw = '';
+                    const chunks: Buffer[] = [];
                     response.on('data', (chunk: Buffer) => {
-                        raw += `${chunk}`;
+                        chunks.push(chunk);
                     });
                     response.on('end', () => {
                         clearTimeout(timer);
                         try {
-                            const data = JSON.parse(raw) as T;
+                            const data = JSON.parse(Buffer.concat(chunks).toString('utf8')) as T;
                             resolve(data);
                         } catch (e) {
                             reject(e);
@@ -174,18 +178,24 @@ export function postServerJSON<T>(
                 }
                 response.on('error', (err) => {
                     clearTimeout(timer);
-                    reject(err);
+                    if (!isTimedOut) {
+                        reject(err);
+                    }
                 });
             });
 
             req.on('error', (err) => {
                 clearTimeout(timer);
-                reject(err);
+                if (!isTimedOut) {
+                    reject(err);
+                }
             });
 
             req.on('abort', () => {
                 clearTimeout(timer);
-                reject(new Error('Aborted'));
+                if (!isTimedOut) {
+                    reject(new Error('Aborted'));
+                }
             });
 
             req.write(JSON.stringify(body));
@@ -216,8 +226,7 @@ export async function getChannelsForServer(server: MattermostServer, requestSess
         let currentUserId = '';
         let csrfToken = '';
         try {
-            const cookies = await targetSession.cookies.get({});
-            const serverCookies = cookies.filter((c) => c.domain && server.url.toString().indexOf(c.domain) >= 0);
+            const serverCookies = await targetSession.cookies.get({url: server.url.toString()});
             currentUserId = serverCookies.find((c) => c.name === COOKIE_NAME_USER_ID)?.value || '';
             csrfToken = serverCookies.find((c) => c.name === COOKIE_NAME_CSRF)?.value || '';
         } catch (e) {
