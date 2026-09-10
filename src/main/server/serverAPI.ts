@@ -11,6 +11,19 @@ import type {ErrorReason} from 'types/server';
 
 const log = new Logger('serverAPI');
 
+/**
+ * Performs a network request to the Mattermost server API with session authentication cookies,
+ * optional abort signal support, and callbacks for response, abort, and error events.
+ *
+ * @param url - The target endpoint URL.
+ * @param isAuthenticated - Whether authentication cookies are required for the request.
+ * @param onSuccess - Callback invoked with the raw response body on HTTP 200.
+ * @param onAbort - Callback invoked when the request is aborted.
+ * @param onError - Callback invoked with an error if the request fails or returns a non-200 status.
+ * @param requestSession - Optional Electron session to retrieve cookies and dispatch the request from.
+ * @param signal - Optional AbortSignal to cancel the request before or while in flight.
+ * @returns The underlying Electron ClientRequest if created, or undefined.
+ */
 export async function getServerAPI(
     url: URL,
     isAuthenticated: boolean,
