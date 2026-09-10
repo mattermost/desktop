@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {Session, Cookie} from 'electron';
+import type {ClientRequest, Cookie, Session} from 'electron';
 import {net, session} from 'electron';
 
 import type {MattermostServer} from 'common/servers/MattermostServer';
@@ -153,10 +153,27 @@ describe('main/server/serverChannels', () => {
         it('should reject on invalid JSON response', async () => {
             mockGetServerAPI.mockImplementation((url, auth, success) => {
                 success?.('<html>Invalid JSON</html>');
-                return Promise.resolve();
+                return Promise.resolve(undefined);
             });
 
             await expect(fetchServerJSON(new URL('https://example.com/api'))).rejects.toThrow();
+        });
+
+        it('should abort request and signal on timeout', async () => {
+            const mockAbort = jest.fn();
+            let capturedSignal: AbortSignal | undefined;
+
+            mockGetServerAPI.mockImplementation((url, auth, success, abort, error, targetSession, signal) => {
+                capturedSignal = signal;
+                return Promise.resolve({
+                    abort: mockAbort,
+                } as unknown as ClientRequest);
+            });
+
+            const promise = fetchServerJSON(new URL('https://example.com/api'), 50);
+            await expect(promise).rejects.toThrow('Timeout fetching https://example.com/api');
+            expect(capturedSignal?.aborted).toBe(true);
+            expect(mockAbort).toHaveBeenCalled();
         });
     });
 
@@ -410,6 +427,58 @@ describe('main/server/serverChannels', () => {
                 serverName: 'Community',
                 teamName: undefined,
             });
+        });
+
+        it('should fetch fallback user profiles in batches of at most 5', async () => {
+            const mockChannels = Array.from({length: 8}, (_, i) => ({
+                id: `c_${i}`,
+                name: `my_user_id__user_${i}`,
+                display_name: '',
+                team_id: '',
+                type: 'D',
+            }));
+
+            jest.mocked(net.request).mockImplementation(() => {
+                throw new Error('Bulk POST disabled');
+            });
+
+            let currentConcurrent = 0;
+            let maxConcurrent = 0;
+
+            mockGetServerAPI.mockImplementation(async (url: URL, auth, success) => {
+                if (url.pathname.endsWith('/teams')) {
+                    success?.(JSON.stringify([]));
+                } else if (url.pathname.endsWith('/channels')) {
+                    success?.(JSON.stringify(mockChannels));
+                } else if (url.pathname.includes('/users/user_')) {
+                    currentConcurrent++;
+                    maxConcurrent = Math.max(maxConcurrent, currentConcurrent);
+                    await new Promise((r) => setTimeout(r, 10));
+                    currentConcurrent--;
+                    const userId = url.pathname.split('/').pop();
+                    success?.(JSON.stringify({
+                        id: userId,
+                        username: userId,
+                        first_name: 'User',
+                        last_name: `${userId}`,
+                    }));
+                }
+                return Promise.resolve(undefined);
+            });
+
+            const sessionWithCookies = {
+                cookies: {
+                    get: jest.fn().mockResolvedValue([
+                        {name: 'MMUSERID', value: 'my_user_id', domain: '.mattermost.com'},
+                        {name: 'MMCSRF', value: 'csrf_tok', domain: '.mattermost.com'},
+                        {name: 'MMAUTHTOKEN', value: 'auth_tok', domain: '.mattermost.com'},
+                    ]),
+                },
+            } as unknown as Session;
+
+            const channels = await getChannelsForServer(mockServer, sessionWithCookies);
+            expect(channels).toHaveLength(8);
+            expect(maxConcurrent).toBeLessThanOrEqual(5);
         });
 
         it('should not display raw user IDs when user profile cannot be resolved', async () => {

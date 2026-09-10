@@ -21,7 +21,7 @@ import notMockedPermissionsManager from 'main/security/permissionsManager';
 
 import getLinuxDoNotDisturb from './dnd-linux';
 
-import NotificationManager, {matchesNotificationRoute} from './index';
+import NotificationManager, {isDirectMessageRoute, matchesNotificationRoute} from './index';
 
 const Notification = jest.mocked(NotMockedNotification);
 const getFocusAssist = jest.mocked(notMockedGetFocusAssist);
@@ -916,6 +916,36 @@ describe('main/notifications', () => {
 
         it('should return false for malformed URLs gracefully', () => {
             expect(matchesNotificationRoute(':::invalid-url:::', 'town-square')).toBe(false);
+        });
+    });
+
+    describe('isDirectMessageRoute', () => {
+        it('should return false for empty or falsy URL', () => {
+            expect(isDirectMessageRoute('')).toBe(false);
+        });
+
+        it('should return true for valid direct message routes with username', () => {
+            expect(isDirectMessageRoute('http://server.com/myteam/messages/@alice')).toBe(true);
+            expect(isDirectMessageRoute('http://server.com/myteam/messages/alice')).toBe(true);
+            expect(isDirectMessageRoute('http://server.com/messages/@bob')).toBe(true);
+        });
+
+        it('should return false for channels named messages', () => {
+            expect(isDirectMessageRoute('http://server.com/myteam/channels/messages')).toBe(false);
+            expect(isDirectMessageRoute('http://server.com/myteam/channels/messages/')).toBe(false);
+        });
+
+        it('should return false for messages route missing username segment', () => {
+            expect(isDirectMessageRoute('http://server.com/myteam/messages')).toBe(false);
+            expect(isDirectMessageRoute('http://server.com/myteam/messages/')).toBe(false);
+        });
+
+        it('should return false for regular channel routes', () => {
+            expect(isDirectMessageRoute('http://server.com/myteam/channels/town-square')).toBe(false);
+        });
+
+        it('should return false for malformed URLs', () => {
+            expect(isDirectMessageRoute(':::invalid-url:::')).toBe(false);
         });
     });
 });

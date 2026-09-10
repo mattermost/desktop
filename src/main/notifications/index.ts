@@ -22,6 +22,31 @@ import {DownloadNotification} from './Download';
 import {Mention} from './Mention';
 import {NewVersionNotification, UpgradeNotification} from './Upgrade';
 
+/**
+ * Checks if a notification URL represents a direct-message route (/messages/<username>).
+ * Excludes non-DM routes such as /team/channels/messages.
+ *
+ * @param urlStr - The target notification URL.
+ * @returns True if the URL corresponds to a direct message route.
+ */
+export function isDirectMessageRoute(urlStr: string): boolean {
+    if (!urlStr) {
+        return false;
+    }
+
+    try {
+        const parsed = new URL(urlStr, 'http://localhost');
+        const segments = parsed.pathname.split('/').filter(Boolean);
+        return segments.some((segment, index) =>
+            segment === 'messages' &&
+            segments[index - 1] !== 'channels' &&
+            index < segments.length - 1,
+        );
+    } catch {
+        return false;
+    }
+}
+
 const log = new Logger('Notifications');
 
 /**
@@ -130,14 +155,7 @@ class NotificationManager {
         let finalSilent = silent;
 
         if (url) {
-            const isDM = (() => {
-                try {
-                    const parsed = new URL(url, 'http://localhost');
-                    return parsed.pathname.split('/').filter(Boolean).includes('messages');
-                } catch {
-                    return url.includes('/messages/');
-                }
-            })();
+            const isDM = isDirectMessageRoute(url);
             let customSound: string | undefined;
 
             if (Config.channelNotificationSounds) {

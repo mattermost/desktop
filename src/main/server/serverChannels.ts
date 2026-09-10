@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {Session} from 'electron';
+import type {ClientRequest, Session} from 'electron';
 import {net, session} from 'electron';
 
 import {COOKIE_NAME_AUTH_TOKEN, COOKIE_NAME_CSRF, COOKIE_NAME_USER_ID} from 'common/constants';
@@ -84,7 +84,18 @@ export async function hasServerAuthCookies(serverUrl: URL, requestSession?: Sess
 export function fetchServerJSON<T>(url: URL, timeoutMs = 5000, requestSession?: Session): Promise<T> {
     const targetSession = requestSession ?? session?.defaultSession;
     return new Promise((resolve, reject) => {
+        const controller = new AbortController();
+        let activeReq: ClientRequest | undefined;
+        let isTimedOut = false;
+
         const timer = setTimeout(() => {
+            isTimedOut = true;
+            controller.abort();
+            try {
+                activeReq?.abort();
+            } catch (e) {
+                log.debug(`Error aborting timed out request for ${url.toString()}`, e);
+            }
             reject(new Error(`Timeout fetching ${url.toString()}`));
         }, timeoutMs);
 
@@ -92,6 +103,9 @@ export function fetchServerJSON<T>(url: URL, timeoutMs = 5000, requestSession?: 
             url,
             true,
             (raw) => {
+                if (isTimedOut) {
+                    return;
+                }
                 clearTimeout(timer);
                 try {
                     const data = JSON.parse(raw) as T;
@@ -101,17 +115,34 @@ export function fetchServerJSON<T>(url: URL, timeoutMs = 5000, requestSession?: 
                 }
             },
             () => {
+                if (isTimedOut) {
+                    return;
+                }
                 clearTimeout(timer);
                 reject(new Error('Aborted'));
             },
             (err) => {
+                if (isTimedOut) {
+                    return;
+                }
                 clearTimeout(timer);
                 reject(err);
             },
             targetSession,
-        ).then(() => {
-            // Started request or returned
+            controller.signal,
+        ).then((req) => {
+            activeReq = req || undefined;
+            if (isTimedOut) {
+                try {
+                    activeReq?.abort();
+                } catch (e) {
+                    log.debug(`Error aborting timed out request for ${url.toString()}`, e);
+                }
+            }
         }).catch((err) => {
+            if (isTimedOut) {
+                return;
+            }
             clearTimeout(timer);
             reject(err);
         });
@@ -338,20 +369,28 @@ export async function getChannelsForServer(server: MattermostServer, requestSess
                 }
             }
 
-            // Fallback for any user IDs not resolved in bulk: fetch individually with GET /api/v4/users/{id}
+            // Fallback for any user IDs not resolved in bulk: fetch individually with GET /api/v4/users/{id} in small batches
             const missingUserIds = userIdsList.filter((id) => !userMap.has(id));
             if (missingUserIds.length > 0) {
-                const individualResults = await Promise.all(missingUserIds.map(async (userId) => {
-                    const userUrl = parseURL(`${server.url}/api/v4/users/${userId}`);
-                    if (userUrl) {
-                        try {
-                            return await fetchServerJSON<ServerUserProfile>(userUrl, 5000, targetSession);
-                        } catch (err) {
-                            log.debug(`Failed to fetch user ${userId} for ${server.name}`, err);
+                const batchSize = 5;
+                const individualResults: Array<ServerUserProfile | null> = [];
+
+                for (let i = 0; i < missingUserIds.length; i += batchSize) {
+                    const batch = missingUserIds.slice(i, i + batchSize);
+                    // eslint-disable-next-line no-await-in-loop
+                    const batchResults = await Promise.all(batch.map(async (userId) => {
+                        const userUrl = parseURL(`${server.url}/api/v4/users/${userId}`);
+                        if (userUrl) {
+                            try {
+                                return await fetchServerJSON<ServerUserProfile>(userUrl, 5000, targetSession);
+                            } catch (err) {
+                                log.debug(`Failed to fetch user ${userId} for ${server.name}`, err);
+                            }
                         }
-                    }
-                    return null;
-                }));
+                        return null;
+                    }));
+                    individualResults.push(...batchResults);
+                }
 
                 for (const u of individualResults) {
                     if (u) {
