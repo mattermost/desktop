@@ -58,7 +58,7 @@ test.describe('permissions/trust_protocols', () => {
             await stubShellOpenExternal(electronApp);
             try {
                 await triggerCustomProtocol(electronApp, serverWin, SPOTIFY_URL, {expectDialog: true});
-                await answerMessageModal(electronApp, 1); // Yes (Save spotify: as allowed)
+                await answerMessageModal(electronApp, 1); // Yes, always allow spotify:
 
                 await expect.poll(
                     () => getShellOpenExternalCalls(electronApp),

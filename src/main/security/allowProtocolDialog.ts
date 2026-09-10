@@ -84,14 +84,14 @@ export class AllowProtocolDialog {
                 return;
             }
             const {response} = await MessageModal.showMessageModal({
-                title: localizeMessage('main.allowProtocolDialog.title', 'Non http(s) protocol'),
+                title: localizeMessage('main.allowProtocolDialog.title', 'Open external app?'),
                 message: localizeMessage('main.allowProtocolDialog.message', '{protocol} link requires an external application.', {protocol}),
                 detail: localizeMessage('main.allowProtocolDialog.detail', 'The requested link is {URL}. Do you want to continue?', {URL: url}),
                 defaultId: 2,
                 type: 'warning',
                 buttons: [
                     localizeMessage('label.yes', 'Yes'),
-                    localizeMessage('main.allowProtocolDialog.button.saveProtocolAsAllowed', 'Yes (Save {protocol} as allowed)', {protocol}),
+                    localizeMessage('main.allowProtocolDialog.button.saveProtocolAsAllowed', 'Yes, always allow {protocol}', {protocol}),
                     localizeMessage('label.no', 'No'),
                 ],
                 cancelId: 2,

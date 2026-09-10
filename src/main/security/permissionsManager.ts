@@ -216,6 +216,7 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
                         localizeMessage('label.denyPermanently', 'Deny Permanently'),
                         localizeMessage('label.allow', 'Allow'),
                     ],
+                    defaultId: 2,
                     cancelId: 0,
                 }).then(({response}) => {
                     // Save their response
