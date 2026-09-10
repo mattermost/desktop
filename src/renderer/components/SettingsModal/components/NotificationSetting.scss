@@ -125,6 +125,76 @@
     align-items: center;
     width: 100%;
 
+    .NotificationSetting__channelSelect {
+        flex: 1;
+        min-width: 220px;
+
+        .NotificationSetting__channelSelect__single-value {
+            color: var(--center-channel-color);
+            font-size: 14px;
+        }
+
+        .NotificationSetting__channelSelect__input-container {
+            color: var(--center-channel-color);
+            font-size: 14px;
+        }
+
+        .NotificationSetting__channelSelect__placeholder {
+            color: rgba(var(--center-channel-color-rgb), 0.56);
+            font-size: 14px;
+        }
+
+        .NotificationSetting__channelSelect__control {
+            background: var(--center-channel-bg);
+            border: var(--border-dark);
+            border-radius: var(--radius-s);
+            box-sizing: border-box;
+            min-height: 38px;
+
+            &:hover {
+                border-color: rgba(var(--center-channel-color-rgb), 0.48);
+            }
+
+            &:focus-within {
+                border-color: var(--button-bg);
+            }
+        }
+
+        .NotificationSetting__channelSelect__menu {
+            background: var(--center-channel-bg);
+            border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+            border-radius: var(--radius-s);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+            z-index: 100;
+        }
+
+        .NotificationSetting__channelSelect__option {
+            background: var(--center-channel-bg);
+            color: var(--center-channel-color);
+            font-size: 13px;
+            padding: 8px 12px;
+
+            &:hover,
+            &--is-focused {
+                background-color: rgba(var(--center-channel-color-rgb), 0.08);
+            }
+
+            &--is-selected {
+                background-color: rgba(var(--center-channel-color-rgb), 0.16);
+                font-weight: 600;
+            }
+        }
+
+        .NotificationSetting__channelSelect__indicator {
+            color: rgba(var(--center-channel-color-rgb), 0.64);
+            padding: 6px;
+        }
+
+        .NotificationSetting__channelSelect__indicator-separator {
+            display: none;
+        }
+    }
+
     .NotificationSetting__input {
         flex: 1;
         padding: 8px 12px;

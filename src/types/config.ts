@@ -69,6 +69,7 @@ export type ConfigV4 = {
     useNativeTitleBar?: boolean;
     trustedEmbeddedMediaOrigins?: TrustedEmbeddedMediaOrigin[];
     channelNotificationSounds?: Record<string, string>;
+    channelNotificationSoundNames?: Record<string, string>;
     dmNotificationSound?: string;
 }
 

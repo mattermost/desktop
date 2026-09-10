@@ -48,3 +48,13 @@ export type ServerTestResult = {
         errorReason?: ErrorReason;
     };
 };
+
+export type ChannelInfo = {
+    id: string;
+    name: string;
+    displayName: string;
+    label: string;
+    serverName: string;
+    teamName?: string;
+};
+

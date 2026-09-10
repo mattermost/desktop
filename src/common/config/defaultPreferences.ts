@@ -59,6 +59,7 @@ const defaultPreferences: ConfigV4 = {
     useNativeTitleBar: false,
     trustedEmbeddedMediaOrigins: [],
     channelNotificationSounds: {},
+    channelNotificationSoundNames: {},
     dmNotificationSound: '',
 };
 

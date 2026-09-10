@@ -1,7 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {FormattedMessage, useIntl} from 'react-intl';
+import type {SingleValue} from 'react-select';
+import CreatableSelect from 'react-select/creatable';
 
 import type {CurrentConfig, LocalConfiguration} from 'types/config';
 
@@ -9,6 +11,11 @@ import CheckSetting from './CheckSetting';
 import RadioSetting from './RadioSetting';
 
 import './NotificationSetting.scss';
+
+type ChannelOption = {
+    value: string;
+    label: string;
+};
 
 /**
  * Settings component for notifications, supporting dock bounce / taskbar flash,
@@ -27,8 +34,69 @@ export default function NotificationSetting({
     config?: LocalConfiguration;
 }) {
     const intl = useIntl();
-    const [newChannelName, setNewChannelName] = useState('');
+    const [channelOptions, setChannelOptions] = useState<ChannelOption[]>([]);
+    const [selectedChannel, setSelectedChannel] = useState<ChannelOption | null>(null);
+    const [isLoadingChannels, setIsLoadingChannels] = useState(false);
     const [newChannelSound, setNewChannelSound] = useState('Ding');
+
+    useEffect(() => {
+        let isMounted = true;
+        setIsLoadingChannels(true);
+        window.desktop.getAvailableChannels().then((channels) => {
+            if (!isMounted) {
+                return;
+            }
+            const options: ChannelOption[] = channels.map((ch) => ({
+                value: ch.id,
+                label: ch.label,
+            }));
+            setChannelOptions(options);
+            setIsLoadingChannels(false);
+        }).catch(() => {
+            if (isMounted) {
+                setIsLoadingChannels(false);
+            }
+        });
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    const handleAddOverride = () => {
+        if (!selectedChannel || !selectedChannel.value.trim()) {
+            return;
+        }
+        const channelKey = selectedChannel.value.trim();
+        const channelLabel = selectedChannel.label.trim();
+
+        const updatedSounds = {
+            ...config?.channelNotificationSounds,
+            [channelKey]: newChannelSound,
+        };
+        onSave('channelNotificationSounds', updatedSounds);
+
+        const updatedNames = {
+            ...config?.channelNotificationSoundNames,
+            [channelKey]: channelLabel,
+        };
+        onSave('channelNotificationSoundNames', updatedNames);
+
+        setSelectedChannel(null);
+        setNewChannelSound('Ding');
+    };
+
+    const handleRemoveOverride = (channelKey: string) => {
+        const updatedSounds = {...config?.channelNotificationSounds};
+        delete updatedSounds[channelKey];
+        onSave('channelNotificationSounds', updatedSounds);
+
+        const updatedNames = {...config?.channelNotificationSoundNames};
+        if (updatedNames[channelKey]) {
+            delete updatedNames[channelKey];
+            onSave('channelNotificationSoundNames', updatedNames);
+        }
+    };
 
     const renderSoundCustomizer = () => {
         return (
@@ -84,36 +152,35 @@ export default function NotificationSetting({
                         </h4>
                         {Object.keys(config?.channelNotificationSounds || {}).length > 0 ? (
                             <div className='NotificationSetting__overridesList'>
-                                {Object.entries(config?.channelNotificationSounds || {}).map(([channel, sound]) => (
-                                    <div
-                                        key={channel}
-                                        className='NotificationSetting__overrideItem'
-                                    >
-                                        <span className='NotificationSetting__overrideChannel'>{channel}</span>
-                                        <span className='NotificationSetting__overrideSound'>
-                                            {sound === 'None' ? (
-                                                <FormattedMessage
-                                                    id='renderer.components.settingsPage.sound.none'
-                                                    defaultMessage='None (Silent)'
-                                                />
-                                            ) : sound}
-                                        </span>
-                                        <button
-                                            type='button'
-                                            className='btn btn-tertiary btn-danger btn-sm'
-                                            onClick={() => {
-                                                const updated = {...config?.channelNotificationSounds};
-                                                delete updated[channel];
-                                                onSave('channelNotificationSounds', updated);
-                                            }}
+                                {Object.entries(config?.channelNotificationSounds || {}).map(([channelKey, sound]) => {
+                                    const displayName = config?.channelNotificationSoundNames?.[channelKey] || channelKey;
+                                    return (
+                                        <div
+                                            key={channelKey}
+                                            className='NotificationSetting__overrideItem'
                                         >
-                                            <FormattedMessage
-                                                id='renderer.components.settingsPage.remove'
-                                                defaultMessage='Remove'
-                                            />
-                                        </button>
-                                    </div>
-                                ))}
+                                            <span className='NotificationSetting__overrideChannel'>{displayName}</span>
+                                            <span className='NotificationSetting__overrideSound'>
+                                                {sound === 'None' ? (
+                                                    <FormattedMessage
+                                                        id='renderer.components.settingsPage.sound.none'
+                                                        defaultMessage='None (Silent)'
+                                                    />
+                                                ) : sound}
+                                            </span>
+                                            <button
+                                                type='button'
+                                                className='btn btn-tertiary btn-danger btn-sm'
+                                                onClick={() => handleRemoveOverride(channelKey)}
+                                            >
+                                                <FormattedMessage
+                                                    id='renderer.components.settingsPage.remove'
+                                                    defaultMessage='Remove'
+                                                />
+                                            </button>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         ) : (
                             <div className='NotificationSetting__noOverrides'>
@@ -125,15 +192,20 @@ export default function NotificationSetting({
                         )}
 
                         <div className='NotificationSetting__addOverrideForm'>
-                            <input
-                                type='text'
-                                className='NotificationSetting__input'
+                            <CreatableSelect
+                                inputId='notificationSetting_channel'
+                                className='NotificationSetting__channelSelect'
+                                classNamePrefix='NotificationSetting__channelSelect'
+                                isClearable={true}
+                                isLoading={isLoadingChannels}
+                                options={channelOptions}
+                                value={selectedChannel}
+                                onChange={(val) => setSelectedChannel(val as SingleValue<ChannelOption>)}
+                                menuPosition='fixed'
                                 placeholder={intl.formatMessage({
-                                    id: 'renderer.components.settingsPage.channelNameOrId',
-                                    defaultMessage: 'Channel Name, ID, or @username',
+                                    id: 'renderer.components.settingsPage.selectChannelPlaceholder',
+                                    defaultMessage: 'Select or search a channel...',
                                 })}
-                                value={newChannelName}
-                                onChange={(e) => setNewChannelName(e.target.value)}
                             />
                             <select
                                 className='NotificationSetting__select'
@@ -157,19 +229,8 @@ export default function NotificationSetting({
                             <button
                                 type='button'
                                 className='btn btn-primary btn-sm'
-                                disabled={!newChannelName.trim()}
-                                onClick={() => {
-                                    const trimmed = newChannelName.trim();
-                                    if (trimmed) {
-                                        const updated = {
-                                            ...config?.channelNotificationSounds,
-                                            [trimmed]: newChannelSound,
-                                        };
-                                        onSave('channelNotificationSounds', updated);
-                                        setNewChannelName('');
-                                        setNewChannelSound('Ding');
-                                    }
-                                }}
+                                disabled={!selectedChannel || !selectedChannel.value.trim()}
+                                onClick={handleAddOverride}
                             >
                                 <FormattedMessage
                                     id='renderer.components.settingsPage.add'

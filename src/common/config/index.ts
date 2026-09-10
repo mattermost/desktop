@@ -185,6 +185,13 @@ export class Config extends EventEmitter {
     }
 
     /**
+     * Map of channel identifiers to cached channel display names.
+     */
+    get channelNotificationSoundNames() {
+        return this.combinedData?.channelNotificationSoundNames ?? defaultPreferences.channelNotificationSoundNames;
+    }
+
+    /**
      * Custom notification sound name for direct messages.
      */
     get dmNotificationSound() {

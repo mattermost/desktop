@@ -209,6 +209,7 @@ const configDataSchemaV4 = Joi.object<ConfigV4>({
         embeddedOrigin: originOnlyStringSchema.required(),
     })).default([]),
     channelNotificationSounds: Joi.object().pattern(Joi.string(), Joi.string()).optional(),
+    channelNotificationSoundNames: Joi.object().pattern(Joi.string(), Joi.string()).optional(),
     dmNotificationSound: Joi.string().allow('').optional(),
 });
 
