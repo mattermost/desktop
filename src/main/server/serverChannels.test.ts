@@ -2,19 +2,24 @@
 // See LICENSE.txt for license information.
 
 import type {Session, Cookie} from 'electron';
-import {session} from 'electron';
+import {net, session} from 'electron';
 
 import type {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {getServerAPI} from 'main/server/serverAPI';
 import {
     fetchServerJSON,
+    formatUserDisplayName,
     getChannelsForServer,
     handleGetAvailableChannels,
     hasServerAuthCookies,
+    postServerJSON,
 } from 'main/server/serverChannels';
 
 jest.mock('electron', () => ({
+    net: {
+        request: jest.fn(),
+    },
     session: {
         defaultSession: {
             cookies: {
@@ -38,6 +43,47 @@ const mockServerManager = jest.mocked(ServerManager);
 describe('main/server/serverChannels', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+    });
+
+    describe('formatUserDisplayName', () => {
+        it('should format full name with username', () => {
+            expect(formatUserDisplayName({
+                id: 'u1',
+                username: 'devinbinnie',
+                first_name: 'Devin',
+                last_name: 'Binnie',
+            })).toBe('Devin Binnie (@devinbinnie)');
+        });
+
+        it('should format single name with username', () => {
+            expect(formatUserDisplayName({
+                id: 'u2',
+                username: 'amancina',
+                first_name: 'Angelo',
+            })).toBe('Angelo (@amancina)');
+        });
+
+        it('should fallback to username if no first or last name', () => {
+            expect(formatUserDisplayName({
+                id: 'u3',
+                username: 'matterbot',
+            })).toBe('@matterbot');
+        });
+
+        it('should fallback to nickname if no username or name', () => {
+            expect(formatUserDisplayName({
+                id: 'u4',
+                username: '',
+                nickname: 'CoolGuy',
+            })).toBe('CoolGuy');
+        });
+
+        it('should fallback to id if no other fields', () => {
+            expect(formatUserDisplayName({
+                id: 'u5',
+                username: '',
+            })).toBe('u5');
+        });
     });
 
     describe('hasServerAuthCookies', () => {
@@ -113,22 +159,62 @@ describe('main/server/serverChannels', () => {
         });
     });
 
+    describe('postServerJSON', () => {
+        it('should post data and parse response on success', async () => {
+            const mockReq = {
+                setHeader: jest.fn(),
+                on: jest.fn().mockImplementation((event, cb) => {
+                    if (event === 'response') {
+                        cb({
+                            statusCode: 200,
+                            on: jest.fn().mockImplementation((resEvent: string, resCb: (chunk?: Buffer) => void) => {
+                                if (resEvent === 'data') {
+                                    resCb(Buffer.from(JSON.stringify({ok: true})));
+                                } else if (resEvent === 'end') {
+                                    resCb();
+                                }
+                            }),
+                        });
+                    }
+                }),
+                write: jest.fn(),
+                end: jest.fn(),
+            };
+            jest.mocked(net.request).mockReturnValue(mockReq as unknown as Electron.ClientRequest);
+
+            const result = await postServerJSON<{ok: boolean}>(new URL('https://example.com/api'), {test: 1}, 'csrf-123');
+            expect(result).toEqual({ok: true});
+            expect(mockReq.setHeader).toHaveBeenCalledWith('X-CSRF-Token', 'csrf-123');
+            expect(mockReq.write).toHaveBeenCalledWith(JSON.stringify({test: 1}));
+            expect(mockReq.end).toHaveBeenCalled();
+        });
+
+        it('should reject on non-2xx status code', async () => {
+            const mockReq = {
+                setHeader: jest.fn(),
+                on: jest.fn().mockImplementation((event, cb) => {
+                    if (event === 'response') {
+                        cb({
+                            statusCode: 500,
+                            on: jest.fn(),
+                        });
+                    }
+                }),
+                write: jest.fn(),
+                end: jest.fn(),
+            };
+            jest.mocked(net.request).mockReturnValue(mockReq as unknown as Electron.ClientRequest);
+
+            await expect(postServerJSON(new URL('https://example.com/api'), {})).rejects.toThrow('Bad status code 500');
+        });
+    });
+
     describe('getChannelsForServer', () => {
         const mockServer: MattermostServer = {
             id: 'server-1',
             name: 'Community',
             url: new URL('https://community.mattermost.com'),
         } as unknown as MattermostServer;
-
-        const mockSession = {
-            cookies: {
-                get: jest.fn().mockResolvedValue([
-                    {name: 'MMUSERID', domain: '.mattermost.com'},
-                    {name: 'MMCSRF', domain: '.mattermost.com'},
-                    {name: 'MMAUTHTOKEN', domain: '.mattermost.com'},
-                ]),
-            },
-        } as unknown as Session;
 
         it('should return empty array if auth cookies are missing', async () => {
             const unauthSession = {
@@ -141,13 +227,40 @@ describe('main/server/serverChannels', () => {
             expect(channels).toEqual([]);
         });
 
-        it('should fetch channels and teams, formatting labels properly', async () => {
+        it('should fetch channels, resolve DM other speaker names, and format labels properly', async () => {
             const mockTeams = [{id: 't1', name: 'core', display_name: 'Core Team'}];
             const mockChannels = [
                 {id: 'c1', name: 'town-square', display_name: 'Town Square', team_id: 't1', type: 'O'},
-                {id: 'c2', name: 'direct-user', display_name: 'Devin Binnie', team_id: '', type: 'D'},
+                {id: 'c2', name: 'my_user_id__other_user_id', display_name: '', team_id: '', type: 'D'},
                 {id: 'c3', name: 'group-msg', display_name: 'Group Chat', team_id: '', type: 'G'},
             ];
+            const mockUser = {
+                id: 'other_user_id',
+                username: 'devinbinnie',
+                first_name: 'Devin',
+                last_name: 'Binnie',
+            };
+
+            const mockReq = {
+                setHeader: jest.fn(),
+                on: jest.fn().mockImplementation((event, cb) => {
+                    if (event === 'response') {
+                        cb({
+                            statusCode: 200,
+                            on: jest.fn().mockImplementation((resEvent: string, resCb: (chunk?: Buffer) => void) => {
+                                if (resEvent === 'data') {
+                                    resCb(Buffer.from(JSON.stringify([mockUser])));
+                                } else if (resEvent === 'end') {
+                                    resCb();
+                                }
+                            }),
+                        });
+                    }
+                }),
+                write: jest.fn(),
+                end: jest.fn(),
+            };
+            jest.mocked(net.request).mockReturnValue(mockReq as unknown as Electron.ClientRequest);
 
             mockGetServerAPI.mockImplementation((url: URL, auth, success) => {
                 if (url.pathname.endsWith('/teams')) {
@@ -158,7 +271,17 @@ describe('main/server/serverChannels', () => {
                 return Promise.resolve();
             });
 
-            const channels = await getChannelsForServer(mockServer, mockSession);
+            const sessionWithCookies = {
+                cookies: {
+                    get: jest.fn().mockResolvedValue([
+                        {name: 'MMUSERID', value: 'my_user_id', domain: '.mattermost.com'},
+                        {name: 'MMCSRF', value: 'csrf_tok', domain: '.mattermost.com'},
+                        {name: 'MMAUTHTOKEN', value: 'auth_tok', domain: '.mattermost.com'},
+                    ]),
+                },
+            } as unknown as Session;
+
+            const channels = await getChannelsForServer(mockServer, sessionWithCookies);
             expect(channels).toHaveLength(3);
             expect(channels[0]).toEqual({
                 id: 'c1',
@@ -168,11 +291,13 @@ describe('main/server/serverChannels', () => {
                 serverName: 'Community',
                 teamName: 'Core Team',
             });
+
+            // DM channel should now show speaker name and username instead of raw unique ID!
             expect(channels[1]).toEqual({
                 id: 'c2',
-                name: 'direct-user',
-                displayName: 'Devin Binnie',
-                label: 'Devin Binnie (Direct Message - Community)',
+                name: 'devinbinnie',
+                displayName: 'Devin Binnie (@devinbinnie)',
+                label: 'Devin Binnie (@devinbinnie) (Direct Message - Community)',
                 serverName: 'Community',
                 teamName: undefined,
             });
@@ -184,6 +309,90 @@ describe('main/server/serverChannels', () => {
                 serverName: 'Community',
                 teamName: undefined,
             });
+        });
+
+        it('should fallback to GET /api/v4/users/{id} if bulk POST users fails', async () => {
+            const mockChannels = [
+                {id: 'c2', name: 'my_user_id__other_user_id', display_name: '', team_id: '', type: 'D'},
+            ];
+            const mockUser = {
+                id: 'other_user_id',
+                username: 'alice',
+                first_name: 'Alice',
+                last_name: 'Wonder',
+            };
+
+            jest.mocked(net.request).mockImplementation(() => {
+                throw new Error('Network error');
+            });
+
+            mockGetServerAPI.mockImplementation((url: URL, auth, success) => {
+                if (url.pathname.endsWith('/teams')) {
+                    success?.(JSON.stringify([]));
+                } else if (url.pathname.endsWith('/channels')) {
+                    success?.(JSON.stringify(mockChannels));
+                } else if (url.pathname.includes('/users/other_user_id')) {
+                    success?.(JSON.stringify(mockUser));
+                }
+                return Promise.resolve();
+            });
+
+            const sessionWithCookies = {
+                cookies: {
+                    get: jest.fn().mockResolvedValue([
+                        {name: 'MMUSERID', value: 'my_user_id', domain: '.mattermost.com'},
+                        {name: 'MMCSRF', value: 'csrf_tok', domain: '.mattermost.com'},
+                        {name: 'MMAUTHTOKEN', value: 'auth_tok', domain: '.mattermost.com'},
+                    ]),
+                },
+            } as unknown as Session;
+
+            const channels = await getChannelsForServer(mockServer, sessionWithCookies);
+            expect(channels).toHaveLength(1);
+            expect(channels[0]).toEqual({
+                id: 'c2',
+                name: 'alice',
+                displayName: 'Alice Wonder (@alice)',
+                label: 'Alice Wonder (@alice) (Direct Message - Community)',
+                serverName: 'Community',
+                teamName: undefined,
+            });
+        });
+
+        it('should not display raw user IDs when user profile cannot be resolved', async () => {
+            const mockChannels = [
+                {id: 'c2', name: 'my_user_id__other_user_id', display_name: '', team_id: '', type: 'D'},
+            ];
+
+            jest.mocked(net.request).mockImplementation(() => {
+                throw new Error('Network error');
+            });
+
+            mockGetServerAPI.mockImplementation((url: URL, auth, success, abort, error) => {
+                if (url.pathname.endsWith('/teams')) {
+                    success?.(JSON.stringify([]));
+                } else if (url.pathname.endsWith('/channels')) {
+                    success?.(JSON.stringify(mockChannels));
+                } else if (url.pathname.includes('/users/other_user_id')) {
+                    error?.(new Error('User not found'));
+                }
+                return Promise.resolve();
+            });
+
+            const sessionWithCookies = {
+                cookies: {
+                    get: jest.fn().mockResolvedValue([
+                        {name: 'MMUSERID', value: 'my_user_id', domain: '.mattermost.com'},
+                        {name: 'MMCSRF', value: 'csrf_tok', domain: '.mattermost.com'},
+                        {name: 'MMAUTHTOKEN', value: 'auth_tok', domain: '.mattermost.com'},
+                    ]),
+                },
+            } as unknown as Session;
+
+            const channels = await getChannelsForServer(mockServer, sessionWithCookies);
+            expect(channels).toHaveLength(1);
+            expect(channels[0].label).toBe('Direct Message (Community)');
+            expect(channels[0].label).not.toContain('my_user_id__other_user_id');
         });
 
         it('should fallback to per-team channels if global channels endpoint returns empty', async () => {
@@ -203,7 +412,17 @@ describe('main/server/serverChannels', () => {
                 return Promise.resolve();
             });
 
-            const channels = await getChannelsForServer(mockServer, mockSession);
+            const sessionWithCookies = {
+                cookies: {
+                    get: jest.fn().mockResolvedValue([
+                        {name: 'MMUSERID', value: 'my_user_id', domain: '.mattermost.com'},
+                        {name: 'MMCSRF', value: 'csrf_tok', domain: '.mattermost.com'},
+                        {name: 'MMAUTHTOKEN', value: 'auth_tok', domain: '.mattermost.com'},
+                    ]),
+                },
+            } as unknown as Session;
+
+            const channels = await getChannelsForServer(mockServer, sessionWithCookies);
             expect(channels).toHaveLength(1);
             expect(channels[0].label).toBe('General (Team One - Community)');
         });
