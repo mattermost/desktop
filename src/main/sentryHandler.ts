@@ -8,6 +8,7 @@ import {app} from 'electron';
 
 import Config from 'common/config';
 import {Logger} from 'common/log';
+import AppVersionManager from 'main/AppVersionManager';
 
 const log = new Logger('SentryHandler');
 
@@ -34,6 +35,7 @@ export class SentryHandler {
             sendDefaultPii: false,
             environment: isPrerelease ? 'prerelease' : 'stable',
             attachStacktrace: true,
+            ...this.getInitialScope(),
         });
 
         this.addSentryContext();
@@ -43,6 +45,15 @@ export class SentryHandler {
 
     flush = () => {
         return Sentry.flush(3000);
+    };
+
+    private getInitialScope = () => {
+        const installId = AppVersionManager.installId;
+        if (!installId) {
+            return {};
+        }
+
+        return {initialScope: {user: {id: installId}}};
     };
 
     private addSentryContext = () => {

@@ -28,6 +28,17 @@
         "no-var": 2,
         "react/no-find-dom-node": 2,
         "no-underscore-dangle": ["warn"],
+        "no-restricted-imports": [
+            2,
+            {
+                "patterns": [
+                    {
+                        "group": ["main/e2e", "main/e2e/**"],
+                        "message": "E2E test hooks live in src/main/e2e/ and must not be imported from app code. Only initialize.ts and mainWindow.ts may import from it."
+                    }
+                ]
+            }
+        ],
         "@mattermost/use-external-link": 0,
         "linebreak-style": 0,
         "import/order": [
@@ -77,6 +88,16 @@
             ],
             "rules": {
                 "no-console": 0
+            }
+        },
+        {
+            "files": [
+                "src/main/e2e/**/*",
+                "src/main/app/initialize.ts",
+                "src/app/mainWindow/mainWindow.ts"
+            ],
+            "rules": {
+                "no-restricted-imports": 0
             }
         },
         {

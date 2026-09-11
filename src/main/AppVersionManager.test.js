@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import fs from 'fs';
+import {v4 as uuid} from 'uuid';
 
 import * as Validator from 'common/Validator';
 
@@ -22,6 +23,10 @@ jest.mock('common/Validator', () => ({
     validateAppState: jest.fn(),
 }));
 
+jest.mock('uuid', () => ({
+    v4: jest.fn(() => 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee'),
+}));
+
 describe('main/AppVersionManager', () => {
     it('should wipe out JSON file when validation fails', () => {
         fs.readFileSync.mockReturnValue('some bad JSON');
@@ -31,5 +36,59 @@ describe('main/AppVersionManager', () => {
         const appVersionManager = new AppVersionManager('somefilename.txt');
 
         expect(fs.writeFile).toBeCalledWith('somefilename.txt', '{}', expect.any(Function));
+    });
+
+    describe('installId', () => {
+        beforeEach(() => {
+            Validator.validateAppState.mockReturnValue(true);
+        });
+
+        it('should generate and persist an install ID when none exists', () => {
+            fs.readFileSync.mockReturnValue('{}');
+            fs.writeFile.mockImplementation((file, data, callback) => callback(null));
+
+            const appVersionManager = new AppVersionManager('somefilename.txt');
+
+            expect(appVersionManager.installId).toBe('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee');
+            expect(fs.writeFile).toBeCalledWith(
+                'somefilename.txt',
+                expect.stringContaining('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee'),
+                expect.any(Function),
+            );
+        });
+
+        it('should reuse a persisted install ID without rewriting the file', () => {
+            fs.readFileSync.mockReturnValue(JSON.stringify({installId: 'existing-id'}));
+            fs.writeFile.mockImplementation((file, data, callback) => callback(null));
+
+            const appVersionManager = new AppVersionManager('somefilename.txt');
+            fs.writeFile.mockClear();
+
+            expect(appVersionManager.installId).toBe('existing-id');
+            expect(fs.writeFile).not.toBeCalled();
+        });
+
+        it('should generate the install ID only once', () => {
+            fs.readFileSync.mockReturnValue('{}');
+            fs.writeFile.mockImplementation((file, data, callback) => callback(null));
+
+            const appVersionManager = new AppVersionManager('somefilename.txt');
+
+            expect(appVersionManager.installId).toBe(appVersionManager.installId);
+            expect(uuid).toBeCalledTimes(1);
+        });
+
+        it('should keep using the generated ID when persisting it fails', async () => {
+            fs.readFileSync.mockReturnValue('{}');
+            fs.writeFile.mockImplementation((file, data, callback) => callback(new Error('disk full')));
+
+            const appVersionManager = new AppVersionManager('somefilename.txt');
+
+            // A rejected write must not surface as an unhandled rejection.
+            await new Promise((resolve) => setImmediate(resolve));
+
+            // Sentry has already read the ID by now, so dropping it here would buy nothing.
+            expect(appVersionManager.installId).toBe('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee');
+        });
     });
 });

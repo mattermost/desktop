@@ -57,7 +57,7 @@ import parseArgs from 'main/ParseArgs';
 import PerformanceMonitor from 'main/performanceMonitor';
 import secureStorage from 'main/secureStorage';
 import AllowProtocolDialog from 'main/security/allowProtocolDialog';
-import {shouldCancelLocalNetworkRequest} from 'main/security/localNetworkAccess';
+import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
 import PermissionsManager from 'main/security/permissionsManager';
 import PreAuthManager from 'main/security/preAuthManager';
 import sentryHandler from 'main/sentryHandler';
@@ -335,7 +335,7 @@ async function initializeAfterAppReady() {
     const defaultSession = session.defaultSession;
     defaultSession.webRequest.onBeforeRequest(async (details, callback) => {
         try {
-            const shouldCancel = await shouldCancelLocalNetworkRequest(details);
+            const shouldCancel = await LocalNetworkAccessManager.shouldCancelLocalNetworkRequest(details);
 
             if (shouldCancel) {
                 log.warn('Blocked server content from accessing local or private network URL', {

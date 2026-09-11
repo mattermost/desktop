@@ -1,7 +1,8 @@
 name: E2E PR Trigger
 
 # Adds E2E/Run on non-draft PRs to master (Matterwick dispatches e2e-functional.yml).
-# E2E/Override skips/cancels E2E; manual E2E/Run removal cancels in-flight runs.
+# E2E/Override waives E2E and passes the required e2e/* statuses; removing it re-arms.
+# Manual E2E/Run removal cancels in-flight runs and leaves e2e/* red.
 # One job keeps the PR checks list to a single row. Concurrency is keyed by
 # event type so unrelated label bots cannot cancel an in-progress trigger (PR #3891).
 on:
@@ -39,6 +40,11 @@ jobs:
       )
       || (
         github.event.action == 'labeled'
+        && github.event.label.name == 'E2E/Override'
+      )
+      || (
+        !github.event.pull_request.draft
+        && github.event.action == 'unlabeled'
         && github.event.label.name == 'E2E/Override'
       )
       || (
@@ -99,7 +105,40 @@ jobs:
               github,
               context,
               sha: pr.head.sha,
-              reason: 'E2E cancelled (E2E/Override label applied)',
+              state: 'success',
+              reason: 'E2E waived (E2E/Override label applied) — no tests ran',
+            });
+
+      - name: Re-arm E2E on E2E/Override removal
+        if: >-
+          !github.event.pull_request.draft
+          && github.event.action == 'unlabeled'
+          && github.event.label.name == 'E2E/Override'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+
+            try {
+              await github.rest.issues.removeLabel({
+                owner,
+                repo,
+                issue_number,
+                name: 'E2E/Run',
+              });
+            } catch (error) {
+              if (error.status !== 404) {
+                throw error;
+              }
+            }
+
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number,
+              labels: ['E2E/Run'],
             });
 
       - name: Refresh E2E/Run label
@@ -150,7 +189,8 @@ jobs:
                 github,
                 context,
                 sha: pr.head.sha,
-                reason: 'E2E skipped (E2E/Override label active)',
+                state: 'success',
+                reason: 'E2E waived (E2E/Override label active) — no tests ran',
               });
               return;
             }

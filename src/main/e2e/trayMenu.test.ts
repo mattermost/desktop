@@ -3,7 +3,7 @@
 
 import type {Menu, MenuItem} from 'electron';
 
-import {createClickTrayMenuItem} from 'main/e2e/trayMenu';
+import {createClickTrayMenuItem} from './trayMenu';
 
 function createMenuItem(partial: Partial<MenuItem> & {label?: string; click?: jest.Mock}): MenuItem {
     return {

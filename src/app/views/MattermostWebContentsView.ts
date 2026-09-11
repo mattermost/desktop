@@ -34,6 +34,7 @@ import {updateServerInfos} from 'main/app/utils';
 import DeveloperMode from 'main/developerMode';
 import {localizeMessage} from 'main/i18nManager';
 import performanceMonitor from 'main/performanceMonitor';
+import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
 import {getServerAPI} from 'main/server/serverAPI';
 
 import WebContentsEventManager from './webContentEvents';
@@ -82,6 +83,7 @@ export class MattermostWebContentsView extends EventEmitter {
         this.atRoot = true;
         this.webContentsView = new WebContentsView(this.options);
         this.cachedWebContentsId = this.webContentsView.webContents.id;
+        LocalNetworkAccessManager.registerWebContents(this.webContentsView.webContents);
         this.resetLoadingStatus();
 
         this.log = ViewManager.getViewLog(this.id, 'MattermostWebContentsView');
@@ -249,6 +251,7 @@ export class MattermostWebContentsView extends EventEmitter {
         AppState.clear(this.id);
         WebContentsEventManager.removeWebContentsListeners(this.webContentsId);
         performanceMonitor.unregisterView(this.webContentsId);
+        LocalNetworkAccessManager.unregisterWebContents(this.webContentsId);
         if (this.parentWindow && !this.parentWindow.isDestroyed()) {
             this.parentWindow.contentView.removeChildView(this.webContentsView);
         }

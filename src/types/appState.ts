@@ -5,4 +5,5 @@ export type AppState = {
     lastAppVersion?: string;
     skippedVersion?: string;
     updateCheckedDate?: string;
+    installId?: string;
 };

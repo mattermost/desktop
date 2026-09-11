@@ -3,6 +3,7 @@
 
 import {test, expect} from '../../fixtures/index';
 import {demoConfig} from '../../helpers/config';
+import {waitForWindow} from '../../helpers/electronApp';
 
 async function openDropdown(electronApp: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>, mainWindow: any) {
     await mainWindow.click('.ServerDropdownButton');
@@ -76,9 +77,10 @@ test.describe('menu_bar/dropdown', () => {
         const dropdownView = await openDropdown(electronApp, mainWindow);
         await dropdownView!.click('.ServerDropdown__button.addServer');
 
-        const newServerModal = await electronApp.waitForEvent('window', {
-            predicate: (window) => window.url().includes('newServer'),
-        });
+        // waitForEvent('window') only sees windows created after it starts listening,
+        // and evaluates its predicate at creation time when the URL can still be blank.
+        // The modal often wins that race on slower runners, so poll the window list.
+        const newServerModal = await waitForWindow(electronApp, 'newServer');
         const modalTitle = await newServerModal.innerText('#newServerModal .Modal__header__text_container');
         expect(modalTitle).toBe('Add Server');
     });

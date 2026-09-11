@@ -6,11 +6,12 @@ import type {ElectronApplication} from 'playwright';
 import {evaluateInMainProcessWithArg} from './testRefs';
 
 /**
- * Invoke the E2E mirror of notifications/index.ts flashFrame().
+ * Invoke the exported flashFrame() from main/notifications — the same function the
+ * notification `show` handler calls, not a copy of it.
  *
  * OS notification delivery is unreliable in headless CI (Electron's Notification
  * often emits `failed` without `show`), so flash_taskbar and dock_bounce tests
- * exercise the same flashFrame() gate the notification `show` handler calls.
+ * call that gate directly rather than waiting on a real notification.
  */
 export async function triggerNotificationEffects(app: ElectronApplication, flash = true): Promise<void> {
     await evaluateInMainProcessWithArg(app, (_electron, shouldFlash: boolean) => {

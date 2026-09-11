@@ -24,6 +24,7 @@ module.exports = merge(base, {
         loginModal: './src/renderer/modals/login/login.tsx',
         certificateModal: './src/renderer/modals/certificate/certificate.tsx',
         preAuthHeaderModal: './src/renderer/modals/preAuthHeader/preAuthHeader.tsx',
+        message: './src/renderer/modals/message/message.tsx',
         loadingScreen: './src/renderer/modals/loadingScreen/index.tsx',
         welcomeScreen: './src/renderer/modals/welcomeScreen/welcomeScreen.tsx',
         popout: './src/renderer/popout.tsx',
@@ -110,6 +111,12 @@ module.exports = merge(base, {
             template: 'src/renderer/index.html',
             chunks: ['preAuthHeaderModal'],
             filename: 'preAuthHeaderModal.html',
+        }),
+        new HtmlWebpackPlugin({
+            title: 'Mattermost Desktop Settings',
+            template: 'src/renderer/index.html',
+            chunks: ['message'],
+            filename: 'message.html',
         }),
         new HtmlWebpackPlugin({
             title: 'Mattermost Desktop Settings',

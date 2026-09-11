@@ -7,10 +7,11 @@ import type {
     WebContentsWillNavigateEventParams,
     WebContentsWillRedirectEventParams,
 } from 'electron';
-import {BrowserWindow, dialog, shell} from 'electron';
+import {BrowserWindow, shell} from 'electron';
 
 import CallsWidgetWindow from 'app/callsWidgetWindow';
 import MainWindow from 'app/mainWindow/mainWindow';
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import NavigationManager from 'app/navigationManager';
 import PluginsPopUpsManager from 'app/views/pluginsPopUps';
 import WebContentsManager from 'app/views/webContentsManager';
@@ -34,11 +35,11 @@ import {
 import ViewManager from 'common/views/viewManager';
 import ContextMenu from 'main/contextMenu';
 import {localizeMessage} from 'main/i18nManager';
+import allowProtocolDialog from 'main/security/allowProtocolDialog';
+import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
+import {composeUserAgent} from 'main/utils';
 
 import {generateHandleConsoleMessage, generateWillFrameNavigate, isCustomProtocol, isMattermostProtocol} from './webContentEventsCommon';
-
-import allowProtocolDialog from '../../main/security/allowProtocolDialog';
-import {composeUserAgent} from '../../main/utils';
 
 const log = new Logger('WebContentsEventManager');
 
@@ -146,7 +147,7 @@ export class WebContentsEventManager {
             const parsedURL = parseURL(details.url);
             if (!parsedURL) {
                 this.log(webContentsId).warn(`Ignoring invalid URL: ${details.url}`);
-                dialog.showErrorBox(
+                MessageModal.showErrorModal(
                     localizeMessage('main.webContentEvents.invalidLinkTitle', 'Invalid Link'),
                     localizeMessage(
                         'main.webContentEvents.invalidLinkDescription',
@@ -244,6 +245,7 @@ export class WebContentsEventManager {
                     };
 
                     popup = this.popupWindow.win;
+                    LocalNetworkAccessManager.registerWebContents(popup.webContents);
                     popup.webContents.on('will-redirect', (event, url) => {
                         const parsedURL = parseURL(url);
                         if (!parsedURL) {
@@ -258,7 +260,9 @@ export class WebContentsEventManager {
                     popup.webContents.on('will-navigate', this.generateWillNavigate(popup.webContents.id));
                     popup.webContents.on('will-frame-navigate', generateWillFrameNavigate(this.log(popup.webContents.id)));
                     popup.webContents.setWindowOpenHandler(this.denyNewWindow);
+                    const popupWebContentsId = popup.webContents.id;
                     popup.once('closed', () => {
+                        LocalNetworkAccessManager.unregisterWebContents(popupWebContentsId);
                         if (this.popupWindow?.contextMenu) {
                             this.popupWindow.contextMenu.dispose();
                         }

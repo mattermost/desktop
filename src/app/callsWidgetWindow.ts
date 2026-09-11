@@ -2,10 +2,11 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent, Rectangle, Event, IpcMainInvokeEvent, WebContentsWillRedirectEventParams} from 'electron';
-import {BrowserWindow, desktopCapturer, dialog, ipcMain, systemPreferences} from 'electron';
+import {BrowserWindow, desktopCapturer, ipcMain, systemPreferences} from 'electron';
 import Joi from 'joi';
 
 import MainWindow from 'app/mainWindow/mainWindow';
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import NavigationManager from 'app/navigationManager';
 import TabManager from 'app/tabs/tabManager';
 import type {MattermostWebContentsView} from 'app/views/MattermostWebContentsView';
@@ -42,6 +43,7 @@ import ViewManager from 'common/views/viewManager';
 import ContextMenu from 'main/contextMenu';
 import {localizeMessage} from 'main/i18nManager';
 import performanceMonitor from 'main/performanceMonitor';
+import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
 import PermissionsManager from 'main/security/permissionsManager';
 import {
     composeUserAgent,
@@ -63,6 +65,7 @@ export class CallsWidgetWindow {
     private options?: CallsWidgetWindowConfig;
     private missingScreensharePermissions?: boolean;
     private seenErrorMessage?: boolean;
+    private webContentsId?: number;
 
     private popOut?: BrowserWindow;
     private boundsErr: Rectangle = {
@@ -221,6 +224,8 @@ export class CallsWidgetWindow {
             return;
         }
         performanceMonitor.registerView('CallsWidgetWindow', this.win.webContents);
+        this.webContentsId = this.win.webContents.id;
+        LocalNetworkAccessManager.registerWebContents(this.win.webContents);
         this.win?.loadURL(widgetURL, {
             userAgent: composeUserAgent(),
         }).catch((reason) => {
@@ -272,6 +277,10 @@ export class CallsWidgetWindow {
 
     private onClosed = () => {
         ipcMain.emit(UPDATE_SHORTCUT_MENU);
+        if (this.webContentsId) {
+            LocalNetworkAccessManager.unregisterWebContents(this.webContentsId);
+            delete this.webContentsId;
+        }
         delete this.win;
         delete this.mainView;
         delete this.options;
@@ -378,6 +387,7 @@ export class CallsWidgetWindow {
 
         // Let the webContentsEventManager handle links that try to open a new window.
         webContentsEventManager.addWebContentsEventListeners(this.popOut.webContents);
+        LocalNetworkAccessManager.registerWebContents(this.popOut.webContents);
 
         // Need to capture and handle redirects for security.
         this.popOut.webContents.on('will-redirect', (event: Event) => {
@@ -394,8 +404,10 @@ export class CallsWidgetWindow {
         this.popOut.webContents.on('devtools-focused', this.emitShortcutMenuUpdate);
         this.popOut.webContents.on('devtools-closed', this.emitShortcutMenuUpdate);
 
+        const popOutWebContentsId = win.webContents.id;
         this.popOut.on('closed', () => {
             ipcMain.emit(UPDATE_SHORTCUT_MENU);
+            LocalNetworkAccessManager.unregisterWebContents(popOutWebContentsId);
             delete this.popOut;
             contextMenu.dispose();
             this.setWidgetWindowStacking({onTop: true});
@@ -569,7 +581,7 @@ export class CallsWidgetWindow {
 
             // We only want to show the error message once to avoid spamming the user with dialog boxes
             if (!this.seenErrorMessage) {
-                dialog.showErrorBox(
+                MessageModal.showErrorModal(
                     localizeMessage('callsWidgetWindow.cannotStartCall.title', 'Cannot Start Call'),
                     localizeMessage('callsWidgetWindow.cannotStartCall.message', 'There is an in-progress call on another server that must be ended before joining a new call.'),
                 );

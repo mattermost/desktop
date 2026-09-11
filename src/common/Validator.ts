@@ -56,6 +56,7 @@ const appStateSchema = Joi.object<AppState>({
     lastAppVersion: Joi.string(),
     skippedVersion: Joi.string(),
     updateCheckedDate: Joi.string(),
+    installId: Joi.string(),
 });
 
 const downloadsSchema = Joi.object<DownloadedItems>().pattern(
