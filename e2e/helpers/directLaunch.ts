@@ -5,7 +5,7 @@ import type {ElectronApplication} from 'playwright';
 import {_electron as electron} from 'playwright';
 
 import {waitForAppReady} from './appReadiness';
-import {electronBinaryPath, appDir, writeConfigFile, type AppConfig} from './config';
+import {electronBinaryPath, appDir, writeConfigFile, writePermissionsFile, type AppConfig} from './config';
 import {registerElectronMainProcess} from './electronApp';
 
 export const DIRECT_LAUNCH_ARGS = [
@@ -24,6 +24,8 @@ export const DIRECT_LAUNCH_ARGS = [
     '--disable-crash-reporter',
     '--force-color-profile=srgb',
     '--mute-audio',
+    '--use-fake-device-for-media-stream',
+    '--use-fake-ui-for-media-stream',
 ];
 
 export type LaunchDirectTestAppOptions = {
@@ -49,6 +51,7 @@ export async function launchDirectTestApp(
 
     if (writeConfig) {
         writeConfigFile(userDataDir, config as AppConfig);
+        writePermissionsFile(userDataDir, config as AppConfig);
     }
 
     const app = await electron.launch({

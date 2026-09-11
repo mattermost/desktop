@@ -9,7 +9,7 @@ import type {ElectronApplication} from 'playwright';
 import {_electron as electron} from 'playwright';
 
 import {waitForAppReady, waitForMainWindow, waitForMainWindowChrome} from '../helpers/appReadiness';
-import {electronBinaryPath, appDir, demoConfig, writeConfigFile, type AppConfig} from '../helpers/config';
+import {electronBinaryPath, appDir, demoConfig, writeConfigFile, writePermissionsFile, type AppConfig} from '../helpers/config';
 import {
     closeElectronApp,
     FAST_TEARDOWN,
@@ -88,6 +88,7 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
         await fs.mkdir(userDataDir, {recursive: true});
 
         writeConfigFile(userDataDir, appConfig);
+        writePermissionsFile(userDataDir, appConfig);
 
         let launchTimeout: number;
         if (process.platform === 'win32') {
@@ -119,6 +120,8 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
                 '--disable-crash-reporter',
                 '--force-color-profile=srgb',
                 '--mute-audio',
+                '--use-fake-device-for-media-stream',
+                '--use-fake-ui-for-media-stream',
             ],
             env: {
                 ...process.env,
