@@ -307,6 +307,24 @@ const definition: (intl: IntlShape) => Promise<SettingsDefinition> = async (intl
                     },
                 },
                 {
+                    id: 'showUnreadsInWindowTitle',
+                    component: CheckSetting,
+                    props: {
+                        label: (
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.showUnreadsInWindowTitle'
+                                defaultMessage='Show unread messages and mentions in the window title'
+                            />
+                        ),
+                        subLabel: (
+                            <FormattedMessage
+                                id='renderer.components.settingsPage.showUnreadsInWindowTitle.description'
+                                defaultMessage='Adds a mention count and an unread indicator (*) to the start of the window title'
+                            />
+                        ),
+                    },
+                },
+                {
                     id: 'notifications',
                     component: NotificationSetting,
                 },

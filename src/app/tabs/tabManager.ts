@@ -8,6 +8,7 @@ import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import type {MattermostWebContentsView} from 'app/views/MattermostWebContentsView';
 import WebContentsManager from 'app/views/webContentsManager';
+import AppState from 'common/appState';
 import {
     ACTIVE_TAB_CHANGED,
     TAB_ORDER_UPDATED,
@@ -39,7 +40,10 @@ import {
     CLEAR_CACHE_AND_RELOAD,
     UPDATE_TARGET_URL,
     WINDOW_CLOSE,
+    UPDATE_APPSTATE_TOTALS,
+    EMIT_CONFIGURATION,
 } from 'common/communication';
+import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import type {MattermostView} from 'common/views/MattermostView';
@@ -56,12 +60,16 @@ export class TabManager extends EventEmitter {
     private tabOrder: Map<string, string[]>;
     private currentVisibleTab?: string;
     private tabListeners: Map<string, () => void>;
+    private mentionCount: number;
+    private hasUnreads: boolean;
 
     constructor() {
         super();
         this.activeTabs = new Map();
         this.tabOrder = new Map();
         this.tabListeners = new Map();
+        this.mentionCount = 0;
+        this.hasUnreads = false;
 
         MainWindow.on(MAIN_WINDOW_RESIZED, this.handleSetCurrentTabViewBounds);
         MainWindow.on(MAIN_WINDOW_FOCUSED, this.focusCurrentTab);
@@ -88,6 +96,9 @@ export class TabManager extends EventEmitter {
 
         ServerManager.on(SERVER_SWITCHED, this.handleServerCurrentChanged);
         ServerManager.on(SERVER_LOGGED_IN_CHANGED, this.handleServerLoggedInChanged);
+
+        AppState.on(UPDATE_APPSTATE_TOTALS, this.handleAppStateTotalsUpdated);
+        ipcMain.on(EMIT_CONFIGURATION, this.updateMainWindowTitle);
     }
 
     getOrderedTabsForServer = (serverId: string): UniqueView[] => {
@@ -527,6 +538,23 @@ export class TabManager extends EventEmitter {
         }
     };
 
+    private handleAppStateTotalsUpdated = (_: boolean, mentionCount: number, isUnread: boolean) => {
+        this.mentionCount = mentionCount;
+        this.hasUnreads = isUnread;
+        this.updateMainWindowTitle();
+    };
+
+    private getUnreadPrefix = () => {
+        if (!Config.showUnreadsInWindowTitle) {
+            return '';
+        }
+
+        const mentionPrefix = this.mentionCount > 0 ? `(${this.mentionCount}) ` : '';
+        const unreadPrefix = this.hasUnreads ? '* ' : '';
+
+        return `${mentionPrefix}${unreadPrefix}`;
+    };
+
     private updateMainWindowTitle = () => {
         const currentActiveTab = this.getCurrentActiveTab();
         if (!currentActiveTab) {
@@ -536,7 +564,7 @@ export class TabManager extends EventEmitter {
         if (!server) {
             return;
         }
-        const title = `${ViewManager.getViewTitle(currentActiveTab.id)}${server.isLoggedIn ? ` - ${server.name}` : ''} - ${app.name}`;
+        const title = `${this.getUnreadPrefix()}${ViewManager.getViewTitle(currentActiveTab.id)}${server.isLoggedIn ? ` - ${server.name}` : ''} - ${app.name}`;
         MainWindow.get()?.setTitle(title);
     };
 }
