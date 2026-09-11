@@ -1,9 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {app, dialog} from 'electron';
+import {app} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import WebContentsManager from 'app/views/webContentsManager';
 import ServerManager from 'common/servers/serverManager';
 import {handleAppActivate, handleAppWillFinishLaunching, handleAppCertificateError, certificateErrorCallbacks} from 'main/app/app';
@@ -16,8 +17,12 @@ jest.mock('electron', () => ({
         once: jest.fn(),
         isReady: jest.fn(),
     },
-    dialog: {
-        showMessageBox: jest.fn(),
+}));
+
+jest.mock('app/mainWindow/modals/messageModal', () => ({
+    __esModule: true,
+    default: {
+        showMessageModal: jest.fn(),
     },
 }));
 
@@ -148,7 +153,7 @@ describe('main/app/app', () => {
         afterEach(() => {
             jest.resetAllMocks();
             certificateErrorCallbacks.clear();
-            dialog.showMessageBox.mockReturnValue(promise);
+            MessageModal.showMessageModal.mockReturnValue(promise);
         });
 
         it('should not trust if explicitly untrusted by CertificateStore', () => {
@@ -178,7 +183,7 @@ describe('main/app/app', () => {
         it('should not show additional dialogs if certificate error has already been logged', () => {
             certificateErrorCallbacks.set('http://server-1.com:error-1', callback);
             handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
-            expect(dialog.showMessageBox).not.toHaveBeenCalled();
+            expect(MessageModal.showMessageModal).not.toHaveBeenCalled();
         });
 
         it('should set callback if one is not already set', () => {
@@ -187,7 +192,7 @@ describe('main/app/app', () => {
         });
 
         it('should remove callback and not add certificate if user selects Cancel', async () => {
-            dialog.showMessageBox.mockResolvedValue({response: 1});
+            MessageModal.showMessageModal.mockResolvedValue({response: 1});
             await handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
             expect(callback).toHaveBeenCalledWith(false);
             expect(certificateErrorCallbacks.has('http://server-1.com:error-1')).toBe(false);
@@ -195,7 +200,7 @@ describe('main/app/app', () => {
         });
 
         it('should remove callback and add certificate if user selects More Details and Trust', async () => {
-            dialog.showMessageBox.mockResolvedValue({response: 0});
+            MessageModal.showMessageModal.mockResolvedValue({response: 0});
             await handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
             expect(callback).toHaveBeenCalledWith(true);
             expect(certificateErrorCallbacks.has('http://server-1.com:error-1')).toBe(false);
@@ -204,14 +209,14 @@ describe('main/app/app', () => {
         });
 
         it('should load URL using MattermostWebContentsView when trusting certificate', async () => {
-            dialog.showMessageBox.mockResolvedValue({response: 0});
+            MessageModal.showMessageModal.mockResolvedValue({response: 0});
             await handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
             expect(callback).toHaveBeenCalledWith(true);
             expect(view.load).toHaveBeenCalledWith(testURL);
         });
 
         it('should explicitly untrust if user selects More Details and then cancel with the checkbox checked', async () => {
-            dialog.showMessageBox.mockResolvedValueOnce({response: 0}).mockResolvedValueOnce({response: 1, checkboxChecked: true});
+            MessageModal.showMessageModal.mockResolvedValueOnce({response: 0}).mockResolvedValueOnce({response: 1, checkboxChecked: true});
             await handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
             expect(callback).toHaveBeenCalledWith(false);
             expect(certificateErrorCallbacks.has('http://server-1.com:error-1')).toBe(false);

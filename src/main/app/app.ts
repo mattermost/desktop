@@ -2,9 +2,10 @@
 // See LICENSE.txt for license information.
 
 import type {BrowserWindow, Event, WebContents, Certificate, Details} from 'electron';
-import {app, dialog} from 'electron';
+import {app} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import Tray from 'app/system/tray/tray';
 import WebContentsManager from 'app/views/webContentsManager';
 import {Logger} from 'common/log';
@@ -139,7 +140,7 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
         }
 
         try {
-            let result = await dialog.showMessageBox(mainWindow, {
+            let result = await MessageModal.showMessageModal({
                 title: localizeMessage('main.app.app.handleAppCertificateError.certError.dialog.title', 'Certificate Error'),
                 message: localizeMessage('main.app.app.handleAppCertificateError.certError.dialog.message', 'There is a problem with the security certificate for this server or for embedded content in a message. Please contact your Mattermost admin or IT department to resolve this issue.'),
                 type: 'error',
@@ -152,7 +153,7 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
             });
 
             if (result.response === 0) {
-                result = await dialog.showMessageBox(mainWindow, {
+                result = await MessageModal.showMessageModal({
                     title: localizeMessage('main.app.app.handleAppCertificateError.certNotTrusted.dialog.title', 'Certificate Not Trusted'),
                     message: localizeMessage('main.app.app.handleAppCertificateError.certNotTrusted.dialog.message', 'Certificate from "{issuerName}" is not trusted.', {issuerName: certificate.issuerName}),
                     detail: extraDetail,

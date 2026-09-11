@@ -60,6 +60,13 @@ jest.mock('app/mainWindow/mainWindow', () => ({
     getSize: jest.fn(),
     on: jest.fn(),
 }));
+jest.mock('app/mainWindow/modals/messageModal', () => ({
+    __esModule: true,
+    default: {
+        showMessageModal: jest.fn(),
+        showErrorModal: jest.fn(),
+    },
+}));
 
 jest.mock('app/tabs/tabManager', () => ({
     focusCurrentTab: jest.fn(),

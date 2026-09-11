@@ -66,6 +66,7 @@ export const ModalConstants = {
     LOGIN_MODAL: 'loginModal',
     PROXY_LOGIN_MODAL: 'proxyLoginModal',
     PRE_AUTH_MODAL: 'preAuthModal',
+    MESSAGE_MODAL: 'messageModal',
 };
 
 export const FILTERED_PROTOCOLS = new Set(['http:', 'https:', 'ws:', 'wss:']);

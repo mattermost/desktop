@@ -6,12 +6,11 @@ import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
 import {demoConfig} from '../../helpers/config';
-import {clearCertificateErrorCallbacks, stubMessageBoxResponses} from '../../helpers/dialog';
+import {answerMessageModal} from '../../helpers/dialog';
 import {launchDirectTestApp} from '../../helpers/directLaunch';
 import {closeElectronApp, closeElectronAppFast} from '../../helpers/electronApp';
-import {waitForErrorView} from '../../helpers/errorView';
 import {buildServerMap} from '../../helpers/serverMap';
-import {evaluateInMainProcess, isTransientEvaluateError, isTransientNavigationError} from '../../helpers/testRefs';
+import {isTransientEvaluateError, isTransientNavigationError} from '../../helpers/testRefs';
 
 const EXPIRED_CERT_URL = 'https://expired.badssl.com';
 
@@ -38,40 +37,37 @@ test(
         let firstAppClosed = false;
         const app = await launchDirectTestApp(userDataDir, badConfig, {
             writeConfig: false,
-            extraEnv: {MM_E2E_STUB_MESSAGE_BOX: 'cancel'},
         });
 
         try {
-            await waitForErrorView(app);
-
-            await clearCertificateErrorCallbacks(app);
-            await stubMessageBoxResponses(app, [{response: 0}, {response: 0}]);
-
-            await evaluateInMainProcess(app, () => {
-                const refs = (global as any).__e2eTestRefs;
-                if (!refs) {
-                    throw new Error('__e2eTestRefs missing (NODE_ENV must be test)');
-                }
-                const server = refs.ServerManager.getOrderedServers()?.[0];
-                if (!server) {
-                    throw new Error('No server available to reload');
-                }
-                refs.ServerManager.reloadServer(server.id);
-            }, {timeoutMs: 30_000});
+            // Answer the launch cert prompt directly. The old test cancelled here and
+            // reloaded only because its single-mode message-box stub forced every
+            // dialog to "cancel"; per-modal answering lets us trust on first load.
+            await answerMessageModal(app, 0, 45_000); // More Details
+            await answerMessageModal(app, 0, 45_000); // Trust Insecure Certificate
 
             const certificateStorePath = path.join(userDataDir, 'certificate.json');
 
-            await expect.poll(async () => {
-                const mainWindow = app.windows().find((window) => window.url().includes('index'));
-                const errorView = await mainWindow?.$('.ErrorView');
-                return errorView === null && fs.existsSync(certificateStorePath);
-            }, {
-                timeout: 45_000,
-                message: 'Trusted certificate should persist to certificate.json and clear ErrorView',
+            // Trust is applied synchronously the instant "Trust Insecure Certificate"
+            // is clicked, so certificate.json appears quickly. Check it on its own so a
+            // failure here means the modal answering broke, not the network reload.
+            await expect.poll(() => fs.existsSync(certificateStorePath), {
+                timeout: 15_000,
+                message: 'Trusted certificate should persist to certificate.json',
             }).toBe(true);
 
             const certificateStore = JSON.parse(fs.readFileSync(certificateStorePath, 'utf-8')) as Record<string, unknown>;
             expect(Object.keys(certificateStore).length).toBeGreaterThan(0);
+
+            // Trust triggers a reload of expired.badssl, which clears the ErrorView once
+            // it loads; that depends on the live network, so give it its own longer poll.
+            await expect.poll(() => {
+                const mainWindow = app.windows().find((window) => window.url().includes('index'));
+                return mainWindow?.$('.ErrorView');
+            }, {
+                timeout: 45_000,
+                message: 'ErrorView should clear after trusting the certificate',
+            }).toBeNull();
 
             await closeElectronApp(app, userDataDir);
             firstAppClosed = true;
@@ -81,12 +77,11 @@ test(
             // trust decision across restarts.
             const relaunchedApp = await launchDirectTestApp(userDataDir, badConfig, {
                 writeConfig: false,
-                extraEnv: {MM_E2E_STUB_MESSAGE_BOX: 'cancel'},
             });
             try {
                 // System-clock changes (MM-T2631 step 1) are not automatable; expired.badssl.com
-                // is the stand-in. Cancel-stubbed relaunch proves trust persisted — a new
-                // untrusted cert would be rejected and ErrorView would reappear.
+                // is the stand-in. The relaunch proves trust persisted — a new untrusted cert
+                // would prompt again and ErrorView would reappear.
                 await expect.poll(async () => {
                     try {
                         const serverMap = await buildServerMap(relaunchedApp);
