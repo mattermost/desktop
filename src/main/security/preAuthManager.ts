@@ -44,7 +44,7 @@ export class PreAuthManager {
         // Relevant Electron issue: https://github.com/electron/electron/issues/48365
         const headerName = Object.keys(details.responseHeaders).find((key) => key.toLowerCase() === 'x-reject-reason');
         if (headerName && details.responseHeaders[headerName]?.includes('pre-auth')) {
-            const server = ServerManager.lookupServerByURL(details.url);
+            const server = ServerManager.lookupServerByURL(details.url, true);
             if (server) {
                 this.handlePreAuthSecret(server.url.toString(), async (secret) => {
                     if (secret) {
@@ -66,7 +66,7 @@ export class PreAuthManager {
     injectPreAuthSecret = (
         details: Electron.OnBeforeSendHeadersListenerDetails,
     ): Record<string, string | string[]> => {
-        const server = ServerManager.lookupServerByURL(details.url);
+        const server = ServerManager.lookupServerByURL(details.url, true);
         if (server?.preAuthSecret && !('X-Mattermost-Preauth-Secret' in details.requestHeaders)) {
             return {
                 'X-Mattermost-Preauth-Secret': server.preAuthSecret,
