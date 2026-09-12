@@ -27,7 +27,7 @@ import {
 import type {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {RELOAD_INTERVAL, MAX_SERVER_RETRIES, SECOND, MAX_LOADING_SCREEN_SECONDS} from 'common/utils/constants';
-import {isInternalURL, parseURL} from 'common/utils/url';
+import {isInternalURL, parseURL, shouldUseFindInPage} from 'common/utils/url';
 import {type MattermostView} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import {updateServerInfos} from 'main/app/utils';
@@ -37,6 +37,7 @@ import performanceMonitor from 'main/performanceMonitor';
 import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
 import {getServerAPI} from 'main/server/serverAPI';
 
+import {closeFindBar, openFindBar, updateFindBarBounds} from './findBar';
 import WebContentsEventManager from './webContentEvents';
 
 import ContextMenu from '../../main/contextMenu';
@@ -96,7 +97,8 @@ export class MattermostWebContentsView extends EventEmitter {
                 ipcMain.emit(CLOSE_DOWNLOADS_DROPDOWN);
             }
         });
-        this.webContentsView.webContents.on('did-navigate-in-page', () => this.handlePageTitleUpdated(this.webContentsView.webContents.getTitle()));
+        this.webContentsView.webContents.on('did-navigate-in-page', this.handleDidNavigateInPage);
+        this.webContentsView.webContents.on('did-navigate', this.closeFindBar);
         this.webContentsView.webContents.on('page-title-updated', (_, newTitle) => this.handlePageTitleUpdated(newTitle));
         this.webContentsView.webContents.on('devtools-focused', this.emitShortcutMenuUpdate);
         this.webContentsView.webContents.on('devtools-closed', this.emitShortcutMenuUpdate);
@@ -235,11 +237,20 @@ export class MattermostWebContentsView extends EventEmitter {
     };
 
     openFind = () => {
+        if (this.shouldOpenFindBar() && this.webContents) {
+            openFindBar(this.parentWindow, this.webContents, this.getBounds());
+            return;
+        }
         this.webContents?.sendInputEvent({type: 'keyDown', keyCode: 'F', modifiers: [process.platform === 'darwin' ? 'cmd' : 'ctrl', 'shift']});
+    };
+
+    closeFindBar = () => {
+        closeFindBar(this.parentWindow, this.webContents);
     };
 
     setBounds = (boundaries: Electron.Rectangle) => {
         this.webContentsView.setBounds(boundaries);
+        updateFindBarBounds(this.parentWindow, this.webContents, boundaries);
     };
 
     destroy = () => {
@@ -255,6 +266,7 @@ export class MattermostWebContentsView extends EventEmitter {
         if (this.parentWindow && !this.parentWindow.isDestroyed()) {
             this.parentWindow.contentView.removeChildView(this.webContentsView);
         }
+        this.closeFindBar();
         if (this.contextMenu) {
             this.contextMenu.dispose();
         }
@@ -466,6 +478,26 @@ export class MattermostWebContentsView extends EventEmitter {
     /**
      * WebContents event handlers
      */
+
+    private shouldOpenFindBar = () => {
+        const server = ServerManager.getServer(this.serverId);
+        const currentURL = this.currentURL;
+        if (!server?.url || !currentURL) {
+            return false;
+        }
+        return shouldUseFindInPage(server.url, currentURL);
+    };
+
+    private closeFindBarIfNotApplicable = () => {
+        if (!this.shouldOpenFindBar()) {
+            this.closeFindBar();
+        }
+    };
+
+    private handleDidNavigateInPage = () => {
+        this.handlePageTitleUpdated(this.webContentsView.webContents.getTitle());
+        this.closeFindBarIfNotApplicable();
+    };
 
     private emitShortcutMenuUpdate = () => ipcMain.emit(UPDATE_SHORTCUT_MENU);
 
