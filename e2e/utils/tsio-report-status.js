@@ -27,6 +27,8 @@ const {
     parseCmtJobName,
     fetchPerJobCountsFromConsolidated,
     buildIndividualReportUrl,
+    notifyCmtChannel,
+    resolveWebhookUrl,
 } = require('./cmt-channel-notify');
 const {
     osStatusContext,
@@ -566,6 +568,34 @@ async function reportTsioStatus({
                 core,
             });
         }
+    }
+
+    // Channel notify (best-effort). Must run before failOnTestFailures throws,
+    // otherwise CMT/PR/master results never post when tests fail.
+    // Routing (see resolveWebhookUrl):
+    //   cmt-desktop      → MM_E2E_RELEASE_WEBHOOK_URL
+    //   desktop-master   → MM_E2E_MASTER_HEALTH_WEBHOOK_URL
+    //   desktop-pr       → MM_DESKTOP_E2E_WEBHOOK_URL
+    try {
+        const notifyNames = new Set(['cmt-desktop', 'desktop-pr', 'desktop-master']);
+        if (notifyNames.has(compositeIdentity.name)) {
+            const webhookUrl = resolveWebhookUrl(compositeIdentity.name);
+            if (webhookUrl) {
+                const channelReportUrl = displayReportUrl || groupReportUrl || targetUrl;
+                await notifyCmtChannel({
+                    core,
+                    baseUrl,
+                    compositeIdentity,
+                    detail,
+                    reportUrl: channelReportUrl,
+                    upstreamJobsSucceeded,
+                    hasFailures,
+                    webhookUrl,
+                });
+            }
+        }
+    } catch (error) {
+        core.warning(`E2E Mattermost notify setup failed: ${error.message}`);
     }
 
     if (failOnTestFailures && overallState === 'failure') {
