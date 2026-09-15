@@ -162,7 +162,9 @@ jobs:
         continue-on-error: true
         env:
           DESKTOP_SHA: ${{ needs.calculate-commit-hash.outputs.DESKTOP_SHA }}
+          DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
           CMT_MATRIX: ${{ inputs.CMT_MATRIX }}
+          MATTERMOST_CMT_WEBHOOK_URL: ${{ secrets.MM_E2E_RELEASE_WEBHOOK_URL }}
         with:
           script: |
             const {updateCmtOsStatusesFromWorkflowJobs} = require('./e2e/utils/github-actions.js');
@@ -171,8 +173,11 @@ jobs:
             await updateCmtOsStatusesFromWorkflowJobs({
               github,
               context,
+              core,
               sha: process.env.DESKTOP_SHA,
               platforms,
+              webhookUrl: process.env.MATTERMOST_CMT_WEBHOOK_URL,
+              desktopVersion: process.env.DESKTOP_VERSION,
             });
 
   # https://mattermost.atlassian.net/browse/CLD-5815
@@ -206,7 +211,9 @@ jobs:
         continue-on-error: true
         env:
           DESKTOP_SHA: ${{ needs.calculate-commit-hash.outputs.DESKTOP_SHA }}
+          DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
           CMT_MATRIX: ${{ inputs.CMT_MATRIX }}
+          MATTERMOST_CMT_WEBHOOK_URL: ${{ secrets.MM_E2E_RELEASE_WEBHOOK_URL }}
         with:
           script: |
             const {updateCmtOsStatusesFromWorkflowJobs} = require('./e2e/utils/github-actions.js');
@@ -215,8 +222,11 @@ jobs:
             await updateCmtOsStatusesFromWorkflowJobs({
               github,
               context,
+              core,
               sha: process.env.DESKTOP_SHA,
               platforms,
+              webhookUrl: process.env.MATTERMOST_CMT_WEBHOOK_URL,
+              desktopVersion: process.env.DESKTOP_VERSION,
             });
 
   cleanup-cmt-instances:

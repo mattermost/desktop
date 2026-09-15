@@ -46,6 +46,120 @@ function osFromCmtJobName(jobName) {
     return canonicalizeOs(String(jobName || '').split('-')[0]);
 }
 
+const PLATFORM_LABEL = {
+    linux: '🐧 Linux',
+    macos: '🍎 macOS',
+    windows: '🪟 Windows',
+};
+
+const FETCH_TIMEOUT_MS = 15_000;
+
+/**
+ * CMT jobs are named `{os}-{serverVersion}` or `{os}-{serverVersion} / e2e-on-{runner}`.
+ *
+ * @param {string} [jobName]
+ * @returns {{os: 'linux'|'macos'|'windows', serverVersion: string}|null}
+ */
+function parseCmtMatrixJobName(jobName) {
+    const head = String(jobName || '').split('/')[0].trim();
+    const os = osFromCmtJobName(head);
+    if (!os) {
+        return null;
+    }
+    const prefix = `${os}-`;
+    if (!head.toLowerCase().startsWith(prefix)) {
+        return null;
+    }
+    const serverVersion = head.slice(prefix.length).trim();
+    if (!serverVersion) {
+        return null;
+    }
+    return {os, serverVersion};
+}
+
+/**
+ * @param {Array<{name?: string, conclusion?: string}>} jobs
+ * @returns {Array<{os: string, serverVersion: string, passed: boolean, conclusion: string}>}
+ */
+function listCmtMatrixJobResults(jobs) {
+    const OS_ORDER = {linux: 0, macos: 1, windows: 2};
+    const results = [];
+    for (const job of jobs || []) {
+        const parsed = parseCmtMatrixJobName(job.name);
+        if (!parsed) {
+            continue;
+        }
+        const conclusion = job.conclusion || 'unknown';
+        results.push({
+            os: parsed.os,
+            serverVersion: parsed.serverVersion,
+            passed: conclusion === 'success',
+            conclusion,
+        });
+    }
+    results.sort((a, b) => {
+        const osDiff = (OS_ORDER[a.os] ?? 9) - (OS_ORDER[b.os] ?? 9);
+        if (osDiff !== 0) {
+            return osDiff;
+        }
+        return a.serverVersion.localeCompare(b.serverVersion, undefined, {numeric: true});
+    });
+    return results;
+}
+
+/**
+ * Job-level CMT rollup for release-6.2 (no TSIO reporter on this branch).
+ *
+ * @param {Object} params
+ * @param {string} [params.desktopVersion]
+ * @param {string} [params.sha]
+ * @param {string} [params.runUrl]
+ * @param {Array<{name?: string, conclusion?: string}>} params.jobs
+ * @returns {string}
+ */
+function formatCmtJobsChannelMessage({desktopVersion, sha, runUrl, jobs}) {
+    const legs = listCmtMatrixJobResults(jobs);
+    const failed = legs.filter((leg) => !leg.passed);
+    const overallFailed = failed.length > 0 || legs.length === 0;
+    const shortSha = (sha || '').slice(0, 7);
+    const lines = [
+        `## ${overallFailed ? '❌' : '✅'} Desktop CMT`,
+        '',
+    ];
+    const meta = [];
+    if (desktopVersion) {
+        meta.push(`**Branch:** \`${String(desktopVersion).replace(/^refs\/(heads|tags)\//, '')}\``);
+    }
+    if (shortSha) {
+        meta.push(`**Commit:** \`${shortSha}\``);
+    }
+    if (meta.length > 0) {
+        lines.push(meta.join(' · '), '');
+    }
+    if (failed.length > 0) {
+        lines.push(`🔴 **${failed.length} failing job${failed.length === 1 ? '' : 's'}**`, '');
+    }
+    lines.push(
+        '| Platform | Server | Result |',
+        '|----------|--------|--------|',
+    );
+    if (legs.length === 0) {
+        lines.push('| — | — | ⚠️ no matrix jobs |', '');
+    } else {
+        for (const leg of legs) {
+            const platform = PLATFORM_LABEL[leg.os] || leg.os;
+            const result = leg.passed ? '✅' : `❌ ${leg.conclusion}`;
+            lines.push(`| ${platform} | \`${leg.serverVersion}\` | ${result} |`);
+        }
+        lines.push('');
+    }
+    lines.push('_release-6.2 CMT reports GitHub job conclusions (this branch has no TSIO rollup)._', '');
+    if (runUrl) {
+        lines.push(`➡️ **Workflow:** ${runUrl}`);
+    }
+    return lines.join('\n').trimEnd() + '\n';
+}
+
 /**
  * @param {Array<{name?: string, conclusion?: string}>} jobs
  * @param {string[]} expectedOs
@@ -148,8 +262,11 @@ async function updateInitialOsStatuses({github, context, sha, platforms}) {
  * @param {Object} params.context
  * @param {string} params.sha
  * @param {Array<{platform?: string, os?: string, runner?: string}>} params.platforms
+ * @param {Object} [params.core] - actions/github-script core (optional; falls back to console)
+ * @param {string} [params.webhookUrl] - MM_E2E_RELEASE_WEBHOOK_URL
+ * @param {string} [params.desktopVersion] - tag / ref under test
  */
-async function updateCmtOsStatusesFromWorkflowJobs({github, context, sha, platforms}) {
+async function updateCmtOsStatusesFromWorkflowJobs({github, context, sha, platforms, core, webhookUrl, desktopVersion}) {
     const workflowUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
     const expectedOs = [...new Set(
         (platforms || []).map((p) => canonicalizeOs(p.platform || p.os, p.runner)).filter(Boolean),
@@ -189,6 +306,61 @@ async function updateCmtOsStatusesFromWorkflowJobs({github, context, sha, platfo
             console.log(`Could not set ${osStatusContext(os)} on ${sha}: ${error.message}`);
         });
     }));
+
+    await notifyCmtChannelFromJobs({
+        core,
+        webhookUrl,
+        desktopVersion,
+        sha,
+        jobs,
+        runUrl: workflowUrl,
+    });
+}
+
+/**
+ * Best-effort incoming-webhook post. Missing URL or a failed POST must not
+ * undo commit statuses already written above.
+ *
+ * @param {Object} params
+ * @param {Object} [params.core]
+ * @param {string} [params.webhookUrl]
+ * @param {string} [params.desktopVersion]
+ * @param {string} [params.sha]
+ * @param {Array<{name?: string, conclusion?: string}>} params.jobs
+ * @param {string} [params.runUrl]
+ */
+async function notifyCmtChannelFromJobs({core, webhookUrl, desktopVersion, sha, jobs, runUrl}) {
+    const log = core || {info: console.log, warning: console.log};
+    if (!webhookUrl) {
+        log.info('Mattermost webhook URL not set — skipping CMT channel notify');
+        return;
+    }
+    try {
+        const text = formatCmtJobsChannelMessage({desktopVersion, sha, runUrl, jobs});
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+        try {
+            const res = await fetch(webhookUrl, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    username: 'Desktop E2E',
+                    icon_url: 'https://mattermost.com/wp-content/uploads/2022/02/icon.png',
+                    text,
+                }),
+                signal: controller.signal,
+            });
+            if (!res.ok) {
+                throw new Error(`Mattermost webhook failed: ${res.status} ${await res.text()}`);
+            }
+            await res.text();
+        } finally {
+            clearTimeout(timer);
+        }
+        log.info('Posted CMT summary to Mattermost channel');
+    } catch (error) {
+        log.warning(`E2E Mattermost notify failed: ${error.message}`);
+    }
 }
 
 /**
@@ -327,6 +499,10 @@ module.exports = {
     updateCmtOsStatusesFromWorkflowJobs,
     canonicalizeOs,
     osFromCmtJobName,
+    parseCmtMatrixJobName,
+    listCmtMatrixJobResults,
+    formatCmtJobsChannelMessage,
+    notifyCmtChannelFromJobs,
     summarizeCmtJobsByOs,
     cmtOsCommitStatus,
     playwrightProjectForOs,

@@ -9,6 +9,9 @@ const assert = require('node:assert/strict');
 const {
     canonicalizeOs,
     osFromCmtJobName,
+    parseCmtMatrixJobName,
+    listCmtMatrixJobResults,
+    formatCmtJobsChannelMessage,
     summarizeCmtJobsByOs,
     cmtOsCommitStatus,
     playwrightProjectForOs,
@@ -89,5 +92,62 @@ describe('playwrightProjectForOs', () => {
         assert.equal(playwrightProjectForOs('macos'), 'darwin');
         assert.equal(playwrightProjectForOs('windows'), 'win32');
         assert.equal(playwrightProjectForOs(null), 'linux');
+    });
+});
+
+describe('parseCmtMatrixJobName', () => {
+    it('parses os-version and reusable-workflow names', () => {
+        assert.deepEqual(parseCmtMatrixJobName('linux-11.9.0'), {os: 'linux', serverVersion: '11.9.0'});
+        assert.deepEqual(
+            parseCmtMatrixJobName('macos-10.11.23 / e2e-on-macos-26'),
+            {os: 'macos', serverVersion: '10.11.23'},
+        );
+        assert.deepEqual(
+            parseCmtMatrixJobName('windows-11.11.0 / e2e-on-windows-2022'),
+            {os: 'windows', serverVersion: '11.11.0'},
+        );
+    });
+
+    it('ignores setup jobs', () => {
+        assert.equal(parseCmtMatrixJobName('calculate-commit-hash'), null);
+        assert.equal(parseCmtMatrixJobName('update-success-final-status'), null);
+    });
+});
+
+describe('formatCmtJobsChannelMessage', () => {
+    const jobs = [
+        {name: 'linux-11.11.0 / e2e-on-ubuntu-latest', conclusion: 'success'},
+        {name: 'windows-10.11.23 / e2e-on-windows-2022', conclusion: 'failure'},
+        {name: 'macos-11.9.1 / e2e-on-macos-26', conclusion: 'success'},
+        {name: 'calculate-commit-hash', conclusion: 'success'},
+    ];
+
+    it('lists matrix legs and marks overall failed when any job failed', () => {
+        const text = formatCmtJobsChannelMessage({
+            desktopVersion: 'v6.2.4-rc.1',
+            sha: '4749f699f62e7d341a056ef6b3aa28a14f12baea',
+            runUrl: 'https://github.com/mattermost/desktop/actions/runs/1',
+            jobs,
+        });
+        assert.match(text, /^## ❌ Desktop CMT\n/);
+        assert.match(text, /\*\*Branch:\*\* `v6\.2\.4-rc\.1` · \*\*Commit:\*\* `4749f69`/);
+        assert.match(text, /🔴 \*\*1 failing job\*\*/);
+        assert.match(text, /\| 🐧 Linux \| `11\.11\.0` \| ✅ \|/);
+        assert.match(text, /\| 🪟 Windows \| `10\.11\.23` \| ❌ failure \|/);
+        assert.match(text, /➡️ \*\*Workflow:\*\* https:\/\/github\.com\/mattermost\/desktop\/actions\/runs\/1/);
+        assert.equal(listCmtMatrixJobResults(jobs).length, 3);
+    });
+
+    it('renders a passed banner when every matrix job succeeded', () => {
+        const text = formatCmtJobsChannelMessage({
+            desktopVersion: 'v6.2.4-rc.1',
+            sha: 'abc1234',
+            jobs: [
+                {name: 'linux-11.11.0', conclusion: 'success'},
+                {name: 'macos-11.11.0', conclusion: 'success'},
+            ],
+        });
+        assert.match(text, /^## ✅ Desktop CMT\n/);
+        assert.doesNotMatch(text, /failing job/);
     });
 });
