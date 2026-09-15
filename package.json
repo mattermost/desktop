@@ -56,7 +56,9 @@
     "package:linux:arch-arm64": "cross-env CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ electron-builder --linux",
     "package:linux-tar": "npm run build-prod && npm run package:linux:arch-x64 -- tar.gz --x64 --publish=never && npm run package:linux:arch-arm64 -- tar.gz --arm64 --publish=never",
     "package:linux-pkg": "npm run build-prod && npm run package:linux:arch-x64 -- deb rpm flatpak --x64 --publish=never && npm run package:linux:arch-arm64 -- deb rpm flatpak --arm64 --publish=never",
-    "package:linux-appImage": "npm run build-prod && npm run package:linux:arch-x64 -- tar.gz appimage --x64 --publish=never && npm run package:linux:arch-arm64 -- tar.gz appimage --arm64 --publish=never"
+    "package:linux-appImage": "npm run build-prod && npm run package:linux:arch-x64 -- tar.gz appimage --x64 --publish=never && npm run package:linux:arch-arm64 -- tar.gz appimage --arm64 --publish=never",
+    "test:ci-utils": "node --test e2e/utils/*.test.js",
+    "check-types:e2e": "tsc -p e2e/tsconfig.json --noEmit"
   },
   "jest": {
     "clearMocks": true,
@@ -73,7 +75,9 @@
     ],
     "collectCoverageFrom": [
       "src/common/**/*.ts",
-      "src/main/**/*.ts"
+      "src/main/**/*.ts",
+      "src/app/**/*.ts",
+      "src/renderer/**/*.{ts,tsx}"
     ],
     "testMatch": [
       "**/src/**/*.test.js",
@@ -110,7 +114,15 @@
           "ancestorSeparator": "> "
         }
       ]
-    ]
+    ],
+    "coverageThreshold": {
+      "global": {
+        "statements": 50,
+        "branches": 40,
+        "functions": 40,
+        "lines": 50
+      }
+    }
   },
   "devDependencies": {
     "@babel/preset-env": "7.24.0",
