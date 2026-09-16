@@ -74,8 +74,3 @@ export const WEBSOCKET_PROTOCOL_EQUIVALENTS: {[protocol: string]: string} = {
     'ws:': 'http:',
     'wss:': 'https:',
 };
-
-export const WEBSOCKET_PROTOCOL_EQUIVALENTS: {[protocol: string]: string} = {
-    'ws:': 'http:',
-    'wss:': 'https:',
-};
