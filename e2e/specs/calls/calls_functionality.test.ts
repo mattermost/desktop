@@ -81,6 +81,11 @@ test.describe('calls/calls_functionality', () => {
             );
             expect(muteButton, 'Mute button must exist in Calls widget').toBeTruthy();
 
+            await widgetWindow.waitForFunction(
+                () => Boolean(((window as unknown as Record<string, unknown>).callsClient as Record<string, unknown> | undefined)?.peer),
+                {timeout: 15_000},
+            );
+
             // Widget uses aria-label toggling ("Mute" / "Unmute") — no aria-pressed.
             const initialLabel = await widgetWindow.evaluate(() => {
                 return document.querySelector('#voice-mute-unmute')?.getAttribute('aria-label') ?? null;
