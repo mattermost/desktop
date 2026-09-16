@@ -5,6 +5,7 @@ import dns from 'dns/promises';
 import {BlockList, isIP} from 'net';
 
 import WebContentsManager from 'app/views/webContentsManager';
+import {WEBSOCKET_PROTOCOL_EQUIVALENTS} from 'common/constants';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
 
@@ -48,11 +49,6 @@ export async function shouldCancelLocalNetworkRequest(
 }
 
 const FILTERED_PROTOCOLS = new Set(['http:', 'https:', 'ws:', 'wss:']);
-
-const WEBSOCKET_PROTOCOL_EQUIVALENTS: {[protocol: string]: string} = {
-    'ws:': 'http:',
-    'wss:': 'https:',
-};
 
 function getComparableOrigin(url: URL): string {
     const protocol = WEBSOCKET_PROTOCOL_EQUIVALENTS[url.protocol] ?? url.protocol;

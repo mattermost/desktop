@@ -107,6 +107,7 @@ jest.mock('electron-is-dev', () => isDev);
 
 jest.mock('common/constants', () => ({
     MATTERMOST_PROTOCOL: 'mattermost',
+    WEBSOCKET_PROTOCOL_EQUIVALENTS: {'ws:': 'http:', 'wss:': 'https:'},
 }));
 
 jest.mock('app/serverHub', () => ({

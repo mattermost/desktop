@@ -72,7 +72,7 @@ export class ServerManager extends EventEmitter {
         return this.remoteInfo.get(serverId);
     };
 
-    lookupServerByURL = (inputURL: URL | string, ignoreScheme = false) => {
+    lookupServerByURL = (inputURL: URL | string, ignoreScheme = false, allowWebSocketProtocol = false) => {
         log.silly('lookupViewByURL', {ignoreScheme});
 
         const parsedURL = parseURL(inputURL);
@@ -80,7 +80,7 @@ export class ServerManager extends EventEmitter {
             return undefined;
         }
         return this.getAllServers().find((server) => {
-            return isInternalURL(parsedURL, server.url, ignoreScheme) &&
+            return isInternalURL(parsedURL, server.url, ignoreScheme, allowWebSocketProtocol) &&
                 getFormattedPathName(parsedURL.pathname).startsWith(getFormattedPathName(server.url.pathname));
         });
     };

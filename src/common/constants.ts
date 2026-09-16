@@ -67,3 +67,8 @@ export const ModalConstants = {
     PROXY_LOGIN_MODAL: 'proxyLoginModal',
     PRE_AUTH_MODAL: 'preAuthModal',
 };
+
+export const WEBSOCKET_PROTOCOL_EQUIVALENTS: {[protocol: string]: string} = {
+    'ws:': 'http:',
+    'wss:': 'https:',
+};
