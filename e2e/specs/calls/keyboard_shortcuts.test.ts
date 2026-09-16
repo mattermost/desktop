@@ -52,6 +52,7 @@ test.describe('calls/keyboard_shortcuts', () => {
         await serverWin.waitForSelector('#channelHeaderTitle', {timeout: 10_000});
         await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
         await leaveCallIfActive(electronApp);
+
         // Allow the Calls plugin rate limiter (burst=10, 1/sec refill) to recover
         // between tests. ICE candidate exchange from the previous call exhausts the
         // bucket; /call start in the next test gets a silent 429 without this wait.
