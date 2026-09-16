@@ -6,6 +6,7 @@ import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
 import {demoConfig, demoMattermostConfig} from '../../helpers/config';
+import {answerMessageModal} from '../../helpers/dialog';
 import {launchDirectTestApp} from '../../helpers/directLaunch';
 import {closeElectronAppFast} from '../../helpers/electronApp';
 import {waitForErrorView} from '../../helpers/errorView';
@@ -25,7 +26,7 @@ async function launchWithConfig(testInfo: {outputDir: string}, config: object) {
     const {mkdirSync} = await import('fs');
     const userDataDir = path.join(testInfo.outputDir, 'custom-userdata');
     mkdirSync(userDataDir, {recursive: true});
-    const app = await launchDirectTestApp(userDataDir, config, {MM_E2E_STUB_MESSAGE_BOX: 'cancel'});
+    const app = await launchDirectTestApp(userDataDir, config);
     return {app, userDataDir};
 }
 
@@ -140,7 +141,7 @@ test.describe('Bad Server Configurations', () => {
             const {mkdirSync} = await import('fs');
             sharedUserDataDir = path.join(testInfo.outputDir, 'add-server-shared');
             mkdirSync(sharedUserDataDir, {recursive: true});
-            sharedApp = await launchDirectTestApp(sharedUserDataDir, demoConfig, {MM_E2E_STUB_MESSAGE_BOX: 'cancel'});
+            sharedApp = await launchDirectTestApp(sharedUserDataDir, demoConfig);
         });
 
         test.afterAll(async () => {
@@ -192,6 +193,8 @@ test.describe('Bad Server Configurations', () => {
                 () => findServerInConfig(configPath, 'Expired Cert Server'),
                 {timeout: 10000},
             ).toBeDefined();
+
+            await answerMessageModal(app, 1, 30_000); // Cancel Connection on the cert prompt
 
             const mainWindow = app.windows().find((w) => w.url().includes('index'));
             expect(mainWindow).toBeDefined();
@@ -394,6 +397,8 @@ test.describe('Bad Server Configurations', () => {
             };
             const {app, userDataDir: badCertUserDataDir} = await launchWithConfig(testInfo, badConfig);
             try {
+                await answerMessageModal(app, 1, 30_000); // Cancel Connection on the cert prompt
+
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));
                 expect(mainWindow).toBeDefined();
                 await waitForErrorView(app, {serverName: 'Pre-configured Expired Cert', waitForActiveServer: false});
@@ -438,7 +443,6 @@ test.describe('Bad Server Configurations', () => {
 
             const app = await launchDirectTestApp(userDataDir, badConfig, {
                 writeConfig: false,
-                extraEnv: {MM_E2E_STUB_MESSAGE_BOX: 'cancel'},
             });
             try {
                 const mainWindow = app.windows().find((w) => w.url().includes('index'));

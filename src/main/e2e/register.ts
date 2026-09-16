@@ -65,14 +65,7 @@ export function maybeRegisterE2eHooks(): void {
         // MM-T1294 / flash_taskbar cannot pass against a stale duplicate.
         triggerNotificationFrameEffects: flashFrame,
         simulateNotificationClick,
-        installMessageBoxStub: messageBoxStub.installMessageBoxStub,
         installOpenDialogStub: messageBoxStub.installOpenDialogStub,
         clearCertificateErrorCallbacks: () => certificateErrorCallbacks.clear(),
     });
-
-    if (process.env.MM_E2E_STUB_MESSAGE_BOX === 'cancel') {
-        messageBoxStub.installMessageBoxStub([{response: 1}]);
-    } else if (process.env.MM_E2E_STUB_MESSAGE_BOX === 'trust') {
-        messageBoxStub.installMessageBoxStub([{response: 0}, {response: 0}]);
-    }
 }

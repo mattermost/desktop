@@ -2,10 +2,11 @@
 // See LICENSE.txt for license information.
 
 import type {BrowserWindow, Rectangle} from 'electron';
-import {app, session, dialog, screen} from 'electron';
+import {app, screen, session} from 'electron';
 import isDev from 'electron-is-dev';
 
 import MainWindow from 'app/mainWindow/mainWindow';
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import MenuManager from 'app/menus';
 import NavigationManager from 'app/navigationManager';
 import {MAIN_WINDOW_CREATED} from 'common/communication';
@@ -206,13 +207,15 @@ export async function clearDataForServer(server: MattermostServer) {
         return;
     }
 
-    const response = await dialog.showMessageBox(mainWindow, {
+    const response = await MessageModal.showMessageModal({
+        title: server.name,
         type: 'warning',
         buttons: [
             localizeMessage('main.app.utils.clearDataForServer.confirm', 'Clear Data'),
             localizeMessage('main.app.utils.clearDataForServer.cancel', 'Cancel'),
         ],
         defaultId: 1,
+        cancelId: 1,
         message: localizeMessage('main.app.utils.clearDataForServer.message', 'This action will erase all session, cache, cookie and storage data for the server "{serverName}". Are you sure you want to clear data for this server?', {serverName: server.name}),
     });
 
@@ -231,7 +234,7 @@ export async function clearAllData() {
         return;
     }
 
-    const response = await dialog.showMessageBox(mainWindow, {
+    const response = await MessageModal.showMessageModal({
         title: app.name,
         type: 'warning',
         buttons: [
@@ -239,6 +242,7 @@ export async function clearAllData() {
             localizeMessage('main.app.utils.clearAllData.cancel', 'Cancel'),
         ],
         defaultId: 1,
+        cancelId: 1,
         message: localizeMessage('main.app.utils.clearAllData.message', 'This action will erase all session, cache, cookie and storage data for all server. Performing this action will restart the application. Are you sure you want to clear all data?'),
     });
 

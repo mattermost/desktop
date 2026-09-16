@@ -3,7 +3,7 @@
 
 import {test, expect} from '../../fixtures/index';
 import {demoConfig, type AppConfig} from '../../helpers/config';
-import {stubMessageBoxResponses} from '../../helpers/dialog';
+import {waitForWindow} from '../../helpers/electronApp';
 import {evaluateInMainProcess} from '../../helpers/testRefs';
 import {isMainWindowVisible} from '../../helpers/tray';
 
@@ -25,7 +25,6 @@ test.describe('system_tray_icon/window_close_tray', () => {
                 {timeout: 10_000},
             ).toBe(true);
 
-            await stubMessageBoxResponses(electronApp, [{response: 1}]);
             await evaluateInMainProcess(electronApp, () => {
                 const refs = (global as any).__e2eTestRefs;
                 if (!refs) {
@@ -33,6 +32,9 @@ test.describe('system_tray_icon/window_close_tray', () => {
                 }
                 refs.MainWindow.get()?.close();
             });
+
+            const messageModal = await waitForWindow(electronApp, 'message.html');
+            await messageModal.click('button:has-text("No")');
 
             await expect.poll(
                 () => electronApp.windows().some((window) => window.url().includes('index')),

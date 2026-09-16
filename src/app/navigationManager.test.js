@@ -1,10 +1,9 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {dialog} from 'electron';
-
 import CallsWidgetWindow from 'app/callsWidgetWindow';
 import MainWindow from 'app/mainWindow/mainWindow';
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import ServerHub from 'app/serverHub';
 import TabManager from 'app/tabs/tabManager';
@@ -21,12 +20,16 @@ import {handleWelcomeScreenModal} from 'main/app/intercom';
 import {NavigationManager} from './navigationManager';
 
 jest.mock('electron', () => ({
-    dialog: {
-        showErrorBox: jest.fn(),
-    },
     ipcMain: {
         handle: jest.fn(),
         on: jest.fn(),
+    },
+}));
+
+jest.mock('app/mainWindow/modals/messageModal', () => ({
+    __esModule: true,
+    default: {
+        showErrorModal: jest.fn(),
     },
 }));
 
@@ -194,7 +197,7 @@ describe('app/navigationManager', () => {
 
         it('should not open new server modal but show a dialog when server management is disabled by policy', () => {
             ServerHub.showNewServerModal.mockClear();
-            dialog.showErrorBox.mockClear();
+            MessageModal.showErrorModal.mockClear();
             ServerManager.hasServers.mockReturnValue(true);
             ServerManager.lookupServerByURL.mockReturnValue(null);
             Config.enableServerManagement = false;
@@ -202,7 +205,7 @@ describe('app/navigationManager', () => {
             navigationManager.openLinkInPrimaryTab('mattermost://server-2.com/deep/link?thing=yes');
 
             expect(ServerHub.showNewServerModal).not.toHaveBeenCalled();
-            expect(dialog.showErrorBox).toHaveBeenCalled();
+            expect(MessageModal.showErrorModal).toHaveBeenCalled();
 
             Config.enableServerManagement = true;
         });
@@ -220,7 +223,7 @@ describe('app/navigationManager', () => {
         it('should not handle welcome screen modal but show a dialog when server management is disabled by policy', () => {
             ModalManager.removeModal.mockClear();
             handleWelcomeScreenModal.mockClear();
-            dialog.showErrorBox.mockClear();
+            MessageModal.showErrorModal.mockClear();
             ServerManager.hasServers.mockReturnValue(false);
             ServerManager.lookupServerByURL.mockReturnValue(null);
             Config.enableServerManagement = false;
@@ -229,7 +232,7 @@ describe('app/navigationManager', () => {
 
             expect(ModalManager.removeModal).not.toHaveBeenCalled();
             expect(handleWelcomeScreenModal).not.toHaveBeenCalled();
-            expect(dialog.showErrorBox).toHaveBeenCalled();
+            expect(MessageModal.showErrorModal).toHaveBeenCalled();
 
             Config.enableServerManagement = true;
         });
@@ -250,7 +253,7 @@ describe('app/navigationManager', () => {
             navigationManager.openLinkInPrimaryTab('not-a-valid-url');
 
             expect(ServerManager.lookupServerByURL).not.toHaveBeenCalled();
-            expect(dialog.showErrorBox).toHaveBeenCalled();
+            expect(MessageModal.showErrorModal).toHaveBeenCalled();
         });
     });
 
@@ -318,7 +321,7 @@ describe('app/navigationManager', () => {
             navigationManager.openLinkInNewTab('mattermost://server-2.com/deep/link?thing=yes');
 
             expect(ServerHub.showNewServerModal).not.toHaveBeenCalled();
-            expect(dialog.showErrorBox).toHaveBeenCalled();
+            expect(MessageModal.showErrorModal).toHaveBeenCalled();
 
             Config.enableServerManagement = true;
         });
@@ -349,7 +352,7 @@ describe('app/navigationManager', () => {
             navigationManager.openLinkInNewTab('not-a-valid-url');
 
             expect(ServerManager.lookupServerByURL).not.toHaveBeenCalled();
-            expect(dialog.showErrorBox).toHaveBeenCalled();
+            expect(MessageModal.showErrorModal).toHaveBeenCalled();
         });
 
         it('should handle missing view gracefully', () => {

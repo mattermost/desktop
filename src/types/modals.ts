@@ -16,3 +16,20 @@ export type LoginModalInfo = {
     request: AuthenticationResponseDetails;
     authInfo: AuthInfo;
 }
+
+export type MessageModalInfo = {
+    type?: 'none' | 'info' | 'error' | 'question' | 'warning';
+    title?: string;
+    message: string;
+    detail?: string;
+    buttons?: string[];
+    defaultId?: number;
+    cancelId?: number;
+    checkboxLabel?: string;
+    checkboxChecked?: boolean;
+}
+
+export type MessageModalResult = {
+    response: number;
+    checkboxChecked: boolean;
+}

@@ -4,8 +4,9 @@
 
 import fs from 'fs';
 
-import {dialog, shell} from 'electron';
+import {shell} from 'electron';
 
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import buildConfig from 'common/config/buildConfig';
 import {Logger} from 'common/log';
 import {parseURL} from 'common/utils/url';
@@ -82,19 +83,18 @@ export class AllowProtocolDialog {
             if (!mainWindow) {
                 return;
             }
-            const {response} = await dialog.showMessageBox(mainWindow, {
-                title: localizeMessage('main.allowProtocolDialog.title', 'Non http(s) protocol'),
+            const {response} = await MessageModal.showMessageModal({
+                title: localizeMessage('main.allowProtocolDialog.title', 'Open external app?'),
                 message: localizeMessage('main.allowProtocolDialog.message', '{protocol} link requires an external application.', {protocol}),
                 detail: localizeMessage('main.allowProtocolDialog.detail', 'The requested link is {URL}. Do you want to continue?', {URL: url}),
                 defaultId: 2,
                 type: 'warning',
                 buttons: [
                     localizeMessage('label.yes', 'Yes'),
-                    localizeMessage('main.allowProtocolDialog.button.saveProtocolAsAllowed', 'Yes (Save {protocol} as allowed)', {protocol}),
+                    localizeMessage('main.allowProtocolDialog.button.saveProtocolAsAllowed', 'Yes, always allow {protocol}', {protocol}),
                     localizeMessage('label.no', 'No'),
                 ],
                 cancelId: 2,
-                noLink: true,
             });
 
             switch (response) {
