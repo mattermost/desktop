@@ -265,7 +265,14 @@ jobs:
       # verdict cannot be attributed to one leg; enforce mode here reports rather
       # than unblocks until the group carries per-OS attribution.
       - name: e2e/triage
-        if: always() && inputs.pr_number != ''
+        # prepare-matrix is skipped when instance_details is empty, and can finish
+        # without an identity if preparation failed; tsio-summary still runs because
+        # it is always(). Without the guard the action would JSON.parse("") and die
+        # inside continue-on-error, leaving the PR with no comment at all.
+        if: >-
+          always()
+          && inputs.pr_number != ''
+          && needs.prepare-matrix.outputs.tsio-composite-identity != ''
         continue-on-error: true
         uses: mattermost/mattermost-test-automation-toolkit/actions/e2e-triage@3aca11f9576504261bd8cb40d702793f2de26e01 # actions/e2e-triage
         with:
