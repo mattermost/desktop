@@ -71,17 +71,13 @@ test.describe('calls/slash_commands', () => {
         'MM-T5588 /call end — host ends the call',
         {tag: ['@P1', '@all']},
         async ({electronApp}) => {
-            const widgetWindow = await startCall(electronApp, serverWin);
+            await startCall(electronApp, serverWin);
 
-            // Wait for the WebRTC peer to be set, then give ICE candidate exchange and
-            // the Calls plugin rate limiter (burst=10, 1/sec refill) time to settle.
-            // Without this, /call end arrives while the bucket is empty and gets a
-            // silent 429, leaving the call open.
-            await widgetWindow.waitForFunction(
-                () => Boolean(((window as unknown as Record<string, unknown>).callsClient as Record<string, unknown> | undefined)?.peer),
-                {timeout: 15_000},
-            );
-            await new Promise((r) => setTimeout(r, 10_000));
+            // The Calls plugin rate limiter (burst=10, 1/sec refill) is exhausted
+            // by WebRTC ICE candidate exchange during call setup. Wait for it to
+            // recover before sending /call end, otherwise the command gets a silent
+            // HTTP 429 and has no effect.
+            await new Promise((r) => setTimeout(r, 15_000));
 
             await sendSlashCommand(serverWin, '/call end');
 
