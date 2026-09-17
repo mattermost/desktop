@@ -41,6 +41,12 @@ describe('runBelongsToPr', () => {
         assert.equal(runBelongsToPr(run, 42, 'master'), false);
         assert.equal(runBelongsToPr(run, 42, 'feature'), false);
     });
+
+    it('matches PR identity on name when display_title is a non-empty YAML name', () => {
+        const run = {display_title: 'E2E', name: `E2E PR #42 @ ${sha}`, head_branch: 'master'};
+        assert.equal(runBelongsToPr(run, 42, 'fork-feature'), true);
+        assert.equal(prNumberFromRunTitle(run), 42);
+    });
 });
 
 describe('cancelActiveE2ERuns', () => {

@@ -147,13 +147,22 @@ async function markE2EStatusesCancelled({github, context, sha, reason = CANCELLE
     ));
 }
 
+function runIdentityTitles(run) {
+    return [run?.display_title, run?.name].filter((title) => Boolean(title));
+}
+
 function runIdentityTitle(run) {
-    return run?.display_title || run?.name || '';
+    return runIdentityTitles(run).find((title) => E2E_PR_RUN_TITLE.test(title)) || run?.display_title || run?.name || '';
 }
 
 function prNumberFromRunTitle(run) {
-    const match = runIdentityTitle(run).match(E2E_PR_RUN_TITLE);
-    return match ? Number.parseInt(match[1], 10) : null;
+    for (const title of runIdentityTitles(run)) {
+        const match = title.match(E2E_PR_RUN_TITLE);
+        if (match) {
+            return Number.parseInt(match[1], 10);
+        }
+    }
+    return null;
 }
 
 /**

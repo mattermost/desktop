@@ -7,11 +7,13 @@ run-name: >-
     || format('E2E {0} @ {1}', inputs.run_type || 'PR', inputs.version_name) }}
 
 concurrency:
+  # MASTER/MAIN: github.sha is the workflow-source commit at dispatch.
+  # Matterwick push sends version_name=master, so that input is not unique.
   group: >-
     ${{ (inputs.run_type == 'MASTER' || inputs.run_type == 'MAIN')
-      && format('e2e-{0}-{1}', inputs.run_type, inputs.version_name)
+      && format('e2e-{0}-{1}', inputs.run_type, github.sha)
       || (inputs.pr_number != '' && format('e2e-pr-{0}', inputs.pr_number))
-      || format('e2e-{0}-{1}', inputs.run_type || 'PR', inputs.version_name) }}
+      || format('e2e-{0}-{1}', inputs.run_type || 'PR', github.sha) }}
   cancel-in-progress: true
 
 on:
