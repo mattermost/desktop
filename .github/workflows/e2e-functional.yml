@@ -200,6 +200,8 @@ jobs:
       contents: read
       id-token: write
       statuses: write
+      # The triage step below posts a sticky comment on the PR.
+      pull-requests: write
     steps:
       # tsio-report-status.js is repo code, not fetched by github-script itself.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -247,6 +249,32 @@ jobs:
               failOnTestFailures: true,
             });
             core.info(`TSIO report ${reportUrl}: ${status} (${JSON.stringify(stats)})`);
+
+      # Is this red E2E run the PR's fault? The step asks Test System IO for the
+      # past executions of exactly the tests that failed, applies history rules
+      # (broken on trunk, flaky on trunk, recurring on other PRs, owned by the
+      # PR's own diff) and escalates only what the rules cannot settle to a
+      # second judge that must cite evidence a reviewer can open.
+      #
+      # always(): the step above throws when TSIO reports failures, which is
+      # exactly the case triage exists for. continue-on-error: triage must never
+      # change the outcome of the E2E run.
+      #
+      # The context below is deliberately not one of the five required per-OS
+      # contexts. One desktop run is a single TSIO group covering every OS, so a
+      # verdict cannot be attributed to one leg; enforce mode here reports rather
+      # than unblocks until the group carries per-OS attribution.
+      - name: e2e/triage
+        if: always() && inputs.pr_number != ''
+        continue-on-error: true
+        uses: mattermost/mattermost-test-automation-toolkit/actions/e2e-triage@3aca11f9576504261bd8cb40d702793f2de26e01 # actions/e2e-triage
+        with:
+          composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
+          status-context: e2e/triage
+          base-ref: master
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          mode: ${{ vars.E2E_TRIAGE_MODE || 'report-only' }}
 
   remove-e2e-label:
     name: Remove E2E label from PR
