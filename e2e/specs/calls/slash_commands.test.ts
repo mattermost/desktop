@@ -71,15 +71,18 @@ test.describe('calls/slash_commands', () => {
         'MM-T5588 /call end — host ends the call',
         {tag: ['@P1', '@all']},
         async ({electronApp}) => {
+            const townSquare = await apiRequest<{id: string}>(testServerUrl, adminToken, `/api/v4/teams/${teamId}/channels/name/town-square`);
+
             await startCall(electronApp, serverWin);
 
-            // The Calls plugin rate limiter (burst=10, 1/sec refill) is exhausted
-            // by WebRTC ICE candidate exchange during call setup. Wait for it to
-            // recover before sending /call end, otherwise the command gets a silent
-            // HTTP 429 and has no effect.
-            await new Promise((r) => setTimeout(r, 15_000));
-
-            await sendSlashCommand(serverWin, '/call end');
+            // End the call via the Calls plugin REST API using the sysadmin token.
+            // The test user's rate limiter (burst=10, 1/sec refill) is exhausted by
+            // WebRTC ICE candidate exchange during call setup. Using the admin token
+            // bypasses this — it has a separate bucket that has not been touched by
+            // any Calls traffic.
+            await apiRequest(testServerUrl, adminToken, `/plugins/com.mattermost.calls/calls/${townSquare.id}/end`, {
+                method: 'POST',
+            });
 
             await expect.poll(
                 () => findCallsWidgetWindow(electronApp),
