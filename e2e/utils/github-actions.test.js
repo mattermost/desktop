@@ -47,6 +47,12 @@ describe('runBelongsToPr', () => {
         assert.equal(runBelongsToPr(run, 42, 'fork-feature'), true);
         assert.equal(prNumberFromRunTitle(run), 42);
     });
+
+    it('does not match a titled other-PR run even when head_branch equals this PR branch', () => {
+        const run = {display_title: `E2E PR #43 @ ${sha}`, head_branch: 'feature'};
+        assert.equal(runBelongsToPr(run, 42, 'feature'), false);
+        assert.equal(runBelongsToPr(run, 43, 'feature'), true);
+    });
 });
 
 describe('cancelActiveE2ERuns', () => {
@@ -69,6 +75,7 @@ describe('cancelActiveE2ERuns', () => {
                                     {id: 2, display_title: `E2E PR #43 @ ${sha}`, head_branch: 'master', status: params.status},
                                     {id: 3, name: 'E2E', display_title: 'E2E', head_branch: 'feature', status: params.status},
                                     {id: 4, name: 'E2E', display_title: 'E2E', head_branch: 'master', status: params.status},
+                                    {id: 5, display_title: `E2E PR #43 @ ${otherSha}`, head_branch: 'feature', status: params.status},
                                 ],
                             },
                         };
@@ -91,6 +98,43 @@ describe('cancelActiveE2ERuns', () => {
         assert.equal(listed[0].event, 'workflow_dispatch');
         assert.deepEqual(cancelled, [1, 3]);
         assert.equal(count, 2);
+    });
+
+    it('does not cancel untitled feature-branch runs when headBranch is omitted', async () => {
+        const cancelled = [];
+        const github = {
+            rest: {
+                actions: {
+                    listRepoWorkflows: async () => ({data: {workflows: [{id: 9, name: 'Electron Playwright Tests'}]}}),
+                    listWorkflowRuns: async (params) => {
+                        if (params.page > 1) {
+                            return {data: {workflow_runs: []}};
+                        }
+                        return {
+                            data: {
+                                workflow_runs: [
+                                    {id: 1, display_title: `E2E PR #42 @ ${sha}`, head_branch: 'master', status: params.status},
+                                    {id: 3, name: 'E2E', display_title: 'E2E', head_branch: 'feature', status: params.status},
+                                    {id: 5, display_title: `E2E PR #43 @ ${sha}`, head_branch: 'feature', status: params.status},
+                                ],
+                            },
+                        };
+                    },
+                    cancelWorkflowRun: async ({run_id: id}) => {
+                        cancelled.push(id);
+                    },
+                },
+            },
+        };
+
+        const count = await cancelActiveE2ERuns({
+            github,
+            context: {repo: {owner: 'mattermost', repo: 'desktop'}},
+            prNumber: 42,
+        });
+
+        assert.deepEqual(cancelled, [1]);
+        assert.equal(count, 1);
     });
 });
 

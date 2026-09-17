@@ -84,6 +84,7 @@ jobs:
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
             const pr = context.payload.pull_request;
+            const isFork = pr.head.repo.full_name !== `${owner}/${repo}`;
 
             try {
               await github.rest.issues.removeLabel({
@@ -102,7 +103,7 @@ jobs:
               github,
               context,
               prNumber: issue_number,
-              headBranch: pr.head.ref,
+              ...(isFork ? {} : {headBranch: pr.head.ref}),
             });
             await markE2EStatusesCancelled({
               github,
@@ -190,7 +191,6 @@ jobs:
                 github,
                 context,
                 prNumber: issue_number,
-                headBranch: pr.head.ref,
               });
               return;
             }

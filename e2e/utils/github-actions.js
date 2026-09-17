@@ -171,8 +171,9 @@ function prNumberFromRunTitle(run) {
  * for same-repo feature branches, never for master/default-branch dispatches.
  */
 function runBelongsToPr(run, prNumber, prHeadRef) {
-    if (prNumberFromRunTitle(run) === prNumber) {
-        return true;
+    const titledPrNumber = prNumberFromRunTitle(run);
+    if (titledPrNumber !== null) {
+        return titledPrNumber === prNumber;
     }
     return Boolean(
         prHeadRef &&
