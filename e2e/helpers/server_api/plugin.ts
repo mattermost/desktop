@@ -126,13 +126,18 @@ export async function ensureCallsPlugin(baseUrl: string, token: string): Promise
     const teams = await apiRequest<Array<{id: string}>>(baseUrl, token, '/api/v4/users/me/teams');
     if (teams.length > 0) {
         const firstTeamId = teams[0].id;
+        let callCommandReady = false;
         const cmdDeadline = Date.now() + 30_000;
         while (Date.now() < cmdDeadline) {
             const commands = await apiRequest<Array<{trigger: string}>>(baseUrl, token, `/api/v4/commands?team_id=${firstTeamId}`);
             if (commands.some((c) => c.trigger === 'call')) {
+                callCommandReady = true;
                 break;
             }
             await new Promise((resolve) => setTimeout(resolve, 1_000));
+        }
+        if (!callCommandReady) {
+            throw new Error('Calls plugin did not register the /call slash command within 30 seconds');
         }
     }
 }
