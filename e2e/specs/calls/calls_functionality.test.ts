@@ -8,7 +8,6 @@ import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost, logoutFromMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {apiLogin} from '../../helpers/server_api/client';
-import {ensureCallsPlugin} from '../../helpers/server_api/plugin';
 import {apiGetAdminTeamId, createCallsTestUser, type TestUser} from '../../helpers/server_api/user';
 import type {ServerView} from '../../helpers/serverView';
 
@@ -30,8 +29,11 @@ test.describe('calls/calls_functionality', () => {
             return;
         }
         testServerUrl = serverUrl;
+
+        // The Calls plugin itself is installed, enabled and configured once per run in
+        // global-setup.ts — never here. Doing it per-file restarts the plugin server-wide
+        // while another worker may be mid-call.
         adminToken = await apiLogin(serverUrl, username, password);
-        await ensureCallsPlugin(serverUrl, adminToken);
         teamId = await apiGetAdminTeamId(serverUrl, adminToken);
     });
 

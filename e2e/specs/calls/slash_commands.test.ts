@@ -7,7 +7,6 @@ import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost, logoutFromMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {apiLogin, apiRequest} from '../../helpers/server_api/client';
-import {ensureCallsPlugin} from '../../helpers/server_api/plugin';
 import {apiGetAdminTeamId, createCallsTestUser, type TestUser} from '../../helpers/server_api/user';
 import type {ServerView} from '../../helpers/serverView';
 
@@ -34,17 +33,13 @@ test.describe('calls/slash_commands', () => {
             return;
         }
         testServerUrl = serverUrl;
-        adminToken = await apiLogin(serverUrl, username, password);
-        await ensureCallsPlugin(serverUrl, adminToken);
-        teamId = await apiGetAdminTeamId(serverUrl, adminToken);
 
-        // SiteURL is required by the Calls plugin /logs/upload endpoint to construct
-        // DM links. Set it here so this file is self-contained when run in isolation
-        // without calls_plugin_setup.test.ts.
-        await apiRequest(serverUrl, adminToken, '/api/v4/config/patch', {
-            method: 'PUT',
-            body: JSON.stringify({ServiceSettings: {SiteURL: serverUrl}}),
-        });
+        // The Calls plugin itself is installed, enabled and configured once per run in
+        // global-setup.ts — never here. Doing it per-file restarts the plugin server-wide
+        // while another worker may be mid-call. global-setup.ts also sets SiteURL, which
+        // the /call logs endpoint needs to build DM links.
+        adminToken = await apiLogin(serverUrl, username, password);
+        teamId = await apiGetAdminTeamId(serverUrl, adminToken);
     });
 
     test.beforeEach(async ({serverMap, electronApp}) => {
