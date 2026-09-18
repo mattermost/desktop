@@ -16,6 +16,15 @@ test.describe('calls/calls_functionality', () => {
     test.use({appConfig: demoMattermostConfig, grantMediaPermissions: true});
     test.setTimeout(120_000);
 
+    // Suite-level, so Playwright never resolves the electronApp/serverMap fixtures
+    // when the server env is absent. A guard inside beforeEach runs only AFTER those
+    // fixtures are built, so an unconfigured run would launch Electron and fail on
+    // the server view instead of reporting a clean skip.
+    test.skip(
+        !process.env.MM_TEST_SERVER_URL || !process.env.MM_TEST_USER_NAME || !process.env.MM_TEST_PASSWORD,
+        'MM_TEST_SERVER_URL, MM_TEST_USER_NAME and MM_TEST_PASSWORD required',
+    );
+
     let serverWin: ServerView;
     let adminToken: string;
     let teamId: string;
@@ -44,8 +53,10 @@ test.describe('calls/calls_functionality', () => {
     });
 
     test.beforeEach(async ({serverMap, electronApp}) => {
-        if (!process.env.MM_TEST_SERVER_URL || !adminToken || !teamId) {
-            test.skip(true, 'MM_TEST_SERVER_URL required');
+        // Env is handled by the suite-level skip above; this only catches a
+        // beforeAll that returned without provisioning.
+        if (!adminToken || !teamId) {
+            test.skip(true, 'Calls suite setup did not complete');
             return;
         }
 

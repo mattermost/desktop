@@ -147,9 +147,14 @@ export function writeConfigFile(userDataDir: string, config: AppConfig): void {
  *
  * MUST be synchronous — must complete before electron.launch() is called.
  */
-export function writePermissionsFile(userDataDir: string, config: AppConfig): void {
+export function writePermissionsFile(userDataDir: string, config: AppConfig | object): void {
     const permissions: Record<string, unknown> = {};
-    for (const server of config.servers) {
+
+    // launchDirectTestApp takes `AppConfig | object`, so `servers` may be absent or
+    // malformed (a spec deliberately writing a bad config, for instance). Grant nothing
+    // in that case rather than throwing before Electron has even launched.
+    const servers = (config as Partial<AppConfig>).servers;
+    for (const server of Array.isArray(servers) ? servers : []) {
         let origin: string;
         try {
             origin = new URL(server.url).origin;
