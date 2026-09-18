@@ -15,8 +15,10 @@ const E2E_OS_STATUS_CONTEXTS = E2E_OS_LIST.map((os) => `e2e/${os}`);
 const E2E_POLICY_STATUS_CONTEXTS = E2E_POLICY_OS_LIST.map((os) => `e2e/${os}-policy`);
 
 const E2E_WORKFLOW_NAME = 'Electron Playwright Tests';
-const ACTIVE_RUN_STATUSES = ['in_progress', 'queued', 'waiting'];
+const ACTIVE_RUN_STATUSES = ['in_progress', 'queued', 'waiting', 'pending', 'requested'];
 const CANCELLED_STATUS_DESCRIPTION = 'E2E cancelled — tests skipped';
+const E2E_PR_RUN_TITLE = /^E2E PR #([1-9][0-9]*) @ [0-9a-f]{40}$/;
+const DEFAULT_BRANCH = 'master';
 
 /**
  * @param {string} [value] - platform / os field from matrix
@@ -145,43 +147,78 @@ async function markE2EStatusesCancelled({github, context, sha, reason = CANCELLE
     ));
 }
 
-/**
- * Return true when a workflow run belongs to the given PR.
- * Matterwick dispatches with version_name set to the PR head branch, so
- * head_branch on the run matches pull_request.head.ref.
- */
-function runBelongsToPr(run, headBranch) {
-    return Boolean(headBranch && run.head_branch === headBranch);
+function runIdentityTitles(run) {
+    return [run?.display_title, run?.name].filter((title) => Boolean(title));
 }
 
-async function resolvePrHeadBranch({github, context, prNumber, headBranch}) {
-    if (headBranch) {
-        return headBranch;
-    }
+function runIdentityTitle(run) {
+    return runIdentityTitles(run).find((title) => E2E_PR_RUN_TITLE.test(title)) || run?.display_title || run?.name || '';
+}
 
-    if (!prNumber) {
-        return null;
+function prNumberFromRunTitle(run) {
+    for (const title of runIdentityTitles(run)) {
+        const match = title.match(E2E_PR_RUN_TITLE);
+        if (match) {
+            return Number.parseInt(match[1], 10);
+        }
     }
+    return null;
+}
 
-    const {data: pr} = await github.rest.pulls.get({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        pull_number: prNumber,
-    });
-    return pr.head.ref;
+/**
+ * Return true when a workflow run belongs to the given PR.
+ * Ownership is the run-name contract. head_branch is only a legacy fallback
+ * for same-repo feature branches, never for master/default-branch dispatches.
+ */
+function runBelongsToPr(run, prNumber, prHeadRef) {
+    const titledPrNumber = prNumberFromRunTitle(run);
+    if (titledPrNumber !== null) {
+        return titledPrNumber === prNumber;
+    }
+    return Boolean(
+        prHeadRef &&
+        prHeadRef !== DEFAULT_BRANCH &&
+        run?.head_branch === prHeadRef,
+    );
+}
+
+async function listActiveWorkflowRuns({github, owner, repo, workflowId}) {
+    const runs = [];
+    const seen = new Set();
+    for (const status of ACTIVE_RUN_STATUSES) {
+        for (let page = 1; ; page += 1) {
+            const {data} = await github.rest.actions.listWorkflowRuns({
+                owner,
+                repo,
+                workflow_id: workflowId,
+                status,
+                event: 'workflow_dispatch',
+                per_page: 100,
+                page,
+            });
+            const pageRuns = data.workflow_runs || [];
+            for (const run of pageRuns) {
+                if (!seen.has(run.id)) {
+                    seen.add(run.id);
+                    runs.push(run);
+                }
+            }
+            if (pageRuns.length < 100) {
+                break;
+            }
+        }
+    }
+    return runs;
 }
 
 /**
  * Cancel active Electron Playwright Tests runs for a single PR.
- * Only runs whose head_branch matches the PR branch are cancelled so concurrent
- * E2E runs on other PRs are not interrupted.
+ * Lists by status and paginates; does not filter the API by PR branch.
  */
 async function cancelActiveE2ERuns({github, context, prNumber, headBranch}) {
     const {owner, repo} = context.repo;
-    const branch = await resolvePrHeadBranch({github, context, prNumber, headBranch});
-
-    if (!branch) {
-        console.log('cancelActiveE2ERuns: no PR branch resolved — skipping cancellation');
+    if (!prNumber) {
+        console.log('cancelActiveE2ERuns: no PR number — skipping cancellation');
         return 0;
     }
 
@@ -194,30 +231,25 @@ async function cancelActiveE2ERuns({github, context, prNumber, headBranch}) {
     }
 
     let cancelled = 0;
+    const runs = await listActiveWorkflowRuns({
+        github,
+        owner,
+        repo,
+        workflowId: e2eWorkflow.id,
+    });
 
-    for (const status of ACTIVE_RUN_STATUSES) {
-        const {data: {workflow_runs: workflowRuns}} = await github.rest.actions.listWorkflowRuns({
-            owner,
-            repo,
-            workflow_id: e2eWorkflow.id,
-            branch,
-            status,
-            per_page: 20,
-        });
+    for (const run of runs) {
+        if (!runBelongsToPr(run, prNumber, headBranch)) {
+            console.log(`Skipping E2E run ${run.id} (${runIdentityTitle(run) || run.head_branch || 'unidentified'})`);
+            continue;
+        }
 
-        for (const run of workflowRuns) {
-            if (!runBelongsToPr(run, branch)) {
-                console.log(`Skipping E2E run ${run.id} (branch ${run.head_branch ?? 'unknown'} != ${branch})`);
-                continue;
-            }
-
-            try {
-                await github.rest.actions.cancelWorkflowRun({owner, repo, run_id: run.id});
-                console.log(`Cancelled E2E run ${run.id} for branch ${branch} (status: ${status})`);
-                cancelled += 1;
-            } catch (error) {
-                console.log(`Could not cancel run ${run.id}: ${error.message}`);
-            }
+        try {
+            await github.rest.actions.cancelWorkflowRun({owner, repo, run_id: run.id});
+            console.log(`Cancelled E2E run ${run.id} for PR #${prNumber}`);
+            cancelled += 1;
+        } catch (error) {
+            console.log(`Could not cancel run ${run.id}: ${error.message}`);
         }
     }
 
@@ -243,27 +275,10 @@ async function removeE2ELabel({github, context}) {
             return;
         }
 
-        let prNumber = null;
-
-        if (run.data.pull_requests && run.data.pull_requests.length > 0) {
-            prNumber = run.data.pull_requests[0].number;
-        } else {
-            const branchName = run.data.head_branch;
-            if (branchName) {
-                const headOwner = run.data.head_repository?.owner?.login || context.repo.owner;
-                const prs = await github.rest.pulls.list({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    state: 'open',
-                    head: `${headOwner}:${branchName}`,
-                });
-                if (prs.data && prs.data.length > 0) {
-                    const matchingPr = prs.data.find(
-                        (pr) => pr.head && pr.head.sha === run.data.head_sha,
-                    );
-                    prNumber = (matchingPr || prs.data[0]).number;
-                }
-            }
+        const prNumber = prNumberFromRunTitle(run.data);
+        if (!prNumber) {
+            console.log('Label removal skipped - run title has no PR identity');
+            return;
         }
 
         if (prNumber) {
@@ -291,6 +306,9 @@ module.exports = {
     removeE2ELabel,
     markE2EStatusesCancelled,
     cancelActiveE2ERuns,
+    runBelongsToPr,
+    prNumberFromRunTitle,
+    runIdentityTitle,
     updateInitialOsStatuses,
     osStatusContext,
     policyStatusContext,

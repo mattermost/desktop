@@ -5,8 +5,10 @@ name: E2E PR Trigger
 # Manual E2E/Run removal cancels in-flight runs and leaves e2e/* red.
 # One job keeps the PR checks list to a single row. Concurrency is keyed by
 # event type so unrelated label bots cannot cancel an in-progress trigger (PR #3891).
+# pull_request_target loads this file from the default branch so fork PRs can
+# receive label writes. Checkout is always ${{ github.sha }} (trusted source).
 on:
-  pull_request:
+  pull_request_target:
     types:
       - opened
       - reopened
@@ -29,6 +31,7 @@ jobs:
     name: E2E label
     runs-on: ubuntu-24.04
     permissions:
+      contents: read
       issues: write
       pull-requests: write
       actions: write
@@ -53,11 +56,11 @@ jobs:
         && github.event.sender.login != 'github-actions[bot]'
       )
     steps:
-      # Always the base ref's own reviewed copy — this job holds write-scoped
-      # tokens, so it must never execute code from the untrusted PR head.
+      # Default-branch workflow source only. Never execute PR-authored scripts.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.base.ref }}
+          ref: ${{ github.sha }}
+          persist-credentials: false
 
       - name: Cancel E2E on manual label removal
         if: >-
@@ -81,6 +84,7 @@ jobs:
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
             const pr = context.payload.pull_request;
+            const isFork = pr.head.repo.full_name !== `${owner}/${repo}`;
 
             try {
               await github.rest.issues.removeLabel({
@@ -99,7 +103,7 @@ jobs:
               github,
               context,
               prNumber: issue_number,
-              headBranch: pr.head.ref,
+              ...(isFork ? {} : {headBranch: pr.head.ref}),
             });
             await markE2EStatusesCancelled({
               github,
@@ -120,6 +124,11 @@ jobs:
           script: |
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
+            const pr = context.payload.pull_request;
+            if (pr.head.repo.full_name !== `${owner}/${repo}`) {
+              core.info(`PR #${issue_number} is a fork — not re-arming E2E/Run after Override removal.`);
+              return;
+            }
 
             try {
               await github.rest.issues.removeLabel({
@@ -153,6 +162,7 @@ jobs:
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
             const pr = context.payload.pull_request;
+            const isFork = pr.head.repo.full_name !== `${owner}/${repo}`;
 
             const { data: labels } = await github.rest.issues.listLabelsOnIssue({
               owner,
@@ -160,6 +170,30 @@ jobs:
               issue_number,
             });
             const labelNames = labels.map((label) => label.name);
+
+            if (isFork) {
+              core.info(`PR #${issue_number} is a fork — stripping E2E/Run without re-adding.`);
+              if (labelNames.includes('E2E/Run')) {
+                try {
+                  await github.rest.issues.removeLabel({
+                    owner,
+                    repo,
+                    issue_number,
+                    name: 'E2E/Run',
+                  });
+                } catch (error) {
+                  if (error.status !== 404) {
+                    throw error;
+                  }
+                }
+              }
+              await cancelActiveE2ERuns({
+                github,
+                context,
+                prNumber: issue_number,
+              });
+              return;
+            }
 
             if (labelNames.includes('E2E/Override')) {
               core.info(`PR #${issue_number} has E2E/Override — skipping E2E/Run refresh.`);

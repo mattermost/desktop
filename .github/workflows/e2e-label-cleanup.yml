@@ -12,6 +12,7 @@ on:
     types: [completed]
 
 permissions:
+  contents: read
   issues: write
   pull-requests: write
   actions: read
@@ -24,6 +25,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
 
       - name: Remove E2E/Run label
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
@@ -31,8 +35,7 @@ jobs:
         with:
           script: |
             const { removeE2ELabel } = require('./e2e/utils/github-actions.js');
-            // Pass the original test workflow's run ID so removeE2ELabel can
-            // look up the dispatching branch and find the associated PR.
+            // Title-only association: E2E PR #<n> @ <40-hex>. Never head_branch.
             await removeE2ELabel({
               github,
               context: {
