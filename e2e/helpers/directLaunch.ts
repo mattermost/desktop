@@ -57,7 +57,7 @@ export async function launchDirectTestApp(
     if (writeConfig) {
         writeConfigFile(userDataDir, config as AppConfig);
         if (grantMediaPermissions) {
-            writePermissionsFile(userDataDir, config as AppConfig);
+            writePermissionsFile(userDataDir, config);
         }
     }
 

@@ -20,6 +20,15 @@ test.describe('calls/slash_commands', () => {
     test.describe.configure({mode: 'serial'});
     test.setTimeout(120_000);
 
+    // Suite-level, so Playwright never resolves the electronApp/serverMap fixtures
+    // when the server env is absent. A guard inside beforeEach runs only AFTER those
+    // fixtures are built, so an unconfigured run would launch Electron and fail on
+    // the server view instead of reporting a clean skip.
+    test.skip(
+        !process.env.MM_TEST_SERVER_URL || !process.env.MM_TEST_USER_NAME || !process.env.MM_TEST_PASSWORD,
+        'MM_TEST_SERVER_URL, MM_TEST_USER_NAME and MM_TEST_PASSWORD required',
+    );
+
     let serverWin: ServerView;
     let adminToken: string;
     let teamId: string;
@@ -49,8 +58,10 @@ test.describe('calls/slash_commands', () => {
     });
 
     test.beforeEach(async ({serverMap, electronApp}) => {
-        if (!process.env.MM_TEST_SERVER_URL || !adminToken || !teamId) {
-            test.skip(true, 'MM_TEST_SERVER_URL required');
+        // Env is handled by the suite-level skip above; this only catches a
+        // beforeAll that returned without provisioning.
+        if (!adminToken || !teamId) {
+            test.skip(true, 'Calls suite setup did not complete');
             return;
         }
 
@@ -135,11 +146,6 @@ test.describe('calls/slash_commands', () => {
         'MM-T5590 /call logs — returns call log output',
         {tag: ['@P1', '@all']},
         async () => {
-            if (!process.env.MM_TEST_SERVER_URL) {
-                test.skip(true, 'MM_TEST_SERVER_URL required');
-                return;
-            }
-
             // No call start here — this suite is serial so T5588/T5589 already
             // confirmed plugin availability. Starting a call would consume rate
             // limiter tokens immediately before /logs/upload hits the same limiter.
