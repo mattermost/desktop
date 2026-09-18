@@ -7,11 +7,11 @@ import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost, logoutFromMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {apiLogin} from '../../helpers/server_api/client';
-import {apiGetAdminTeamId, createCallsTestUser, type TestUser} from '../../helpers/server_api/user';
+import {apiGetAdminTeamId, createCallsTestUser, deactivateCallsTestUsers, type TestUser} from '../../helpers/server_api/user';
 import type {ServerView} from '../../helpers/serverView';
 
 test.describe('calls/keyboard_shortcuts', () => {
-    test.use({appConfig: demoMattermostConfig});
+    test.use({appConfig: demoMattermostConfig, grantMediaPermissions: true});
     test.describe.configure({mode: 'serial'});
     test.setTimeout(120_000);
 
@@ -36,6 +36,12 @@ test.describe('calls/keyboard_shortcuts', () => {
         teamId = await apiGetAdminTeamId(serverUrl, adminToken);
     });
 
+    test.afterAll(async () => {
+        if (testServerUrl && adminToken) {
+            await deactivateCallsTestUsers(testServerUrl, adminToken);
+        }
+    });
+
     test.beforeEach(async ({serverMap, electronApp}) => {
         if (!process.env.MM_TEST_SERVER_URL || !adminToken || !teamId) {
             test.skip(true, 'MM_TEST_SERVER_URL required');
@@ -54,11 +60,6 @@ test.describe('calls/keyboard_shortcuts', () => {
         await serverWin.waitForSelector('#channelHeaderTitle', {timeout: 10_000});
         await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
         await leaveCallIfActive(electronApp);
-
-        // Allow the Calls plugin rate limiter (burst=10, 1/sec refill) to recover
-        // between tests. ICE candidate exchange from the previous call exhausts the
-        // bucket; /call start in the next test gets a silent 429 without this wait.
-        await new Promise((r) => setTimeout(r, 10_000));
     });
 
     // Covered by MM-T5411 in calls_functionality.test.ts (smoke test). Skip here to avoid duplicate coverage.

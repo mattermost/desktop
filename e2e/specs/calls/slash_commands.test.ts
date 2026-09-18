@@ -7,7 +7,7 @@ import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost, logoutFromMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {apiLogin, apiRequest} from '../../helpers/server_api/client';
-import {apiGetAdminTeamId, createCallsTestUser, type TestUser} from '../../helpers/server_api/user';
+import {apiGetAdminTeamId, createCallsTestUser, deactivateCallsTestUsers, type TestUser} from '../../helpers/server_api/user';
 import type {ServerView} from '../../helpers/serverView';
 
 async function sendSlashCommand(serverWin: ServerView, command: string): Promise<void> {
@@ -16,7 +16,7 @@ async function sendSlashCommand(serverWin: ServerView, command: string): Promise
 }
 
 test.describe('calls/slash_commands', () => {
-    test.use({appConfig: demoMattermostConfig});
+    test.use({appConfig: demoMattermostConfig, grantMediaPermissions: true});
     test.describe.configure({mode: 'serial'});
     test.setTimeout(120_000);
 
@@ -42,6 +42,12 @@ test.describe('calls/slash_commands', () => {
         teamId = await apiGetAdminTeamId(serverUrl, adminToken);
     });
 
+    test.afterAll(async () => {
+        if (testServerUrl && adminToken) {
+            await deactivateCallsTestUsers(testServerUrl, adminToken);
+        }
+    });
+
     test.beforeEach(async ({serverMap, electronApp}) => {
         if (!process.env.MM_TEST_SERVER_URL || !adminToken || !teamId) {
             test.skip(true, 'MM_TEST_SERVER_URL required');
@@ -62,26 +68,31 @@ test.describe('calls/slash_commands', () => {
         await leaveCallIfActive(electronApp);
     });
 
+    // NOTE: this does NOT exercise the `/call end` slash command, despite MM-T5588's
+    // wording. Sending `/call end` as the host gets a silent HTTP 429: the caller's
+    // Calls rate limiter (burst 10, 1/sec refill) is drained by WebRTC ICE exchange
+    // during call setup, and the EndCallConfirmation modal swallows the rejection.
+    // Ending via the plugin's REST endpoint as sysadmin uses a bucket no call traffic
+    // has touched, so what is actually covered here is the desktop side: the widget
+    // and the channel/sidebar affordances react correctly when a call ends.
+    //
+    // Slash-command coverage for `/call end` is therefore still missing. Restoring it
+    // needs the rate-limit interaction solved first, not another wait.
     test(
-        'MM-T5588 /call end — host ends the call',
+        'MM-T5588 host ends the call (via Calls REST API) — desktop tears the call down',
         {tag: ['@P1', '@all']},
         async ({electronApp}) => {
             const townSquare = await apiRequest<{id: string}>(testServerUrl, adminToken, `/api/v4/teams/${teamId}/channels/name/town-square`);
 
             await startCall(electronApp, serverWin);
 
-            // End the call via the Calls plugin REST API using the sysadmin token.
-            // The test user's rate limiter (burst=10, 1/sec refill) is exhausted by
-            // WebRTC ICE candidate exchange during call setup. Using the admin token
-            // bypasses this — it has a separate bucket that has not been touched by
-            // any Calls traffic.
             await apiRequest(testServerUrl, adminToken, `/plugins/com.mattermost.calls/calls/${townSquare.id}/end`, {
                 method: 'POST',
             });
 
             await expect.poll(
                 () => findCallsWidgetWindow(electronApp),
-                {timeout: 30_000, message: 'Calls widget must close after /call end'},
+                {timeout: 30_000, message: 'Calls widget must close after the call is ended'},
             ).toBeNull();
 
             await expect.poll(

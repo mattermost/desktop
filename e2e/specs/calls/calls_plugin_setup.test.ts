@@ -10,6 +10,7 @@ import {CALLS_PLUGIN_ID, isCallsPluginEnabled} from '../../helpers/server_api/pl
 // global-setup.ts, before any worker starts — see the comment on setUpCallsPlugin
 // there for why it must not live in a spec's beforeAll.
 test.describe('calls/plugin_setup', () => {
+    // No grantMediaPermissions — this spec never opens a call.
     test.use({appConfig: demoMattermostConfig});
 
     test('Calls plugin is installed and enabled on the test server',

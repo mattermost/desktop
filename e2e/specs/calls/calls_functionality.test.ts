@@ -8,12 +8,12 @@ import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost, logoutFromMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {apiLogin} from '../../helpers/server_api/client';
-import {apiGetAdminTeamId, createCallsTestUser, type TestUser} from '../../helpers/server_api/user';
+import {apiGetAdminTeamId, createCallsTestUser, deactivateCallsTestUsers, type TestUser} from '../../helpers/server_api/user';
 import type {ServerView} from '../../helpers/serverView';
 
 test.describe('calls/calls_functionality', () => {
     test.describe.configure({mode: 'serial'});
-    test.use({appConfig: demoMattermostConfig});
+    test.use({appConfig: demoMattermostConfig, grantMediaPermissions: true});
     test.setTimeout(120_000);
 
     let serverWin: ServerView;
@@ -35,6 +35,12 @@ test.describe('calls/calls_functionality', () => {
         // while another worker may be mid-call.
         adminToken = await apiLogin(serverUrl, username, password);
         teamId = await apiGetAdminTeamId(serverUrl, adminToken);
+    });
+
+    test.afterAll(async () => {
+        if (testServerUrl && adminToken) {
+            await deactivateCallsTestUsers(testServerUrl, adminToken);
+        }
     });
 
     test.beforeEach(async ({serverMap, electronApp}) => {
