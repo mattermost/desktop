@@ -135,3 +135,36 @@ export function localNetworkConfig(serverUrl: string): AppConfig {
 export function writeConfigFile(userDataDir: string, config: AppConfig): void {
     fs.writeFileSync(path.join(userDataDir, 'config.json'), JSON.stringify(config, null, 2));
 }
+
+/**
+ * Pre-grant `media`/`screenShare` permissions for every configured server so the
+ * Calls widget can open a microphone via getUserMedia during E2E.
+ *
+ * The main process PermissionsManager reads userDataDir/permissions.json keyed by
+ * `server.url.origin` and denies `media` in test mode (NODE_ENV=test) unless it is
+ * already allowed here. Without this, the Calls WebRTC peer never establishes even
+ * with `--use-fake-device-for-media-stream`.
+ *
+ * MUST be synchronous — must complete before electron.launch() is called.
+ */
+export function writePermissionsFile(userDataDir: string, config: AppConfig | object): void {
+    const permissions: Record<string, unknown> = {};
+
+    // launchDirectTestApp takes `AppConfig | object`, so `servers` may be absent or
+    // malformed (a spec deliberately writing a bad config, for instance). Grant nothing
+    // in that case rather than throwing before Electron has even launched.
+    const servers = (config as Partial<AppConfig>).servers;
+    for (const server of Array.isArray(servers) ? servers : []) {
+        let origin: string;
+        try {
+            origin = new URL(server.url).origin;
+        } catch {
+            continue;
+        }
+        permissions[origin] = {
+            media: {allowed: true},
+            screenShare: {allowed: true},
+        };
+    }
+    fs.writeFileSync(path.join(userDataDir, 'permissions.json'), JSON.stringify(permissions, null, 2));
+}

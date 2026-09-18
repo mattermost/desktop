@@ -9,7 +9,7 @@ import type {ElectronApplication} from 'playwright';
 import {_electron as electron} from 'playwright';
 
 import {waitForAppReady, waitForMainWindow, waitForMainWindowChrome} from '../helpers/appReadiness';
-import {electronBinaryPath, appDir, demoConfig, writeConfigFile, type AppConfig} from '../helpers/config';
+import {electronBinaryPath, appDir, demoConfig, writeConfigFile, writePermissionsFile, type AppConfig} from '../helpers/config';
 import {
     closeElectronApp,
     FAST_TEARDOWN,
@@ -29,6 +29,14 @@ type Fixtures = {
      * Defaults to demoConfig. Override with test.use({ appConfig: myConfig }).
      */
     appConfig: AppConfig;
+
+    /**
+     * Pre-grant `media`/`screenShare` for every configured server before launch,
+     * so getUserMedia succeeds without a prompt. Off by default — it disables the
+     * main process PermissionsManager's test-mode denial, which a permissions test
+     * would need left intact. Opt in with test.use({grantMediaPermissions: true}).
+     */
+    grantMediaPermissions: boolean;
 
     /**
      * A launched ElectronApplication with its own isolated userDataDir.
@@ -81,13 +89,20 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
         await use(demoConfig);
     },
 
+    grantMediaPermissions: async ({}, use) => {
+        await use(false);
+    },
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    electronApp: async ({appConfig, workerElectronCleanup: _workerElectronCleanup}, use, testInfo) => {
+    electronApp: async ({appConfig, grantMediaPermissions, workerElectronCleanup: _workerElectronCleanup}, use, testInfo) => {
         const userDataDir = path.join(testInfo.outputDir, 'userdata');
         await fs.rm(userDataDir, {recursive: true, force: true});
         await fs.mkdir(userDataDir, {recursive: true});
 
         writeConfigFile(userDataDir, appConfig);
+        if (grantMediaPermissions) {
+            writePermissionsFile(userDataDir, appConfig);
+        }
 
         let launchTimeout: number;
         if (process.platform === 'win32') {
@@ -119,6 +134,8 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
                 '--disable-crash-reporter',
                 '--force-color-profile=srgb',
                 '--mute-audio',
+                '--use-fake-device-for-media-stream',
+                '--use-fake-ui-for-media-stream',
             ],
             env: {
                 ...process.env,
