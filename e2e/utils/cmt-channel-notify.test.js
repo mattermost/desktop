@@ -143,13 +143,13 @@ describe('cmt-channel-notify', () => {
             });
         });
 
-        it('still prefers the semver split when the version is semver', () => {
-            // `ubuntu-latest-8-cores` has more hyphens than a stock runner label; the
-            // semver branch must win so the runner is not truncated at the OS token.
-            assert.deepEqual(parseCmtJobName('e2e-on-ubuntu-latest-8-cores-11.9.0'), {
+        // Splitting on the version shape instead of the runner would read this as
+        // runner `ubuntu-latest-release` + version `11.9.0`.
+        it('keeps a hyphenated version out of the runner capture', () => {
+            assert.deepEqual(parseCmtJobName('e2e-on-ubuntu-latest-release-11.9.0'), {
                 os: 'linux',
-                serverVersion: '11.9.0',
-                runner: 'ubuntu-latest-8-cores',
+                serverVersion: 'release-11.9.0',
+                runner: 'ubuntu-latest',
                 kind: 'e2e',
             });
         });
