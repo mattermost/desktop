@@ -113,6 +113,47 @@ describe('cmt-channel-notify', () => {
             });
         });
 
+        // PR and master runs dispatch MM_SERVER_VERSION as a branch ref, not semver.
+        // These used to return null, which silently dropped the leg from the per-OS
+        // rollup and left e2e/<os> reporting "E2E incomplete — no results for this OS".
+        it('parses job names whose server version is a branch ref, not semver', () => {
+            assert.deepEqual(parseCmtJobName('e2e-on-ubuntu-latest-master'), {
+                os: 'linux',
+                serverVersion: 'master',
+                runner: 'ubuntu-latest',
+                kind: 'e2e',
+            });
+            assert.deepEqual(parseCmtJobName('e2e-on-macos-26-master'), {
+                os: 'macos',
+                serverVersion: 'master',
+                runner: 'macos-26',
+                kind: 'e2e',
+            });
+            assert.deepEqual(parseCmtJobName('e2e-on-windows-2022-master'), {
+                os: 'windows',
+                serverVersion: 'master',
+                runner: 'windows-2022',
+                kind: 'e2e',
+            });
+            assert.deepEqual(parseCmtJobName('e2e-on-ubuntu-22.04-release-11.9'), {
+                os: 'linux',
+                serverVersion: 'release-11.9',
+                runner: 'ubuntu-22.04',
+                kind: 'e2e',
+            });
+        });
+
+        // Splitting on the version shape instead of the runner would read this as
+        // runner `ubuntu-latest-release` + version `11.9.0`.
+        it('keeps a hyphenated version out of the runner capture', () => {
+            assert.deepEqual(parseCmtJobName('e2e-on-ubuntu-latest-release-11.9.0'), {
+                os: 'linux',
+                serverVersion: 'release-11.9.0',
+                runner: 'ubuntu-latest',
+                kind: 'e2e',
+            });
+        });
+
         it('parses policy-tests job names', () => {
             assert.deepEqual(parseCmtJobName('policy-tests-macos'), {
                 os: 'macos',
