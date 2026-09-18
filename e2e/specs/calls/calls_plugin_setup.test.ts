@@ -3,12 +3,15 @@
 
 import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
-import {apiLogin, apiRequest} from '../../helpers/server_api/client';
-import {CALLS_PLUGIN_ID, ensureCallsPlugin, isCallsPluginEnabled} from '../../helpers/server_api/plugin';
+import {apiLogin} from '../../helpers/server_api/client';
+import {CALLS_PLUGIN_ID, isCallsPluginEnabled} from '../../helpers/server_api/plugin';
 
+// Assertion only. The install/enable/configure work happens once per run in
+// global-setup.ts, before any worker starts — see the comment on setUpCallsPlugin
+// there for why it must not live in a spec's beforeAll.
 test.describe('calls/plugin_setup', () => {
+    // No grantMediaPermissions — this spec never opens a call.
     test.use({appConfig: demoMattermostConfig});
-    test.setTimeout(120_000);
 
     test('Calls plugin is installed and enabled on the test server',
         {tag: ['@P1', '@all']},
@@ -23,20 +26,10 @@ test.describe('calls/plugin_setup', () => {
             }
 
             const token = await apiLogin(serverUrl, username, password);
-            await ensureCallsPlugin(serverUrl, token);
 
-            // SiteURL is required by the Calls plugin /logs/upload endpoint to construct
-            // DM links in ephemeral posts. Set it here (before slash_commands tests run)
-            // so the config_changed WebSocket event and any resulting webapp reload
-            // complete well before T5588 executes.
-            await apiRequest(serverUrl, token, '/api/v4/config/patch', {
-                method: 'PUT',
-                body: JSON.stringify({ServiceSettings: {SiteURL: serverUrl}}),
-            });
-
-            await expect.poll(
-                () => isCallsPluginEnabled(serverUrl, token),
-                {timeout: 60_000, message: `Calls plugin (${CALLS_PLUGIN_ID}) must be active after setup`},
+            expect(
+                await isCallsPluginEnabled(serverUrl, token),
+                `Calls plugin (${CALLS_PLUGIN_ID}) must be active after global setup`,
             ).toBe(true);
         },
     );

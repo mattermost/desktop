@@ -31,12 +31,17 @@ export const DIRECT_LAUNCH_ARGS = [
 export type LaunchDirectTestAppOptions = {
     extraEnv?: Record<string, string>;
     writeConfig?: boolean;
+
+    // Pre-grant media/screenShare for the configured servers. Off by default — it
+    // disables the main process PermissionsManager's test-mode denial, which a
+    // permissions test would need left intact.
+    grantMediaPermissions?: boolean;
 };
 
 function resolveLaunchOptions(
     extraEnvOrOptions: Record<string, string> | LaunchDirectTestAppOptions,
 ): LaunchDirectTestAppOptions {
-    if ('writeConfig' in extraEnvOrOptions || 'extraEnv' in extraEnvOrOptions) {
+    if ('writeConfig' in extraEnvOrOptions || 'extraEnv' in extraEnvOrOptions || 'grantMediaPermissions' in extraEnvOrOptions) {
         return extraEnvOrOptions;
     }
     return {extraEnv: extraEnvOrOptions};
@@ -47,11 +52,13 @@ export async function launchDirectTestApp(
     config: AppConfig | object,
     extraEnvOrOptions: Record<string, string> | LaunchDirectTestAppOptions = {},
 ): Promise<ElectronApplication> {
-    const {extraEnv = {}, writeConfig = true} = resolveLaunchOptions(extraEnvOrOptions);
+    const {extraEnv = {}, writeConfig = true, grantMediaPermissions = false} = resolveLaunchOptions(extraEnvOrOptions);
 
     if (writeConfig) {
         writeConfigFile(userDataDir, config as AppConfig);
-        writePermissionsFile(userDataDir, config as AppConfig);
+        if (grantMediaPermissions) {
+            writePermissionsFile(userDataDir, config as AppConfig);
+        }
     }
 
     const app = await electron.launch({
