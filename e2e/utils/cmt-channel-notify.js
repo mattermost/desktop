@@ -7,7 +7,8 @@
  *
  * Expected job names from e2e-functional-template.yml:
  *   e2e-on-{runner}-{serverVersion}
- * e.g. e2e-on-ubuntu-latest-11.9.0, e2e-on-windows-2022-10.5.14
+ * e.g. e2e-on-ubuntu-latest-11.9.0, e2e-on-windows-2022-10.5.14,
+ *      e2e-on-ubuntu-latest-master (PR/master runs pass a branch ref, not semver)
  *
  * Per-leg pass/fail counts come from TSIO consolidated specs grouped by
  * contributing report id → gh_job_name (group report only has upload status).
@@ -74,8 +75,19 @@ function parseCmtJobName(jobName) {
         };
     }
 
-    // Server versions may include pre-release: 11.9.0-rc.3
-    const match = jobName.match(/^e2e-on-(.+)-(\d+\.\d+\.\d+(?:[-.][\w.]+)?)$/);
+    // The trailing token is MM_SERVER_VERSION, which is not always semver: CMT and
+    // release runs pass 11.9.0 / 11.9.0-rc.3, while PR and master runs pass a branch
+    // ref such as `master`. Matching semver first keeps runner labels with extra
+    // hyphens splitting correctly; the ref form then anchors on the OS token instead,
+    // which covers every runner label we dispatch (ubuntu-latest, macos-26,
+    // windows-2022, ubuntu-22.04, ...).
+    //
+    // Returning null here drops the leg from every per-OS rollup, which is how
+    // `e2e/<os>` ended up reporting "E2E incomplete — no results for this OS" on PRs
+    // even though the tests had run and reported.
+    const match =
+        jobName.match(/^e2e-on-(.+)-(\d+\.\d+\.\d+(?:[-.][\w.]+)?)$/) ||
+        jobName.match(/^e2e-on-((?:ubuntu|linux|macos|darwin|windows)-[\w.]+)-(.+)$/);
     if (!match) {
         return null;
     }
