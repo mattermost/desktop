@@ -248,6 +248,59 @@ jobs:
             });
             core.info(`TSIO report ${reportUrl}: ${status} (${JSON.stringify(stats)})`);
 
+
+
+  # Is this red E2E run the PR's fault? The job asks Test System IO for the past
+  # executions of exactly the tests that failed, applies history rules (broken on
+  # trunk, flaky on trunk, recurring on other PRs, owned by the PR's own diff) and
+  # escalates only what the rules cannot settle to a second judge that must cite
+  # evidence a reviewer can open.
+  #
+  # Deliberately its own job rather than a step in tsio-summary: that job checks
+  # out the branch under test and loads its helper files into github-script, so it
+  # must never hold pull-requests: write. This job checks out nothing and runs a
+  # single SHA-pinned action.
+  #
+  # It needs tsio-summary only for ordering — that job polls until every leg has
+  # joined the group, so by the time this runs the group is settled.
+  #
+  # It runs on master as well as on PRs. On master the question changes from "is
+  # this the PR's fault" to "is master noisy or actually broken", and only
+  # intermittency clears a failure: a test that failed in the previous master run
+  # too is a streak, not a flake, and stays red. A master run has no PR to comment
+  # on, so the story lands in the job summary.
+  #
+  # The context below is deliberately not one of the five required per-OS
+  # contexts. One desktop run is a single TSIO group covering every OS, so a
+  # verdict cannot be attributed to one leg; enforce mode here reports rather than
+  # unblocks until the group carries per-OS attribution.
+  tsio-triage:
+    name: Triage E2E failures
+    runs-on: ubuntu-24.04
+    needs:
+      - prepare-matrix
+      - tsio-summary
+    # prepare-matrix is skipped when instance_details is empty and can finish
+    # without an identity when preparation fails, so guard on the identity itself.
+    if: >-
+      always()
+      && needs.prepare-matrix.outputs.tsio-composite-identity != ''
+    permissions:
+      contents: read
+      statuses: write
+      pull-requests: write
+    steps:
+      # Triage must never change the outcome of the E2E run itself.
+      - name: e2e/triage
+        continue-on-error: true
+        uses: mattermost/mattermost-test-automation-toolkit/actions/e2e-triage@da3ab59c1a9735bc52c81a886d72e65dcd13b34d # actions/e2e-triage
+        with:
+          composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
+          status-context: e2e/triage
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          mode: ${{ vars.E2E_TRIAGE_MODE || 'report-only' }}
+
   remove-e2e-label:
     name: Remove E2E label from PR
     runs-on: ubuntu-24.04
