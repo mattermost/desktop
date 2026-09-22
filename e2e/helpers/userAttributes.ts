@@ -67,6 +67,7 @@ function customAttributeEditScopeJs(elExpr: string): string {
  */
 function customAttributeRowJs(elExpr: string): string {
     return `(
+        ${elExpr}?.closest('.section-min') ||
         ${elExpr}?.closest('.setting-list') ||
         ${elExpr}?.closest('.SettingsBlock') ||
         ${elExpr}?.closest('section') ||
@@ -328,90 +329,14 @@ async function ensureCustomAttributeEditReady(win: ServerView, fieldId: string):
     }
 }
 
-/**
- * 12.0 `getCustomProfileAttributeValues`: GET /users/:id/custom_profile_attributes
- * then `RECEIVED_CPA_VALUES`. Settings `componentDidMount` skips that fetch when
- * login left a truthy `{}`. Dispatch the same action so Cancel's `setupInitialState`
- * and the describe text (from `props.user.custom_profile_attributes`) restore the
- * saved value.
- *
- * `runInRenderer` wraps a sync IIFE; await the fetch via executeJavaScript instead.
- */
-async function fetchCustomProfileAttributeValuesIntoClient(
-    win: ServerView,
-): Promise<Record<string, string | string[]>> {
-    const result = await win.app.evaluate(async ({webContents}, webContentsId: number) => {
-        const wc = webContents.fromId(webContentsId);
-        if (!wc || wc.isDestroyed()) {
-            throw new Error(`webContents ${webContentsId} is not available`);
-        }
-
-        // Top-level promise is awaited; do not wrap this in runInRenderer.
-        return wc.executeJavaScript(`
-            (async () => {
-                const store = window.store;
-                if (!store?.getState || !store.dispatch) {
-                    return {error: 'Mattermost Redux store is not available'};
-                }
-                const userId = store.getState().entities?.users?.currentUserId;
-                if (!userId) {
-                    return {error: 'currentUserId missing'};
-                }
-                const base = String(window.basename || '').replace(/\\/$/, '');
-                const response = await fetch(base + '/api/v4/users/' + userId + '/custom_profile_attributes', {
-                    credentials: 'same-origin',
-                    headers: {'X-Requested-With': 'XMLHttpRequest'},
-                });
-                if (!response.ok) {
-                    return {error: 'CPA values fetch failed: ' + response.status};
-                }
-                const customAttributeValues = await response.json();
-                store.dispatch({
-                    type: 'RECEIVED_CPA_VALUES',
-                    data: {userID: userId, customAttributeValues},
-                });
-                const merged = store.getState().entities?.users?.profiles?.[userId]?.custom_profile_attributes;
-                return {values: merged && typeof merged === 'object' ? merged : {}};
-            })()
-        `);
-    }, win.webContentsId) as {error?: string; values?: Record<string, string | string[]>};
-
-    if (result?.error) {
-        throw new Error(result.error);
-    }
-    return result?.values ?? {};
-}
-
-async function remountProfileSettingsTab(win: ServerView, fieldId: string): Promise<void> {
-    // Switching tabs remounts UserSettingsGeneralTab so setupInitialState and
-    // describe read the current getCurrentUser map. Do not close the modal.
-    await win.runInRenderer<void>(`
-        const modal = document.querySelector(${JSON.stringify(PROFILE_SETTINGS_MODAL_SELECTOR)});
-        if (!modal) {
-            throw new Error('Profile settings modal is not open');
-        }
-        const securityNav = Array.from(modal.querySelectorAll('a, button, [role="tab"], [role="menuitem"], .nav-link'))
-            .find((element) => /^security$/i.test((element.textContent || '').trim()));
-        if (!(securityNav instanceof HTMLElement)) {
-            throw new Error('Security settings tab not found');
-        }
-        securityNav.click();
-    `);
-    await win.waitForSelector('#passwordEdit, #mfaEdit, #signInMethodEdit', {timeout: 10_000});
-
-    await win.runInRenderer<void>(`
-        const modal = document.querySelector(${JSON.stringify(PROFILE_SETTINGS_MODAL_SELECTOR)});
-        if (!modal) {
-            throw new Error('Profile settings modal is not open');
-        }
-        const profileNav = Array.from(modal.querySelectorAll('a, button, [role="tab"], [role="menuitem"], .nav-link'))
-            .find((element) => /profile settings/i.test((element.textContent || '').trim()));
-        if (!(profileNav instanceof HTMLElement)) {
-            throw new Error('Profile settings tab not found');
-        }
-        profileNav.click();
-    `);
-    await win.waitForSelector(`#customAttribute_${fieldId}Edit`, {timeout: 10_000});
+/** Reload so GET /users/me leaves CPA null and settings mount fetches the values endpoint. */
+export async function reloadAndOpenProfileSettings(win: ServerView, fieldId: string): Promise<void> {
+    await closeProfileSettings(win);
+    await reloadServerView(win.app, win.webContentsId);
+    await waitForMattermostShellReady(win);
+    await dismissBlockingOverlays(win);
+    await openProfileSettings(win);
+    await ensureCustomAttributeEditReady(win, fieldId);
 }
 
 export async function getCustomAttributeLabelsInSettings(win: ServerView): Promise<string[]> {
@@ -519,6 +444,11 @@ export async function getCustomAttributeInputValue(win: ServerView, fieldId: str
         const fieldId = ${JSON.stringify(fieldId)};
         const editBtn = document.querySelector('#customAttribute_' + fieldId + 'Edit');
         const input = document.querySelector('#customAttribute_' + fieldId);
+        if (editBtn instanceof HTMLElement) {
+            editBtn.scrollIntoView({block: 'center'});
+        } else if (input instanceof HTMLElement) {
+            input.scrollIntoView({block: 'center'});
+        }
         const editVisible = Boolean(editBtn && editBtn.getBoundingClientRect().width > 0);
         if (!editVisible && input instanceof HTMLInputElement) {
             return input.value;
@@ -530,50 +460,18 @@ export async function getCustomAttributeInputValue(win: ServerView, fieldId: str
         if (!row) {
             return '';
         }
-        let text = row.textContent || '';
+        const clone = row.cloneNode(true);
+        clone.querySelectorAll('button, a').forEach((el) => el.remove());
+        let text = clone.textContent || '';
         const labelEl = row.querySelector('label, .form__label, .setting-list-item__label, h4, h5, strong');
         const label = labelEl?.textContent?.trim() || '';
         if (label) {
             text = text.replace(label, '');
         }
         return text
-            .replace(/Edit.*$/s, '')
             .replace(/Click 'Edit' to add your custom attribute/gi, '')
             .trim();
     `);
-}
-
-export async function waitForCustomAttributeValueInProfileSettings(
-    win: ServerView,
-    fieldId: string,
-    expected: string,
-): Promise<void> {
-    await ensureCustomAttributeEditReady(win, fieldId);
-
-    const showsExpected = async () => (await getCustomAttributeInputValue(win, fieldId)).includes(expected);
-
-    // Keep the modal open. UserSettingsModal reads getCurrentUser; RECEIVED_CPA_VALUES
-    // updates that profile. Switching Security → Profile remounts the general tab
-    // so describe and setupInitialState see Engineering (live props can stay stale).
-    const clientValues = await fetchCustomProfileAttributeValuesIntoClient(win);
-    if (String(clientValues[fieldId] ?? '').includes(expected)) {
-        await remountProfileSettingsTab(win, fieldId);
-        if (await showsExpected()) {
-            return;
-        }
-    }
-
-    // PATCH / GET me never write the user map; if the CPA fetch still did not
-    // surface in settings, persist Engineering through the settings Save path
-    // then load the values endpoint into the client.
-    await editTextCustomAttribute(win, fieldId, expected, true);
-    const afterSave = await fetchCustomProfileAttributeValuesIntoClient(win);
-    await remountProfileSettingsTab(win, fieldId);
-    const visible = await getCustomAttributeInputValue(win, fieldId);
-    expect(
-        visible,
-        `Custom attribute ${fieldId} must show ${JSON.stringify(expected)} after loading CPA values (visible=${JSON.stringify(visible)}, client=${JSON.stringify(afterSave[fieldId] ?? '')})`,
-    ).toContain(expected);
 }
 
 const PROFILE_POPOVER_SELECTOR = [
