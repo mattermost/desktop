@@ -28,6 +28,14 @@ async function postListContainsLines(win: ServerView, lineOne: string, lineTwo: 
     return Boolean(found);
 }
 
+async function countPostsContaining(win: ServerView, text: string): Promise<number> {
+    return win.evaluate((needle) => {
+        return Array.from(document.querySelectorAll('.post-message__text')).filter((el) => {
+            return (el.textContent ?? '').includes(needle);
+        }).length;
+    }, text);
+}
+
 test.describe('mattermost/alt_enter', () => {
     test.use({appConfig: demoMattermostConfig});
     test.setTimeout(120_000);
@@ -88,6 +96,10 @@ test.describe('mattermost/alt_enter', () => {
                 () => postListContainsLines(firstServer!, lineOne, lineTwo),
                 {timeout: 10_000, message: 'Send button must post the composed message'},
             ).toBe(true);
+            expect(
+                await countPostsContaining(firstServer!, lineOne),
+                'Exactly one post must contain the unique first line (Alt+Enter must not have sent it)',
+            ).toBe(1);
         },
     );
 });
