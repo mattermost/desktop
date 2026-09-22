@@ -6,28 +6,32 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
+import {type FullConfig} from '@playwright/test';
+
 import {ensureElectronBinary} from './helpers/config';
 import {clearAllRegistryFiles} from './helpers/electronApp';
 import {apiLogin, apiRequest} from './helpers/server_api/client';
-import {ensureCallsPlugin} from './helpers/server_api/plugin';
+import {CALLS_PLUGIN_ID, ensureCallsPlugin, isCallsPluginEnabled} from './helpers/server_api/plugin';
 
 const MACOS_DEFAULTS_SNAPSHOT = path.join(os.tmpdir(), 'mattermost-desktop-e2e-macos-defaults-snapshot.json');
 
 /**
- * Install/enable the Calls plugin and configure it for E2E — exactly once per run,
- * before any worker starts.
+ * Install/enable the Calls plugin and configure it for E2E — once per OS server,
+ * on shard 1 (or when Playwright is not sharding). Later shards only wait for
+ * the plugin to be active and patch SiteURL; they must not disable/re-enable or
+ * they restart Calls under a shard that is already in a call.
  *
  * This MUST NOT move back into a spec's `beforeAll`. `ensureCallsPlugin` disables and
  * re-enables the plugin server-wide to reset its rate limiter, and the Calls specs run
  * across multiple workers (2 in CI on macOS/Windows). A `beforeAll` in one file would
  * tear the plugin down underneath a call another worker had already started — the
- * widget opens, then never finishes connecting. globalSetup runs once with no workers
- * alive, so the same restart is safe here.
+ * widget opens, then never finishes connecting. globalSetup runs once per shard with no
+ * workers alive, so the restart is safe on shard 1 only.
  *
  * Throws on failure rather than skipping: a server that cannot run Calls should fail
  * loudly instead of silently yielding a green run with the Calls specs erroring later.
  */
-async function setUpCallsPlugin(): Promise<void> {
+async function setUpCallsPlugin(restartPlugin: boolean): Promise<void> {
     const serverUrl = process.env.MM_TEST_SERVER_URL;
     const username = process.env.MM_TEST_USER_NAME;
     const password = process.env.MM_TEST_PASSWORD;
@@ -44,7 +48,20 @@ async function setUpCallsPlugin(): Promise<void> {
     }
 
     const token = await apiLogin(serverUrl, username, password);
-    await ensureCallsPlugin(serverUrl, token);
+    if (restartPlugin) {
+        await ensureCallsPlugin(serverUrl, token);
+    } else {
+        const deadline = Date.now() + 60_000;
+        while (Date.now() < deadline) {
+            if (await isCallsPluginEnabled(serverUrl, token)) {
+                break;
+            }
+            await new Promise((resolve) => setTimeout(resolve, 2_000));
+        }
+        if (!await isCallsPluginEnabled(serverUrl, token)) {
+            throw new Error(`Calls plugin (${CALLS_PLUGIN_ID}) did not become active within 60s`);
+        }
+    }
 
     // SiteURL is required by the Calls plugin /logs/upload endpoint to construct DM
     // links in ephemeral posts. Setting it here means the config_changed WebSocket
@@ -63,7 +80,7 @@ function readMacOsDefault(domain: string, key: string): string | null {
     }
 }
 
-export default async function globalSetup() {
+export default async function globalSetup(config: FullConfig) {
     ensureElectronBinary();
 
     // Clear stale per-worker PID shards (and any legacy shared file) from a
@@ -115,5 +132,7 @@ export default async function globalSetup() {
     }
 
     // Last, so a server-side failure cannot leave the local/OS setup above half-done.
-    await setUpCallsPlugin();
+    // shard.current is 1-based; unsharded runs have shard === null.
+    const restartCallsPlugin = !config.shard || config.shard.current === 1;
+    await setUpCallsPlugin(restartCallsPlugin);
 }
