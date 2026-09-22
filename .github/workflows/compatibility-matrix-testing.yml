@@ -208,6 +208,11 @@ jobs:
             e2e/utils/github-actions.js
           sparse-checkout-cone-mode: false
 
+      # cancelled() is only valid in job/step `if`, not in `env`.
+      - name: Detect cancelled run
+        if: cancelled()
+        run: echo "TSIO_RUN_CANCELLED=true" >> "$GITHUB_ENV"
+
       - name: Render TSIO summary + flip commit statuses
         id: summary
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0

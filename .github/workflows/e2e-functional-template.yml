@@ -357,16 +357,14 @@ jobs:
         env:
           TSIO_CONFIG: ${{ inputs.tsio-config }}
 
-      # Main OS jobs do not fail the GHA step on Playwright non-zero when TSIO is
-      # configured, so also upload when PLAYWRIGHT_EXIT_CODE != 0. Never glob
-      # e2e/test-results (Electron userdata is GB).
+      # Screenshots only — Playwright traces record fill() arguments, which include
+      # MM_TEST_PASSWORD. Never glob e2e/test-results (Electron userdata is GB).
       - name: e2e/upload-failure-artifacts
         if: ${{ failure() || (always() && env.PLAYWRIGHT_EXIT_CODE != '' && env.PLAYWRIGHT_EXIT_CODE != '0') }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: e2e-failure-${{ runner.os }}-${{ inputs.shard }}
+          name: e2e-failure-${{ env.E2E_GH_JOB_NAME }}
           path: |
-            e2e/test-results/**/trace.zip
             e2e/test-results/tsio-screenshots/**
           if-no-files-found: ignore
           retention-days: 3

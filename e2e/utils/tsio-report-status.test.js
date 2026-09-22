@@ -13,6 +13,7 @@ const {
     countReportsForBucket,
     shardsAreReady,
     shouldFailFromScope,
+    scopedHasShardFailure,
 } = require('./tsio-report-status');
 
 describe('buildOsStatusTotals', () => {
@@ -383,6 +384,67 @@ describe('flipPerOsCommitStatuses', () => {
         assert.equal(statuses[0].state, 'success');
         assert.match(statuses[0].description, /210 passed, 0 failed, 6 skipped/);
     });
+
+    it('does not flip e2e/linux green when a shard report is missing', async () => {
+        const {statuses, github, core, context, compositeIdentity} = makeHarness();
+
+        await flipPerOsCommitStatuses({
+            github,
+            context,
+            compositeIdentity,
+            detail: {
+                reports: [
+                    {gh_job_name: 'e2e-on-ubuntu-latest-master-1-of-3', status: 'complete'},
+                    {gh_job_name: 'e2e-on-ubuntu-latest-master-2-of-3', status: 'complete'},
+                ],
+            },
+            perJobCounts: {
+                'e2e-on-ubuntu-latest-master-1-of-3': {passed: 80, failed: 0, skipped: 1, flaky: 0},
+                'e2e-on-ubuntu-latest-master-2-of-3': {passed: 82, failed: 0, skipped: 1, flaky: 0},
+            },
+            targetUrl: 'https://example.test/report',
+            upstreamJobsSucceeded: false,
+            expectedOs: ['linux'],
+            readyWhenOs: 'linux',
+            minReports: 3,
+            core,
+        });
+
+        assert.equal(statuses.length, 1);
+        assert.equal(statuses[0].context, 'e2e/linux');
+        assert.notEqual(statuses[0].state, 'success');
+        assert.match(statuses[0].description, /2\/3/);
+    });
+
+    it('flips e2e/linux green only when all shards uploaded and upstream succeeded', async () => {
+        const {statuses, github, core, context, compositeIdentity} = makeHarness();
+
+        await flipPerOsCommitStatuses({
+            github,
+            context,
+            compositeIdentity,
+            detail: {
+                reports: [
+                    {gh_job_name: 'e2e-on-ubuntu-latest-master-1-of-3', status: 'complete'},
+                    {gh_job_name: 'e2e-on-ubuntu-latest-master-2-of-3', status: 'complete'},
+                    {gh_job_name: 'e2e-on-ubuntu-latest-master-3-of-3', status: 'complete'},
+                ],
+            },
+            perJobCounts: {
+                'e2e-on-ubuntu-latest-master-1-of-3': {passed: 80, failed: 0, skipped: 1, flaky: 0},
+                'e2e-on-ubuntu-latest-master-2-of-3': {passed: 70, failed: 0, skipped: 2, flaky: 0},
+                'e2e-on-ubuntu-latest-master-3-of-3': {passed: 60, failed: 0, skipped: 3, flaky: 0},
+            },
+            targetUrl: 'https://example.test/report',
+            upstreamJobsSucceeded: true,
+            expectedOs: ['linux'],
+            readyWhenOs: 'linux',
+            minReports: 3,
+            core,
+        });
+
+        assert.equal(statuses[0].state, 'success');
+    });
 });
 
 describe('reportUrlForStatusBucket', () => {
@@ -511,21 +573,60 @@ describe('shouldFailFromScope', () => {
         }), true);
     });
 
+    it('fails the scoped OS when shard reports are incomplete even if uploaded tests passed', () => {
+        const detail = {
+            reports: [
+                {gh_job_name: 'e2e-on-ubuntu-latest-master-1-of-3', status: 'complete'},
+                {gh_job_name: 'e2e-on-ubuntu-latest-master-2-of-3', status: 'complete'},
+            ],
+        };
+        const byKey = buildOsStatusTotals({
+            detail,
+            perJobCounts: {
+                'e2e-on-ubuntu-latest-master-1-of-3': {passed: 80, failed: 0, skipped: 0, flaky: 0},
+                'e2e-on-ubuntu-latest-master-2-of-3': {passed: 82, failed: 0, skipped: 0, flaky: 0},
+            },
+        });
+        assert.equal(shouldFailFromScope({
+            failOnTestFailures: true,
+            readyWhenOs: 'linux',
+            overallState: 'success',
+            byKey,
+            upstreamJobsSucceeded: true,
+            minReports: 3,
+            detail,
+        }), true);
+    });
+
     it('uses global overallState when no OS/policy scope is set', () => {
         assert.equal(shouldFailFromScope({
             failOnTestFailures: true,
             overallState: 'failure',
             byKey: linuxPass,
             upstreamJobsSucceeded: true,
-            hasPerJobCounts: true,
         }), true);
         assert.equal(shouldFailFromScope({
             failOnTestFailures: true,
             overallState: 'success',
             byKey: linuxPass,
             upstreamJobsSucceeded: true,
-            hasPerJobCounts: true,
         }), false);
+    });
+});
+
+describe('scopedHasShardFailure', () => {
+    it('ignores shard failures outside the OS being flipped', () => {
+        const byKey = {
+            linux: {shardFailed: false},
+            macos: {shardFailed: true},
+        };
+        assert.equal(scopedHasShardFailure(byKey, ['linux'], []), false);
+        assert.equal(scopedHasShardFailure(byKey, ['macos'], []), true);
+        assert.equal(scopedHasShardFailure(byKey, null, ['macos']), false);
+        assert.equal(scopedHasShardFailure({
+            'macos-policy': {shardFailed: true},
+            linux: {shardFailed: true},
+        }, null, ['macos']), true);
     });
 });
 

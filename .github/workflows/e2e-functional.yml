@@ -489,7 +489,13 @@ jobs:
             e2e/utils/github-actions.js
           sparse-checkout-cone-mode: false
 
-      - name: Render TSIO summary + channel notify (per-OS statuses already flipped)
+      # cancelled() is only valid in job/step `if`, not in `env`. A superseded
+      # E2E/Run still runs this always() job — skip the channel "failed" post.
+      - name: Detect cancelled run
+        if: cancelled()
+        run: echo "TSIO_RUN_CANCELLED=true" >> "$GITHUB_ENV"
+
+      - name: Render TSIO summary + channel notify (does not flip per-OS statuses)
         id: summary
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
@@ -518,7 +524,7 @@ jobs:
               compositeIdentity: JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY),
               totalReportsExpected: parseInt(process.env.TSIO_TOTAL_REPORTS_EXPECTED, 10),
               upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
-              perOsCommitStatuses: true,
+              perOsCommitStatuses: false,
               expectedOs,
               expectedPolicyOs: E2E_POLICY_OS_LIST,
               failOnTestFailures: true,
@@ -799,7 +805,6 @@ jobs:
         with:
           name: e2e-failure-policy-${{ runner.os }}
           path: |
-            e2e/test-results/**/trace.zip
             e2e/test-results/tsio-screenshots/**
             e2e/playwright-report
           if-no-files-found: ignore
