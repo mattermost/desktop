@@ -169,13 +169,15 @@ export async function navigateBackInServerView(serverWin: ServerView): Promise<v
         window.history.back();
     });
 
+    // history.back() returns before popstate. /login/desktop and .DesktopAuthToken
+    // are still present while the overlay is mounted, so wait for overlay removal
+    // (or the login form) before considering a header-Back fallback.
     await expect.poll(
         () => serverWin.evaluate(() => {
             return Boolean(document.querySelector('#input_loginId')) ||
-                Boolean(document.querySelector('.DesktopAuthToken')) ||
-                window.location.pathname.includes('/login');
+                !document.querySelector('#mock-idp-title');
         }).catch(() => false),
-        {timeout: 10_000, message: 'Server view must navigate back after history.back()'},
+        {timeout: 10_000, message: 'Mock IdP overlay must be gone or login form visible after history.back()'},
     ).toBe(true);
 
     const loginFormVisible = await serverWin.evaluate(() => Boolean(document.querySelector('#input_loginId'))).catch(() => false);
