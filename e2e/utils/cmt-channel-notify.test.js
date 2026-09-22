@@ -204,6 +204,32 @@ describe('cmt-channel-notify', () => {
             assert.equal(parseCmtJobName('e2e-on-ubuntu-latest-11.9.0').shard, undefined);
         });
 
+        it('keeps CMT OS×version job names distinct and does not treat rc versions as shards', () => {
+            const linuxA = parseCmtJobName('e2e-on-ubuntu-latest-9.6.1');
+            const linuxB = parseCmtJobName('e2e-on-ubuntu-latest-9.5.2');
+            const macRc = parseCmtJobName('e2e-on-macos-26-11.9.0-rc.3');
+            const winRc = parseCmtJobName('e2e-on-windows-2022-11.9.0-rc.3');
+            assert.equal(linuxA?.serverVersion, '9.6.1');
+            assert.equal(linuxB?.serverVersion, '9.5.2');
+            assert.equal(macRc?.serverVersion, '11.9.0-rc.3');
+            assert.equal(winRc?.serverVersion, '11.9.0-rc.3');
+            assert.equal(linuxA?.shard, undefined);
+            assert.equal(linuxB?.shard, undefined);
+            assert.equal(macRc?.shard, undefined);
+            assert.equal(winRc?.os, 'windows');
+            assert.notEqual(linuxA?.serverVersion, linuxB?.serverVersion);
+        });
+
+        it('parses PR/master rc server versions with a shard suffix', () => {
+            assert.deepEqual(parseCmtJobName('e2e-on-ubuntu-latest-12.0.0-rc1-1-of-3'), {
+                os: 'linux',
+                serverVersion: '12.0.0-rc1',
+                runner: 'ubuntu-latest',
+                kind: 'e2e',
+                shard: '1-of-3',
+            });
+        });
+
         it('returns null for unexpected names', () => {
             assert.equal(parseCmtJobName('linux-11.9.0'), null);
             assert.equal(parseCmtJobName(''), null);

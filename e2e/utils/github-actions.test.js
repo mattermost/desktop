@@ -61,6 +61,14 @@ describe('totalReportsExpected', () => {
     it('omits policy when asked', () => {
         assert.equal(totalReportsExpected(threeOs, {includePolicy: false}), 8);
     });
+
+    it('must not be used for CMT totals (CMT is unsharded env × server, not these shard counts)', () => {
+        // compatibility-matrix-testing.yml uses jq `(.environment|length)*(.server|length)`
+        // and leaves template `shard` at 1-of-1. Feeding a 3-OS list into this helper
+        // would inflate the TSIO group to 10. Keep that path off CMT.
+        assert.equal(totalReportsExpected(threeOs), 10);
+        assert.notEqual(3, totalReportsExpected(threeOs, {includePolicy: false}));
+    });
 });
 
 describe('prepareE2eMatrix', () => {

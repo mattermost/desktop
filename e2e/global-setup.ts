@@ -11,15 +11,22 @@ import {type FullConfig} from '@playwright/test';
 import {ensureElectronBinary} from './helpers/config';
 import {clearAllRegistryFiles} from './helpers/electronApp';
 import {apiLogin, apiRequest} from './helpers/server_api/client';
-import {CALLS_PLUGIN_ID, ensureCallsPlugin, isCallsPluginEnabled} from './helpers/server_api/plugin';
+import {ensureCallsPlugin, waitForCallsPluginReady} from './helpers/server_api/plugin';
 
 const MACOS_DEFAULTS_SNAPSHOT = path.join(os.tmpdir(), 'mattermost-desktop-e2e-macos-defaults-snapshot.json');
 
 /**
  * Install/enable the Calls plugin and configure it for E2E — once per OS server,
- * on shard 1 (or when Playwright is not sharding). Later shards only wait for
- * the plugin to be active and patch SiteURL; they must not disable/re-enable or
- * they restart Calls under a shard that is already in a call.
+ * on shard 1 (or when Playwright is not sharding). Later shards wait for full
+ * readiness (active + test mode off + `/call` registered) and patch SiteURL;
+ * they must not disable/re-enable or they restart Calls under a shard that is
+ * already in a call.
+ *
+ * Restart stays on shard 1 (not "never when sharded"): it resets the in-memory
+ * rate limiter, and CMT/local `--shard=1/1` still needs it per server. All four
+ * `specs/calls/*` files currently land in shard 1, so sibling shards do not run
+ * Calls specs. A pre-shard workflow job would be the other correct option; it
+ * is more structure for the same server-local effect.
  *
  * This MUST NOT move back into a spec's `beforeAll`. `ensureCallsPlugin` disables and
  * re-enables the plugin server-wide to reset its rate limiter, and the Calls specs run
@@ -51,16 +58,7 @@ async function setUpCallsPlugin(restartPlugin: boolean): Promise<void> {
     if (restartPlugin) {
         await ensureCallsPlugin(serverUrl, token);
     } else {
-        const deadline = Date.now() + 60_000;
-        while (Date.now() < deadline) {
-            if (await isCallsPluginEnabled(serverUrl, token)) {
-                break;
-            }
-            await new Promise((resolve) => setTimeout(resolve, 2_000));
-        }
-        if (!await isCallsPluginEnabled(serverUrl, token)) {
-            throw new Error(`Calls plugin (${CALLS_PLUGIN_ID}) did not become active within 60s`);
-        }
+        await waitForCallsPluginReady(serverUrl, token, 90_000);
     }
 
     // SiteURL is required by the Calls plugin /logs/upload endpoint to construct DM
