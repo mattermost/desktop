@@ -268,13 +268,18 @@ jobs:
 
   # Flip e2e/<os> as soon as that OS's shards finish — do not wait for the other
   # platforms or the channel-notify summary.
+  #
+  # always() keeps these jobs on a failed or timed-out shard (a job timeout
+  # cancels that job, not the workflow). !cancelled() skips the TSIO poll when
+  # the *run* is cancelled (superseded PR). Master is keyed by SHA with
+  # cancel-in-progress only when pr_number is set, so this cannot hide a master result.
   e2e-linux-status:
     name: Post e2e/linux
     runs-on: ubuntu-24.04
     needs:
       - prepare-matrix
       - e2e-linux
-    if: ${{ always() && needs.prepare-matrix.outputs.linux != '[]' }}
+    if: ${{ always() && !cancelled() && needs.prepare-matrix.outputs.linux != '[]' }}
     permissions:
       contents: read
       id-token: write
@@ -322,7 +327,7 @@ jobs:
     needs:
       - prepare-matrix
       - e2e-macos
-    if: ${{ always() && needs.prepare-matrix.outputs.macos != '[]' }}
+    if: ${{ always() && !cancelled() && needs.prepare-matrix.outputs.macos != '[]' }}
     permissions:
       contents: read
       id-token: write
@@ -370,7 +375,7 @@ jobs:
     needs:
       - prepare-matrix
       - e2e-windows
-    if: ${{ always() && needs.prepare-matrix.outputs.windows != '[]' }}
+    if: ${{ always() && !cancelled() && needs.prepare-matrix.outputs.windows != '[]' }}
     permissions:
       contents: read
       id-token: write
@@ -418,7 +423,7 @@ jobs:
     needs:
       - prepare-matrix
       - e2e-policy-tests
-    if: always()
+    if: ${{ always() && !cancelled() }}
     permissions:
       contents: read
       id-token: write
@@ -475,7 +480,7 @@ jobs:
       - e2e-macos
       - e2e-windows
       - e2e-policy-tests
-    if: always()
+    if: ${{ always() && !cancelled() }}
     permissions:
       contents: read
       actions: read

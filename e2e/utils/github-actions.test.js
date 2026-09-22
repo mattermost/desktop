@@ -136,3 +136,47 @@ describe('TSIO gh-job-name equals GHA job runtime name', () => {
         assert.match(yml, /name: E2E Windows \(\$\{\{ matrix\.shardDisplay \}\}\)/);
     });
 });
+
+describe('Post/TSIO skip cancelled workflow runs', () => {
+    const yml = fs.readFileSync(path.join(__dirname, '../../.github/workflows/e2e-functional.yml'), 'utf8');
+
+    // GitHub expressions are `${{ ... }}`; join so eslint does not treat them as template interpolation.
+    const gha = (expr) => ['$', '{{ ', expr, ' }}'].join('');
+
+    function jobIf(jobId) {
+        const re = new RegExp(`(?:^|\\n)  ${jobId}:\\n(?:.*\\n)*?    if: (.+)`);
+        const match = yml.match(re);
+        assert.ok(match, `${jobId} must have an if:`);
+        return match[1];
+    }
+
+    it('Post e2e/* and TSIO summary keep always() so a failed or timed-out shard still posts', () => {
+        assert.match(jobIf('e2e-linux-status'), /always\(\)/);
+        assert.match(jobIf('e2e-macos-status'), /always\(\)/);
+        assert.match(jobIf('e2e-windows-status'), /always\(\)/);
+        assert.match(jobIf('e2e-policy-status'), /always\(\)/);
+        assert.match(jobIf('tsio-summary'), /always\(\)/);
+    });
+
+    it('Post e2e/* and TSIO summary skip when the workflow run is cancelled()', () => {
+        assert.equal(
+            jobIf('e2e-linux-status'),
+            gha("always() && !cancelled() && needs.prepare-matrix.outputs.linux != '[]'"),
+        );
+        assert.equal(
+            jobIf('e2e-macos-status'),
+            gha("always() && !cancelled() && needs.prepare-matrix.outputs.macos != '[]'"),
+        );
+        assert.equal(
+            jobIf('e2e-windows-status'),
+            gha("always() && !cancelled() && needs.prepare-matrix.outputs.windows != '[]'"),
+        );
+        assert.equal(jobIf('e2e-policy-status'), gha('always() && !cancelled()'));
+        assert.equal(jobIf('tsio-summary'), gha('always() && !cancelled()'));
+    });
+
+    it('concurrency keys master by SHA and only cancels in-progress PR runs', () => {
+        assert.ok(yml.includes('group: e2e-functional-' + gha('inputs.pr_number || github.sha')));
+        assert.ok(yml.includes('cancel-in-progress: ' + gha("inputs.pr_number != ''")));
+    });
+});
