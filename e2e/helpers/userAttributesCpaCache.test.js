@@ -19,7 +19,7 @@ describe('12.0 custom_profile_attributes fetch skip', () => {
 
     it('does not fetch when login left an empty CPA map', () => {
         // Truthy {} skips getCustomProfileAttributeValues. API PATCH is then
-        // invisible until reload — T5749 shows the empty placeholder.
+        // invisible in the already-mounted client — T5749 seeds via UI save.
         assert.equal(willFetchCpaValues({}), false);
     });
 });

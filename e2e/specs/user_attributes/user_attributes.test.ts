@@ -43,7 +43,6 @@ import {
     updateCustomProfileAttributeValues,
     type UserPropertyField,
     waitForCustomAttributeEditInProfileSettings,
-    waitForCustomAttributeValueInProfileSettings,
 } from '../../helpers/userAttributes';
 
 const FIELD_PREFIX = 'E2E_UA_';
@@ -195,7 +194,6 @@ test.describe('user_attributes/user_attributes', () => {
 
             try {
                 created = await createCustomProfileAttributeField({name: fieldName}, 0);
-                await updateCustomProfileAttributeValues({[created.id]: TEST_DEPARTMENT});
 
                 try {
                     await openProfileSettings(win);
@@ -204,17 +202,14 @@ test.describe('user_attributes/user_attributes', () => {
                     test.skip(true, 'Profile settings UI is not available on this server');
                     return;
                 }
-                await waitForCustomAttributeValueInProfileSettings(win, created.id, TEST_DEPARTMENT);
+                // 12.0 skips CPA refetch when login left user.custom_profile_attributes as {}.
+                // API PATCH never appears; seed Engineering through the settings save path
+                // that updates Redux the same way a user would, then cancel an unsaved edit.
+                await editTextCustomAttribute(win, created.id, TEST_DEPARTMENT, true);
                 await editTextCustomAttribute(win, created.id, 'Changed Value', false);
                 await cancelCustomAttributeEdit(win, created.id);
-                await expect.poll(
-                    async () => getCustomAttributeInputValue(win, created.id),
-                    {message: 'Cancel must restore the saved custom attribute value'},
-                ).toContain(TEST_DEPARTMENT);
-                await expect.poll(
-                    async () => getCustomAttributeInputValue(win, created.id),
-                    {message: 'Cancel must discard the unsaved custom attribute edit'},
-                ).not.toContain('Changed Value');
+                expect(await getCustomAttributeInputValue(win, created.id)).toContain(TEST_DEPARTMENT);
+                expect(await getCustomAttributeInputValue(win, created.id)).not.toContain('Changed Value');
                 await closeProfileSettings(win);
             } finally {
                 if (created) {

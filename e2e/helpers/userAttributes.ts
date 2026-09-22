@@ -455,40 +455,6 @@ export async function getCustomAttributeInputValue(win: ServerView, fieldId: str
     `);
 }
 
-/**
- * 12.0 UserSettingsGeneralTab / ProfilePopoverCustomAttributes only fetch CPA
- * values when `user.custom_profile_attributes` is missing. Login often leaves
- * `{}`, so API PATCH values never appear until reload. Same once-reload as field defs.
- */
-export async function waitForCustomAttributeValueInProfileSettings(
-    win: ServerView,
-    fieldId: string,
-    expected: string,
-): Promise<void> {
-    for (let attempt = 0; attempt < 2; attempt++) {
-        try {
-            await expect.poll(async () => {
-                const value = await getCustomAttributeInputValue(win, fieldId);
-                return value.includes(expected);
-            }, {
-                timeout: attempt === 0 ? 5_000 : 15_000,
-                message: `Custom attribute ${fieldId} must show ${JSON.stringify(expected)}`,
-            }).toBe(true);
-            return;
-        } catch (error) {
-            if (attempt === 1) {
-                throw error;
-            }
-            await closeProfileSettings(win).catch(() => undefined);
-            await reloadServerView(win.app, win.webContentsId);
-            await waitForMattermostShellReady(win);
-            await dismissBlockingOverlays(win);
-            await openProfileSettings(win);
-            await ensureCustomAttributeEditReady(win, fieldId);
-        }
-    }
-}
-
 const PROFILE_POPOVER_SELECTOR = [
     '#user-profile-popover',
     '.user-profile-popover',
