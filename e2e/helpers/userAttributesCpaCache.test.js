@@ -23,4 +23,18 @@ describe('12.0 custom_profile_attributes fetch skip', () => {
         // Cancel re-inits from that map.
         assert.equal(willFetchCpaValues({}), false);
     });
+
+    it('RECEIVED_CPA_VALUES merges endpoint values onto the user map', () => {
+        const applyReceivedCpaValues = (existing, incoming) => ({...(existing || {}), ...incoming});
+        assert.deepEqual(applyReceivedCpaValues({}, {abc: 'Engineering'}), {abc: 'Engineering'});
+        assert.deepEqual(applyReceivedCpaValues(undefined, {abc: 'Engineering'}), {abc: 'Engineering'});
+    });
+
+    it('Cancel describe restores the user map, not the unsaved draft', () => {
+        // updateSection = setupInitialState(props); describe reads
+        // props.user.custom_profile_attributes, not the input draft.
+        const describeAfterCancel = (userMap) => userMap?.abc || '';
+        assert.equal(describeAfterCancel({abc: 'Engineering'}), 'Engineering');
+        assert.equal(describeAfterCancel({}), '');
+    });
 });

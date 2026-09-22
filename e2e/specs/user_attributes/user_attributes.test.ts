@@ -44,6 +44,7 @@ import {
     updateCustomProfileAttributeValues,
     type UserPropertyField,
     waitForCustomAttributeEditInProfileSettings,
+    waitForCustomAttributeValueInProfileSettings,
 } from '../../helpers/userAttributes';
 
 const FIELD_PREFIX = 'E2E_UA_';
@@ -195,6 +196,7 @@ test.describe('user_attributes/user_attributes', () => {
 
             try {
                 created = await createCustomProfileAttributeField({name: fieldName}, 0);
+                await updateCustomProfileAttributeValues({[created.id]: TEST_DEPARTMENT});
 
                 try {
                     await openProfileSettings(win);
@@ -204,12 +206,10 @@ test.describe('user_attributes/user_attributes', () => {
                     return;
                 }
 
-                // 12.0 saveCustomProfileAttribute PATCHes the server but does not
-                // write user.custom_profile_attributes. Cancel's updateSection
-                // re-inits from that map (often {}), so a saved "Engineering"
-                // cannot survive Cancel. Assert the unsaved edit is discarded.
+                await waitForCustomAttributeValueInProfileSettings(win, created.id, TEST_DEPARTMENT);
                 await editTextCustomAttribute(win, created.id, 'Changed Value', false);
                 await cancelCustomAttributeEdit(win, created.id);
+                expect(await getCustomAttributeInputValue(win, created.id)).toContain(TEST_DEPARTMENT);
                 expect(await getCustomAttributeInputValue(win, created.id)).not.toContain('Changed Value');
                 await closeProfileSettings(win);
             } finally {

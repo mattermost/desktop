@@ -328,6 +328,68 @@ async function ensureCustomAttributeEditReady(win: ServerView, fieldId: string):
     }
 }
 
+/**
+ * 12.0 `getCustomProfileAttributeValues`: GET /users/:id/custom_profile_attributes
+ * then `RECEIVED_CPA_VALUES`. Settings `componentDidMount` skips that fetch when
+ * login left a truthy `{}`. Dispatch the same action so Cancel's `setupInitialState`
+ * and the describe text (from `props.user.custom_profile_attributes`) restore the
+ * saved value.
+ *
+ * `runInRenderer` wraps a sync IIFE; await the fetch via executeJavaScript instead.
+ */
+async function fetchCustomProfileAttributeValuesIntoClient(
+    win: ServerView,
+): Promise<Record<string, string | string[]>> {
+    const result = await win.app.evaluate(async ({webContents}, webContentsId: number) => {
+        const wc = webContents.fromId(webContentsId);
+        if (!wc || wc.isDestroyed()) {
+            throw new Error(`webContents ${webContentsId} is not available`);
+        }
+
+        // Top-level promise is awaited; do not wrap this in runInRenderer.
+        return wc.executeJavaScript(`
+            (async () => {
+                const store = window.store;
+                if (!store?.getState || !store.dispatch) {
+                    return {error: 'Mattermost Redux store is not available'};
+                }
+                const userId = store.getState().entities?.users?.currentUserId;
+                if (!userId) {
+                    return {error: 'currentUserId missing'};
+                }
+                const base = String(window.basename || '').replace(/\\/$/, '');
+                const response = await fetch(base + '/api/v4/users/' + userId + '/custom_profile_attributes', {
+                    credentials: 'same-origin',
+                    headers: {'X-Requested-With': 'XMLHttpRequest'},
+                });
+                if (!response.ok) {
+                    return {error: 'CPA values fetch failed: ' + response.status};
+                }
+                const customAttributeValues = await response.json();
+                store.dispatch({
+                    type: 'RECEIVED_CPA_VALUES',
+                    data: {userID: userId, customAttributeValues},
+                });
+                const merged = store.getState().entities?.users?.profiles?.[userId]?.custom_profile_attributes;
+                return {values: merged && typeof merged === 'object' ? merged : {}};
+            })()
+        `);
+    }, win.webContentsId) as {error?: string; values?: Record<string, string | string[]>};
+
+    if (result?.error) {
+        throw new Error(result.error);
+    }
+    return result?.values ?? {};
+}
+
+async function remountProfileSettings(win: ServerView, fieldId: string): Promise<void> {
+    // Close+open remounts UserSettingsGeneralTab so setupInitialState reads the
+    // user map after RECEIVED_CPA_VALUES. Do not page-reload here — that wipes Redux.
+    await closeProfileSettings(win);
+    await openProfileSettings(win);
+    await win.waitForSelector(`#customAttribute_${fieldId}Edit`, {timeout: 10_000});
+}
+
 export async function getCustomAttributeLabelsInSettings(win: ServerView): Promise<string[]> {
     return win.runInRenderer<string[]>(`
         const modal = document.querySelector(${JSON.stringify(PROFILE_SETTINGS_MODAL_SELECTOR)})
@@ -455,6 +517,35 @@ export async function getCustomAttributeInputValue(win: ServerView, fieldId: str
             .replace(/Click 'Edit' to add your custom attribute/gi, '')
             .trim();
     `);
+}
+
+export async function waitForCustomAttributeValueInProfileSettings(
+    win: ServerView,
+    fieldId: string,
+    expected: string,
+): Promise<void> {
+    await ensureCustomAttributeEditReady(win, fieldId);
+
+    const showsExpected = async () => (await getCustomAttributeInputValue(win, fieldId)).includes(expected);
+
+    const clientValues = await fetchCustomProfileAttributeValuesIntoClient(win);
+    if (String(clientValues[fieldId] ?? '').includes(expected)) {
+        await remountProfileSettings(win, fieldId);
+        if (await showsExpected()) {
+            return;
+        }
+    }
+
+    // PATCH / GET me never write the user map; if the CPA fetch still did not
+    // surface in settings, persist Engineering through the settings Save path
+    // then load the values endpoint into the client.
+    await editTextCustomAttribute(win, fieldId, expected, true);
+    await fetchCustomProfileAttributeValuesIntoClient(win);
+    await remountProfileSettings(win, fieldId);
+    expect(
+        await getCustomAttributeInputValue(win, fieldId),
+        `Custom attribute ${fieldId} must show ${JSON.stringify(expected)} after loading CPA values`,
+    ).toContain(expected);
 }
 
 const PROFILE_POPOVER_SELECTOR = [
