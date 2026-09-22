@@ -143,7 +143,12 @@ async function openAndCloseDevTools(app: ElectronApplication): Promise<void> {
         if (!win) {
             throw new Error('Main window not found');
         }
-        win.webContents.openDevTools({mode: 'detach'});
+
+        // Docked, not detach: a detached DevTools window is a second
+        // BrowserWindow. On macOS CI, closeDevTools() can leave
+        // isDevToolsOpened() true and the next Playwright main-process
+        // evaluate times out (MM-T4049).
+        win.webContents.openDevTools({mode: 'bottom'});
     });
 
     await expect.poll(
