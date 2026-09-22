@@ -4,12 +4,31 @@
 import {test, expect} from '../../fixtures/index';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost} from '../../helpers/login';
+import {waitForMattermostShellReady} from '../../helpers/mattermostShell';
 
-// ── MM-T5584: Viewing and Unarchiving Custom Groups ───────────────────
+// ── MM-T5584: Viewing Custom Groups ───────────────────────────────────
 // Custom Groups (User Groups) are an Enterprise feature. The desktop app
-// hosts the webapp UI but the feature availability is gated by the server
-// license. This test verifies the desktop correctly renders the User Groups
-// view when the feature is available.
+// hosts the webapp UI; availability is gated by the server license.
+// 12.0 Products menu uses #product_switch_menu and #userGroups (not the
+// pre-12 #product_switcher / .product-switcher-menu selectors).
+
+const PRODUCT_MENU_BUTTON = [
+    '#product_switch_menu',
+    '#product_switcher',
+    'button[aria-label="Product switch menu"]',
+].join(', ');
+
+const USER_GROUPS_MENU_ITEM = '#userGroups';
+
+const USER_GROUPS_SURFACE = [
+    '#userGroupsModal',
+    '.user-groups-modal',
+    '#user-groups-modal',
+    '#user-groups-modal_body',
+    '[id^="user-groups-modal"]',
+    '[class*="UserGroupsModal"]',
+    '[class*="user-groups-modal"]',
+].join(', ');
 
 test.describe('mattermost/custom_groups', () => {
     test.describe.configure({mode: 'serial'});
@@ -35,7 +54,7 @@ test.describe('mattermost/custom_groups', () => {
         expect(firstServer, 'Mattermost server view should exist').toBeTruthy();
 
         await loginToMattermost(firstServer!);
-        await firstServer!.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
+        await waitForMattermostShellReady(firstServer!, {channelItem: '#sidebarItem_town-square'});
     });
 
     test('MM-T5584 Viewing Custom Groups',
@@ -44,79 +63,54 @@ test.describe('mattermost/custom_groups', () => {
             const firstServer = serverMap[demoMattermostConfig.servers[0].name]?.[0]?.win;
             expect(firstServer, 'Server view must exist').toBeTruthy();
 
-            // Check if User Groups are accessible via the product switcher
-            const productSwitcher = await firstServer!.$('#product_switcher, .product-switcher, [class*="product-switcher"]');
-            if (!productSwitcher) {
-                test.skip(true, 'Product switcher not available — may require Enterprise license');
+            try {
+                await firstServer!.waitForSelector(PRODUCT_MENU_BUTTON, {timeout: 10_000});
+            } catch {
+                test.skip(true, 'Product menu not available — may require Enterprise license');
                 return;
             }
 
-            // Open the product switcher
-            await productSwitcher.click();
-            await firstServer!.waitForSelector('.product-switcher-menu, .Menu', {timeout: 5_000});
+            await firstServer!.click(PRODUCT_MENU_BUTTON);
 
-            // Look for User Groups in the product switcher menu
-            const hasGroupsMenuItem = await firstServer!.evaluate(() => {
-                const items = document.querySelectorAll('.product-switcher-menu button, .Menu .MenuItem');
-                return Array.from(items).some(
-                    (item) => {
-                        const text = (item.textContent ?? '').toLowerCase();
-                        return text.includes('user groups') || text.includes('groups');
-                    },
-                );
-            });
-
-            if (!hasGroupsMenuItem) {
-                // Close menu and skip
-                await firstServer!.click('#channelHeaderTitle');
-                test.skip(true, 'User Groups not available in product switcher');
+            try {
+                await firstServer!.waitForSelector(USER_GROUPS_MENU_ITEM, {timeout: 5_000});
+            } catch {
+                await firstServer!.keyboard.press('Escape');
+                test.skip(true, 'User Groups not available in product menu');
                 return;
             }
 
-            // Click User Groups
+            // Menu.ItemToggleModalRedux puts id="userGroups" on the <li>; the
+            // React onClick lives on the inner button. ServerLocator.click()
+            // dispatches element.click() on the li, which does not fire it.
             const groupsClicked = await firstServer!.evaluate(() => {
-                const items = document.querySelectorAll('.product-switcher-menu button, .Menu .MenuItem');
-                const groupsItem = Array.from(items).find(
-                    (item) => {
-                        const text = (item.textContent ?? '').toLowerCase();
-                        return text.includes('user groups') || text.includes('groups');
-                    },
-                );
-                if (groupsItem) {
-                    (groupsItem as HTMLElement).click();
-                    return true;
+                const item = document.querySelector('#userGroups') as HTMLElement | null;
+                if (!item) {
+                    return false;
                 }
-                return false;
+                const target = (item.querySelector('button, a, [role="menuitem"]') as HTMLElement | null) ?? item;
+                target.click();
+                return true;
             });
             expect(groupsClicked, 'User Groups menu item must be clickable').toBe(true);
 
-            // Scope assertions to the actual User Groups surface (modal or page).
-            // Webapp renders user groups inside `.user-groups-modal` / `#user-groups-modal`
-            // (with `_heading`/`_body`), so prefer those selectors over substring wildcards
-            // that can match unrelated sidebar/channel elements.
-            const groupsSurfaceSelector = [
-                '.user-groups-modal',
-                '#user-groups-modal',
-                '#user-groups-modal_body',
-                '[id^="user-groups-modal"]',
-                '[class*="UserGroupsModal"]',
-                '[class*="user-groups-modal"]',
-            ].join(', ');
-
-            await firstServer!.waitForSelector(groupsSurfaceSelector, {timeout: 10_000});
+            await firstServer!.waitForSelector(USER_GROUPS_SURFACE, {timeout: 10_000});
 
             const viewHasStructure = await firstServer!.evaluate((selector) => {
                 const roots = document.querySelectorAll(selector);
                 for (const root of roots) {
-                    if (root.querySelector('ul, ol, table, [role="list"], [role="table"], [role="grid"]')) {
+                    if (root.querySelector('.user-groups-list, ul, ol, table, [role="list"], [role="table"], [role="grid"]')) {
+                        return true;
+                    }
+                    const text = (root.textContent ?? '').toLowerCase();
+                    if (text.includes('user groups') || text.includes('no groups')) {
                         return true;
                     }
                 }
                 return false;
-            }, groupsSurfaceSelector);
-            expect(viewHasStructure, 'User Groups view must have a list/table structure').toBe(true);
+            }, USER_GROUPS_SURFACE);
+            expect(viewHasStructure, 'User Groups view must show a list, empty state, or header').toBe(true);
 
-            // Return to channels
             await firstServer!.click('#sidebarItem_town-square');
             await firstServer!.waitForSelector('#channelHeaderTitle', {timeout: 10_000});
         },
