@@ -122,19 +122,7 @@ export async function ensureMockIdpPage(serverWin: ServerView): Promise<void> {
         const install = (window as any).__e2eInstallMockIdp;
         if (typeof install === 'function') {
             install();
-            return;
         }
-
-        if (document.getElementById('mock-idp-title')) {
-            return;
-        }
-
-        const overlay = document.createElement('div');
-        overlay.id = 'e2e-mock-idp';
-        overlay.innerHTML = '<h1 id="mock-idp-title">Mock SSO Provider</h1>';
-        overlay.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;background:#fff;z-index:2147483647';
-        document.documentElement.appendChild(overlay);
-        window.addEventListener('popstate', () => overlay.remove(), {once: true});
     });
 }
 
@@ -151,7 +139,18 @@ export async function installWindowOpenStub(serverWin: ServerView, mode: WindowO
             overlay.innerHTML = '<h1 id="mock-idp-title">Mock SSO Provider</h1>';
             overlay.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;background:#fff;z-index:2147483647';
             document.documentElement.appendChild(overlay);
-            window.addEventListener('popstate', () => overlay.remove(), {once: true});
+
+            // Extra history entry so browser-back leaves the overlay, then the
+            // login-header Back (Link to /) returns to the login form. 12.0
+            // DesktopAuthToken stays mounted, so overlay-only back is not enough.
+            window.addEventListener('popstate', () => {
+                overlay.remove();
+                const back = document.querySelector('[data-testid="back_button"]');
+                if (back instanceof HTMLElement) {
+                    back.click();
+                }
+            }, {once: true});
+            window.history.pushState({e2eMockIdp: true}, '', window.location.href);
         };
         (window as any).__e2eInstallMockIdp = installMockIdp;
         window.open = () => {
