@@ -279,6 +279,17 @@ async function isCustomAttributeEditVisible(win: ServerView, fieldId: string): P
     `);
 }
 
+async function isCustomAttributeInputVisible(win: ServerView, fieldId: string): Promise<boolean> {
+    return win.runInRenderer<boolean>(`
+        const input = document.querySelector('#customAttribute_${fieldId}');
+        if (!(input instanceof HTMLElement)) {
+            return false;
+        }
+        const rect = input.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+    `);
+}
+
 /** Webapp caches CPA field defs; reload once if API-created fields are missing from Profile Settings. */
 export async function waitForCustomAttributeEditInProfileSettings(win: ServerView, fieldId: string): Promise<void> {
     await ensureCustomAttributeEditReady(win, fieldId);
@@ -344,17 +355,22 @@ export async function editTextCustomAttribute(
     newValue: string,
     save = true,
 ): Promise<void> {
-    await ensureCustomAttributeEditReady(win, fieldId);
-    await win.runInRenderer<void>(`
-        const fieldId = ${JSON.stringify(fieldId)};
-        const editBtn = document.querySelector('#customAttribute_' + fieldId + 'Edit');
-        if (!(editBtn instanceof HTMLElement)) {
-            throw new Error('Custom attribute Edit button not found for ' + fieldId);
-        }
-        editBtn.scrollIntoView({block: 'center'});
-        editBtn.click();
-    `);
-    await win.waitForSelector(`#customAttribute_${fieldId}`, {timeout: 10_000});
+    // 12.0 SettingItemMax hides Edit while the section is already open (e.g. after
+    // an invalid URL blur). Clicking Edit again waits for a hidden button, reloads,
+    // and drops the in-progress editor — webapp T5772 fills and saves in place.
+    if (!(await isCustomAttributeInputVisible(win, fieldId))) {
+        await ensureCustomAttributeEditReady(win, fieldId);
+        await win.runInRenderer<void>(`
+            const fieldId = ${JSON.stringify(fieldId)};
+            const editBtn = document.querySelector('#customAttribute_' + fieldId + 'Edit');
+            if (!(editBtn instanceof HTMLElement)) {
+                throw new Error('Custom attribute Edit button not found for ' + fieldId);
+            }
+            editBtn.scrollIntoView({block: 'center'});
+            editBtn.click();
+        `);
+        await win.waitForSelector(`#customAttribute_${fieldId}`, {timeout: 10_000});
+    }
     await win.runInRenderer<void>(`
         const fieldId = ${JSON.stringify(fieldId)};
         const input = document.querySelector('#customAttribute_' + fieldId);
@@ -392,11 +408,18 @@ export async function editTextCustomAttribute(
 
 export async function cancelCustomAttributeEdit(win: ServerView, fieldId?: string): Promise<void> {
     await win.runInRenderer<void>(`
-        const modal = document.querySelector('#accountSettingsModal, .user-settings, #userAccountModal, .AccountModal');
-        const scope = modal || document;
+        const fieldId = ${JSON.stringify(fieldId ?? '')};
+        const input = fieldId ? document.querySelector('#customAttribute_' + fieldId) : null;
+        const saveBtn = document.querySelector('#saveSetting');
+        const scope = ${customAttributeEditScopeJs('input || saveBtn')}
+            || document.querySelector(${JSON.stringify(PROFILE_SETTINGS_MODAL_SELECTOR)})
+            || document;
         const cancelBtn = Array.from(scope.querySelectorAll('button'))
             .find((button) => (button.textContent || '').trim() === 'Cancel');
-        cancelBtn?.click();
+        if (!(cancelBtn instanceof HTMLElement)) {
+            throw new Error('Cancel button not found for custom attribute edit section');
+        }
+        cancelBtn.click();
     `);
     if (fieldId) {
         await win.waitForSelector(`#customAttribute_${fieldId}Edit`, {timeout: 10_000});
@@ -430,6 +453,40 @@ export async function getCustomAttributeInputValue(win: ServerView, fieldId: str
             .replace(/Click 'Edit' to add your custom attribute/gi, '')
             .trim();
     `);
+}
+
+/**
+ * 12.0 UserSettingsGeneralTab / ProfilePopoverCustomAttributes only fetch CPA
+ * values when `user.custom_profile_attributes` is missing. Login often leaves
+ * `{}`, so API PATCH values never appear until reload. Same once-reload as field defs.
+ */
+export async function waitForCustomAttributeValueInProfileSettings(
+    win: ServerView,
+    fieldId: string,
+    expected: string,
+): Promise<void> {
+    for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+            await expect.poll(async () => {
+                const value = await getCustomAttributeInputValue(win, fieldId);
+                return value.includes(expected);
+            }, {
+                timeout: attempt === 0 ? 5_000 : 15_000,
+                message: `Custom attribute ${fieldId} must show ${JSON.stringify(expected)}`,
+            }).toBe(true);
+            return;
+        } catch (error) {
+            if (attempt === 1) {
+                throw error;
+            }
+            await closeProfileSettings(win).catch(() => undefined);
+            await reloadServerView(win.app, win.webContentsId);
+            await waitForMattermostShellReady(win);
+            await dismissBlockingOverlays(win);
+            await openProfileSettings(win);
+            await ensureCustomAttributeEditReady(win, fieldId);
+        }
+    }
 }
 
 const PROFILE_POPOVER_SELECTOR = [

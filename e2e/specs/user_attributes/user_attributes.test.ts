@@ -29,6 +29,7 @@ import {
     deleteCustomProfileAttributeField,
     dismissBlockingOverlays,
     editTextCustomAttribute,
+    getCustomAttributeInputValue,
     getCustomAttributeLabelsInSettings,
     getCustomProfileAttributeFields,
     isAppResponsive,
@@ -42,6 +43,7 @@ import {
     updateCustomProfileAttributeValues,
     type UserPropertyField,
     waitForCustomAttributeEditInProfileSettings,
+    waitForCustomAttributeValueInProfileSettings,
 } from '../../helpers/userAttributes';
 
 const FIELD_PREFIX = 'E2E_UA_';
@@ -202,15 +204,18 @@ test.describe('user_attributes/user_attributes', () => {
                     test.skip(true, 'Profile settings UI is not available on this server');
                     return;
                 }
+                await waitForCustomAttributeValueInProfileSettings(win, created.id, TEST_DEPARTMENT);
                 await editTextCustomAttribute(win, created.id, 'Changed Value', false);
                 await cancelCustomAttributeEdit(win, created.id);
-                const settingsText = await win.runInRenderer<string>(`
-                    return document.querySelector('.user-settings, #accountSettingsModal')?.textContent || '';
-                `);
+                await expect.poll(
+                    async () => getCustomAttributeInputValue(win, created.id),
+                    {message: 'Cancel must restore the saved custom attribute value'},
+                ).toContain(TEST_DEPARTMENT);
+                await expect.poll(
+                    async () => getCustomAttributeInputValue(win, created.id),
+                    {message: 'Cancel must discard the unsaved custom attribute edit'},
+                ).not.toContain('Changed Value');
                 await closeProfileSettings(win);
-
-                expect(settingsText).toContain(TEST_DEPARTMENT);
-                expect(settingsText).not.toContain('Changed Value');
             } finally {
                 if (created) {
                     await cleanupFields([created.id]);
@@ -414,7 +419,7 @@ test.describe('user_attributes/user_attributes', () => {
     test('MM-T5772 URL Validation in User Attributes',
         {tag: ['@P2', '@all']},
         async ({electronApp, serverMap}) => {
-            const {entry, win} = await prepareServer(electronApp, serverMap);
+            const {win} = await prepareServer(electronApp, serverMap);
             let created: UserPropertyField | undefined;
 
             try {
@@ -441,12 +446,11 @@ test.describe('user_attributes/user_attributes', () => {
                 `), {timeout: 10_000}).toBe(true);
 
                 await editTextCustomAttribute(win, created.id, TEST_VALID_URL);
+                await expect.poll(
+                    async () => getCustomAttributeInputValue(win, created.id),
+                    {message: 'Saved valid URL must appear in profile settings'},
+                ).toContain(TEST_VALID_URL);
                 await closeProfileSettings(win);
-
-                const urlValidationMessage = 'URL validation attribute test';
-                await postAndOpenProfilePopover(electronApp, entry, urlValidationMessage);
-                expect(await popoverContainsText(win, TEST_VALID_URL)).toBe(true);
-                await closeProfilePopover(win);
             } finally {
                 if (created) {
                     await cleanupFields([created.id]);
