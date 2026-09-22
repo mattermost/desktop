@@ -382,14 +382,6 @@ async function fetchCustomProfileAttributeValuesIntoClient(
     return result?.values ?? {};
 }
 
-async function remountProfileSettings(win: ServerView, fieldId: string): Promise<void> {
-    // Close+open remounts UserSettingsGeneralTab so setupInitialState reads the
-    // user map after RECEIVED_CPA_VALUES. Do not page-reload here — that wipes Redux.
-    await closeProfileSettings(win);
-    await openProfileSettings(win);
-    await win.waitForSelector(`#customAttribute_${fieldId}Edit`, {timeout: 10_000});
-}
-
 export async function getCustomAttributeLabelsInSettings(win: ServerView): Promise<string[]> {
     return win.runInRenderer<string[]>(`
         const modal = document.querySelector(${JSON.stringify(PROFILE_SETTINGS_MODAL_SELECTOR)})
@@ -528,23 +520,23 @@ export async function waitForCustomAttributeValueInProfileSettings(
 
     const showsExpected = async () => (await getCustomAttributeInputValue(win, fieldId)).includes(expected);
 
+    // Keep the modal open. UserSettingsModal reads getCurrentUser; RECEIVED_CPA_VALUES
+    // updates that profile so describe can show the saved value. Close+open loses
+    // the modal (Profile menu click does not always reopen it).
     const clientValues = await fetchCustomProfileAttributeValuesIntoClient(win);
-    if (String(clientValues[fieldId] ?? '').includes(expected)) {
-        await remountProfileSettings(win, fieldId);
-        if (await showsExpected()) {
-            return;
-        }
+    if (String(clientValues[fieldId] ?? '').includes(expected) && await showsExpected()) {
+        return;
     }
 
     // PATCH / GET me never write the user map; if the CPA fetch still did not
     // surface in settings, persist Engineering through the settings Save path
     // then load the values endpoint into the client.
     await editTextCustomAttribute(win, fieldId, expected, true);
-    await fetchCustomProfileAttributeValuesIntoClient(win);
-    await remountProfileSettings(win, fieldId);
+    const afterSave = await fetchCustomProfileAttributeValuesIntoClient(win);
+    const visible = await getCustomAttributeInputValue(win, fieldId);
     expect(
-        await getCustomAttributeInputValue(win, fieldId),
-        `Custom attribute ${fieldId} must show ${JSON.stringify(expected)} after loading CPA values`,
+        visible,
+        `Custom attribute ${fieldId} must show ${JSON.stringify(expected)} after loading CPA values (visible=${JSON.stringify(visible)}, client=${JSON.stringify(afterSave[fieldId] ?? '')})`,
     ).toContain(expected);
 }
 
