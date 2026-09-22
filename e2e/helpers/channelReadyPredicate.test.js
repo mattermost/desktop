@@ -28,21 +28,19 @@ function oldPostListLoaded({header, composer, loadingScreen}) {
     return Boolean(header && composer);
 }
 
-/** Product wait: header + composer means the channel is interactive. */
-function viewLoaded({header, composer, loadingScreen}) {
-    if (header && composer) {
-        return true;
-    }
-    if (isVisible(loadingScreen)) {
-        return false;
-    }
-    return Boolean(header && composer);
+function visibleBox(extra = {}) {
+    return {display: 'block', visibility: 'visible', opacity: '1', width: 100, height: 24, ...extra};
+}
+
+/** Product wait: visible header + visible composer. Hidden leftovers do not count. */
+function viewLoaded({header, composer}) {
+    return isVisible(header) && isVisible(composer);
 }
 
 describe('channel ready wait vs 12.0 PostListRow sentinel', () => {
     const interactiveChannel = {
-        header: {id: 'channelHeaderTitle'},
-        composer: {id: 'post_textbox'},
+        header: visibleBox({id: 'channelHeaderTitle'}),
+        composer: visibleBox({id: 'post_textbox'}),
 
         // PostListRow always mounts <div class="loading-screen"> for
         // OLDER_MESSAGES_LOADER. hideAnimation only stops the CSS animation.
@@ -65,5 +63,23 @@ describe('channel ready wait vs 12.0 PostListRow sentinel', () => {
         };
         assert.equal(oldPostListLoaded(loading), false);
         assert.equal(viewLoaded(loading), false);
+    });
+
+    it('does not treat a hidden leftover composer as ready', () => {
+        const switching = {
+            header: visibleBox({id: 'channelHeaderTitle'}),
+            composer: {display: 'none', visibility: 'hidden', opacity: '0', width: 0, height: 0},
+            loadingScreen: interactiveChannel.loadingScreen,
+        };
+        assert.equal(viewLoaded(switching), false);
+    });
+
+    it('does not treat a hidden leftover header as ready', () => {
+        const switching = {
+            header: {display: 'none', visibility: 'hidden', opacity: '0', width: 0, height: 0},
+            composer: visibleBox({id: 'post_textbox'}),
+            loadingScreen: interactiveChannel.loadingScreen,
+        };
+        assert.equal(viewLoaded(switching), false);
     });
 });

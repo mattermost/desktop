@@ -86,34 +86,13 @@ export const IS_COMPOSER_INTERACTIVE_JS = `
     return document.activeElement === root || root.contains(document.activeElement);
 `;
 
-const POST_LIST_COMPOSER_SELECTORS = POST_TEXTBOX_SELECTOR;
-
-/** True when the channel header and interactive composer are both present. */
+/** True when the channel header and composer are both visible. */
 export const IS_CHANNEL_VIEW_LOADED_JS = `
     ${POST_TEXTBOX_RESOLVER_JS}
 
-    const hasHeader = document.querySelector(${CHANNEL_HEADER_SELECTORS_JSON});
-    const composer = __mmResolvePostTextboxRoot()
-        || document.querySelector('${POST_LIST_COMPOSER_SELECTORS}');
-    if (hasHeader && composer) {
-        return true;
-    }
-
-    const postList = document.querySelector(
-        '#post-list, .post-list, [data-testid="postList"], .post-list-holder',
-    );
-    if ([...(postList?.querySelectorAll('.post-list__loading, .post-list__dynamic-loading') ?? [])].some(__mmIsVisible)) {
-        return false;
-    }
-
-    const channelLoading = document.querySelector(
-        '#channelView .loading-screen, .channel-view .loading-screen, .ChannelLoader, .channel-loader',
-    );
-    if (__mmIsVisible(channelLoading)) {
-        return false;
-    }
-
-    return Boolean(hasHeader && composer);
+    const header = document.querySelector(${CHANNEL_HEADER_SELECTORS_JSON});
+    const composer = __mmResolvePostTextboxRoot();
+    return Boolean(__mmIsVisible(header) && composer);
 `;
 
 /**
