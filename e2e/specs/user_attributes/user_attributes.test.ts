@@ -29,8 +29,10 @@ import {
     deleteCustomProfileAttributeField,
     dismissBlockingOverlays,
     editTextCustomAttribute,
+    getCustomAttributeInputValue,
     getCustomAttributeLabelsInSettings,
     getCustomProfileAttributeFields,
+    getCustomProfileAttributeValues,
     isAppResponsive,
     isUserAttributesFeatureAvailable,
     postAndOpenProfilePopover,
@@ -39,6 +41,7 @@ import {
     popoverContainsText,
     popoverLinkHasHref,
     recoverFromProfileSettings,
+    reloadAndOpenProfileSettings,
     updateCustomProfileAttributeValues,
     type UserPropertyField,
     waitForCustomAttributeEditInProfileSettings,
@@ -193,7 +196,6 @@ test.describe('user_attributes/user_attributes', () => {
 
             try {
                 created = await createCustomProfileAttributeField({name: fieldName}, 0);
-                await updateCustomProfileAttributeValues({[created.id]: TEST_DEPARTMENT});
 
                 try {
                     await openProfileSettings(win);
@@ -202,15 +204,19 @@ test.describe('user_attributes/user_attributes', () => {
                     test.skip(true, 'Profile settings UI is not available on this server');
                     return;
                 }
+
+                // 12.0 GET /users/me omits CPA values; Save does not write them onto
+                // props.user. Seed via Edit → type → Save, then reload so settings
+                // mount runs getCustomProfileAttributeValues and Engineering is on
+                // screen before the unsaved edit.
+                await editTextCustomAttribute(win, created.id, TEST_DEPARTMENT);
+                await reloadAndOpenProfileSettings(win, created.id);
+                expect(await getCustomAttributeInputValue(win, created.id)).toContain(TEST_DEPARTMENT);
                 await editTextCustomAttribute(win, created.id, 'Changed Value', false);
                 await cancelCustomAttributeEdit(win, created.id);
-                const settingsText = await win.runInRenderer<string>(`
-                    return document.querySelector('.user-settings, #accountSettingsModal')?.textContent || '';
-                `);
+                expect(await getCustomAttributeInputValue(win, created.id)).toContain(TEST_DEPARTMENT);
+                expect(await getCustomAttributeInputValue(win, created.id)).not.toContain('Changed Value');
                 await closeProfileSettings(win);
-
-                expect(settingsText).toContain(TEST_DEPARTMENT);
-                expect(settingsText).not.toContain('Changed Value');
             } finally {
                 if (created) {
                     await cleanupFields([created.id]);
@@ -414,7 +420,7 @@ test.describe('user_attributes/user_attributes', () => {
     test('MM-T5772 URL Validation in User Attributes',
         {tag: ['@P2', '@all']},
         async ({electronApp, serverMap}) => {
-            const {entry, win} = await prepareServer(electronApp, serverMap);
+            const {win} = await prepareServer(electronApp, serverMap);
             let created: UserPropertyField | undefined;
 
             try {
@@ -441,12 +447,12 @@ test.describe('user_attributes/user_attributes', () => {
                 `), {timeout: 10_000}).toBe(true);
 
                 await editTextCustomAttribute(win, created.id, TEST_VALID_URL);
-                await closeProfileSettings(win);
 
-                const urlValidationMessage = 'URL validation attribute test';
-                await postAndOpenProfilePopover(electronApp, entry, urlValidationMessage);
-                expect(await popoverContainsText(win, TEST_VALID_URL)).toBe(true);
-                await closeProfilePopover(win);
+                // 12.0 GET /users/me omits custom_profile_attributes even after save.
+                // Values live on GET /users/me/custom_profile_attributes.
+                const saved = await getCustomProfileAttributeValues();
+                expect(String(saved[created.id] ?? '')).toContain(TEST_VALID_URL);
+                await closeProfileSettings(win);
             } finally {
                 if (created) {
                     await cleanupFields([created.id]);

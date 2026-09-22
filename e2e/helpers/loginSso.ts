@@ -119,11 +119,17 @@ export async function installWindowOpenStub(serverWin: ServerView, mode: WindowO
                 return null;
             }
 
-            const mockHtml = '<!DOCTYPE html><html><head><title>Mock SSO</title></head>' +
-                '<body><h1 id="mock-idp-title">Mock SSO Provider</h1></body></html>';
-            document.open();
-            document.write(mockHtml);
-            document.close();
+            // 12.0 DesktopAuthToken calls window.open then setState; document.write
+            // does not replace that mounted React tree. Overlay survives the re-render.
+            if (!document.getElementById('mock-idp-title')) {
+                const overlay = document.createElement('div');
+                overlay.id = 'e2e-mock-idp';
+                overlay.innerHTML = '<h1 id="mock-idp-title">Mock SSO Provider</h1>';
+                overlay.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;background:#fff;z-index:2147483647';
+                document.documentElement.appendChild(overlay);
+                window.addEventListener('popstate', () => overlay.remove(), {once: true});
+            }
+
             return null;
         };
     }, mode);
@@ -163,14 +169,21 @@ export async function navigateBackInServerView(serverWin: ServerView): Promise<v
         window.history.back();
     });
 
+    // history.back() returns before popstate. /login/desktop and .DesktopAuthToken
+    // are still present while the overlay is mounted, so wait for overlay removal
+    // (or the login form) before considering a header-Back fallback.
     await expect.poll(
         () => serverWin.evaluate(() => {
             return Boolean(document.querySelector('#input_loginId')) ||
-                Boolean(document.querySelector('.DesktopAuthToken')) ||
-                window.location.pathname.includes('/login');
+                !document.querySelector('#mock-idp-title');
         }).catch(() => false),
-        {timeout: 10_000, message: 'Server view must navigate back after history.back()'},
+        {timeout: 10_000, message: 'Mock IdP overlay must be gone or login form visible after history.back()'},
     ).toBe(true);
+
+    const loginFormVisible = await serverWin.evaluate(() => Boolean(document.querySelector('#input_loginId'))).catch(() => false);
+    if (!loginFormVisible) {
+        await clickLoginHeaderBack(serverWin);
+    }
 }
 
 export async function clickOpenIdAndWaitForDesktopAuth(serverWin: ServerView): Promise<void> {

@@ -1,10 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {TestInfo} from '@playwright/test';
-
 import {test, expect} from '../../fixtures/index';
-import {assertCallsSpecsOnShard1} from '../../helpers/assertCallsShard';
 import {findCallsWidgetWindow, startCall, closeCallsWidget, leaveCallIfActive} from '../../helpers/callsWidget';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost, logoutFromMattermost} from '../../helpers/login';
@@ -14,6 +11,7 @@ import {apiGetAdminTeamId, createCallsTestUser, deactivateCallsTestUsers, type T
 import type {ServerView} from '../../helpers/serverView';
 
 async function sendSlashCommand(serverWin: ServerView, command: string): Promise<void> {
+    await serverWin.waitForSelector('#post_textbox', {timeout: 10_000});
     await serverWin.type('#post_textbox', command);
     await serverWin.click('[data-testid="SendMessageButton"]');
 }
@@ -37,8 +35,7 @@ test.describe('calls/slash_commands', () => {
     let teamId: string;
     let testServerUrl: string;
 
-    test.beforeAll(async ({}, testInfo: TestInfo) => {
-        assertCallsSpecsOnShard1(testInfo.config.shard);
+    test.beforeAll(async () => {
         const serverUrl = process.env.MM_TEST_SERVER_URL;
         const username = process.env.MM_TEST_USER_NAME;
         const password = process.env.MM_TEST_PASSWORD;
@@ -150,15 +147,15 @@ test.describe('calls/slash_commands', () => {
         'MM-T5590 /call logs — returns call log output',
         {tag: ['@P1', '@all']},
         async () => {
-            // No call start here — this suite is serial so T5588/T5589 already
-            // confirmed plugin availability. Starting a call would consume rate
-            // limiter tokens immediately before /logs/upload hits the same limiter.
-            // T5589 also left call logs in localStorage from its own call.
+            // beforeEach logs out and creates a new user, which wipes in-memory
+            // Calls logs. Seed both storages: Calls getPersistentStorage() uses
+            // localStorage when window.desktop is set, otherwise sessionStorage.
             await serverWin.runInRenderer<void>(`
-                if (!(localStorage.getItem('calls_client_logs') || '').trim()) {
-                    localStorage.setItem('calls_client_logs',
-                        'debug [e2e] pre-seeded call log for MM-T5590\\n',
-                    );
+                const seed = 'debug [e2e] pre-seeded call log for MM-T5590\\n';
+                for (const storage of [localStorage, sessionStorage]) {
+                    if (!(storage.getItem('calls_client_logs') || '').trim()) {
+                        storage.setItem('calls_client_logs', seed);
+                    }
                 }
             `);
 

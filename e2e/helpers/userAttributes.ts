@@ -67,6 +67,7 @@ function customAttributeEditScopeJs(elExpr: string): string {
  */
 function customAttributeRowJs(elExpr: string): string {
     return `(
+        ${elExpr}?.closest('.section-min') ||
         ${elExpr}?.closest('.setting-list') ||
         ${elExpr}?.closest('.SettingsBlock') ||
         ${elExpr}?.closest('section') ||
@@ -163,6 +164,18 @@ export async function updateCustomProfileAttributeValues(
         method: 'PATCH',
         body: JSON.stringify(valuesByFieldId),
     });
+}
+
+export async function getCustomProfileAttributeValues(
+    userId = 'me',
+): Promise<Record<string, string | string[]>> {
+    const {baseUrl, username, password} = getTestServerCredentials();
+    const token = await apiLogin(baseUrl, username, password);
+    return apiRequest<Record<string, string | string[]>>(
+        baseUrl,
+        token,
+        `/api/v4/users/${userId}/custom_profile_attributes`,
+    );
 }
 
 export {dismissBlockingOverlays} from './blockingOverlays';
@@ -279,6 +292,17 @@ async function isCustomAttributeEditVisible(win: ServerView, fieldId: string): P
     `);
 }
 
+async function isCustomAttributeInputVisible(win: ServerView, fieldId: string): Promise<boolean> {
+    return win.runInRenderer<boolean>(`
+        const input = document.querySelector('#customAttribute_${fieldId}');
+        if (!(input instanceof HTMLElement)) {
+            return false;
+        }
+        const rect = input.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+    `);
+}
+
 /** Webapp caches CPA field defs; reload once if API-created fields are missing from Profile Settings. */
 export async function waitForCustomAttributeEditInProfileSettings(win: ServerView, fieldId: string): Promise<void> {
     await ensureCustomAttributeEditReady(win, fieldId);
@@ -303,6 +327,16 @@ async function ensureCustomAttributeEditReady(win: ServerView, fieldId: string):
             await openProfileSettings(win);
         }
     }
+}
+
+/** Reload so GET /users/me leaves CPA null and settings mount fetches the values endpoint. */
+export async function reloadAndOpenProfileSettings(win: ServerView, fieldId: string): Promise<void> {
+    await closeProfileSettings(win);
+    await reloadServerView(win.app, win.webContentsId);
+    await waitForMattermostShellReady(win);
+    await dismissBlockingOverlays(win);
+    await openProfileSettings(win);
+    await ensureCustomAttributeEditReady(win, fieldId);
 }
 
 export async function getCustomAttributeLabelsInSettings(win: ServerView): Promise<string[]> {
@@ -344,32 +378,23 @@ export async function editTextCustomAttribute(
     newValue: string,
     save = true,
 ): Promise<void> {
-    await ensureCustomAttributeEditReady(win, fieldId);
-    await win.runInRenderer<void>(`
-        const fieldId = ${JSON.stringify(fieldId)};
-        const editBtn = document.querySelector('#customAttribute_' + fieldId + 'Edit');
-        if (!(editBtn instanceof HTMLElement)) {
-            throw new Error('Custom attribute Edit button not found for ' + fieldId);
-        }
-        editBtn.scrollIntoView({block: 'center'});
-        editBtn.click();
-    `);
-    await win.waitForSelector(`#customAttribute_${fieldId}`, {timeout: 10_000});
-    await win.runInRenderer<void>(`
-        const fieldId = ${JSON.stringify(fieldId)};
-        const input = document.querySelector('#customAttribute_' + fieldId);
-        if (!input) {
-            throw new Error('Custom attribute input not found');
-        }
-        input.focus?.();
-        if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) {
-            input.value = '';
-            input.dispatchEvent(new Event('input', {bubbles: true}));
-        }
-    `);
-    if (newValue) {
-        await win.fill(`#customAttribute_${fieldId}`, newValue);
+    // 12.0 SettingItemMax hides Edit while the section is already open (e.g. after
+    // an invalid URL blur). Clicking Edit again waits for a hidden button, reloads,
+    // and drops the in-progress editor — webapp T5772 fills and saves in place.
+    if (!(await isCustomAttributeInputVisible(win, fieldId))) {
+        await ensureCustomAttributeEditReady(win, fieldId);
+        await win.runInRenderer<void>(`
+            const fieldId = ${JSON.stringify(fieldId)};
+            const editBtn = document.querySelector('#customAttribute_' + fieldId + 'Edit');
+            if (!(editBtn instanceof HTMLElement)) {
+                throw new Error('Custom attribute Edit button not found for ' + fieldId);
+            }
+            editBtn.scrollIntoView({block: 'center'});
+            editBtn.click();
+        `);
+        await win.waitForSelector(`#customAttribute_${fieldId}`, {timeout: 10_000});
     }
+    await win.fill(`#customAttribute_${fieldId}`, newValue);
     if (save) {
         await win.waitForSelector('#saveSetting', {timeout: 10_000});
         await expect.poll(async () => win.runInRenderer<boolean>(`
@@ -391,12 +416,23 @@ export async function editTextCustomAttribute(
 }
 
 export async function cancelCustomAttributeEdit(win: ServerView, fieldId?: string): Promise<void> {
+    // SettingItemMax mounts Cancel as #cancelSetting beside #saveSetting. Compass
+    // Button textContent is not always exactly "Cancel"; prefer the product id.
+    await win.waitForSelector('#cancelSetting', {timeout: 10_000});
     await win.runInRenderer<void>(`
-        const modal = document.querySelector('#accountSettingsModal, .user-settings, #userAccountModal, .AccountModal');
-        const scope = modal || document;
-        const cancelBtn = Array.from(scope.querySelectorAll('button'))
-            .find((button) => (button.textContent || '').trim() === 'Cancel');
-        cancelBtn?.click();
+        const fieldId = ${JSON.stringify(fieldId ?? '')};
+        const input = fieldId ? document.querySelector('#customAttribute_' + fieldId) : null;
+        const saveBtn = document.querySelector('#saveSetting');
+        const scope = ${customAttributeEditScopeJs('input || saveBtn')}
+            || document.querySelector(${JSON.stringify(PROFILE_SETTINGS_MODAL_SELECTOR)})
+            || document;
+        const cancelBtn = scope.querySelector('#cancelSetting')
+            || scope.querySelector('[data-testid="cancelButton"]')
+            || document.querySelector('#cancelSetting');
+        if (!(cancelBtn instanceof HTMLElement)) {
+            throw new Error('Cancel button not found for custom attribute edit section');
+        }
+        cancelBtn.click();
     `);
     if (fieldId) {
         await win.waitForSelector(`#customAttribute_${fieldId}Edit`, {timeout: 10_000});
@@ -408,6 +444,11 @@ export async function getCustomAttributeInputValue(win: ServerView, fieldId: str
         const fieldId = ${JSON.stringify(fieldId)};
         const editBtn = document.querySelector('#customAttribute_' + fieldId + 'Edit');
         const input = document.querySelector('#customAttribute_' + fieldId);
+        if (editBtn instanceof HTMLElement) {
+            editBtn.scrollIntoView({block: 'center'});
+        } else if (input instanceof HTMLElement) {
+            input.scrollIntoView({block: 'center'});
+        }
         const editVisible = Boolean(editBtn && editBtn.getBoundingClientRect().width > 0);
         if (!editVisible && input instanceof HTMLInputElement) {
             return input.value;
@@ -419,14 +460,15 @@ export async function getCustomAttributeInputValue(win: ServerView, fieldId: str
         if (!row) {
             return '';
         }
-        let text = row.textContent || '';
+        const clone = row.cloneNode(true);
+        clone.querySelectorAll('button, a').forEach((el) => el.remove());
+        let text = clone.textContent || '';
         const labelEl = row.querySelector('label, .form__label, .setting-list-item__label, h4, h5, strong');
         const label = labelEl?.textContent?.trim() || '';
         if (label) {
             text = text.replace(label, '');
         }
         return text
-            .replace(/Edit.*$/s, '')
             .replace(/Click 'Edit' to add your custom attribute/gi, '')
             .trim();
     `);
