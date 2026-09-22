@@ -107,20 +107,6 @@ export async function startCall(electronApp: ElectronApplication, serverWin: Ser
     return widgetWindow;
 }
 
-async function leaveCallViaDesktopApi(widgetWindow: Page): Promise<void> {
-    await widgetWindow.evaluate(() => {
-        const w = window as Window & {
-            callsClient?: {disconnect?: () => void};
-            desktopAPI?: {leaveCall?: () => void};
-        };
-        w.callsClient?.disconnect?.();
-        if (typeof w.desktopAPI?.leaveCall !== 'function') {
-            throw new Error('desktopAPI.leaveCall is not available');
-        }
-        w.desktopAPI.leaveCall();
-    });
-}
-
 export async function leaveCallIfActive(
     electronApp: ElectronApplication,
     serverWin?: ServerView,
@@ -128,7 +114,9 @@ export async function leaveCallIfActive(
     const existing = findCallsWidgetWindow(electronApp);
     if (existing) {
         await closeCallsWidget(electronApp, existing, serverWin);
-    } else if (serverWin) {
+        return;
+    }
+    if (serverWin) {
         await expect.poll(
             () => serverWin.isVisible('[data-testid="calls-sidebar-active-call-icon"]'),
             {timeout: 10_000, message: 'Sidebar active-call icon must disappear after leaving'},
@@ -141,19 +129,27 @@ export async function closeCallsWidget(
     widgetWindow: Page,
     serverWin?: ServerView,
 ): Promise<void> {
-    // Disconnect the plugin client, then close the widget via desktop IPC.
-    // The confirmation menu (#calls-widget-leave-button → "Leave call") does
-    // not complete on macOS/Windows CI (dropdown never appears), so the call
-    // stays up and the next startCall times out. Do not use sendWidgetShortcut
-    // here; Cmd/Ctrl+Shift+L is covered by the leave-shortcut spec.
+    // Leave via the keyboard shortcut, which calls disconnect() directly (see the
+    // "MM Calls - Leave call keyboard shortcut" test).
+    // If the shortcut ever proves unreliable, the faithful alternative is the menu
+    // route used by the Calls plugin's own suite: click #calls-widget-leave-button,
+    // then click "Leave call" inside getByTestId('dropdownmenu').
     if (!widgetWindow.isClosed()) {
+        const isMac = process.platform === 'darwin';
         try {
             await waitForCallsClientReady(widgetWindow);
-            await leaveCallViaDesktopApi(widgetWindow);
+            await sendWidgetShortcut(
+                electronApp,
+                'L',
+                isMac ? ['shift', 'meta'] : ['shift', 'control'],
+            );
         } catch (error) {
             if (!widgetWindow.isClosed()) {
                 throw error;
             }
+
+            // Widget disappeared between the isClosed() check and the shortcut; the
+            // poll below is the real assertion.
         }
     }
 
