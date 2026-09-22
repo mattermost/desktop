@@ -113,9 +113,10 @@ env:
 
 jobs:
   e2e:
-    # Display title only. TSIO still keys reports on E2E_GH_JOB_NAME below
-    # (`e2e-on-{runner}-{version}[-{i}-of-{n}]`), which parseCmtJobName reads.
-    name: Playwright · MM ${{ inputs.MM_SERVER_VERSION }} · ${{ inputs.runs-on }}
+    # TSIO report-upload resolves gh_job_id by matching gh-job-name to this
+    # job's runtime name (or the last ` / ` segment). Caller titles like
+    # `E2E Linux (1/3)` are fine; this nested name MUST equal E2E_GH_JOB_NAME.
+    name: e2e-on-${{ inputs.runs-on }}-${{ inputs.MM_SERVER_VERSION }}${{ inputs.shard != '1-of-1' && format('-{0}', inputs.shard) || '' }}
     runs-on: ${{ inputs.runs-on }}
     permissions:
       contents: read
@@ -125,7 +126,7 @@ jobs:
       run:
         shell: bash
     env:
-      # Stable TSIO / artifact id — not the job display `name:` above.
+      # Must equal this job's `name:` — TSIO upload matches gh-job-name to it.
       # Shape: e2e-on-{runner}-{MM_SERVER_VERSION}[-{i}-of-{n}]; omit shard for 1-of-1 (CMT).
       E2E_GH_JOB_NAME: e2e-on-${{ inputs.runs-on }}-${{ inputs.MM_SERVER_VERSION }}${{ inputs.shard != '1-of-1' && format('-{0}', inputs.shard) || '' }}
       PLAYWRIGHT_SHARD: ${{ inputs.shard }}

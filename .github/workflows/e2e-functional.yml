@@ -1,4 +1,7 @@
 name: Electron Playwright Tests
+# display_title matches the concurrency key: PR number, else SHA. Used by
+# isWorkflowRunSuperseded so fork PRs dispatched on master do not hide each other.
+run-name: ${{ inputs.pr_number != '' && format('E2E PR {0}', inputs.pr_number) || format('E2E {0}', github.sha) }}
 
 on:
   workflow_dispatch:
@@ -597,7 +600,8 @@ jobs:
           PR_NUMBER: ${{ inputs.pr_number }}
 
   e2e-policy-tests:
-    name: E2E Policy · ${{ matrix.platform == 'macos' && 'macOS' || 'Windows' }}
+    # Must equal gh-job-name below — TSIO upload matches this job's runtime name.
+    name: policy-tests-${{ matrix.platform }}
     needs:
       - prepare-matrix
       - update-initial-status
