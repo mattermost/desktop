@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../../fixtures/index';
-import {waitForCallsWidgetWindow, closeCallsWidget, sendWidgetShortcut, leaveCallIfActive, startCall} from '../../helpers/callsWidget';
+import {waitForCallsWidgetWindow, waitForCallsClientReady, closeCallsWidget, sendWidgetShortcut, leaveCallIfActive, startCall} from '../../helpers/callsWidget';
 import {waitForMattermostShellReady} from '../../helpers/channelReadiness';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost, logoutFromMattermost} from '../../helpers/login';
@@ -93,17 +93,7 @@ test.describe('calls/calls_functionality', () => {
                 '/plugins/com.mattermost.calls/standalone/widget.html',
             );
 
-            // Wait for mute button directly — covers React mount + call connection in one step.
-            const muteButton = await widgetWindow.waitForSelector(
-                'button[aria-label*="Mute"], button[aria-label*="mute"]',
-                {timeout: 30_000},
-            );
-            expect(muteButton, 'Mute button must exist in Calls widget').toBeTruthy();
-
-            await widgetWindow.waitForFunction(
-                () => Boolean(((window as unknown as Record<string, unknown>).callsClient as Record<string, unknown> | undefined)?.peer),
-                {timeout: 15_000},
-            );
+            const muteButton = await waitForCallsClientReady(widgetWindow);
 
             // Widget uses aria-label toggling ("Mute" / "Unmute") — no aria-pressed.
             const initialLabel = await widgetWindow.evaluate(() => {
@@ -148,20 +138,12 @@ test.describe('calls/calls_functionality', () => {
                 throw new Error('Calls widget did not open — is the Calls plugin enabled and media available?');
             }
 
-            // Wait for mute button directly — covers React mount + call connection in one step.
-            await widgetWindow.waitForSelector('button[aria-label*="Mute"], button[aria-label*="mute"]', {timeout: 30_000});
+            await waitForCallsClientReady(widgetWindow);
             await widgetWindow.bringToFront();
 
             const initialLabel = await widgetWindow.evaluate(() => {
                 return document.querySelector('#voice-mute-unmute')?.getAttribute('aria-label') ?? null;
             });
-
-            // callsClient.unmute() silently bails when this.peer is null (no WebRTC connection yet).
-            // The mute button can appear before the peer is established, so wait explicitly.
-            await widgetWindow.waitForFunction(
-                () => Boolean(((window as unknown as Record<string, unknown>).callsClient as Record<string, unknown> | undefined)?.peer),
-                {timeout: 15_000},
-            );
 
             const isMac = process.platform === 'darwin';
             await sendWidgetShortcut(electronApp, 'Space', isMac ? ['shift', 'meta'] : ['shift', 'control']);
