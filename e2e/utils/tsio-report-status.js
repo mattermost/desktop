@@ -106,10 +106,33 @@ function shardsAreReady({detail, totalReportsExpected, readyWhenOs, readyWhenPol
 const EMPTY_OS_ROW = {passed: 0, failed: 0, skipped: 0, shardFailed: false, hasResults: false};
 
 /**
+ * Playwright can fail while the CI job still exits 0 (TSIO is the failure
+ * signal). Without per-job counts we cannot tell which OS failed, so do not
+ * post success from "shards uploaded" / empty `row.failed`.
+ *
+ * @param {{failed?: number, shardFailed?: boolean, hasResults?: boolean}} row
+ * @param {{hasPerJobCounts?: boolean, overallFailed?: number}} completeness
+ * @returns {boolean}
+ */
+function countsUnavailableWithFailures(row, completeness) {
+    const overallFailed = Number(completeness.overallFailed) || 0;
+    if (overallFailed <= 0) {
+        return false;
+    }
+    if (row.failed > 0 || row.shardFailed) {
+        return false;
+    }
+    if (completeness.hasPerJobCounts === false) {
+        return true;
+    }
+    return !row.hasResults;
+}
+
+/**
  * @param {Object} row
  * @param {boolean} upstreamJobsSucceeded
  * @param {string} incompleteLabel
- * @param {{minReports?: number, uploadedReports?: number}} [completeness]
+ * @param {{minReports?: number, uploadedReports?: number, hasPerJobCounts?: boolean, overallFailed?: number}} [completeness]
  * @returns {{state: string, description: string}}
  */
 function statusFromTotals(row, upstreamJobsSucceeded, incompleteLabel, completeness = {}) {
@@ -141,6 +164,12 @@ function statusFromTotals(row, upstreamJobsSucceeded, incompleteLabel, completen
                 description: 'CI job failed (untracked by TSIO)',
             };
         }
+        if (countsUnavailableWithFailures(row, completeness)) {
+            return {
+                state: 'error',
+                description: 'TSIO per-job counts unavailable with test failures',
+            };
+        }
         if (row.hasResults) {
             return {
                 state: 'success',
@@ -150,6 +179,13 @@ function statusFromTotals(row, upstreamJobsSucceeded, incompleteLabel, completen
         return {
             state: 'success',
             description: `${uploaded}/${minReports} shards uploaded`,
+        };
+    }
+
+    if (countsUnavailableWithFailures(row, completeness)) {
+        return {
+            state: 'error',
+            description: 'TSIO per-job counts unavailable with test failures',
         };
     }
 
@@ -186,10 +222,17 @@ function shouldFailFromScope({
     upstreamJobsSucceeded,
     minReports,
     detail,
+    hasPerJobCounts,
+    overallFailed,
 }) {
     if (!failOnTestFailures) {
         return false;
     }
+
+    const countMeta = {
+        hasPerJobCounts,
+        overallFailed,
+    };
 
     if (readyWhenOs) {
         const row = byKey[readyWhenOs] || EMPTY_OS_ROW;
@@ -198,7 +241,7 @@ function shouldFailFromScope({
             row,
             upstreamJobsSucceeded,
             'E2E incomplete — no results for this OS',
-            {minReports, uploadedReports: uploaded},
+            {minReports, uploadedReports: uploaded, ...countMeta},
         ).state !== 'success';
     }
 
@@ -210,7 +253,7 @@ function shouldFailFromScope({
                 row,
                 upstreamJobsSucceeded,
                 'Policy incomplete — no results for this OS',
-                {minReports: 1, uploadedReports: uploaded},
+                {minReports: 1, uploadedReports: uploaded, ...countMeta},
             ).state !== 'success';
         });
     }
@@ -377,6 +420,8 @@ async function flipPerOsCommitStatuses({
     readyWhenOs,
     readyWhenPolicy = false,
     minReports,
+    hasPerJobCounts,
+    overallFailed,
     core,
 }) {
     const byKey = buildOsStatusTotals({detail, perJobCounts});
@@ -384,6 +429,10 @@ async function flipPerOsCommitStatuses({
     const policyOss = resolveExpectedPolicyOs(expectedPolicyOs);
     const emptyRow = {passed: 0, failed: 0, skipped: 0, shardFailed: false, hasResults: false};
     const reports = detail?.reports || [];
+    const countMeta = {
+        hasPerJobCounts,
+        overallFailed,
+    };
 
     const urlFor = (bucketKey) => reportUrlForStatusBucket({
         reports,
@@ -397,18 +446,20 @@ async function flipPerOsCommitStatuses({
             return {
                 minReports,
                 uploadedReports: countReportsForBucket(detail, os),
+                ...countMeta,
             };
         }
-        return {};
+        return countMeta;
     };
 
     const policyCompleteness = (os) => {
         if (!readyWhenPolicy) {
-            return {};
+            return countMeta;
         }
         return {
             minReports: 1,
             uploadedReports: countReportsForBucket(detail, `${os}-policy`),
+            ...countMeta,
         };
     };
 
@@ -763,20 +814,24 @@ async function reportTsioStatus({
     }
 
     let perJobCounts = null;
+    const overallFailed = stats.failed || 0;
     if (perOsCommitStatuses || readyWhenOs || readyWhenPolicy) {
         try {
             perJobCounts = await fetchPerJobCountsFromConsolidated(baseUrl, compositeIdentity, detail);
         } catch (error) {
-            // Do not treat a failed fetch as zero results — that would flip e2e/<os>
-            // to error/failure and clear pending. Leave statuses pending until counts exist.
+            // Do not treat a failed fetch as zero results when there are no test
+            // failures — that would flip e2e/<os> to error and clear pending.
+            // If the group already has failures, post error instead of success.
             core.warning(
-                `Could not load per-OS TSIO counts — leaving e2e/<os> statuses pending: ${error.message}`,
+                overallFailed > 0 ?
+                    `Could not load per-OS TSIO counts with test failures — marking e2e/<os> error: ${error.message}` :
+                    `Could not load per-OS TSIO counts — leaving e2e/<os> statuses pending: ${error.message}`,
             );
             perJobCounts = null;
         }
         const byKeyForFlip = buildOsStatusTotals({detail, perJobCounts: perJobCounts || {}});
         const hasShardFailure = scopedHasShardFailure(byKeyForFlip, expectedOs, expectedPolicyOs);
-        if (perOsCommitStatuses && (perJobCounts || !upstreamJobsSucceeded || hasShardFailure)) {
+        if (perOsCommitStatuses && (perJobCounts || !upstreamJobsSucceeded || hasShardFailure || overallFailed > 0)) {
             await flipPerOsCommitStatuses({
                 github,
                 context,
@@ -791,6 +846,8 @@ async function reportTsioStatus({
                 readyWhenOs,
                 readyWhenPolicy,
                 minReports,
+                hasPerJobCounts: perJobCounts != null,
+                overallFailed,
                 core,
             });
         }
@@ -838,6 +895,8 @@ async function reportTsioStatus({
         upstreamJobsSucceeded,
         minReports,
         detail,
+        hasPerJobCounts: perJobCounts != null,
+        overallFailed,
     })) {
         let reason;
         if (readyWhenOs) {

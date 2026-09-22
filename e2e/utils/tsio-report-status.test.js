@@ -13,6 +13,7 @@ const {
     countReportsForBucket,
     shardsAreReady,
     shouldFailFromScope,
+    statusFromTotals,
     scopedHasShardFailure,
 } = require('./tsio-report-status');
 
@@ -445,6 +446,37 @@ describe('flipPerOsCommitStatuses', () => {
 
         assert.equal(statuses[0].state, 'success');
     });
+
+    it('posts error, not success, when shards uploaded but per-job counts are missing and tests failed', async () => {
+        const {statuses, github, core, context, compositeIdentity} = makeHarness();
+
+        await flipPerOsCommitStatuses({
+            github,
+            context,
+            compositeIdentity,
+            detail: {
+                reports: [
+                    {gh_job_name: 'e2e-on-ubuntu-latest-master-1-of-3', status: 'complete'},
+                    {gh_job_name: 'e2e-on-ubuntu-latest-master-2-of-3', status: 'complete'},
+                    {gh_job_name: 'e2e-on-ubuntu-latest-master-3-of-3', status: 'complete'},
+                ],
+            },
+            perJobCounts: {},
+            targetUrl: 'https://example.test/report',
+            upstreamJobsSucceeded: true,
+            expectedOs: ['linux'],
+            readyWhenOs: 'linux',
+            minReports: 3,
+            hasPerJobCounts: false,
+            overallFailed: 4,
+            core,
+        });
+
+        assert.equal(statuses.length, 1);
+        assert.equal(statuses[0].context, 'e2e/linux');
+        assert.equal(statuses[0].state, 'error');
+        assert.match(statuses[0].description, /per-job counts unavailable/i);
+    });
 });
 
 describe('reportUrlForStatusBucket', () => {
@@ -610,6 +642,49 @@ describe('shouldFailFromScope', () => {
             overallState: 'success',
             byKey: linuxPass,
             upstreamJobsSucceeded: true,
+        }), false);
+    });
+
+    it('does not succeed a scoped OS when per-job counts are missing and the group failed tests', () => {
+        const detail = {
+            reports: [
+                {gh_job_name: 'e2e-on-ubuntu-latest-master-1-of-3', status: 'complete'},
+                {gh_job_name: 'e2e-on-ubuntu-latest-master-2-of-3', status: 'complete'},
+                {gh_job_name: 'e2e-on-ubuntu-latest-master-3-of-3', status: 'complete'},
+            ],
+            test_stats: {failed: 4, passed: 200, skipped: 5, total: 209},
+        };
+        const byKey = buildOsStatusTotals({detail, perJobCounts: {}});
+        assert.equal(shouldFailFromScope({
+            failOnTestFailures: true,
+            readyWhenOs: 'linux',
+            overallState: 'failure',
+            byKey,
+            upstreamJobsSucceeded: true,
+            minReports: 3,
+            detail,
+            hasPerJobCounts: false,
+            overallFailed: 4,
+        }), true);
+
+        const uploaded = countReportsForBucket(detail, 'linux');
+        assert.equal(statusFromTotals(
+            byKey.linux || {passed: 0, failed: 0, skipped: 0, shardFailed: false, hasResults: false},
+            true,
+            'E2E incomplete — no results for this OS',
+            {minReports: 3, uploadedReports: uploaded, hasPerJobCounts: false, overallFailed: 4},
+        ).state, 'error');
+    });
+
+    it('still succeeds a passing OS when another OS failed and per-job counts exist', () => {
+        assert.equal(shouldFailFromScope({
+            failOnTestFailures: true,
+            readyWhenOs: 'linux',
+            overallState: 'failure',
+            byKey: linuxPass,
+            upstreamJobsSucceeded: true,
+            hasPerJobCounts: true,
+            overallFailed: 4,
         }), false);
     });
 });
