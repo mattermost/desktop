@@ -49,9 +49,16 @@ export async function waitForCallsWidgetWindow(
     }).catch(() => null);
 }
 
+// Calls 1.12.5 paints mute/leave/shortcut controls while Redux `clientConnecting`
+// is still true. Clicks and keyboard handlers no-op until RTC connect clears that
+// flag (the mute button is `disabled` until then).
+export async function waitForCallsClientReady(widgetWindow: Page, timeoutMs = 30_000): Promise<void> {
+    await widgetWindow.waitForSelector('#voice-mute-unmute:not([disabled])', {timeout: timeoutMs});
+}
+
 // Send a keyboard shortcut to the Calls widget BrowserWindow.
-// Must only be called after callsClient.peer is established — handlers
-// silently bail if the WebRTC peer is null (confirmed in MM-T5411).
+// Must only be called after waitForCallsClientReady — handlers no-op while
+// clientConnecting, and unmute() also bails if the WebRTC peer is null.
 export async function sendWidgetShortcut(
     electronApp: ElectronApplication,
     keyCode: string,
@@ -88,18 +95,11 @@ export async function startCall(electronApp: ElectronApplication, serverWin: Ser
         throw new Error('Calls widget did not open — is the Calls plugin enabled on this server?');
     }
 
-    // Wait for the mute button (React mounted + call connected in widget),
-    // then wait for the sidebar icon which confirms channelHasCall is true in
-    // the main webapp's Redux state — required before any /call slash commands.
-    await widgetWindow.waitForSelector('button[aria-label*="Mute"], button[aria-label*="mute"]', {timeout: 30_000});
-    await serverWin.waitForSelector('[data-testid="calls-sidebar-active-call-icon"]', {timeout: 15_000});
+    await waitForCallsClientReady(widgetWindow);
 
-    // Wait for the WebRTC peer to be established before any shortcut is sent.
-    // callsClient handlers silently bail when peer is null.
-    await widgetWindow.waitForFunction(
-        () => Boolean(((window as unknown as Record<string, unknown>).callsClient as Record<string, unknown> | undefined)?.peer),
-        {timeout: 15_000},
-    );
+    // Sidebar icon confirms channelHasCall is true in the main webapp's Redux
+    // state — required before any /call slash commands.
+    await serverWin.waitForSelector('[data-testid="calls-sidebar-active-call-icon"]', {timeout: 15_000});
 
     return widgetWindow;
 }
@@ -123,14 +123,21 @@ export async function closeCallsWidget(
     // then click "Leave call" inside getByTestId('dropdownmenu').
     if (!widgetWindow.isClosed()) {
         const isMac = process.platform === 'darwin';
-        await sendWidgetShortcut(
-            electronApp,
-            'L',
-            isMac ? ['shift', 'meta'] : ['shift', 'control'],
-        ).catch(() => {
+        try {
+            await waitForCallsClientReady(widgetWindow);
+            await sendWidgetShortcut(
+                electronApp,
+                'L',
+                isMac ? ['shift', 'meta'] : ['shift', 'control'],
+            );
+        } catch (error) {
+            if (!widgetWindow.isClosed()) {
+                throw error;
+            }
+
             // Widget disappeared between the isClosed() check and the shortcut; the
             // poll below is the real assertion.
-        });
+        }
     }
 
     await expect.poll(

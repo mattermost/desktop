@@ -111,19 +111,55 @@ export async function clickWebappHistoryBackIfVisible(serverWin: ServerView): Pr
 
 export type WindowOpenStubMode = 'noop' | 'mock-idp';
 
+/**
+ * 12.0.0 DesktopAuthToken calls window.open then setState. document.write is
+ * ignored after SPA load, so the React tree stays on .DesktopAuthToken.
+ * Paint a full-viewport overlay instead (survives that re-render); browser-back
+ * removes it via popstate and returns to the login form.
+ */
+export async function ensureMockIdpPage(serverWin: ServerView): Promise<void> {
+    await serverWin.evaluate(() => {
+        const install = (window as any).__e2eInstallMockIdp;
+        if (typeof install === 'function') {
+            install();
+            return;
+        }
+
+        if (document.getElementById('mock-idp-title')) {
+            return;
+        }
+
+        const overlay = document.createElement('div');
+        overlay.id = 'e2e-mock-idp';
+        overlay.innerHTML = '<h1 id="mock-idp-title">Mock SSO Provider</h1>';
+        overlay.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;background:#fff;z-index:2147483647';
+        document.documentElement.appendChild(overlay);
+        window.addEventListener('popstate', () => overlay.remove(), {once: true});
+    });
+}
+
 export async function installWindowOpenStub(serverWin: ServerView, mode: WindowOpenStubMode): Promise<void> {
     await serverWin.evaluate((stubMode) => {
         (window as any).__e2eOriginalWindowOpen = window.open.bind(window);
+        const installMockIdp = () => {
+            if (document.getElementById('mock-idp-title')) {
+                return;
+            }
+
+            const overlay = document.createElement('div');
+            overlay.id = 'e2e-mock-idp';
+            overlay.innerHTML = '<h1 id="mock-idp-title">Mock SSO Provider</h1>';
+            overlay.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;background:#fff;z-index:2147483647';
+            document.documentElement.appendChild(overlay);
+            window.addEventListener('popstate', () => overlay.remove(), {once: true});
+        };
+        (window as any).__e2eInstallMockIdp = installMockIdp;
         window.open = () => {
             if (stubMode === 'noop') {
                 return null;
             }
 
-            const mockHtml = '<!DOCTYPE html><html><head><title>Mock SSO</title></head>' +
-                '<body><h1 id="mock-idp-title">Mock SSO Provider</h1></body></html>';
-            document.open();
-            document.write(mockHtml);
-            document.close();
+            installMockIdp();
             return null;
         };
     }, mode);
@@ -136,6 +172,7 @@ export async function restoreWindowOpen(serverWin: ServerView): Promise<void> {
             window.open = original;
         }
         delete (window as any).__e2eOriginalWindowOpen;
+        delete (window as any).__e2eInstallMockIdp;
     });
 }
 
@@ -150,6 +187,7 @@ export async function waitForDesktopAuthPage(serverWin: ServerView): Promise<voi
 }
 
 export async function waitForMockIdpPage(serverWin: ServerView): Promise<void> {
+    await ensureMockIdpPage(serverWin);
     await serverWin.waitForSelector(MOCK_IDP_TITLE_SELECTOR, {timeout: 15_000});
 }
 
