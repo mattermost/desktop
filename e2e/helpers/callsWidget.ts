@@ -53,7 +53,10 @@ export async function waitForCallsWidgetWindow(
 // is still true. Clicks and keyboard handlers no-op until RTC connect clears that
 // flag (the mute button is `disabled` until then).
 export async function waitForCallsClientReady(widgetWindow: Page, timeoutMs = 30_000) {
-    return widgetWindow.waitForSelector('#voice-mute-unmute:not([disabled])', {timeout: timeoutMs});
+    return widgetWindow.waitForSelector('#voice-mute-unmute:not([disabled])', {
+        state: 'visible',
+        timeout: timeoutMs,
+    });
 }
 
 // Send a keyboard shortcut to the Calls widget BrowserWindow.
@@ -116,27 +119,18 @@ export async function closeCallsWidget(
     widgetWindow: Page,
     serverWin?: ServerView,
 ): Promise<void> {
-    // Leave via the keyboard shortcut, which calls disconnect() directly (see the
-    // "MM Calls - Leave call keyboard shortcut" test).
-    // If the shortcut ever proves unreliable, the faithful alternative is the menu
-    // route used by the Calls plugin's own suite: click #calls-widget-leave-button,
-    // then click "Leave call" inside getByTestId('dropdownmenu').
+    // Leave through the widget menu (plugin suite path), not sendWidgetShortcut.
+    // Keyboard delivery is OS-dependent and flakes in CI; Cmd/Ctrl+Shift+L is
+    // covered by the leave-shortcut spec.
     if (!widgetWindow.isClosed()) {
-        const isMac = process.platform === 'darwin';
         try {
             await waitForCallsClientReady(widgetWindow);
-            await sendWidgetShortcut(
-                electronApp,
-                'L',
-                isMac ? ['shift', 'meta'] : ['shift', 'control'],
-            );
+            await widgetWindow.locator('#calls-widget-leave-button').click();
+            await widgetWindow.getByTestId('dropdownmenu').getByText('Leave call').click();
         } catch (error) {
             if (!widgetWindow.isClosed()) {
                 throw error;
             }
-
-            // Widget disappeared between the isClosed() check and the shortcut; the
-            // poll below is the real assertion.
         }
     }
 
