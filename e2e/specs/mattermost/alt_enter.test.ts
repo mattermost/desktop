@@ -7,10 +7,9 @@ import {loginToMattermost} from '../../helpers/login';
 import {
     getPostTextboxValue,
     pressPostTextboxKey,
-    POST_TEXTBOX_SELECTOR,
     typeIntoPostTextbox,
     waitForChannelPostListLoaded,
-    waitForMattermostShell,
+    waitForMattermostShellReady,
 } from '../../helpers/mattermostShell';
 
 // ── MM-T2023: ALT+ENTER ───────────────────────────────────────────────
@@ -34,9 +33,8 @@ test.describe('mattermost/alt_enter', () => {
             expect(firstServer, 'Server view must exist').toBeTruthy();
 
             await loginToMattermost(firstServer!);
-            await waitForMattermostShell(firstServer!, {channelItem: '#sidebarItem_off-topic'});
+            await waitForMattermostShellReady(firstServer!, {channelItem: '#sidebarItem_off-topic'});
             await firstServer!.click('#sidebarItem_off-topic');
-            await firstServer!.waitForSelector(POST_TEXTBOX_SELECTOR, {timeout: 15_000});
             await waitForChannelPostListLoaded(firstServer!);
 
             const postsBefore = await firstServer!.evaluate(() =>

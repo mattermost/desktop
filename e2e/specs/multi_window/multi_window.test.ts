@@ -15,7 +15,7 @@ import {closeElectronAppFast, waitForWindow} from '../../helpers/electronApp';
 import {NOTIFICATION_CLICKED} from '../../helpers/ipcChannels';
 import {loginToMattermost} from '../../helpers/login';
 import {waitForMainWindowFocused} from '../../helpers/mainWindowFocus';
-import {POST_TEXTBOX_SELECTOR, waitForChannelPostListLoaded, waitForMattermostShellReady} from '../../helpers/mattermostShell';
+import {POST_TEXTBOX_SELECTOR, waitForMattermostShellReady} from '../../helpers/mattermostShell';
 import {
     closeAllPopouts,
     closePopoutWindow,
@@ -96,7 +96,6 @@ test.describe('multi_window/multi_window', () => {
         const popoutView = await getPopoutServerView(electronApp);
         await prepareMattermostServerView(electronApp, popoutView.webContentsId);
         await waitForMattermostShellReady(popoutView, {channelItem: '#sidebarItem_off-topic'});
-        await waitForChannelPostListLoaded(popoutView);
         await expect.poll(
             async () => popoutView.evaluate(() => window.location.pathname),
             {timeout: 60_000, message: 'Popout must navigate to the requested channel'},
