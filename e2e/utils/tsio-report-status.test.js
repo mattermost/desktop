@@ -477,6 +477,72 @@ describe('flipPerOsCommitStatuses', () => {
         assert.equal(statuses[0].state, 'error');
         assert.match(statuses[0].description, /per-job counts unavailable/i);
     });
+
+    it('posts error when one uploaded shard in the bucket has no per-job counts and tests failed', async () => {
+        const {statuses, github, core, context, compositeIdentity} = makeHarness();
+
+        await flipPerOsCommitStatuses({
+            github,
+            context,
+            compositeIdentity,
+            detail: {
+                reports: [
+                    {gh_job_name: 'e2e-on-ubuntu-latest-master-1-of-3', status: 'complete'},
+                    {gh_job_name: 'e2e-on-ubuntu-latest-master-2-of-3', status: 'complete'},
+                    {gh_job_name: 'e2e-on-ubuntu-latest-master-3-of-3', status: 'complete'},
+                ],
+            },
+            perJobCounts: {
+                'e2e-on-ubuntu-latest-master-1-of-3': {passed: 80, failed: 0, skipped: 0, flaky: 0},
+                'e2e-on-ubuntu-latest-master-2-of-3': {passed: 82, failed: 0, skipped: 0, flaky: 0},
+            },
+            targetUrl: 'https://example.test/report',
+            upstreamJobsSucceeded: true,
+            expectedOs: ['linux'],
+            readyWhenOs: 'linux',
+            minReports: 3,
+            hasPerJobCounts: true,
+            overallFailed: 2,
+            core,
+        });
+
+        assert.equal(statuses[0].state, 'error');
+        assert.match(statuses[0].description, /per-job counts unavailable/i);
+    });
+
+    it('posts success for a fully counted passing OS when another OS failed', async () => {
+        const {statuses, github, core, context, compositeIdentity} = makeHarness();
+
+        await flipPerOsCommitStatuses({
+            github,
+            context,
+            compositeIdentity,
+            detail: {
+                reports: [
+                    {gh_job_name: 'e2e-on-ubuntu-latest-master-1-of-3', status: 'complete'},
+                    {gh_job_name: 'e2e-on-ubuntu-latest-master-2-of-3', status: 'complete'},
+                    {gh_job_name: 'e2e-on-ubuntu-latest-master-3-of-3', status: 'complete'},
+                    {gh_job_name: 'e2e-on-windows-2022-master-1-of-3', status: 'complete'},
+                ],
+            },
+            perJobCounts: {
+                'e2e-on-ubuntu-latest-master-1-of-3': {passed: 80, failed: 0, skipped: 1, flaky: 0},
+                'e2e-on-ubuntu-latest-master-2-of-3': {passed: 78, failed: 0, skipped: 2, flaky: 0},
+                'e2e-on-ubuntu-latest-master-3-of-3': {passed: 81, failed: 0, skipped: 0, flaky: 0},
+                'e2e-on-windows-2022-master-1-of-3': {passed: 90, failed: 1, skipped: 3, flaky: 0},
+            },
+            targetUrl: 'https://example.test/report',
+            upstreamJobsSucceeded: true,
+            expectedOs: ['linux', 'windows'],
+            hasPerJobCounts: true,
+            overallFailed: 1,
+            core,
+        });
+
+        const byContext = Object.fromEntries(statuses.map((s) => [s.context, s]));
+        assert.equal(byContext['e2e/linux'].state, 'success');
+        assert.equal(byContext['e2e/windows'].state, 'failure');
+    });
 });
 
 describe('reportUrlForStatusBucket', () => {
@@ -686,6 +752,103 @@ describe('shouldFailFromScope', () => {
             hasPerJobCounts: true,
             overallFailed: 4,
         }), false);
+    });
+
+    it('does not succeed a scoped OS when one uploaded shard lacks per-job counts and the group failed', () => {
+        const detail = {
+            reports: [
+                {gh_job_name: 'e2e-on-ubuntu-latest-master-1-of-3', status: 'complete'},
+                {gh_job_name: 'e2e-on-ubuntu-latest-master-2-of-3', status: 'complete'},
+                {gh_job_name: 'e2e-on-ubuntu-latest-master-3-of-3', status: 'complete'},
+            ],
+            test_stats: {failed: 2, passed: 200, skipped: 5, total: 207},
+        };
+        const perJobCounts = {
+            'e2e-on-ubuntu-latest-master-1-of-3': {passed: 80, failed: 0, skipped: 0, flaky: 0},
+            'e2e-on-ubuntu-latest-master-2-of-3': {passed: 82, failed: 0, skipped: 0, flaky: 0},
+        };
+        const byKey = buildOsStatusTotals({detail, perJobCounts});
+        assert.equal(byKey.linux.hasResults, true);
+        assert.equal(byKey.linux.failed, 0);
+        assert.equal(shouldFailFromScope({
+            failOnTestFailures: true,
+            readyWhenOs: 'linux',
+            overallState: 'failure',
+            byKey,
+            upstreamJobsSucceeded: true,
+            minReports: 3,
+            detail,
+            perJobCounts,
+            hasPerJobCounts: true,
+            overallFailed: 2,
+        }), true);
+        assert.equal(statusFromTotals(
+            byKey.linux,
+            true,
+            'E2E incomplete — no results for this OS',
+            {
+                minReports: 3,
+                uploadedReports: 3,
+                hasPerJobCounts: true,
+                hasCountsForEveryUploadedReport: false,
+                overallFailed: 2,
+            },
+        ).state, 'error');
+    });
+
+    it('keeps a fully counted passing OS green when another OS failed', () => {
+        const detail = {
+            reports: [
+                {gh_job_name: 'e2e-on-ubuntu-latest-master-1-of-3', status: 'complete'},
+                {gh_job_name: 'e2e-on-ubuntu-latest-master-2-of-3', status: 'complete'},
+                {gh_job_name: 'e2e-on-ubuntu-latest-master-3-of-3', status: 'complete'},
+                {gh_job_name: 'e2e-on-windows-2022-master-1-of-3', status: 'complete'},
+            ],
+            test_stats: {failed: 1, passed: 300, skipped: 8, total: 309},
+        };
+        const perJobCounts = {
+            'e2e-on-ubuntu-latest-master-1-of-3': {passed: 80, failed: 0, skipped: 2, flaky: 0},
+            'e2e-on-ubuntu-latest-master-2-of-3': {passed: 78, failed: 0, skipped: 1, flaky: 0},
+            'e2e-on-ubuntu-latest-master-3-of-3': {passed: 81, failed: 0, skipped: 2, flaky: 0},
+            'e2e-on-windows-2022-master-1-of-3': {passed: 90, failed: 1, skipped: 3, flaky: 0},
+        };
+        const byKey = buildOsStatusTotals({detail, perJobCounts});
+        assert.equal(shouldFailFromScope({
+            failOnTestFailures: true,
+            readyWhenOs: 'linux',
+            overallState: 'failure',
+            byKey,
+            upstreamJobsSucceeded: true,
+            minReports: 3,
+            detail,
+            perJobCounts,
+            hasPerJobCounts: true,
+            overallFailed: 1,
+        }), false);
+        assert.equal(statusFromTotals(
+            byKey.linux,
+            true,
+            'E2E incomplete — no results for this OS',
+            {
+                minReports: 3,
+                uploadedReports: 3,
+                hasPerJobCounts: true,
+                hasCountsForEveryUploadedReport: true,
+                overallFailed: 1,
+            },
+        ).state, 'success');
+        assert.equal(shouldFailFromScope({
+            failOnTestFailures: true,
+            readyWhenOs: 'windows',
+            overallState: 'failure',
+            byKey,
+            upstreamJobsSucceeded: true,
+            minReports: 1,
+            detail,
+            perJobCounts,
+            hasPerJobCounts: true,
+            overallFailed: 1,
+        }), true);
     });
 });
 

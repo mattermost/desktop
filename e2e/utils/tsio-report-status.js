@@ -71,6 +71,27 @@ function countReportsForBucket(detail, bucketKey) {
 }
 
 /**
+ * `row.hasResults` is true if *any* shard in the bucket has counts. A sibling
+ * uploaded report can still be missing from `perJobCounts`. Do not post scoped
+ * success until every uploaded name has an entry.
+ *
+ * @returns {boolean|undefined} undefined when the bucket has no uploaded reports
+ */
+function hasCountsForEveryUploadedReport(detail, perJobCounts, bucketKey) {
+    const names = (detail?.reports || []).map((report) => report.gh_job_name || report.display_name);
+    const jobNames = [...new Set(names.filter(
+        (name) => Boolean(name) && statusBucketKey(parseCmtJobName(name)) === bucketKey,
+    ))];
+    if (jobNames.length === 0) {
+        return undefined;
+    }
+    if (!perJobCounts) {
+        return false;
+    }
+    return jobNames.every((name) => Object.prototype.hasOwnProperty.call(perJobCounts, name));
+}
+
+/**
  * Whether the poll loop can stop waiting for more uploads.
  * Per-OS status jobs stop when that OS's shards are present, not when all 10
  * reports in the group have landed.
@@ -111,7 +132,7 @@ const EMPTY_OS_ROW = {passed: 0, failed: 0, skipped: 0, shardFailed: false, hasR
  * post success from "shards uploaded" / empty `row.failed`.
  *
  * @param {{failed?: number, shardFailed?: boolean, hasResults?: boolean}} row
- * @param {{hasPerJobCounts?: boolean, overallFailed?: number}} completeness
+ * @param {{hasPerJobCounts?: boolean, hasCountsForEveryUploadedReport?: boolean, overallFailed?: number}} completeness
  * @returns {boolean}
  */
 function countsUnavailableWithFailures(row, completeness) {
@@ -125,6 +146,9 @@ function countsUnavailableWithFailures(row, completeness) {
     if (completeness.hasPerJobCounts === false) {
         return true;
     }
+    if (completeness.hasCountsForEveryUploadedReport === false) {
+        return true;
+    }
     return !row.hasResults;
 }
 
@@ -132,7 +156,7 @@ function countsUnavailableWithFailures(row, completeness) {
  * @param {Object} row
  * @param {boolean} upstreamJobsSucceeded
  * @param {string} incompleteLabel
- * @param {{minReports?: number, uploadedReports?: number, hasPerJobCounts?: boolean, overallFailed?: number}} [completeness]
+ * @param {{minReports?: number, uploadedReports?: number, hasPerJobCounts?: boolean, hasCountsForEveryUploadedReport?: boolean, overallFailed?: number}} [completeness]
  * @returns {{state: string, description: string}}
  */
 function statusFromTotals(row, upstreamJobsSucceeded, incompleteLabel, completeness = {}) {
@@ -170,6 +194,12 @@ function statusFromTotals(row, upstreamJobsSucceeded, incompleteLabel, completen
                 description: 'TSIO per-job counts unavailable with test failures',
             };
         }
+        if (completeness.hasCountsForEveryUploadedReport === false) {
+            return {
+                state: 'error',
+                description: 'TSIO per-job counts incomplete for this OS',
+            };
+        }
         if (row.hasResults) {
             return {
                 state: 'success',
@@ -186,6 +216,12 @@ function statusFromTotals(row, upstreamJobsSucceeded, incompleteLabel, completen
         return {
             state: 'error',
             description: 'TSIO per-job counts unavailable with test failures',
+        };
+    }
+    if (completeness.hasCountsForEveryUploadedReport === false) {
+        return {
+            state: 'error',
+            description: 'TSIO per-job counts incomplete for this OS',
         };
     }
 
@@ -222,6 +258,7 @@ function shouldFailFromScope({
     upstreamJobsSucceeded,
     minReports,
     detail,
+    perJobCounts,
     hasPerJobCounts,
     overallFailed,
 }) {
@@ -241,19 +278,30 @@ function shouldFailFromScope({
             row,
             upstreamJobsSucceeded,
             'E2E incomplete — no results for this OS',
-            {minReports, uploadedReports: uploaded, ...countMeta},
+            {
+                minReports,
+                uploadedReports: uploaded,
+                ...countMeta,
+                hasCountsForEveryUploadedReport: hasCountsForEveryUploadedReport(detail, perJobCounts, readyWhenOs),
+            },
         ).state !== 'success';
     }
 
     if (readyWhenPolicy) {
         return E2E_POLICY_OS_LIST.some((os) => {
-            const row = byKey[`${os}-policy`] || EMPTY_OS_ROW;
-            const uploaded = countReportsForBucket(detail, `${os}-policy`);
+            const key = `${os}-policy`;
+            const row = byKey[key] || EMPTY_OS_ROW;
+            const uploaded = countReportsForBucket(detail, key);
             return statusFromTotals(
                 row,
                 upstreamJobsSucceeded,
                 'Policy incomplete — no results for this OS',
-                {minReports: 1, uploadedReports: uploaded, ...countMeta},
+                {
+                    minReports: 1,
+                    uploadedReports: uploaded,
+                    ...countMeta,
+                    hasCountsForEveryUploadedReport: hasCountsForEveryUploadedReport(detail, perJobCounts, key),
+                },
             ).state !== 'success';
         });
     }
@@ -442,24 +490,27 @@ async function flipPerOsCommitStatuses({
     });
 
     const osCompleteness = (os) => {
-        if (readyWhenOs === os) {
-            return {
-                minReports,
-                uploadedReports: countReportsForBucket(detail, os),
-                ...countMeta,
-            };
-        }
-        return countMeta;
+        const extra = readyWhenOs === os ? {
+            minReports,
+            uploadedReports: countReportsForBucket(detail, os),
+        } : {};
+        return {
+            ...countMeta,
+            ...extra,
+            hasCountsForEveryUploadedReport: hasCountsForEveryUploadedReport(detail, perJobCounts, os),
+        };
     };
 
     const policyCompleteness = (os) => {
-        if (!readyWhenPolicy) {
-            return countMeta;
-        }
-        return {
+        const key = `${os}-policy`;
+        const extra = readyWhenPolicy ? {
             minReports: 1,
-            uploadedReports: countReportsForBucket(detail, `${os}-policy`),
+            uploadedReports: countReportsForBucket(detail, key),
+        } : {};
+        return {
             ...countMeta,
+            ...extra,
+            hasCountsForEveryUploadedReport: hasCountsForEveryUploadedReport(detail, perJobCounts, key),
         };
     };
 
@@ -897,6 +948,7 @@ async function reportTsioStatus({
         detail,
         hasPerJobCounts: perJobCounts != null,
         overallFailed,
+        perJobCounts: perJobCounts || {},
     })) {
         let reason;
         if (readyWhenOs) {
@@ -937,3 +989,4 @@ module.exports.shardsAreReady = shardsAreReady;
 module.exports.shouldFailFromScope = shouldFailFromScope;
 module.exports.statusFromTotals = statusFromTotals;
 module.exports.scopedHasShardFailure = scopedHasShardFailure;
+module.exports.hasCountsForEveryUploadedReport = hasCountsForEveryUploadedReport;
