@@ -203,6 +203,28 @@ const PROFILE_SETTINGS_BODY_SELECTOR = [
     '[data-testid="accountSettingsModalBody"]',
 ].join(', ');
 
+/**
+ * Visible Profile Settings root. `querySelector('A, B')` is tree order, not
+ * selector order, so a leftover hidden `.user-settings` would beat the open
+ * `#userAccountModal`.
+ */
+function visibleProfileSettingsRootJs(): string {
+    return `(() => {
+        const isVisible = (el) => {
+            if (!(el instanceof HTMLElement)) {
+                return false;
+            }
+            const rect = el.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0;
+        };
+        const modal = Array.from(document.querySelectorAll(${JSON.stringify(PROFILE_SETTINGS_MODAL_SELECTOR)})).find(isVisible);
+        if (modal) {
+            return modal;
+        }
+        return Array.from(document.querySelectorAll(${JSON.stringify(PROFILE_SETTINGS_BODY_SELECTOR)})).find(isVisible) || null;
+    })()`;
+}
+
 export async function openProfileSettings(win: ServerView): Promise<void> {
     const opened = await win.runInRenderer<boolean>(`
         const menuBtn = document.querySelector('#userAccountMenuButton');
@@ -341,8 +363,7 @@ export async function reloadAndOpenProfileSettings(win: ServerView, fieldId: str
 
 export async function getCustomAttributeLabelsInSettings(win: ServerView): Promise<string[]> {
     return win.runInRenderer<string[]>(`
-        const modal = document.querySelector(${JSON.stringify(PROFILE_SETTINGS_MODAL_SELECTOR)})
-            || document.querySelector('.user-settings');
+        const modal = ${visibleProfileSettingsRootJs()};
         if (!modal) {
             return [];
         }
@@ -370,6 +391,33 @@ export async function getCustomAttributeLabelsInSettings(win: ServerView): Promi
         }
         return labels;
     `);
+}
+
+export async function profileSettingsContainsText(win: ServerView, text: string): Promise<boolean> {
+    return win.runInRenderer<boolean>(`
+        const modal = ${visibleProfileSettingsRootJs()};
+        if (!modal) {
+            return false;
+        }
+        return (modal.textContent || '').includes(${JSON.stringify(text)});
+    `);
+}
+
+/** Webapp caches CPA field defs after API create; wait for Edit then poll labels. */
+export async function waitForCustomAttributeNamesInSettings(
+    win: ServerView,
+    names: string[],
+    fieldId: string,
+): Promise<string[]> {
+    await waitForCustomAttributeEditInProfileSettings(win, fieldId);
+    await expect.poll(async () => {
+        const labels = await getCustomAttributeLabelsInSettings(win);
+        return names.every((name) => labels.some((label) => label.includes(name)));
+    }, {
+        timeout: 10_000,
+        message: `Profile settings must include ${names.join(', ')}`,
+    }).toBe(true);
+    return getCustomAttributeLabelsInSettings(win);
 }
 
 export async function editTextCustomAttribute(

@@ -30,7 +30,6 @@ import {
     dismissBlockingOverlays,
     editTextCustomAttribute,
     getCustomAttributeInputValue,
-    getCustomAttributeLabelsInSettings,
     getCustomProfileAttributeFields,
     getCustomProfileAttributeValues,
     isAppResponsive,
@@ -40,11 +39,13 @@ import {
     patchCustomProfileAttributeField,
     popoverContainsText,
     popoverLinkHasHref,
+    profileSettingsContainsText,
     recoverFromProfileSettings,
     reloadAndOpenProfileSettings,
     updateCustomProfileAttributeValues,
     type UserPropertyField,
     waitForCustomAttributeEditInProfileSettings,
+    waitForCustomAttributeNamesInSettings,
 } from '../../helpers/userAttributes';
 
 const FIELD_PREFIX = 'E2E_UA_';
@@ -127,12 +128,12 @@ test.describe('user_attributes/user_attributes', () => {
                     test.skip(true, 'Profile settings UI is not available on this server');
                     return;
                 }
-                const labels = await getCustomAttributeLabelsInSettings(win);
+                const labels = await waitForCustomAttributeNamesInSettings(
+                    win,
+                    names,
+                    created[created.length - 1]!.id,
+                );
                 await closeProfileSettings(win);
-
-                for (const name of names) {
-                    expect(labels.some((label) => label.includes(name)), `Expected ${name} in profile settings`).toBe(true);
-                }
 
                 const labelIndexes = names.map((name) => labels.findIndex((label) => label.includes(name)));
                 expect(labelIndexes.every((index) => index >= 0)).toBe(true);
@@ -165,20 +166,12 @@ test.describe('user_attributes/user_attributes', () => {
                     test.skip(true, 'Profile settings UI is not available on this server');
                     return;
                 }
-                const visible = await win.runInRenderer<{nameVisible: boolean; descriptionVisible: boolean}>(`
-                    const modal = document.querySelector('#accountSettingsModal, .user-settings, #userAccountModal, .AccountModal');
-                    if (!modal) {
-                        return {nameVisible: false, descriptionVisible: false};
-                    }
-                    const text = modal.textContent || '';
-                    return {
-                        nameVisible: text.includes(${JSON.stringify(longName)}),
-                        descriptionVisible: text.includes(${JSON.stringify(longDescription)}),
-                    };
-                `);
+                await waitForCustomAttributeEditInProfileSettings(win, created!.id);
+                await expect.poll(
+                    () => profileSettingsContainsText(win, longName),
+                    {timeout: 10_000, message: 'Long attribute name should be visible'},
+                ).toBe(true);
                 await closeProfileSettings(win);
-
-                expect(visible.nameVisible, 'Long attribute name should be visible').toBe(true);
             } finally {
                 if (created) {
                     await cleanupFields([created.id]);
@@ -537,8 +530,7 @@ test.describe('user_attributes/user_attributes', () => {
                     test.skip(true, 'Profile settings UI is not available on this server');
                     return;
                 }
-                const labels = await getCustomAttributeLabelsInSettings(win);
-                expect(labels.some((label) => label.includes(created!.name)), 'Always-visible attribute should appear in profile settings').toBe(true);
+                await waitForCustomAttributeNamesInSettings(win, [created!.name], created!.id);
                 await closeProfileSettings(win);
             } finally {
                 if (created) {
