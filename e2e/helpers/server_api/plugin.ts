@@ -58,11 +58,30 @@ async function disableCallsTestMode(baseUrl: string, token: string): Promise<voi
 }
 
 /**
+ * 12.0 default `channel_user` no longer includes `use_slash_commands`, so
+ * `/call start` from a regular test user returns 403 and the widget never opens.
+ */
+async function ensureChannelUserCanUseSlashCommands(baseUrl: string, token: string): Promise<void> {
+    const role = await apiRequest<{id: string; permissions: string[]}>(baseUrl, token, '/api/v4/roles/name/channel_user');
+    if (role.permissions.includes('use_slash_commands')) {
+        return;
+    }
+
+    await apiRequest(baseUrl, token, `/api/v4/roles/${role.id}/patch`, {
+        method: 'PUT',
+        body: JSON.stringify({
+            permissions: [...role.permissions, 'use_slash_commands'],
+        }),
+    });
+}
+
+/**
  * Ensure the Calls plugin is installed, active, and configured for E2E testing.
  *
  * - Installs the plugin from the marketplace if absent.
  * - Restarts the plugin if it is already running.
  * - Turns Test mode off once the plugin is active.
+ * - Grants `channel_user` `use_slash_commands` (dropped from 12.0 defaults).
  */
 export async function ensureCallsPlugin(baseUrl: string, token: string): Promise<void> {
     if (await isCallsPluginEnabled(baseUrl, token)) {
@@ -119,6 +138,7 @@ export async function ensureCallsPlugin(baseUrl: string, token: string): Promise
     }
 
     await disableCallsTestMode(baseUrl, token);
+    await ensureChannelUserCanUseSlashCommands(baseUrl, token);
 
     // Poll until OnActivate has registered the 'call' slash command.
     // The plugin reports active before slash commands are ready, so /call start
