@@ -74,7 +74,7 @@ test.describe('calls/calls_functionality', () => {
         await waitForMattermostShellReady(serverWin, {channelItem: '#sidebarItem_town-square'});
         await serverWin.click('#sidebarItem_town-square');
         await serverWin.waitForSelector('#channelHeaderTitle', {timeout: 10_000});
-        await leaveCallIfActive(electronApp);
+        await leaveCallIfActive(electronApp, serverWin);
         await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
     });
 

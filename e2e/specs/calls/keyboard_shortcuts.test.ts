@@ -74,7 +74,7 @@ test.describe('calls/keyboard_shortcuts', () => {
         await serverWin.click('#sidebarItem_town-square');
         await serverWin.waitForSelector('#channelHeaderTitle', {timeout: 10_000});
         await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
-        await leaveCallIfActive(electronApp);
+        await leaveCallIfActive(electronApp, serverWin);
     });
 
     // Covered by MM-T5411 in calls_functionality.test.ts (smoke test). Skip here to avoid duplicate coverage.

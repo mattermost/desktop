@@ -81,7 +81,7 @@ test.describe('calls/slash_commands', () => {
         await serverWin.click('#sidebarItem_town-square');
         await serverWin.waitForSelector('#channelHeaderTitle', {timeout: 10_000});
         await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
-        await leaveCallIfActive(electronApp);
+        await leaveCallIfActive(electronApp, serverWin);
     });
 
     // NOTE: this does NOT exercise the `/call end` slash command, despite MM-T5588's

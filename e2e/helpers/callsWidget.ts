@@ -107,10 +107,32 @@ export async function startCall(electronApp: ElectronApplication, serverWin: Ser
     return widgetWindow;
 }
 
-export async function leaveCallIfActive(electronApp: ElectronApplication): Promise<void> {
+async function leaveCallViaDesktopApi(widgetWindow: Page): Promise<void> {
+    await widgetWindow.evaluate(() => {
+        const w = window as Window & {
+            callsClient?: {disconnect?: () => void};
+            desktopAPI?: {leaveCall?: () => void};
+        };
+        w.callsClient?.disconnect?.();
+        if (typeof w.desktopAPI?.leaveCall !== 'function') {
+            throw new Error('desktopAPI.leaveCall is not available');
+        }
+        w.desktopAPI.leaveCall();
+    });
+}
+
+export async function leaveCallIfActive(
+    electronApp: ElectronApplication,
+    serverWin?: ServerView,
+): Promise<void> {
     const existing = findCallsWidgetWindow(electronApp);
     if (existing) {
-        await closeCallsWidget(electronApp, existing);
+        await closeCallsWidget(electronApp, existing, serverWin);
+    } else if (serverWin) {
+        await expect.poll(
+            () => serverWin.isVisible('[data-testid="calls-sidebar-active-call-icon"]'),
+            {timeout: 10_000, message: 'Sidebar active-call icon must disappear after leaving'},
+        ).toBe(false);
     }
 }
 
@@ -119,14 +141,15 @@ export async function closeCallsWidget(
     widgetWindow: Page,
     serverWin?: ServerView,
 ): Promise<void> {
-    // Leave through the widget menu (plugin suite path), not sendWidgetShortcut.
-    // Keyboard delivery is OS-dependent and flakes in CI; Cmd/Ctrl+Shift+L is
-    // covered by the leave-shortcut spec.
+    // Disconnect the plugin client, then close the widget via desktop IPC.
+    // The confirmation menu (#calls-widget-leave-button → "Leave call") does
+    // not complete on macOS/Windows CI (dropdown never appears), so the call
+    // stays up and the next startCall times out. Do not use sendWidgetShortcut
+    // here; Cmd/Ctrl+Shift+L is covered by the leave-shortcut spec.
     if (!widgetWindow.isClosed()) {
         try {
             await waitForCallsClientReady(widgetWindow);
-            await widgetWindow.locator('#calls-widget-leave-button').click();
-            await widgetWindow.getByTestId('dropdownmenu').getByText('Leave call').click();
+            await leaveCallViaDesktopApi(widgetWindow);
         } catch (error) {
             if (!widgetWindow.isClosed()) {
                 throw error;
