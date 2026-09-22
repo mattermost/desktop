@@ -382,6 +382,38 @@ async function fetchCustomProfileAttributeValuesIntoClient(
     return result?.values ?? {};
 }
 
+async function remountProfileSettingsTab(win: ServerView, fieldId: string): Promise<void> {
+    // Switching tabs remounts UserSettingsGeneralTab so setupInitialState and
+    // describe read the current getCurrentUser map. Do not close the modal.
+    await win.runInRenderer<void>(`
+        const modal = document.querySelector(${JSON.stringify(PROFILE_SETTINGS_MODAL_SELECTOR)});
+        if (!modal) {
+            throw new Error('Profile settings modal is not open');
+        }
+        const securityNav = Array.from(modal.querySelectorAll('a, button, [role="tab"], [role="menuitem"], .nav-link'))
+            .find((element) => /^security$/i.test((element.textContent || '').trim()));
+        if (!(securityNav instanceof HTMLElement)) {
+            throw new Error('Security settings tab not found');
+        }
+        securityNav.click();
+    `);
+    await win.waitForSelector('#passwordEdit, #mfaEdit, #signInMethodEdit', {timeout: 10_000});
+
+    await win.runInRenderer<void>(`
+        const modal = document.querySelector(${JSON.stringify(PROFILE_SETTINGS_MODAL_SELECTOR)});
+        if (!modal) {
+            throw new Error('Profile settings modal is not open');
+        }
+        const profileNav = Array.from(modal.querySelectorAll('a, button, [role="tab"], [role="menuitem"], .nav-link'))
+            .find((element) => /profile settings/i.test((element.textContent || '').trim()));
+        if (!(profileNav instanceof HTMLElement)) {
+            throw new Error('Profile settings tab not found');
+        }
+        profileNav.click();
+    `);
+    await win.waitForSelector(`#customAttribute_${fieldId}Edit`, {timeout: 10_000});
+}
+
 export async function getCustomAttributeLabelsInSettings(win: ServerView): Promise<string[]> {
     return win.runInRenderer<string[]>(`
         const modal = document.querySelector(${JSON.stringify(PROFILE_SETTINGS_MODAL_SELECTOR)})
@@ -521,11 +553,14 @@ export async function waitForCustomAttributeValueInProfileSettings(
     const showsExpected = async () => (await getCustomAttributeInputValue(win, fieldId)).includes(expected);
 
     // Keep the modal open. UserSettingsModal reads getCurrentUser; RECEIVED_CPA_VALUES
-    // updates that profile so describe can show the saved value. Close+open loses
-    // the modal (Profile menu click does not always reopen it).
+    // updates that profile. Switching Security → Profile remounts the general tab
+    // so describe and setupInitialState see Engineering (live props can stay stale).
     const clientValues = await fetchCustomProfileAttributeValuesIntoClient(win);
-    if (String(clientValues[fieldId] ?? '').includes(expected) && await showsExpected()) {
-        return;
+    if (String(clientValues[fieldId] ?? '').includes(expected)) {
+        await remountProfileSettingsTab(win, fieldId);
+        if (await showsExpected()) {
+            return;
+        }
     }
 
     // PATCH / GET me never write the user map; if the CPA fetch still did not
@@ -533,6 +568,7 @@ export async function waitForCustomAttributeValueInProfileSettings(
     // then load the values endpoint into the client.
     await editTextCustomAttribute(win, fieldId, expected, true);
     const afterSave = await fetchCustomProfileAttributeValuesIntoClient(win);
+    await remountProfileSettingsTab(win, fieldId);
     const visible = await getCustomAttributeInputValue(win, fieldId);
     expect(
         visible,
