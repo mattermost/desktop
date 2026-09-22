@@ -36,7 +36,7 @@ async function isCallsTestModeOff(baseUrl: string, token: string): Promise<boole
 async function isCallsSlashCommandRegistered(baseUrl: string, token: string): Promise<boolean> {
     const teams = await apiRequest<Array<{id: string}>>(baseUrl, token, '/api/v4/users/me/teams');
     if (teams.length === 0) {
-        return true;
+        throw new Error('Calls setup user belongs to no teams — cannot verify /call is registered');
     }
     const commands = await apiRequest<Array<{trigger: string}>>(
         baseUrl,
