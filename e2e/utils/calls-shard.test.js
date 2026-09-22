@@ -45,3 +45,16 @@ describe('Calls specs wire the shard-1 guard', () => {
         });
     }
 });
+
+describe('workflow does not grep-filter Calls per shard', () => {
+    it('every Playwright job uses the same --shard formula and no Calls grepInvert', () => {
+        const yml = fs.readFileSync(
+            path.join(__dirname, '../../.github/workflows/e2e-functional-template.yml'),
+            'utf8',
+        );
+        const shardFlag = '--shard="${PLAYWRIGHT_SHARD%%-of-*}/${PLAYWRIGHT_SHARD##*-of-}"'; // eslint-disable-line no-template-curly-in-string
+        assert.equal(yml.split(shardFlag).length - 1, 3);
+        assert.doesNotMatch(yml, /grepInvert|grep-invert|--grep-invert/);
+        assert.doesNotMatch(yml, /specs\/calls/);
+    });
+});
