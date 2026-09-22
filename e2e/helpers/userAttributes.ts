@@ -165,6 +165,18 @@ export async function updateCustomProfileAttributeValues(
     });
 }
 
+export async function getCustomProfileAttributeValues(
+    userId = 'me',
+): Promise<Record<string, string | string[]>> {
+    const {baseUrl, username, password} = getTestServerCredentials();
+    const token = await apiLogin(baseUrl, username, password);
+    return apiRequest<Record<string, string | string[]>>(
+        baseUrl,
+        token,
+        `/api/v4/users/${userId}/custom_profile_attributes`,
+    );
+}
+
 export {dismissBlockingOverlays} from './blockingOverlays';
 
 export async function navigateToTownSquare(win: ServerView): Promise<void> {
@@ -371,21 +383,7 @@ export async function editTextCustomAttribute(
         `);
         await win.waitForSelector(`#customAttribute_${fieldId}`, {timeout: 10_000});
     }
-    await win.runInRenderer<void>(`
-        const fieldId = ${JSON.stringify(fieldId)};
-        const input = document.querySelector('#customAttribute_' + fieldId);
-        if (!input) {
-            throw new Error('Custom attribute input not found');
-        }
-        input.focus?.();
-        if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) {
-            input.value = '';
-            input.dispatchEvent(new Event('input', {bubbles: true}));
-        }
-    `);
-    if (newValue) {
-        await win.fill(`#customAttribute_${fieldId}`, newValue);
-    }
+    await win.fill(`#customAttribute_${fieldId}`, newValue);
     if (save) {
         await win.waitForSelector('#saveSetting', {timeout: 10_000});
         await expect.poll(async () => win.runInRenderer<boolean>(`
@@ -407,6 +405,9 @@ export async function editTextCustomAttribute(
 }
 
 export async function cancelCustomAttributeEdit(win: ServerView, fieldId?: string): Promise<void> {
+    // SettingItemMax mounts Cancel as #cancelSetting beside #saveSetting. Compass
+    // Button textContent is not always exactly "Cancel"; prefer the product id.
+    await win.waitForSelector('#cancelSetting', {timeout: 10_000});
     await win.runInRenderer<void>(`
         const fieldId = ${JSON.stringify(fieldId ?? '')};
         const input = fieldId ? document.querySelector('#customAttribute_' + fieldId) : null;
@@ -414,8 +415,9 @@ export async function cancelCustomAttributeEdit(win: ServerView, fieldId?: strin
         const scope = ${customAttributeEditScopeJs('input || saveBtn')}
             || document.querySelector(${JSON.stringify(PROFILE_SETTINGS_MODAL_SELECTOR)})
             || document;
-        const cancelBtn = Array.from(scope.querySelectorAll('button'))
-            .find((button) => (button.textContent || '').trim() === 'Cancel');
+        const cancelBtn = scope.querySelector('#cancelSetting')
+            || scope.querySelector('[data-testid="cancelButton"]')
+            || document.querySelector('#cancelSetting');
         if (!(cancelBtn instanceof HTMLElement)) {
             throw new Error('Cancel button not found for custom attribute edit section');
         }
