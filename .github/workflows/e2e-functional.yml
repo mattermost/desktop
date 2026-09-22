@@ -209,7 +209,9 @@ jobs:
           sparse-checkout: |
             e2e/utils/tsio-report-status.js
             e2e/utils/cmt-channel-notify.js
+            e2e/utils/cmt-failure-owners.js
             e2e/utils/github-actions.js
+            e2e/utils/github-to-mattermost.js
           sparse-checkout-cone-mode: false
 
       - name: Render TSIO summary + flip per-OS commit statuses
@@ -229,6 +231,8 @@ jobs:
           # Routing is by compositeIdentity.name in cmt-channel-notify.js.
           MATTERMOST_E2E_WEBHOOK_URL: ${{ secrets.MM_DESKTOP_E2E_WEBHOOK_URL }}
           MATTERMOST_MASTER_HEALTH_WEBHOOK_URL: ${{ secrets.MM_E2E_MASTER_HEALTH_WEBHOOK_URL }}
+          # Optional GitHub login → Mattermost username JSON. Unset = file map only.
+          MM_GITHUB_USERNAME_MAP: ${{ secrets.MM_GITHUB_USERNAME_MAP }}
         with:
           script: |
             const {canonicalizeOs, E2E_POLICY_OS_LIST} = require('./e2e/utils/github-actions.js');
