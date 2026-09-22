@@ -34,7 +34,8 @@ function shardCountForOs(os) {
 
 /**
  * Expand canonical platform rows into one matrix entry per Playwright shard.
- * Adds `shard: "i-of-n"` for `--shard=i/n` and unique gh-job-name suffixes.
+ * Adds `shard: "i-of-n"` (TSIO / `--shard` machine id) and `shardDisplay: "i/n"`
+ * (GitHub Actions job title only).
  *
  * @param {Array<{platform?: string, os?: string, runner?: string}>} platforms
  * @returns {Array<Record<string, unknown>>}
@@ -49,6 +50,7 @@ function expandPlatformShards(platforms) {
                 ...platform,
                 ...(os ? {platform: os} : {}),
                 shard: `${i}-of-${n}`,
+                shardDisplay: `${i}/${n}`,
             });
         }
     }
@@ -293,6 +295,56 @@ async function cancelActiveE2ERuns({github, context, prNumber, headBranch}) {
 }
 
 /**
+ * True when a newer run of this workflow exists on the same head_branch, so
+ * this run was superseded (typically cancel-in-progress).
+ *
+ * Master (`desktop-master`) is never cancelled by our concurrency group — a
+ * later master commit must still post its own health result. Fail-open on API
+ * errors so a lookup failure cannot hide a real hang or test failure.
+ *
+ * Do not use job `cancelled` results: GitHub reports timeouts as cancelled.
+ *
+ * @param {Object} params
+ * @param {Object} params.github
+ * @param {Object} params.context
+ * @param {{name?: string}} [params.compositeIdentity]
+ * @returns {Promise<boolean>}
+ */
+async function isWorkflowRunSuperseded({github, context, compositeIdentity}) {
+    if (compositeIdentity?.name === 'desktop-master') {
+        return false;
+    }
+
+    try {
+        const {owner, repo} = context.repo;
+        const thisRunId = Number(context.runId);
+        const {data: thisRun} = await github.rest.actions.getWorkflowRun({
+            owner,
+            repo,
+            run_id: thisRunId,
+        });
+        const branch = thisRun.head_branch;
+        if (!branch) {
+            return false;
+        }
+
+        const {data: {workflow_runs: workflowRuns}} = await github.rest.actions.listWorkflowRuns({
+            owner,
+            repo,
+            workflow_id: thisRun.workflow_id,
+            branch,
+            event: thisRun.event,
+            per_page: 20,
+        });
+
+        return workflowRuns.some((run) => run.id !== thisRunId && run.head_branch === branch && run.id > thisRunId);
+    } catch (error) {
+        console.log(`isWorkflowRunSuperseded: fail-open (${error.message})`);
+        return false;
+    }
+}
+
+/**
  * Remove E2E/Run label when workflow triggered via Matterwick
  * @param {Object} params - Parameters object
  * @param {Object} params.github - GitHub API client from actions/github-script
@@ -359,6 +411,7 @@ module.exports = {
     removeE2ELabel,
     markE2EStatusesCancelled,
     cancelActiveE2ERuns,
+    isWorkflowRunSuperseded,
     updateInitialOsStatuses,
     osStatusContext,
     policyStatusContext,

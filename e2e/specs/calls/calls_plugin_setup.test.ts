@@ -1,7 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import type {TestInfo} from '@playwright/test';
+
 import {test, expect} from '../../fixtures/index';
+import {assertCallsSpecsOnShard1} from '../../helpers/assertCallsShard';
 import {demoMattermostConfig} from '../../helpers/config';
 import {apiLogin} from '../../helpers/server_api/client';
 import {CALLS_PLUGIN_ID, isCallsPluginEnabled} from '../../helpers/server_api/plugin';
@@ -18,6 +21,10 @@ test.describe('calls/plugin_setup', () => {
         !process.env.MM_TEST_SERVER_URL || !process.env.MM_TEST_USER_NAME || !process.env.MM_TEST_PASSWORD,
         'MM_TEST_SERVER_URL, MM_TEST_USER_NAME and MM_TEST_PASSWORD required',
     );
+
+    test.beforeAll(async ({}, testInfo: TestInfo) => {
+        assertCallsSpecsOnShard1(testInfo.config.shard);
+    });
 
     test('Calls plugin is installed and enabled on the test server',
         {tag: ['@P1', '@all']},

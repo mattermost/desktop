@@ -162,7 +162,7 @@ jobs:
   #   ]
   # }
   e2e:
-    name: ${{ matrix.environment.os }}-${{ matrix.server.version }}
+    name: ${{ matrix.environment.os == 'macos' && 'E2E macOS' || matrix.environment.os == 'windows' && 'E2E Windows' || 'E2E Linux' }} · MM ${{ matrix.server.version }}
     uses: ./.github/workflows/e2e-functional-template.yml
     needs:
       - calculate-commit-hash
@@ -191,6 +191,7 @@ jobs:
     if: always()
     permissions:
       contents: read
+      actions: read
       id-token: write
       statuses: write
     needs:
@@ -207,11 +208,6 @@ jobs:
             e2e/utils/cmt-channel-notify.js
             e2e/utils/github-actions.js
           sparse-checkout-cone-mode: false
-
-      # cancelled() is only valid in job/step `if`, not in `env`.
-      - name: Detect cancelled run
-        if: cancelled()
-        run: echo "TSIO_RUN_CANCELLED=true" >> "$GITHUB_ENV"
 
       - name: Render TSIO summary + flip commit statuses
         id: summary

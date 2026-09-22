@@ -31,6 +31,7 @@ const {
 const {
     osStatusContext,
     policyStatusContext,
+    isWorkflowRunSuperseded,
     E2E_OS_LIST,
     E2E_POLICY_OS_LIST,
 } = require('./github-actions');
@@ -496,7 +497,6 @@ function buildDisplayReportUrl(baseUrl, compositeIdentity) {
  * @param {string} [params.readyWhenOs] - Poll until this OS's e2e shards are uploaded (linux|macos|windows)
  * @param {boolean} [params.readyWhenPolicy] - Poll until policy reports are uploaded
  * @param {number} [params.minReports] - Reports required for readyWhenOs / readyWhenPolicy
- * @param {boolean} [params.runCancelled] - When true (cancelled workflow), skip the channel post
  * @param {boolean} [params.useStaging] - Target TSIO staging instead of production
  * @param {string} [params.oidcAudience] - OIDC audience claim TSIO expects
  * @param {boolean} [params.upstreamJobsSucceeded] - When false (default true), force the
@@ -525,7 +525,6 @@ async function reportTsioStatus({
     readyWhenOs,
     readyWhenPolicy = false,
     minReports,
-    runCancelled = process.env.TSIO_RUN_CANCELLED === 'true',
     useStaging = false,
     oidcAudience = 'mattermost-test-system-io',
     upstreamJobsSucceeded = true,
@@ -804,25 +803,33 @@ async function reportTsioStatus({
     //   desktop-pr       → MM_DESKTOP_E2E_WEBHOOK_URL
     // Failures here must not undo a successfully written commit status.
     try {
-        if (notifyChannel && !runCancelled) {
-            const notifyNames = new Set(['cmt-desktop', 'desktop-pr', 'desktop-master']);
-            if (notifyNames.has(compositeIdentity.name)) {
-                const {notifyCmtChannel, resolveWebhookUrl} = require('./cmt-channel-notify.js');
-                const webhookUrl = resolveWebhookUrl(compositeIdentity.name);
-                if (webhookUrl) {
-                    // Prefer TSIO links even when the poll timed out at in_progress
-                    // (commit status may still point at the Actions run URL).
-                    const channelReportUrl = displayReportUrl || groupReportUrl || targetUrl;
-                    await notifyCmtChannel({
-                        core,
-                        baseUrl,
-                        compositeIdentity,
-                        detail,
-                        reportUrl: channelReportUrl,
-                        upstreamJobsSucceeded,
-                        hasFailures,
-                        webhookUrl,
-                    });
+        if (notifyChannel) {
+            // Do not use needs.*.result == 'cancelled': job timeouts also report
+            // cancelled and would hide real hangs. cancelled() is false in this
+            // always() job after concurrency cancel (run 35781926909).
+            const superseded = await isWorkflowRunSuperseded({github, context, compositeIdentity});
+            if (superseded) {
+                core.info('Skipping channel notify — a newer run of this workflow superseded this one');
+            } else {
+                const notifyNames = new Set(['cmt-desktop', 'desktop-pr', 'desktop-master']);
+                if (notifyNames.has(compositeIdentity.name)) {
+                    const {notifyCmtChannel, resolveWebhookUrl} = require('./cmt-channel-notify.js');
+                    const webhookUrl = resolveWebhookUrl(compositeIdentity.name);
+                    if (webhookUrl) {
+                        // Prefer TSIO links even when the poll timed out at in_progress
+                        // (commit status may still point at the Actions run URL).
+                        const channelReportUrl = displayReportUrl || groupReportUrl || targetUrl;
+                        await notifyCmtChannel({
+                            core,
+                            baseUrl,
+                            compositeIdentity,
+                            detail,
+                            reportUrl: channelReportUrl,
+                            upstreamJobsSucceeded,
+                            hasFailures,
+                            webhookUrl,
+                        });
+                    }
                 }
             }
         }

@@ -38,11 +38,14 @@ on:
 permissions:
   contents: read
 
-# Duplicate E2E/Run dispatches on the same PR (or master version_name) used to
-# sit on macos-26 for 25+ minutes. Cancel the older run.
+# Duplicate E2E/Run dispatches on the same PR used to sit on macos-26 for
+# 25+ minutes — cancel the older PR run. Master dispatches share no PR number
+# and used to share group `e2e-functional-master`, so a newer merge cancelled
+# the previous commit. Key master by SHA and never cancel-in-progress unless
+# this is a PR run.
 concurrency:
-  group: e2e-functional-${{ inputs.pr_number || inputs.version_name }}
-  cancel-in-progress: true
+  group: e2e-functional-${{ inputs.pr_number || github.sha }}
+  cancel-in-progress: ${{ inputs.pr_number != '' }}
 
 jobs:
   # TSIO reporting model (PR / master / release):
@@ -186,7 +189,7 @@ jobs:
     needs:
       - prepare-matrix
       - update-initial-status
-    name: linux-${{ matrix.shard }}
+    name: E2E Linux (${{ matrix.shardDisplay }})
     if: ${{ needs.prepare-matrix.outputs.linux != '[]' }}
     strategy:
       matrix:
@@ -213,7 +216,7 @@ jobs:
     needs:
       - prepare-matrix
       - update-initial-status
-    name: macos-${{ matrix.shard }}
+    name: E2E macOS (${{ matrix.shardDisplay }})
     if: ${{ needs.prepare-matrix.outputs.macos != '[]' }}
     strategy:
       matrix:
@@ -240,7 +243,7 @@ jobs:
     needs:
       - prepare-matrix
       - update-initial-status
-    name: windows-${{ matrix.shard }}
+    name: E2E Windows (${{ matrix.shardDisplay }})
     if: ${{ needs.prepare-matrix.outputs.windows != '[]' }}
     strategy:
       matrix:
@@ -475,6 +478,7 @@ jobs:
     if: always()
     permissions:
       contents: read
+      actions: read
       id-token: write
       statuses: write
     steps:
@@ -488,12 +492,6 @@ jobs:
             e2e/utils/cmt-channel-notify.js
             e2e/utils/github-actions.js
           sparse-checkout-cone-mode: false
-
-      # cancelled() is only valid in job/step `if`, not in `env`. A superseded
-      # E2E/Run still runs this always() job — skip the channel "failed" post.
-      - name: Detect cancelled run
-        if: cancelled()
-        run: echo "TSIO_RUN_CANCELLED=true" >> "$GITHUB_ENV"
 
       - name: Render TSIO summary + channel notify (does not flip per-OS statuses)
         id: summary
@@ -599,7 +597,7 @@ jobs:
           PR_NUMBER: ${{ inputs.pr_number }}
 
   e2e-policy-tests:
-    name: policy-tests-${{ matrix.platform }}
+    name: E2E Policy · ${{ matrix.platform == 'macos' && 'macOS' || 'Windows' }}
     needs:
       - prepare-matrix
       - update-initial-status

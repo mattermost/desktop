@@ -113,10 +113,9 @@ env:
 
 jobs:
   e2e:
-    # Includes MM_SERVER_VERSION, not just runs-on: CMT tests multiple server
-    # versions against the same runner (e.g. macos-26 x 11.9.0 and macos-26 x
-    # 11.8.4). Shard suffix is omitted for 1-of-1 so CMT names stay stable.
-    name: e2e-on-${{ inputs.runs-on }}-${{ inputs.MM_SERVER_VERSION }}${{ inputs.shard != '1-of-1' && format('-{0}', inputs.shard) || '' }}
+    # Display title only. TSIO still keys reports on E2E_GH_JOB_NAME below
+    # (`e2e-on-{runner}-{version}[-{i}-of-{n}]`), which parseCmtJobName reads.
+    name: Playwright · MM ${{ inputs.MM_SERVER_VERSION }} · ${{ inputs.runs-on }}
     runs-on: ${{ inputs.runs-on }}
     permissions:
       contents: read
@@ -126,7 +125,8 @@ jobs:
       run:
         shell: bash
     env:
-      # Must match `name:` above (TSIO gh-job-name + failure stub).
+      # Stable TSIO / artifact id — not the job display `name:` above.
+      # Shape: e2e-on-{runner}-{MM_SERVER_VERSION}[-{i}-of-{n}]; omit shard for 1-of-1 (CMT).
       E2E_GH_JOB_NAME: e2e-on-${{ inputs.runs-on }}-${{ inputs.MM_SERVER_VERSION }}${{ inputs.shard != '1-of-1' && format('-{0}', inputs.shard) || '' }}
       PLAYWRIGHT_SHARD: ${{ inputs.shard }}
     steps:

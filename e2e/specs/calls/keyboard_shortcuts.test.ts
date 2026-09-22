@@ -1,7 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import type {TestInfo} from '@playwright/test';
+
 import {test, expect} from '../../fixtures/index';
+import {assertCallsSpecsOnShard1} from '../../helpers/assertCallsShard';
 import {findCallsWidgetWindow, startCall, closeCallsWidget, sendWidgetShortcut, leaveCallIfActive} from '../../helpers/callsWidget';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost, logoutFromMattermost} from '../../helpers/login';
@@ -29,7 +32,8 @@ test.describe('calls/keyboard_shortcuts', () => {
     let teamId: string;
     let testServerUrl: string;
 
-    test.beforeAll(async () => {
+    test.beforeAll(async ({}, testInfo: TestInfo) => {
+        assertCallsSpecsOnShard1(testInfo.config.shard);
         const serverUrl = process.env.MM_TEST_SERVER_URL;
         const username = process.env.MM_TEST_USER_NAME;
         const password = process.env.MM_TEST_PASSWORD;

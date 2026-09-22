@@ -58,7 +58,9 @@ async function setUpCallsPlugin(restartPlugin: boolean): Promise<void> {
     if (restartPlugin) {
         await ensureCallsPlugin(serverUrl, token);
     } else {
-        await waitForCallsPluginReady(serverUrl, token, 90_000);
+        // Shard 1's restart can take ~30s disable + 60s enable + 30s ready,
+        // plus marketplace install. 90s was shorter than a slow restart.
+        await waitForCallsPluginReady(serverUrl, token, 180_000);
     }
 
     // SiteURL is required by the Calls plugin /logs/upload endpoint to construct DM
