@@ -202,6 +202,7 @@ test.describe('user_attributes/user_attributes', () => {
                     test.skip(true, 'Profile settings UI is not available on this server');
                     return;
                 }
+
                 // 12.0 skips CPA refetch when login left user.custom_profile_attributes as {}.
                 // API PATCH never appears; seed Engineering through the settings save path
                 // that updates Redux the same way a user would, then cancel an unsaved edit.
