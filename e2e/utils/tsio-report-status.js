@@ -31,7 +31,6 @@ const {
 const {
     osStatusContext,
     policyStatusContext,
-    isWorkflowRunSuperseded,
     E2E_OS_LIST,
     E2E_POLICY_OS_LIST,
 } = require('./github-actions');
@@ -804,32 +803,24 @@ async function reportTsioStatus({
     // Failures here must not undo a successfully written commit status.
     try {
         if (notifyChannel) {
-            // Do not use needs.*.result == 'cancelled': job timeouts also report
-            // cancelled and would hide real hangs. cancelled() is false in this
-            // always() job after concurrency cancel (run 35781926909).
-            const superseded = await isWorkflowRunSuperseded({github, context, compositeIdentity});
-            if (superseded) {
-                core.info('Skipping channel notify — a newer run of this workflow superseded this one');
-            } else {
-                const notifyNames = new Set(['cmt-desktop', 'desktop-pr', 'desktop-master']);
-                if (notifyNames.has(compositeIdentity.name)) {
-                    const {notifyCmtChannel, resolveWebhookUrl} = require('./cmt-channel-notify.js');
-                    const webhookUrl = resolveWebhookUrl(compositeIdentity.name);
-                    if (webhookUrl) {
-                        // Prefer TSIO links even when the poll timed out at in_progress
-                        // (commit status may still point at the Actions run URL).
-                        const channelReportUrl = displayReportUrl || groupReportUrl || targetUrl;
-                        await notifyCmtChannel({
-                            core,
-                            baseUrl,
-                            compositeIdentity,
-                            detail,
-                            reportUrl: channelReportUrl,
-                            upstreamJobsSucceeded,
-                            hasFailures,
-                            webhookUrl,
-                        });
-                    }
+            const notifyNames = new Set(['cmt-desktop', 'desktop-pr', 'desktop-master']);
+            if (notifyNames.has(compositeIdentity.name)) {
+                const {notifyCmtChannel, resolveWebhookUrl} = require('./cmt-channel-notify.js');
+                const webhookUrl = resolveWebhookUrl(compositeIdentity.name);
+                if (webhookUrl) {
+                    // Prefer TSIO links even when the poll timed out at in_progress
+                    // (commit status may still point at the Actions run URL).
+                    const channelReportUrl = displayReportUrl || groupReportUrl || targetUrl;
+                    await notifyCmtChannel({
+                        core,
+                        baseUrl,
+                        compositeIdentity,
+                        detail,
+                        reportUrl: channelReportUrl,
+                        upstreamJobsSucceeded,
+                        hasFailures,
+                        webhookUrl,
+                    });
                 }
             }
         }

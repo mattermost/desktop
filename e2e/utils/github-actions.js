@@ -20,7 +20,12 @@ const E2E_POLICY_STATUS_CONTEXTS = E2E_POLICY_OS_LIST.map((os) => `e2e/${os}-pol
  */
 const E2E_PLAYWRIGHT_SHARDS = {
     linux: 3,
-    macos: 3,
+
+    // macos-26 only has ~2 concurrent runners. 3 shards queued 6–8 min on
+    // f4f64f2c (linux/windows started immediately). Two shards both start;
+    // unsharded Playwright was 29 min so each is ~15 min + ~40s setup.
+    macos: 2,
+
     // Two Windows shards were 10.2 vs 14.4 min Playwright on 9be05be3.
     windows: 3,
 };
@@ -295,109 +300,6 @@ async function cancelActiveE2ERuns({github, context, prNumber, headBranch}) {
     return cancelled;
 }
 
-const E2E_PR_RUN_NAME = /^E2E PR (\d+)$/;
-
-/**
- * PR number from `run-name: E2E PR <n>` (GitHub `display_title`). Same key as
- * `e2e-functional.yml` concurrency `inputs.pr_number`.
- *
- * @param {{display_title?: string}} [run]
- * @returns {string|null}
- */
-function e2ePrNumberFromRun(run) {
-    const match = String(run?.display_title || '').match(E2E_PR_RUN_NAME);
-    return match ? match[1] : null;
-}
-
-/**
- * @param {{display_title?: string}} run
- * @param {{gh_pr_number?: string|number}} [compositeIdentity]
- * @returns {string|null}
- */
-function thisRunPrNumber(run, compositeIdentity) {
-    const fromTitle = e2ePrNumberFromRun(run);
-    if (fromTitle) {
-        return fromTitle;
-    }
-    if (compositeIdentity?.gh_pr_number === undefined || compositeIdentity.gh_pr_number === null || compositeIdentity.gh_pr_number === '') {
-        return null;
-    }
-    return String(compositeIdentity.gh_pr_number);
-}
-
-/**
- * True when a newer run shares this run's concurrency key, so this run was
- * superseded (typically cancel-in-progress).
- *
- * PR e2e keys concurrency on `inputs.pr_number` and stamps `run-name: E2E PR <n>`.
- * Match newer runs by that PR number, not `head_branch`. Fork PRs are dispatched
- * on master, so branch matching would let one fork (or a later master run) hide
- * another PR's failure.
- *
- * Master (`desktop-master`) is never cancelled by our concurrency group and
- * must still post its own health result.
- *
- * CMT keys concurrency on `github.ref`; match newer runs of the same workflow
- * on the same `head_branch`.
- *
- * Fail-open on API errors so a lookup failure cannot hide a hang or failure.
- * Do not use job `cancelled` results: GitHub reports timeouts as cancelled.
- *
- * @param {Object} params
- * @param {Object} params.github
- * @param {Object} params.context
- * @param {{name?: string, gh_pr_number?: string|number}} [params.compositeIdentity]
- * @returns {Promise<boolean>}
- */
-async function isWorkflowRunSuperseded({github, context, compositeIdentity}) {
-    if (compositeIdentity?.name === 'desktop-master') {
-        return false;
-    }
-
-    try {
-        const {owner, repo} = context.repo;
-        const thisRunId = Number(context.runId);
-        const {data: thisRun} = await github.rest.actions.getWorkflowRun({
-            owner,
-            repo,
-            run_id: thisRunId,
-        });
-
-        const thisPr = thisRunPrNumber(thisRun, compositeIdentity);
-        if (thisPr) {
-            const {data: {workflow_runs: workflowRuns}} = await github.rest.actions.listWorkflowRuns({
-                owner,
-                repo,
-                workflow_id: thisRun.workflow_id,
-                event: thisRun.event,
-                per_page: 30,
-            });
-            return workflowRuns.some((run) => run.id > thisRunId && e2ePrNumberFromRun(run) === thisPr);
-        }
-
-        if (compositeIdentity?.name === 'cmt-desktop') {
-            const branch = thisRun.head_branch;
-            if (!branch) {
-                return false;
-            }
-            const {data: {workflow_runs: workflowRuns}} = await github.rest.actions.listWorkflowRuns({
-                owner,
-                repo,
-                workflow_id: thisRun.workflow_id,
-                branch,
-                event: thisRun.event,
-                per_page: 20,
-            });
-            return workflowRuns.some((run) => run.id > thisRunId && run.head_branch === branch);
-        }
-
-        return false;
-    } catch (error) {
-        console.log(`isWorkflowRunSuperseded: fail-open (${error.message})`);
-        return false;
-    }
-}
-
 /**
  * Remove E2E/Run label when workflow triggered via Matterwick
  * @param {Object} params - Parameters object
@@ -465,7 +367,6 @@ module.exports = {
     removeE2ELabel,
     markE2EStatusesCancelled,
     cancelActiveE2ERuns,
-    isWorkflowRunSuperseded,
     updateInitialOsStatuses,
     osStatusContext,
     policyStatusContext,

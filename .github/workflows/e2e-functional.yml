@@ -1,7 +1,4 @@
 name: Electron Playwright Tests
-# display_title matches the concurrency key: PR number, else SHA. Used by
-# isWorkflowRunSuperseded so fork PRs dispatched on master do not hide each other.
-run-name: ${{ inputs.pr_number != '' && format('E2E PR {0}', inputs.pr_number) || format('E2E {0}', github.sha) }}
 
 on:
   workflow_dispatch:

@@ -105,7 +105,7 @@ export async function clickWebappHistoryBackIfVisible(serverWin: ServerView): Pr
     if ((await back.count()) === 0) {
         return false;
     }
-    await back.nth(0).click();
+    await back.click();
     return true;
 }
 

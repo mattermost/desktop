@@ -19,12 +19,13 @@ import type {ServerView} from '../../helpers/serverView';
 // in the textbox component via MM-14177, merged in v5.24.0).
 
 async function postListContainsLines(win: ServerView, lineOne: string, lineTwo: string): Promise<boolean> {
-    return win.evaluate(({one, two}) => {
+    const found = await win.evaluate(({one, two}) => {
         return Array.from(document.querySelectorAll('.post-message__text')).some((el) => {
             const text = el.textContent ?? '';
             return text.includes(one) && text.includes(two);
         });
     }, {one: lineOne, two: lineTwo});
+    return Boolean(found);
 }
 
 test.describe('mattermost/alt_enter', () => {
