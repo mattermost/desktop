@@ -13,22 +13,9 @@
  * Per-leg pass/fail counts come from TSIO consolidated specs grouped by
  * contributing report id → gh_job_name (group report only has upload status).
  *
- * Failing tests are listed with last-touched GitHub authors (GraphQL blame on
- * the stack file/line, else last commit on the file). Mattermost @mentions are
- * emitted only for logins listed in github-to-mattermost.js or MM_GITHUB_USERNAME_MAP.
- *
  * Retry attempts are collapsed to one outcome per (spec × job), matching
  * Playwright: failed+passed → flaky; all failed → failed once (not once per attempt).
  */
-
-const {
-    attachOwnersToFailedSpecs,
-    extractSpecLocation,
-    formatFailingTestsSection,
-    githubLoginForFileLine,
-    loadGithubToMattermostMap,
-    shortFailingTestTitle,
-} = require('./cmt-failure-owners');
 
 const OS_ORDER = {linux: 0, macos: 1, windows: 2};
 const FETCH_TIMEOUT_MS = 15_000;
@@ -356,7 +343,6 @@ function resolveChannelTotals(perJobCounts, stats = {}, expectedJobNames) {
  * @param {string} params.reportUrl - group / consolidated rollup URL
  * @param {string} [params.baseUrl] - TSIO origin for per-leg /reports/r/{id} links
  * @param {Record<string, {passed?: number, failed?: number, skipped?: number, flaky?: number}>} params.perJobCounts
- * @param {Array<{title?: string, osList?: string[], githubLogin?: string, mattermostUsername?: string}>} [params.failingSpecs]
  * @param {boolean} [params.upstreamJobsSucceeded]
  * @param {boolean} [params.hasFailures] - true when TSIO reports failed shards or failed tests
  * @returns {string}
@@ -367,7 +353,6 @@ function formatCmtChannelMessage({
     reportUrl,
     baseUrl,
     perJobCounts,
-    failingSpecs,
     upstreamJobsSucceeded = true,
     hasFailures = false,
 }) {
@@ -409,10 +394,6 @@ function formatCmtChannelMessage({
                 lines.push(`| ${platform} | ${suite} | ${leg.failed} |`);
             }
             lines.push('');
-        }
-        const failingTestLines = formatFailingTestsSection(failingSpecs);
-        if (failingTestLines.length > 0) {
-            lines.push(...failingTestLines, '');
         }
     }
 
@@ -514,99 +495,20 @@ function collapseSpecAttempts(entries) {
 }
 
 /**
+ * @param {string} baseUrl
+ * @param {Object} compositeIdentity
  * @param {Object} groupDetail
- * @returns {Record<string, string>}
+ * @returns {Promise<Record<string, {passed: number, failed: number, skipped: number, flaky: number}>>}
  */
-function jobNameByReportId(groupDetail) {
+async function fetchPerJobCountsFromConsolidated(baseUrl, compositeIdentity, groupDetail) {
     const idToJob = {};
-    for (const report of groupDetail?.reports || []) {
+    for (const report of groupDetail.reports || []) {
         const name = report.gh_job_name || report.display_name;
         if (report.id && name) {
             idToJob[report.id] = name;
         }
     }
-    return idToJob;
-}
 
-/**
- * @param {Object} consol - TSIO consolidated payload
- * @param {Object} compositeIdentity
- * @param {Object} groupDetail
- * @returns {{perJobCounts: Record<string, {passed: number, failed: number, skipped: number, flaky: number}>, failedSpecs: Array<{title: string, osList: string[], file?: string, line?: number}>}}
- */
-function analyzeConsolidatedSpecs(consol, compositeIdentity, groupDetail) {
-    const idToJob = jobNameByReportId(groupDetail);
-    const counts = {};
-    const failedSpecs = [];
-    const commitSha = compositeIdentity.commit_sha;
-    const attempt = Number.parseInt(compositeIdentity.gh_run_attempt || '1', 10);
-
-    for (const spec of consol.specs || []) {
-        /** @type {Record<string, Array<{status?: string, error_message?: string}>>} */
-        const entriesByJob = {};
-        for (const entry of spec.history || []) {
-            if (entry.commit_sha !== commitSha) {
-                continue;
-            }
-            if (Number.parseInt(entry.run_attempt || '0', 10) !== attempt) {
-                continue;
-            }
-            const job = idToJob[entry.report_id];
-            if (!job) {
-                continue;
-            }
-            if (!entriesByJob[job]) {
-                entriesByJob[job] = [];
-            }
-            entriesByJob[job].push(entry);
-        }
-
-        const failedOs = new Set();
-        let location = null;
-
-        for (const [job, entries] of Object.entries(entriesByJob)) {
-            const status = collapseSpecAttempts(entries);
-            if (!status) {
-                continue;
-            }
-            if (!counts[job]) {
-                counts[job] = {passed: 0, failed: 0, skipped: 0, flaky: 0};
-            }
-            counts[job][status] += 1;
-
-            if (status === 'failed') {
-                const parsed = parseCmtJobName(job);
-                if (parsed?.os && parsed.os !== 'unknown') {
-                    failedOs.add(parsed.os);
-                }
-                if (!location) {
-                    const failedEntry = entries.find((entry) => entry.status === 'failed' && entry.error_message) ||
-                        entries.find((entry) => entry.error_message);
-                    location = extractSpecLocation(failedEntry?.error_message);
-                }
-            }
-        }
-
-        if (failedOs.size > 0) {
-            failedSpecs.push({
-                title: spec.full_title || spec.title || 'unknown test',
-                osList: [...failedOs].sort((a, b) => (OS_ORDER[a] ?? 9) - (OS_ORDER[b] ?? 9)),
-                file: location?.file,
-                line: location?.line,
-            });
-        }
-    }
-
-    return {perJobCounts: counts, failedSpecs};
-}
-
-/**
- * @param {string} baseUrl
- * @param {Object} compositeIdentity
- * @param {Object} groupDetail
- * @returns {Promise<{perJobCounts: Record<string, {passed: number, failed: number, skipped: number, flaky: number}>, failedSpecs: Array<{title: string, osList: string[], file?: string, line?: number}>}>}
- */
-async function fetchConsolidatedJobData(baseUrl, compositeIdentity, groupDetail) {
     const repoTrailing = (compositeIdentity.repository || '').split('/').pop() || compositeIdentity.repository;
     const params = new URLSearchParams({
         repository: repoTrailing,
@@ -630,18 +532,43 @@ async function fetchConsolidatedJobData(baseUrl, compositeIdentity, groupDetail)
         },
     );
 
-    return analyzeConsolidatedSpecs(consol, compositeIdentity, groupDetail);
-}
+    const counts = {};
+    const commitSha = compositeIdentity.commit_sha;
+    const attempt = Number.parseInt(compositeIdentity.gh_run_attempt || '1', 10);
 
-/**
- * @param {string} baseUrl
- * @param {Object} compositeIdentity
- * @param {Object} groupDetail
- * @returns {Promise<Record<string, {passed: number, failed: number, skipped: number, flaky: number}>>}
- */
-async function fetchPerJobCountsFromConsolidated(baseUrl, compositeIdentity, groupDetail) {
-    const {perJobCounts} = await fetchConsolidatedJobData(baseUrl, compositeIdentity, groupDetail);
-    return perJobCounts;
+    for (const spec of consol.specs || []) {
+        /** @type {Record<string, Array<{status?: string}>>} */
+        const entriesByJob = {};
+        for (const entry of spec.history || []) {
+            if (entry.commit_sha !== commitSha) {
+                continue;
+            }
+            if (Number.parseInt(entry.run_attempt || '0', 10) !== attempt) {
+                continue;
+            }
+            const job = idToJob[entry.report_id];
+            if (!job) {
+                continue;
+            }
+            if (!entriesByJob[job]) {
+                entriesByJob[job] = [];
+            }
+            entriesByJob[job].push(entry);
+        }
+
+        for (const [job, entries] of Object.entries(entriesByJob)) {
+            const status = collapseSpecAttempts(entries);
+            if (!status) {
+                continue;
+            }
+            if (!counts[job]) {
+                counts[job] = {passed: 0, failed: 0, skipped: 0, flaky: 0};
+            }
+            counts[job][status] += 1;
+        }
+    }
+
+    return counts;
 }
 
 /**
@@ -693,14 +620,10 @@ async function postMattermostWebhook({core, webhookUrl, text, username = 'Deskto
  * @param {string} params.reportUrl
  * @param {boolean} [params.upstreamJobsSucceeded]
  * @param {boolean} [params.hasFailures]
- * @param {Object} [params.github] - octokit from actions/github-script (blame + last commit)
- * @param {Object} [params.context] - GitHub Actions context
  * @param {string} [params.webhookUrl]
  */
 async function notifyCmtChannel({
     core,
-    github,
-    context,
     baseUrl,
     compositeIdentity,
     detail,
@@ -712,27 +635,10 @@ async function notifyCmtChannel({
     try {
         const resolvedWebhook = webhookUrl || resolveWebhookUrl(compositeIdentity?.name);
         let perJobCounts = {};
-        let failingSpecs = [];
         try {
-            const consolidated = await fetchConsolidatedJobData(baseUrl, compositeIdentity, detail);
-            perJobCounts = consolidated.perJobCounts;
-            failingSpecs = consolidated.failedSpecs;
+            perJobCounts = await fetchPerJobCountsFromConsolidated(baseUrl, compositeIdentity, detail);
         } catch (error) {
             core.warning(`Could not load per-leg TSIO counts: ${error.message}`);
-        }
-
-        if (failingSpecs.length > 0 && github) {
-            try {
-                await attachOwnersToFailedSpecs({
-                    github,
-                    context,
-                    commitSha: compositeIdentity.commit_sha,
-                    failedSpecs: failingSpecs,
-                    core,
-                });
-            } catch (error) {
-                core.warning(`Could not resolve failure owners: ${error.message}`);
-            }
         }
 
         const text = formatCmtChannelMessage({
@@ -741,7 +647,6 @@ async function notifyCmtChannel({
             reportUrl,
             baseUrl,
             perJobCounts,
-            failingSpecs,
             upstreamJobsSucceeded,
             hasFailures,
         });
@@ -761,16 +666,8 @@ module.exports = {
     reportTitleForIdentity,
     resolveChannelTotals,
     collapseSpecAttempts,
-    extractSpecLocation,
-    shortFailingTestTitle,
-    loadGithubToMattermostMap,
-    formatFailingTestsSection,
-    analyzeConsolidatedSpecs,
     formatCmtChannelMessage,
     fetchPerJobCountsFromConsolidated,
-    fetchConsolidatedJobData,
-    attachOwnersToFailedSpecs,
-    githubLoginForFileLine,
     postMattermostWebhook,
     notifyCmtChannel,
 };

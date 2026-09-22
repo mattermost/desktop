@@ -205,9 +205,7 @@ jobs:
           sparse-checkout: |
             e2e/utils/tsio-report-status.js
             e2e/utils/cmt-channel-notify.js
-            e2e/utils/cmt-failure-owners.js
             e2e/utils/github-actions.js
-            e2e/utils/github-to-mattermost.js
           sparse-checkout-cone-mode: false
 
       - name: Render TSIO summary + flip commit statuses
@@ -225,7 +223,6 @@ jobs:
           # PR MM_DESKTOP_E2E_WEBHOOK_URL and master MM_E2E_MASTER_HEALTH_WEBHOOK_URL).
           # Optional — when unset, TSIO status still flips and channel notify is skipped.
           MATTERMOST_CMT_WEBHOOK_URL: ${{ secrets.MM_E2E_RELEASE_WEBHOOK_URL }}
-          MM_GITHUB_USERNAME_MAP: ${{ secrets.MM_GITHUB_USERNAME_MAP }}
           # TSIO only sees test-case-level results — a job-level failure with no
           # matching failed test (hung worker teardown, crashed runner, npm ci
           # failure) would otherwise still read as "100% passed".

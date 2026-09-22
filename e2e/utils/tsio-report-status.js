@@ -614,8 +614,6 @@ async function reportTsioStatus({
                 const channelReportUrl = displayReportUrl || groupReportUrl || targetUrl;
                 await notifyCmtChannel({
                     core,
-                    github,
-                    context,
                     baseUrl,
                     compositeIdentity,
                     detail,
