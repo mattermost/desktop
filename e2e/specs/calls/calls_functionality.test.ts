@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../../fixtures/index';
-import {waitForCallsWidgetWindow, closeCallsWidget, sendWidgetShortcut, leaveCallIfActive, startCall} from '../../helpers/callsWidget';
+import {closeCallsWidget, sendWidgetShortcut, leaveCallIfActive, startCall} from '../../helpers/callsWidget';
 import {waitForMattermostShellReady} from '../../helpers/channelReadiness';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost, logoutFromMattermost} from '../../helpers/login';
@@ -77,33 +77,17 @@ test.describe('calls/calls_functionality', () => {
     test('MM-T4841 Calls UI Functionality - Self-managed',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
-            await serverWin.waitForSelector('#post_textbox', {timeout: 10_000});
-            await serverWin.type('#post_textbox', '/call start');
-
-            // wc.insertText() leaves window.getSelection() outside the Slate
-            // contenteditable so keyboard Enter is ignored. Click Send instead.
-            await serverWin.click('[data-testid="SendMessageButton"]');
-
-            const widgetWindow = await waitForCallsWidgetWindow(electronApp);
-            if (!widgetWindow) {
-                throw new Error('Calls widget did not open — is the Calls plugin enabled and media available?');
-            }
+            const widgetWindow = await startCall(electronApp, serverWin);
 
             expect(widgetWindow.url(), 'Widget URL must point to Calls plugin').toContain(
                 '/plugins/com.mattermost.calls/standalone/widget.html',
             );
 
-            // Wait for mute button directly — covers React mount + call connection in one step.
             const muteButton = await widgetWindow.waitForSelector(
                 'button[aria-label*="Mute"], button[aria-label*="mute"]',
                 {timeout: 30_000},
             );
             expect(muteButton, 'Mute button must exist in Calls widget').toBeTruthy();
-
-            await widgetWindow.waitForFunction(
-                () => Boolean(((window as unknown as Record<string, unknown>).callsClient as Record<string, unknown> | undefined)?.peer),
-                {timeout: 15_000},
-            );
 
             // Widget uses aria-label toggling ("Mute" / "Unmute") — no aria-pressed.
             const initialLabel = await widgetWindow.evaluate(() => {
@@ -123,7 +107,7 @@ test.describe('calls/calls_functionality', () => {
         },
     );
 
-    test('MM-T5587 Calls - Slash Commands',
+    test('MM-T5587 /call start opens the Calls widget',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
             const widgetWindow = await startCall(electronApp, serverWin);
@@ -139,29 +123,12 @@ test.describe('calls/calls_functionality', () => {
     test('MM-T5411 Calls - Keyboard Shortcuts (self-managed)',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
-            await serverWin.waitForSelector('#post_textbox', {timeout: 10_000});
-            await serverWin.type('#post_textbox', '/call start');
-            await serverWin.click('[data-testid="SendMessageButton"]');
-
-            const widgetWindow = await waitForCallsWidgetWindow(electronApp, 30_000);
-            if (!widgetWindow) {
-                throw new Error('Calls widget did not open — is the Calls plugin enabled and media available?');
-            }
-
-            // Wait for mute button directly — covers React mount + call connection in one step.
-            await widgetWindow.waitForSelector('button[aria-label*="Mute"], button[aria-label*="mute"]', {timeout: 30_000});
+            const widgetWindow = await startCall(electronApp, serverWin);
             await widgetWindow.bringToFront();
 
             const initialLabel = await widgetWindow.evaluate(() => {
                 return document.querySelector('#voice-mute-unmute')?.getAttribute('aria-label') ?? null;
             });
-
-            // callsClient.unmute() silently bails when this.peer is null (no WebRTC connection yet).
-            // The mute button can appear before the peer is established, so wait explicitly.
-            await widgetWindow.waitForFunction(
-                () => Boolean(((window as unknown as Record<string, unknown>).callsClient as Record<string, unknown> | undefined)?.peer),
-                {timeout: 15_000},
-            );
 
             const isMac = process.platform === 'darwin';
             await sendWidgetShortcut(electronApp, 'Space', isMac ? ['shift', 'meta'] : ['shift', 'control']);
