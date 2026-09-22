@@ -169,6 +169,41 @@ describe('cmt-channel-notify', () => {
             });
         });
 
+        it('parses Playwright shard suffixes without folding them into the runner', () => {
+            assert.deepEqual(parseCmtJobName('e2e-on-ubuntu-latest-master-1-of-3'), {
+                os: 'linux',
+                serverVersion: 'master',
+                runner: 'ubuntu-latest',
+                kind: 'e2e',
+                shard: '1-of-3',
+            });
+            assert.deepEqual(parseCmtJobName('e2e-on-macos-26-master-3-of-3'), {
+                os: 'macos',
+                serverVersion: 'master',
+                runner: 'macos-26',
+                kind: 'e2e',
+                shard: '3-of-3',
+            });
+            assert.deepEqual(parseCmtJobName('e2e-on-windows-2022-master-2-of-2'), {
+                os: 'windows',
+                serverVersion: 'master',
+                runner: 'windows-2022',
+                kind: 'e2e',
+                shard: '2-of-2',
+            });
+            assert.deepEqual(parseCmtJobName('e2e-on-ubuntu-latest-release-11.9.0-2-of-3'), {
+                os: 'linux',
+                serverVersion: 'release-11.9.0',
+                runner: 'ubuntu-latest',
+                kind: 'e2e',
+                shard: '2-of-3',
+            });
+        });
+
+        it('keeps unsharded CMT names without a shard field', () => {
+            assert.equal(parseCmtJobName('e2e-on-ubuntu-latest-11.9.0').shard, undefined);
+        });
+
         it('returns null for unexpected names', () => {
             assert.equal(parseCmtJobName('linux-11.9.0'), null);
             assert.equal(parseCmtJobName(''), null);

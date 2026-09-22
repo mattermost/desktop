@@ -53,6 +53,99 @@ function statusBucketKey(parsed) {
 }
 
 /**
+ * How many uploaded TSIO reports belong to one status bucket
+ * (linux|macos|windows|macos-policy|windows-policy).
+ *
+ * @param {Object} [detail]
+ * @param {string} bucketKey
+ * @returns {number}
+ */
+function countReportsForBucket(detail, bucketKey) {
+    if (!bucketKey) {
+        return 0;
+    }
+    return (detail?.reports || []).filter((report) => {
+        const name = report.gh_job_name || report.display_name;
+        return statusBucketKey(parseCmtJobName(name)) === bucketKey;
+    }).length;
+}
+
+/**
+ * Whether the poll loop can stop waiting for more uploads.
+ * Per-OS status jobs stop when that OS's shards are present, not when all 10
+ * reports in the group have landed.
+ *
+ * @param {Object} params
+ * @param {Object} [params.detail]
+ * @param {number} params.totalReportsExpected
+ * @param {string} [params.readyWhenOs]
+ * @param {boolean} [params.readyWhenPolicy]
+ * @param {number} [params.minReports]
+ * @returns {boolean}
+ */
+function shardsAreReady({detail, totalReportsExpected, readyWhenOs, readyWhenPolicy, minReports}) {
+    const reports = Array.isArray(detail?.reports) ? detail.reports : [];
+    const uploaded = reports.length;
+    const needed = positiveInt(minReports, 1);
+
+    if (readyWhenPolicy) {
+        const n = reports.filter((report) => {
+            const parsed = parseCmtJobName(report.gh_job_name || report.display_name);
+            return parsed?.kind === 'policy';
+        }).length;
+        return n >= needed;
+    }
+
+    if (readyWhenOs) {
+        return countReportsForBucket(detail, readyWhenOs) >= needed;
+    }
+
+    return totalReportsExpected <= 0 || uploaded >= totalReportsExpected;
+}
+
+const EMPTY_OS_ROW = {passed: 0, failed: 0, skipped: 0, shardFailed: false, hasResults: false};
+
+/**
+ * Fail the status job from this OS/policy scope only — never from global
+ * `stats.failed` (other OS reports may already be in the same TSIO group).
+ *
+ * @returns {boolean}
+ */
+function shouldFailFromScope({
+    failOnTestFailures,
+    readyWhenOs,
+    readyWhenPolicy,
+    overallState,
+    byKey,
+    upstreamJobsSucceeded,
+    hasPerJobCounts,
+}) {
+    if (!failOnTestFailures) {
+        return false;
+    }
+
+    if (readyWhenOs) {
+        const row = byKey[readyWhenOs] || EMPTY_OS_ROW;
+        if (!hasPerJobCounts && !row.shardFailed && upstreamJobsSucceeded) {
+            return false;
+        }
+        return statusFromTotals(row, upstreamJobsSucceeded, 'E2E incomplete — no results for this OS').state !== 'success';
+    }
+
+    if (readyWhenPolicy) {
+        return E2E_POLICY_OS_LIST.some((os) => {
+            const row = byKey[`${os}-policy`] || EMPTY_OS_ROW;
+            if (!hasPerJobCounts && !row.shardFailed && upstreamJobsSucceeded) {
+                return false;
+            }
+            return statusFromTotals(row, upstreamJobsSucceeded, 'Policy incomplete — no results for this OS').state !== 'success';
+        });
+    }
+
+    return overallState === 'failure';
+}
+
+/**
  * Aggregate TSIO per-job counts / shard failures by status bucket
  * (linux|macos|windows|macos-policy|windows-policy).
  *
@@ -141,12 +234,17 @@ function reportUrlForStatusBucket({reports, bucketKey, baseUrl, fallbackUrl}) {
 
 /**
  * Resolve which OS contexts this run should report.
+ * `null` means flip none (policy-only status job). Empty/omitted still falls
+ * back to whatever OS buckets have results, or all three.
  *
- * @param {string[]} [expectedOs]
+ * @param {string[]|null} [expectedOs]
  * @param {Record<string, unknown>} byKey
  * @returns {string[]}
  */
 function resolveExpectedOs(expectedOs, byKey) {
+    if (expectedOs === null) {
+        return [];
+    }
     if (Array.isArray(expectedOs) && expectedOs.length > 0) {
         return expectedOs.filter((os) => E2E_OS_LIST.includes(os));
     }
@@ -312,6 +410,10 @@ function buildDisplayReportUrl(baseUrl, compositeIdentity) {
  * @param {string[]} [params.expectedOs] - Canonical OS list for this run (linux|macos|windows)
  * @param {string[]} [params.expectedPolicyOs] - Policy OS list (macos|windows); PR/master only
  * @param {boolean} [params.failOnTestFailures] - When true (default), throw if tests/shards/upstream CI failed (not merely TSIO still consolidating)
+ * @param {boolean} [params.notifyChannel] - When false, skip Mattermost webhook (per-OS status jobs). Default true.
+ * @param {string} [params.readyWhenOs] - Poll until this OS's e2e shards are uploaded (linux|macos|windows)
+ * @param {boolean} [params.readyWhenPolicy] - Poll until policy reports are uploaded
+ * @param {number} [params.minReports] - Reports required for readyWhenOs / readyWhenPolicy
  * @param {boolean} [params.useStaging] - Target TSIO staging instead of production
  * @param {string} [params.oidcAudience] - OIDC audience claim TSIO expects
  * @param {boolean} [params.upstreamJobsSucceeded] - When false (default true), force the
@@ -336,6 +438,10 @@ async function reportTsioStatus({
     expectedOs,
     expectedPolicyOs,
     failOnTestFailures = true,
+    notifyChannel = true,
+    readyWhenOs,
+    readyWhenPolicy = false,
+    minReports,
     useStaging = false,
     oidcAudience = 'mattermost-test-system-io',
     upstreamJobsSucceeded = true,
@@ -399,8 +505,13 @@ async function reportTsioStatus({
                 throw new Error(`reports/${reportId} failed: ${statusRes.status} ${await statusRes.text()}`);
             }
             detail = await statusRes.json();
-            const uploaded = Array.isArray(detail.reports) ? detail.reports.length : 0;
-            const shardsReady = totalReportsExpected <= 0 || uploaded >= totalReportsExpected;
+            const shardsReady = shardsAreReady({
+                detail,
+                totalReportsExpected,
+                readyWhenOs,
+                readyWhenPolicy,
+                minReports,
+            });
 
             if (shardsReady && shardsReadySinceAttempt < 0) {
                 shardsReadySinceAttempt = attempt;
@@ -569,8 +680,8 @@ async function reportTsioStatus({
         });
     }
 
-    if (perOsCommitStatuses) {
-        let perJobCounts;
+    let perJobCounts = null;
+    if (perOsCommitStatuses || readyWhenOs || readyWhenPolicy) {
         try {
             perJobCounts = await fetchPerJobCountsFromConsolidated(baseUrl, compositeIdentity, detail);
         } catch (error) {
@@ -581,13 +692,15 @@ async function reportTsioStatus({
             );
             perJobCounts = null;
         }
-        if (perJobCounts) {
+        const byKeyForFlip = buildOsStatusTotals({detail, perJobCounts: perJobCounts || {}});
+        const hasShardFailure = Object.values(byKeyForFlip).some((row) => row.shardFailed);
+        if (perOsCommitStatuses && (perJobCounts || !upstreamJobsSucceeded || hasShardFailure)) {
             await flipPerOsCommitStatuses({
                 github,
                 context,
                 compositeIdentity,
                 detail,
-                perJobCounts,
+                perJobCounts: perJobCounts || {},
                 targetUrl,
                 baseUrl,
                 upstreamJobsSucceeded,
@@ -604,33 +717,53 @@ async function reportTsioStatus({
     //   desktop-pr       → MM_DESKTOP_E2E_WEBHOOK_URL
     // Failures here must not undo a successfully written commit status.
     try {
-        const notifyNames = new Set(['cmt-desktop', 'desktop-pr', 'desktop-master']);
-        if (notifyNames.has(compositeIdentity.name)) {
-            const {notifyCmtChannel, resolveWebhookUrl} = require('./cmt-channel-notify.js');
-            const webhookUrl = resolveWebhookUrl(compositeIdentity.name);
-            if (webhookUrl) {
-                // Prefer TSIO links even when the poll timed out at in_progress
-                // (commit status may still point at the Actions run URL).
-                const channelReportUrl = displayReportUrl || groupReportUrl || targetUrl;
-                await notifyCmtChannel({
-                    core,
-                    baseUrl,
-                    compositeIdentity,
-                    detail,
-                    reportUrl: channelReportUrl,
-                    upstreamJobsSucceeded,
-                    hasFailures,
-                    webhookUrl,
-                });
+        if (notifyChannel) {
+            const notifyNames = new Set(['cmt-desktop', 'desktop-pr', 'desktop-master']);
+            if (notifyNames.has(compositeIdentity.name)) {
+                const {notifyCmtChannel, resolveWebhookUrl} = require('./cmt-channel-notify.js');
+                const webhookUrl = resolveWebhookUrl(compositeIdentity.name);
+                if (webhookUrl) {
+                    // Prefer TSIO links even when the poll timed out at in_progress
+                    // (commit status may still point at the Actions run URL).
+                    const channelReportUrl = displayReportUrl || groupReportUrl || targetUrl;
+                    await notifyCmtChannel({
+                        core,
+                        baseUrl,
+                        compositeIdentity,
+                        detail,
+                        reportUrl: channelReportUrl,
+                        upstreamJobsSucceeded,
+                        hasFailures,
+                        webhookUrl,
+                    });
+                }
             }
         }
     } catch (error) {
         core.warning(`E2E Mattermost notify setup failed: ${error.message}`);
     }
 
-    if (failOnTestFailures && overallState === 'failure') {
+    const byKey = buildOsStatusTotals({detail, perJobCounts: perJobCounts || {}});
+    if (shouldFailFromScope({
+        failOnTestFailures,
+        readyWhenOs,
+        readyWhenPolicy,
+        overallState,
+        byKey,
+        upstreamJobsSucceeded,
+        hasPerJobCounts: Boolean(perJobCounts),
+    })) {
         let reason;
-        if (!upstreamJobsSucceeded && !hasFailures) {
+        if (readyWhenOs) {
+            const row = byKey[readyWhenOs] || EMPTY_OS_ROW;
+            if (!upstreamJobsSucceeded && row.failed === 0 && !row.shardFailed) {
+                reason = `an upstream CI job failed with no corresponding test failure (${readyWhenOs})`;
+            } else {
+                reason = `${readyWhenOs}: ${row.passed} passed, ${row.failed} failed, shardFailed=${row.shardFailed}`;
+            }
+        } else if (readyWhenPolicy) {
+            reason = 'one or more policy legs did not pass';
+        } else if (!upstreamJobsSucceeded && !hasFailures) {
             reason = 'an upstream CI job failed with no corresponding test failure';
         } else if (failedShards.length > 0 && (stats.failed || 0) === 0) {
             reason = `shard(s) failed: ${failedShards.join(', ')}`;
@@ -654,3 +787,6 @@ module.exports = reportTsioStatus;
 module.exports.buildOsStatusTotals = buildOsStatusTotals;
 module.exports.flipPerOsCommitStatuses = flipPerOsCommitStatuses;
 module.exports.reportUrlForStatusBucket = reportUrlForStatusBucket;
+module.exports.countReportsForBucket = countReportsForBucket;
+module.exports.shardsAreReady = shardsAreReady;
+module.exports.shouldFailFromScope = shouldFailFromScope;

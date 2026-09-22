@@ -10,6 +10,9 @@ const {
     buildOsStatusTotals,
     flipPerOsCommitStatuses,
     reportUrlForStatusBucket,
+    countReportsForBucket,
+    shardsAreReady,
+    shouldFailFromScope,
 } = require('./tsio-report-status');
 
 describe('buildOsStatusTotals', () => {
@@ -65,6 +68,31 @@ describe('buildOsStatusTotals', () => {
 
         assert.equal(byKey.macos.shardFailed, true);
         assert.equal(byKey.macos.hasResults, false);
+    });
+
+    it('rolls Playwright shards for one OS into a single bucket', () => {
+        const byKey = buildOsStatusTotals({
+            detail: {
+                reports: [
+                    {gh_job_name: 'e2e-on-ubuntu-latest-master-1-of-3', status: 'complete'},
+                    {gh_job_name: 'e2e-on-ubuntu-latest-master-2-of-3', status: 'complete'},
+                    {gh_job_name: 'e2e-on-ubuntu-latest-master-3-of-3', status: 'failed'},
+                ],
+            },
+            perJobCounts: {
+                'e2e-on-ubuntu-latest-master-1-of-3': {passed: 80, failed: 0, skipped: 2, flaky: 0},
+                'e2e-on-ubuntu-latest-master-2-of-3': {passed: 70, failed: 0, skipped: 3, flaky: 1},
+                'e2e-on-ubuntu-latest-master-3-of-3': {passed: 60, failed: 2, skipped: 1, flaky: 0},
+            },
+        });
+
+        assert.deepEqual(byKey.linux, {
+            passed: 211,
+            failed: 2,
+            skipped: 6,
+            shardFailed: true,
+            hasResults: true,
+        });
     });
 });
 
@@ -324,6 +352,37 @@ describe('flipPerOsCommitStatuses', () => {
 
         assert.equal(statuses[0].target_url, groupUrl);
     });
+
+    it('rolls sharded job names into e2e/linux', async () => {
+        const {statuses, github, core, context, compositeIdentity} = makeHarness();
+
+        await flipPerOsCommitStatuses({
+            github,
+            context,
+            compositeIdentity,
+            detail: {
+                reports: [
+                    {gh_job_name: 'e2e-on-ubuntu-latest-master-1-of-3', status: 'complete'},
+                    {gh_job_name: 'e2e-on-ubuntu-latest-master-2-of-3', status: 'complete'},
+                    {gh_job_name: 'e2e-on-ubuntu-latest-master-3-of-3', status: 'complete'},
+                ],
+            },
+            perJobCounts: {
+                'e2e-on-ubuntu-latest-master-1-of-3': {passed: 80, failed: 0, skipped: 1, flaky: 0},
+                'e2e-on-ubuntu-latest-master-2-of-3': {passed: 70, failed: 0, skipped: 2, flaky: 0},
+                'e2e-on-ubuntu-latest-master-3-of-3': {passed: 60, failed: 0, skipped: 3, flaky: 0},
+            },
+            targetUrl: 'https://example.test/report',
+            upstreamJobsSucceeded: true,
+            expectedOs: ['linux'],
+            core,
+        });
+
+        assert.equal(statuses.length, 1);
+        assert.equal(statuses[0].context, 'e2e/linux');
+        assert.equal(statuses[0].state, 'success');
+        assert.match(statuses[0].description, /210 passed, 0 failed, 6 skipped/);
+    });
 });
 
 describe('reportUrlForStatusBucket', () => {
@@ -369,3 +428,104 @@ describe('reportUrlForStatusBucket', () => {
         assert.equal(url, fallback);
     });
 });
+
+describe('countReportsForBucket / shardsAreReady', () => {
+    const linuxShards = {
+        reports: [
+            {gh_job_name: 'e2e-on-ubuntu-latest-master-1-of-3', status: 'complete'},
+            {gh_job_name: 'e2e-on-ubuntu-latest-master-2-of-3', status: 'complete'},
+            {gh_job_name: 'e2e-on-ubuntu-latest-master-3-of-3', status: 'complete'},
+            {gh_job_name: 'policy-tests-macos', status: 'complete'},
+        ],
+    };
+
+    it('counts only the requested OS bucket', () => {
+        assert.equal(countReportsForBucket(linuxShards, 'linux'), 3);
+        assert.equal(countReportsForBucket(linuxShards, 'macos'), 0);
+        assert.equal(countReportsForBucket(linuxShards, 'macos-policy'), 1);
+    });
+
+    it('is ready for linux when 3 linux shards are present even if macos is missing', () => {
+        assert.equal(shardsAreReady({
+            detail: linuxShards,
+            totalReportsExpected: 10,
+            readyWhenOs: 'linux',
+            minReports: 3,
+        }), true);
+        assert.equal(shardsAreReady({
+            detail: linuxShards,
+            totalReportsExpected: 10,
+        }), false);
+        assert.equal(shardsAreReady({
+            detail: {reports: linuxShards.reports.slice(0, 2)},
+            totalReportsExpected: 10,
+            readyWhenOs: 'linux',
+            minReports: 3,
+        }), false);
+    });
+
+    it('is ready for policy when min policy reports are present', () => {
+        assert.equal(shardsAreReady({
+            detail: linuxShards,
+            totalReportsExpected: 10,
+            readyWhenPolicy: true,
+            minReports: 2,
+        }), false);
+        assert.equal(shardsAreReady({
+            detail: {
+                reports: [
+                    {gh_job_name: 'policy-tests-macos', status: 'complete'},
+                    {gh_job_name: 'policy-tests-windows', status: 'complete'},
+                ],
+            },
+            totalReportsExpected: 10,
+            readyWhenPolicy: true,
+            minReports: 2,
+        }), true);
+    });
+});
+
+describe('shouldFailFromScope', () => {
+    const linuxPass = {linux: {passed: 200, failed: 0, skipped: 5, shardFailed: false, hasResults: true}};
+    const linuxFail = {linux: {passed: 198, failed: 2, skipped: 5, shardFailed: false, hasResults: true}};
+
+    it('does not fail a passing OS when another OS failed in the same TSIO group', () => {
+        assert.equal(shouldFailFromScope({
+            failOnTestFailures: true,
+            readyWhenOs: 'linux',
+            overallState: 'failure',
+            byKey: linuxPass,
+            upstreamJobsSucceeded: true,
+            hasPerJobCounts: true,
+        }), false);
+    });
+
+    it('fails only the scoped OS when that OS has test failures', () => {
+        assert.equal(shouldFailFromScope({
+            failOnTestFailures: true,
+            readyWhenOs: 'linux',
+            overallState: 'success',
+            byKey: linuxFail,
+            upstreamJobsSucceeded: true,
+            hasPerJobCounts: true,
+        }), true);
+    });
+
+    it('uses global overallState when no OS/policy scope is set', () => {
+        assert.equal(shouldFailFromScope({
+            failOnTestFailures: true,
+            overallState: 'failure',
+            byKey: linuxPass,
+            upstreamJobsSucceeded: true,
+            hasPerJobCounts: true,
+        }), true);
+        assert.equal(shouldFailFromScope({
+            failOnTestFailures: true,
+            overallState: 'success',
+            byKey: linuxPass,
+            upstreamJobsSucceeded: true,
+            hasPerJobCounts: true,
+        }), false);
+    });
+});
+
