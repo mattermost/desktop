@@ -143,11 +143,22 @@ describe('Post/TSIO skip cancelled workflow runs', () => {
     // GitHub expressions are `${{ ... }}`; join so eslint does not treat them as template interpolation.
     const gha = (expr) => ['$', '{{ ', expr, ' }}'].join('');
 
-    function jobIf(jobId) {
-        const re = new RegExp(`(?:^|\\n)  ${jobId}:\\n(?:.*\\n)*?    if: (.+)`);
-        const match = yml.match(re);
-        assert.ok(match, `${jobId} must have an if:`);
-        return match[1];
+    function jobIf(jobId, source = yml) {
+        const lines = source.split(/\r?\n/);
+        const header = `  ${jobId}:`;
+        const start = lines.indexOf(header);
+        assert.ok(start >= 0, `${jobId} must exist`);
+        for (let i = start + 1; i < lines.length; i++) {
+            if ((/^ {2}\S/).test(lines[i])) {
+                break;
+            }
+            const match = lines[i].match(/^ {4}if: (.+)$/);
+            if (match) {
+                return match[1];
+            }
+        }
+        assert.fail(`${jobId} must have an if:`);
+        return '';
     }
 
     it('Post e2e/* and TSIO summary keep always() so a failed or timed-out shard still posts', () => {
@@ -178,5 +189,11 @@ describe('Post/TSIO skip cancelled workflow runs', () => {
     it('concurrency keys master by SHA and only cancels in-progress PR runs', () => {
         assert.ok(yml.includes('group: e2e-functional-' + gha('inputs.pr_number || github.sha')));
         assert.ok(yml.includes('cancel-in-progress: ' + gha("inputs.pr_number != ''")));
+    });
+
+    it('parses job if: on CRLF checkouts (Windows CI)', () => {
+        const crlf = yml.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
+        assert.match(jobIf('e2e-linux-status', crlf), /always\(\)/);
+        assert.equal(jobIf('tsio-summary', crlf), gha('always() && !cancelled()'));
     });
 });
