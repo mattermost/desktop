@@ -15,7 +15,7 @@ import {closeElectronAppFast, waitForWindow} from '../../helpers/electronApp';
 import {NOTIFICATION_CLICKED} from '../../helpers/ipcChannels';
 import {loginToMattermost} from '../../helpers/login';
 import {waitForMainWindowFocused} from '../../helpers/mainWindowFocus';
-import {POST_TEXTBOX_SELECTOR, waitForMattermostShellReady} from '../../helpers/mattermostShell';
+import {waitForChannelPostListLoaded, waitForMattermostShellReady} from '../../helpers/mattermostShell';
 import {
     closeAllPopouts,
     closePopoutWindow,
@@ -100,10 +100,7 @@ test.describe('multi_window/multi_window', () => {
             async () => popoutView.evaluate(() => window.location.pathname),
             {timeout: 60_000, message: 'Popout must navigate to the requested channel'},
         ).toMatch(/off[-_]topic/i);
-        await expect.poll(
-            () => popoutView.evaluate((selector) => Boolean(document.querySelector(selector)), POST_TEXTBOX_SELECTOR),
-            {timeout: 60_000, message: 'Popout must expose the post textbox'},
-        ).toBe(true);
+        await waitForChannelPostListLoaded(popoutView, {timeout: 60_000});
 
         const tempFile = path.join(os.tmpdir(), `mm-e2e-upload-${Date.now()}.txt`);
         await fs.writeFile(tempFile, 'multi-window upload test');

@@ -211,7 +211,10 @@ test.describe('user_attributes/user_attributes', () => {
                 // screen before the unsaved edit.
                 await editTextCustomAttribute(win, created.id, TEST_DEPARTMENT);
                 await reloadAndOpenProfileSettings(win, created.id);
-                expect(await getCustomAttributeInputValue(win, created.id)).toContain(TEST_DEPARTMENT);
+                await expect.poll(
+                    () => getCustomAttributeInputValue(win, created.id),
+                    {timeout: 10_000, message: 'Saved custom attribute must load after reload'},
+                ).toContain(TEST_DEPARTMENT);
                 await editTextCustomAttribute(win, created.id, 'Changed Value', false);
                 await cancelCustomAttributeEdit(win, created.id);
                 expect(await getCustomAttributeInputValue(win, created.id)).toContain(TEST_DEPARTMENT);
