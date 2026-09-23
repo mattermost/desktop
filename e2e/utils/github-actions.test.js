@@ -208,17 +208,25 @@ describe('e2e job timeout-minutes', () => {
     const workflowsDir = path.join(__dirname, '../../.github/workflows');
     const gha = (expr) => ['$', '{{ ', expr, ' }}'].join('');
 
-    function jobTimeoutMinutes(file, jobId) {
-        const source = fs.readFileSync(path.join(workflowsDir, file), 'utf8');
+    function jobLines(source, jobId) {
         const lines = source.split(/\r?\n/);
         const header = `  ${jobId}:`;
         const start = lines.indexOf(header);
-        assert.ok(start >= 0, `${file} ${jobId} must exist`);
+        assert.ok(start >= 0, `${jobId} must exist`);
+        let end = lines.length;
         for (let i = start + 1; i < lines.length; i++) {
             if ((/^ {2}\S/).test(lines[i])) {
+                end = i;
                 break;
             }
-            const match = lines[i].match(/^ {4}timeout-minutes: (.+)$/);
+        }
+        return lines.slice(start, end);
+    }
+
+    function jobTimeoutMinutes(file, jobId) {
+        const source = fs.readFileSync(path.join(workflowsDir, file), 'utf8');
+        for (const line of jobLines(source, jobId)) {
+            const match = line.match(/^ {4}timeout-minutes: (.+)$/);
             if (match) {
                 return match[1];
             }
@@ -256,13 +264,13 @@ describe('e2e job timeout-minutes', () => {
 
     it('CMT linux tests wait only on linux install, not macos/windows install', () => {
         const cmt = fs.readFileSync(path.join(workflowsDir, 'compatibility-matrix-testing.yml'), 'utf8');
-        const start = cmt.indexOf('\n  e2e-linux:\n');
-        const end = cmt.indexOf('\n  e2e-macos:\n');
-        assert.ok(start >= 0 && end > start, 'e2e-linux job block');
-        const block = cmt.slice(start, end);
-        assert.match(block, /- e2e-linux-install/);
-        assert.doesNotMatch(block, /e2e-macos-install/);
-        assert.doesNotMatch(block, /e2e-windows-install/);
+        const crlf = cmt.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
+        for (const source of [cmt, crlf]) {
+            const block = jobLines(source, 'e2e-linux').join('\n');
+            assert.match(block, /- e2e-linux-install/);
+            assert.doesNotMatch(block, /e2e-macos-install/);
+            assert.doesNotMatch(block, /e2e-windows-install/);
+        }
     });
 });
 
