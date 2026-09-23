@@ -141,8 +141,7 @@ export async function createCustomProfileAttributeField(
             }),
         });
     } catch (error) {
-        // 11.7 CMT: leftover rows hit idx_propertyfields_unique_legacy (500) even
-        // after GET+DELETE of E2E_UA_* names. Reuse the existing field by name.
+        // Older servers can 400/500 on a leftover unique index; reuse the field by name.
         if (!(error instanceof ApiRequestError) || ![400, 500].includes(error.status)) {
             throw error;
         }
@@ -445,9 +444,8 @@ export async function editTextCustomAttribute(
     newValue: string,
     save = true,
 ): Promise<void> {
-    // 12.0 SettingItemMax hides Edit while the section is already open (e.g. after
-    // an invalid URL blur). Clicking Edit again waits for a hidden button, reloads,
-    // and drops the in-progress editor — webapp T5772 fills and saves in place.
+    // 12.0 hides Edit while the section is already open; clicking it again would
+    // wait on a hidden button and drop the in-progress editor.
     if (!(await isCustomAttributeInputVisible(win, fieldId))) {
         await ensureCustomAttributeEditReady(win, fieldId);
         await win.runInRenderer<void>(`
@@ -483,8 +481,7 @@ export async function editTextCustomAttribute(
 }
 
 export async function cancelCustomAttributeEdit(win: ServerView, fieldId?: string): Promise<void> {
-    // SettingItemMax mounts Cancel as #cancelSetting beside #saveSetting. Compass
-    // Button textContent is not always exactly "Cancel"; prefer the product id.
+    // Button text is not always exactly "Cancel"; use the #cancelSetting id.
     await win.waitForSelector('#cancelSetting', {timeout: 10_000});
     await win.runInRenderer<void>(`
         const fieldId = ${JSON.stringify(fieldId ?? '')};

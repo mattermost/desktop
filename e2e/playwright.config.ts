@@ -32,10 +32,8 @@ const PLATFORM_GREP: Record<Platform, RegExp> = {
 // Electron processes are heavy (~300MB each). Override with E2E_WORKERS.
 const cpuCount = os.cpus().length;
 
-// Linux CI still hits Playwright worker-teardown hangs with 2 Electron workers
-// (stuck app.close() burns the 90s budget) — keep linux at 1; extra concurrency
-// is more shards. macOS/Windows hosted runners have 3–4 CPUs / 14–16GB; 3
-// workers (~1GB) is within that. Serial describe() files stay serial.
+// Linux CI hits Playwright worker-teardown hangs with 2 Electron workers (a stuck
+// app.close() burns the 90s budget), so it stays at 1 and scales via shards.
 function getDefaultWorkers(): number {
     if (process.env.CI) {
         return getActivePlatform() === 'linux' ? 1 : 3;
@@ -134,8 +132,7 @@ export default defineConfig({
     use: {
 
         // Video/trace land in test-results/ and bloat CI artifacts (Electron
-        // userdata + webm/zip per test). CI traces also record fill() passwords.
-        // Failures are debugged via the merged HTML report on S3 (screenshots).
+        // userdata + webm/zip per test). CI traces would also record fill() passwords.
         trace: process.env.CI ? 'off' : 'retain-on-failure',
         screenshot: 'only-on-failure',
         video: process.env.CI ? 'off' : 'retain-on-failure',

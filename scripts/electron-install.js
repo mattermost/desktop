@@ -10,31 +10,18 @@
 
 function printCauseChain(err) {
     let current = err;
-    let depth = 0;
-    while (current && depth < 8) {
-        const code = current.code || current.errno;
-        const parts = [`[electron-install] cause[${depth}]: ${current.name || 'Error'}: ${current.message}`];
-        if (code) {
-            parts.push(`code=${code}`);
-        }
-        if (current.syscall) {
-            parts.push(`syscall=${current.syscall}`);
-        }
-        if (current.hostname) {
-            parts.push(`hostname=${current.hostname}`);
-        }
-        if (current.address) {
-            parts.push(`address=${current.address}`);
-        }
-        if (current.port) {
-            parts.push(`port=${current.port}`);
-        }
-        if (current.errored) {
-            parts.push(`errored=${current.errored}`);
-        }
-        console.error(parts.join(' '));
+    for (let depth = 0; current && depth < 8; depth++) {
+        const fields = {
+            code: current.code || current.errno,
+            syscall: current.syscall,
+            hostname: current.hostname,
+            address: current.address,
+            port: current.port,
+            errored: current.errored,
+        };
+        const extras = Object.entries(fields).filter(([, value]) => value).map(([key, value]) => `${key}=${value}`);
+        console.error([`[electron-install] cause[${depth}]: ${current.name || 'Error'}: ${current.message}`, ...extras].join(' '));
         current = current.cause;
-        depth += 1;
     }
 }
 

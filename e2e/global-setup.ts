@@ -18,16 +18,9 @@ const MACOS_DEFAULTS_SNAPSHOT = path.join(os.tmpdir(), 'mattermost-desktop-e2e-m
 
 /**
  * Install/enable the Calls plugin and configure it for E2E — once per OS server,
- * on shard 1 (or when Playwright is not sharding). Later shards still sweep
- * leftovers and patch SiteURL; they must not disable/re-enable or wait on
- * Calls readiness. They run no Calls specs, and `waitForCallsPluginReady` throws
- * if shard 1's restart is still in progress.
- *
- * Restart stays on shard 1 (not "never when sharded"): it resets the in-memory
- * rate limiter, and CMT/local `--shard=1/1` still needs it per server. All four
- * `specs/calls/*` files currently land in shard 1, so sibling shards do not run
- * Calls specs. A pre-shard workflow job would be the other correct option; it
- * is more structure for the same server-local effect.
+ * on shard 1 (or when Playwright is not sharding). All `specs/calls/*` files run
+ * on shard 1; later shards only sweep leftovers and patch SiteURL, since a restart
+ * there would tear the plugin down under shard 1's calls.
  *
  * This MUST NOT move back into a spec's `beforeAll`. `ensureCallsPlugin` disables and
  * re-enables the plugin server-wide to reset its rate limiter, and the Calls specs run
@@ -57,8 +50,7 @@ async function setUpCallsPlugin(restartPlugin: boolean): Promise<void> {
 
     const token = await apiLogin(serverUrl, username, password);
 
-    // Every shard: leftovers sit on the shared OS server, and T1307 is not on shard 1.
-    // Concurrent DELETE of an already-archived channel must not throw.
+    // Every shard: leftovers sit on the shared OS server and break specs outside shard 1.
     try {
         const archived = await archiveLeftoverCallsE2EChannels(serverUrl, token);
         if (archived > 0) {

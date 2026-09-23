@@ -18,19 +18,10 @@ type PluginList = {
 
 let cachedCallsPluginVersion: string | undefined;
 
-export function getCachedCallsPluginVersion(): string | undefined {
-    return cachedCallsPluginVersion;
-}
-
-function pluginVersion(plugin: PluginManifest | undefined): string | undefined {
-    return plugin?.version || undefined;
-}
-
-export async function getCallsPluginVersion(baseUrl: string, token: string): Promise<string | undefined> {
+async function getCallsPluginVersion(baseUrl: string, token: string): Promise<string | undefined> {
     const plugins = await apiRequest<PluginList>(baseUrl, token, '/api/v4/plugins');
-    const version = pluginVersion(plugins.active.find((plugin) => plugin.id === CALLS_PLUGIN_ID));
-    cachedCallsPluginVersion = version;
-    return version;
+    cachedCallsPluginVersion = plugins.active.find((plugin) => plugin.id === CALLS_PLUGIN_ID)?.version || undefined;
+    return cachedCallsPluginVersion;
 }
 
 /**
@@ -90,7 +81,7 @@ async function isCallsSlashCommandRegistered(baseUrl: string, token: string): Pr
  * Wait until Calls is usable: plugin active, test mode off, `/call` registered.
  * The plugin can report active before slash commands exist, so "active" alone is not enough.
  */
-export async function waitForCallsPluginReady(
+async function waitForCallsPluginReady(
     baseUrl: string,
     token: string,
     timeoutMs = 60_000,

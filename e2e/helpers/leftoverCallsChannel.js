@@ -44,8 +44,6 @@ function isStaleLeftoverCallsE2EChannel(channel, now = Date.now()) {
 }
 
 module.exports = {
-    CALLS_E2E_DISPLAY_PREFIX,
-    CALLS_E2E_NAME_PATTERN,
     LEFTOVER_CALLS_MAX_AGE_MS,
     isLeftoverCallsE2EChannel,
     isStaleLeftoverCallsE2EChannel,

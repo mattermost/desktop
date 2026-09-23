@@ -51,18 +51,6 @@ export async function apiCreateChannel(
     });
 }
 
-export async function apiAddUserToChannel(
-    baseUrl: string,
-    token: string,
-    channelId: string,
-    userId: string,
-): Promise<void> {
-    await apiRequest<unknown>(baseUrl, token, `/api/v4/channels/${channelId}/members`, {
-        method: 'POST',
-        body: JSON.stringify({user_id: userId}),
-    });
-}
-
 /** Mattermost returns 400 when the channel is already deleted; 404 if it is gone. */
 export function isAlreadyArchivedChannelStatus(status: number): boolean {
     return status === 400 || status === 404;

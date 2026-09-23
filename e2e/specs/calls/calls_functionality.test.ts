@@ -6,10 +6,9 @@ import type {TestInfo} from '@playwright/test';
 import {test, expect} from '../../fixtures/index';
 import {assertCallsSpecsOnShard1} from '../../helpers/assertCallsShard';
 import {
-    callsMuteStateKey,
     closeCallsWidget,
     enterCallsTestChannel,
-    getCallsMuteState,
+    getCallsMuteStateKey,
     leaveCallIfActive,
     startCall,
     toggleMuteViaShortcut,
@@ -121,13 +120,12 @@ test.describe('calls/calls_functionality', () => {
 
             const muteButton = await waitForCallsClientReady(widgetWindow);
 
-            // 1.12+ toggles aria-label ("Mute" / "Unmute"); older widgets use aria-pressed.
-            const initialMute = callsMuteStateKey(await getCallsMuteState(widgetWindow));
+            const initialMute = await getCallsMuteStateKey(widgetWindow);
 
             await muteButton.click();
 
             await expect.poll(
-                async () => callsMuteStateKey(await getCallsMuteState(widgetWindow)),
+                () => getCallsMuteStateKey(widgetWindow),
                 {timeout: 5_000, message: 'Mute button must toggle after click'},
             ).not.toBe(initialMute);
 

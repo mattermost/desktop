@@ -95,13 +95,6 @@ export const IS_CHANNEL_VIEW_LOADED_JS = `
     return Boolean(__mmIsVisible(header) && composer);
 `;
 
-/**
- * @deprecated Use IS_CHANNEL_VIEW_LOADED_JS. The old spinner-first / __mmIsShown
- * probe treated 12.0 PostListRow's always-mounted `.loading-screen` sentinel
- * (OLDER_MESSAGES_LOADER) as "still loading" after the channel was interactive.
- */
-export const IS_CHANNEL_POST_LIST_LOADED_JS = IS_CHANNEL_VIEW_LOADED_JS;
-
 /** True when a top-level JS error banner is shown (webapp crashed partially). */
 export const HAS_CLIENT_JS_ERROR_JS = `
     return Boolean(

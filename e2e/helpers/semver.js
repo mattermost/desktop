@@ -40,7 +40,4 @@ function isVersionAtLeast(version, minimum) {
     return true;
 }
 
-module.exports = {
-    numericVersion,
-    isVersionAtLeast,
-};
+module.exports = {isVersionAtLeast};

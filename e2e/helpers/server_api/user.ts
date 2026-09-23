@@ -120,9 +120,8 @@ const createdChannelIds: string[] = [];
 
 /**
  * Private channel for one Calls test, created as that test user so the shared
- * admin (LHS / channel-menu specs) never sees it. Town Square is shared across
- * Windows/macOS workers (2 in CI), so parallel `/call start` hits "A call is
- * already ongoing in the channel" and can close the other worker's widget.
+ * admin never sees it. A shared channel (Town Square) lets parallel workers'
+ * `/call start` collide ("A call is already ongoing").
  */
 export async function createCallsTestChannel(
     baseUrl: string,
@@ -144,11 +143,7 @@ export async function createCallsTestChannel(
     return {id: channel.id, name: channel.name};
 }
 
-/**
- * Archive every Calls test channel this worker created. Best-effort — leftover
- * private channels on the shared admin team fill the LHS ("More unreads") and
- * break hover-gated channel menus (T1307 / T125 / T5890).
- */
+/** Archive every Calls test channel this worker created (best-effort). */
 export async function archiveCallsTestChannels(baseUrl: string, adminToken: string): Promise<void> {
     const ids = createdChannelIds.splice(0, createdChannelIds.length);
 
@@ -162,14 +157,10 @@ export async function archiveCallsTestChannels(baseUrl: string, adminToken: stri
 }
 
 /**
- * Archive leftover Calls E2E private channels on the shared test server.
- *
- * PR E2E servers (`desktop-pr-*`) are reused across runs. Channels created as
- * the admin before per-test isolation still pack the admin LHS with
- * "More unreads" and hide the hover-gated ⋮ (T1307 / T125 / T5890).
- * Per-test archive only covers channels this worker created.
- * Only channels older than 60 minutes (`create_at`) are archived, so a late
- * shard or another CMT OS leg cannot delete a channel a sibling is using.
+ * Archive leftover Calls E2E private channels on the reused test server. They
+ * pack the admin LHS with "More unreads" and hide hover-gated channel menus.
+ * Only channels older than 60 minutes are archived, so a late shard or another
+ * CMT OS leg cannot delete a channel a sibling is still using.
  */
 export async function archiveLeftoverCallsE2EChannels(baseUrl: string, adminToken: string): Promise<number> {
     const teams = await apiRequest<Team[]>(baseUrl, adminToken, '/api/v4/users/me/teams');

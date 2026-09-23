@@ -62,23 +62,12 @@ export async function waitForCallsWidgetWindow(
     }).catch(() => null);
 }
 
-export type CallsMuteState = {
-    label: string | null;
-    pressed: string | null;
-};
-
-export async function getCallsMuteState(widgetWindow: Page): Promise<CallsMuteState> {
+/** 1.12+ toggles the mute aria-label ("Mute" / "Unmute"); older widgets toggle aria-pressed. */
+export async function getCallsMuteStateKey(widgetWindow: Page): Promise<string> {
     return widgetWindow.evaluate((selector) => {
         const button = document.querySelector(selector);
-        return {
-            label: button?.getAttribute('aria-label') ?? null,
-            pressed: button?.getAttribute('aria-pressed') ?? null,
-        };
+        return `${button?.getAttribute('aria-label') ?? ''}|${button?.getAttribute('aria-pressed') ?? ''}`;
     }, CALLS_MUTE_SELECTOR);
-}
-
-export function callsMuteStateKey(state: CallsMuteState): string {
-    return `${state.label ?? ''}|${state.pressed ?? ''}`;
 }
 
 // Calls 1.12 paints mute while Redux `clientConnecting` and sets `disabled` until
@@ -133,43 +122,37 @@ export async function sendWidgetShortcut(
     }, {keyCode, modifiers});
 }
 
-/** 1.12+ binds Ctrl/Cmd+Shift+Space; older widgets bind "m" (desktop v6.3.1 T5411). */
+/** 1.12+ binds Ctrl/Cmd+Shift+Space; older widgets bind "m". Tries the expected key first, then the other. */
 export async function toggleMuteViaShortcut(
     electronApp: ElectronApplication,
     widgetWindow: Page,
 ): Promise<void> {
-    const initialMute = callsMuteStateKey(await getCallsMuteState(widgetWindow));
+    const initialMute = await getCallsMuteStateKey(widgetWindow);
     const callsVersion = await resolveCallsPluginVersion();
     const legacyMuteKey = Boolean(
         callsVersion && !isVersionAtLeast(callsVersion, CALLS_DISABLED_WHILE_CONNECTING),
     );
     const isMac = process.platform === 'darwin';
-
-    const assertToggled = async (timeout: number, message: string) => {
-        await expect.poll(
-            async () => callsMuteStateKey(await getCallsMuteState(widgetWindow)),
-            {timeout, message},
-        ).not.toBe(initialMute);
+    const pressM = {
+        press: () => widgetWindow.keyboard.press('m'),
+        message: 'Mute must toggle after the "m" keyboard shortcut',
     };
+    const pressSpace = {
+        press: () => sendWidgetShortcut(electronApp, 'Space', isMac ? ['shift', 'meta'] : ['shift', 'control']),
+        message: 'Mute must toggle after Ctrl/Cmd+Shift+Space',
+    };
+    const [first, fallback] = legacyMuteKey ? [pressM, pressSpace] : [pressSpace, pressM];
+    const assertToggled = (timeout: number, message: string) => expect.poll(
+        () => getCallsMuteStateKey(widgetWindow),
+        {timeout, message},
+    ).not.toBe(initialMute);
 
-    if (legacyMuteKey) {
-        await widgetWindow.keyboard.press('m');
-        try {
-            await assertToggled(3_000, 'Mute must toggle after the "m" keyboard shortcut');
-            return;
-        } catch {
-            await sendWidgetShortcut(electronApp, 'Space', isMac ? ['shift', 'meta'] : ['shift', 'control']);
-            await assertToggled(5_000, 'Mute must toggle after Ctrl/Cmd+Shift+Space');
-            return;
-        }
-    }
-
-    await sendWidgetShortcut(electronApp, 'Space', isMac ? ['shift', 'meta'] : ['shift', 'control']);
+    await first.press();
     try {
-        await assertToggled(3_000, 'Mute must toggle after Ctrl/Cmd+Shift+Space');
+        await assertToggled(3_000, first.message);
     } catch {
-        await widgetWindow.keyboard.press('m');
-        await assertToggled(5_000, 'Mute must toggle after the "m" keyboard shortcut');
+        await fallback.press();
+        await assertToggled(5_000, fallback.message);
     }
 }
 

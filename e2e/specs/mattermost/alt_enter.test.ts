@@ -55,10 +55,7 @@ test.describe('mattermost/alt_enter', () => {
             await firstServer!.click('#sidebarItem_off-topic');
             await waitForChannelPostListLoaded(firstServer!);
 
-            // Do not snapshot .post-message__text length here. waitForChannelPostListLoaded
-            // is header+composer (12.0 PostList keeps a sentinel .loading-screen), so the
-            // virt list may still be empty. CI macos then painted 15 history posts and the
-            // count equality looked like Alt+Enter sent the draft.
+            // Match on unique text, not post counts: history may still be painting.
             const lineOne = `Line one ${Date.now()}`;
             const lineTwo = 'Line two';
 

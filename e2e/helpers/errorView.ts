@@ -147,10 +147,8 @@ export async function waitForErrorView(
         }
     };
 
-    // Do not reload on the first miss. T6176 macos CI showed ErrorView with
-    // ERR_CERT_DATE_INVALID in the failure screenshot while this helper timed
-    // out: an immediate reload races LOAD_FAILED from Cancel Connection and
-    // retriggers the certificate modal, so .ErrorView never appears in-poll.
+    // Do not reload on the first miss: an immediate reload races LOAD_FAILED from
+    // Cancel Connection and retriggers the certificate modal.
     const appearedBeforeReload = await expect.poll(
         isErrorViewVisible,
         {timeout: Math.min(timeout, 8_000), message: 'ErrorView after initial load failure'},

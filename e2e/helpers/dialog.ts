@@ -69,10 +69,8 @@ export async function answerMessageModal(app: ElectronApplication, response: num
     await button.waitFor({state: 'visible', timeout});
 
     // Clicking dismisses the modal and tears down its WebContentsView. Use a DOM
-    // click so Playwright does not retry actionability against that teardown.
-    // evaluate(click) can still throw after a successful click if hide() closes
-    // the page before the result is serialized (macOS T6176). Swallow only that
-    // target-closed error; other failures still throw.
+    // click so Playwright does not retry actionability against that teardown, and
+    // ignore the target-closed error if the page closes before evaluate returns.
     try {
         await button.evaluate((el) => (el as HTMLElement).click());
     } catch (error) {
