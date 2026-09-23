@@ -683,8 +683,9 @@ jobs:
             node_modules
             e2e/node_modules
           enableCrossOsArchive: false
-          # v7: exact restore only — avoids probing legacy v6 blobs that warn on macOS
-          key: ${{ runner.os }}-build-node-modules-v7-${{ hashFiles('**/package-lock.json') }}
+          # v7: exact restore only — avoids probing legacy v6 blobs that warn on macOS.
+          # Hash patches/** so a patch-package change cannot skip npm ci / postinstall.
+          key: ${{ runner.os }}-build-node-modules-v7-${{ hashFiles('**/package-lock.json', 'patches/**') }}
 
       - name: e2e/cache-electron-gyp-windows
         if: runner.os == 'Windows'
@@ -722,7 +723,7 @@ jobs:
             node_modules
             e2e/node_modules
           enableCrossOsArchive: false
-          key: ${{ runner.os }}-build-node-modules-v7-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-build-node-modules-v7-${{ hashFiles('**/package-lock.json', 'patches/**') }}
 
       - name: e2e/suppress-macos-dialogs
         if: runner.os == 'macOS'

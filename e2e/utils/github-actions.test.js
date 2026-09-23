@@ -197,3 +197,31 @@ describe('Post/TSIO skip cancelled workflow runs', () => {
         assert.equal(jobIf('tsio-summary', crlf), gha('always() && !cancelled()'));
     });
 });
+
+describe('e2e/policy node_modules cache key includes patches', () => {
+    const workflowsDir = path.join(__dirname, '../../.github/workflows');
+    const v7Key = /build-node-modules-v7-\$\{\{ hashFiles\(([^)]+)\) \}\}/g;
+    const expectedHashArgs = "'**/package-lock.json', 'patches/**'";
+
+    function v7NodeModulesHashArgs(file) {
+        const yml = fs.readFileSync(path.join(workflowsDir, file), 'utf8');
+        return [...yml.matchAll(v7Key)].map((m) => m[1]);
+    }
+
+    it('template restore and save hash package-lock.json and patches/**', () => {
+        const args = v7NodeModulesHashArgs('e2e-functional-template.yml');
+        assert.equal(args.length, 2, 'restore + save');
+        assert.deepEqual(args, [expectedHashArgs, expectedHashArgs]);
+    });
+
+    it('policy jobs use the same restore and save key', () => {
+        const args = v7NodeModulesHashArgs('e2e-functional.yml');
+        assert.equal(args.length, 2, 'restore + save');
+        assert.deepEqual(args, [expectedHashArgs, expectedHashArgs]);
+    });
+
+    it('ci.yaml and build-for-pr.yml do not share the e2e v7 key', () => {
+        assert.deepEqual(v7NodeModulesHashArgs('ci.yaml'), []);
+        assert.deepEqual(v7NodeModulesHashArgs('build-for-pr.yml'), []);
+    });
+});
