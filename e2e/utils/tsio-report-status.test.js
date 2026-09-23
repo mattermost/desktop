@@ -15,6 +15,7 @@ const {
     shouldFailFromScope,
     statusFromTotals,
     scopedHasShardFailure,
+    shouldPostPerOsCommitStatuses,
 } = require('./tsio-report-status');
 
 describe('buildOsStatusTotals', () => {
@@ -865,6 +866,25 @@ describe('scopedHasShardFailure', () => {
             'macos-policy': {shardFailed: true},
             linux: {shardFailed: true},
         }, null, ['macos']), true);
+    });
+});
+
+describe('shouldPostPerOsCommitStatuses', () => {
+    it('never flips e2e/<os> for cmt-desktop even if the caller asks', () => {
+        assert.equal(shouldPostPerOsCommitStatuses(true, {name: 'cmt-desktop'}), false);
+        assert.equal(shouldPostPerOsCommitStatuses(false, {name: 'cmt-desktop'}), false);
+    });
+
+    it('keeps PR and master per-OS flipping when asked', () => {
+        assert.equal(shouldPostPerOsCommitStatuses(true, {name: 'desktop-pr'}), true);
+        assert.equal(shouldPostPerOsCommitStatuses(true, {name: 'desktop-master'}), true);
+        assert.equal(shouldPostPerOsCommitStatuses(false, {name: 'desktop-pr'}), false);
+        assert.equal(shouldPostPerOsCommitStatuses(true, {name: 'desktop-nightly'}), true);
+    });
+
+    it('follows the flag when identity name is missing', () => {
+        assert.equal(shouldPostPerOsCommitStatuses(true, {}), true);
+        assert.equal(shouldPostPerOsCommitStatuses(false), false);
     });
 });
 

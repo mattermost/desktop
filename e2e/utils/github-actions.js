@@ -8,7 +8,7 @@ const E2E_OS_LIST = ['linux', 'macos', 'windows'];
 /** Platforms that run dedicated policy-test legs (PR / master only). */
 const E2E_POLICY_OS_LIST = ['macos', 'windows'];
 
-/** Per-OS commit status contexts for PR / master / CMT (restored from pre-TSIO merge). */
+/** Per-OS commit status contexts for PR / master required checks. CMT must not write these. */
 const E2E_OS_STATUS_CONTEXTS = E2E_OS_LIST.map((os) => `e2e/${os}`);
 
 /** Policy commit status contexts: e2e/macos-policy, e2e/windows-policy. */
@@ -135,6 +135,7 @@ function policyStatusContext(os) {
 
 /**
  * Post pending e2e/<os> (and optionally e2e/<os>-policy) statuses for this run.
+ * Callers: PR/master `e2e-functional.yml` only. CMT must not invoke this.
  *
  * @param {Object} params
  * @param {Object} params.github

@@ -580,6 +580,22 @@ function buildDisplayReportUrl(baseUrl, compositeIdentity) {
 }
 
 /**
+ * CMT (`cmt-desktop`) must never write e2e/linux|macos|windows or policy
+ * contexts — those are PR/master required checks. CMT posts only
+ * `e2e/compatibility-matrix-testing` via `commitStatusContext`.
+ *
+ * @param {boolean} perOsCommitStatuses
+ * @param {{name?: string}} [compositeIdentity]
+ * @returns {boolean}
+ */
+function shouldPostPerOsCommitStatuses(perOsCommitStatuses, compositeIdentity) {
+    if (compositeIdentity?.name === 'cmt-desktop') {
+        return false;
+    }
+    return Boolean(perOsCommitStatuses);
+}
+
+/**
  * Recover a report group's id via the idempotent begin endpoint, poll the
  * public status endpoint until the group leaves in_progress, render a step
  * summary, and flip commit status(es).
@@ -632,6 +648,10 @@ async function reportTsioStatus({
     pollAttempts,
     pollDelayMs,
 }) {
+    const postPerOsCommitStatuses = shouldPostPerOsCommitStatuses(
+        perOsCommitStatuses,
+        compositeIdentity,
+    );
     const resolvedPollAttempts = positiveInt(
         pollAttempts ?? intEnv('TSIO_POLL_ATTEMPTS', 12),
         12,
@@ -740,7 +760,7 @@ async function reportTsioStatus({
                 core.warning(`Failed to create failure commit status: ${statusError.message}`);
             }
         }
-        if (perOsCommitStatuses) {
+        if (postPerOsCommitStatuses) {
             const oss = resolveExpectedOs(expectedOs, {});
             const policyOss = resolveExpectedPolicyOs(expectedPolicyOs);
             await Promise.all([
@@ -866,7 +886,7 @@ async function reportTsioStatus({
 
     let perJobCounts = null;
     const overallFailed = stats.failed || 0;
-    if (perOsCommitStatuses || readyWhenOs || readyWhenPolicy) {
+    if (postPerOsCommitStatuses || readyWhenOs || readyWhenPolicy) {
         try {
             perJobCounts = await fetchPerJobCountsFromConsolidated(baseUrl, compositeIdentity, detail);
         } catch (error) {
@@ -882,7 +902,7 @@ async function reportTsioStatus({
         }
         const byKeyForFlip = buildOsStatusTotals({detail, perJobCounts: perJobCounts || {}});
         const hasShardFailure = scopedHasShardFailure(byKeyForFlip, expectedOs, expectedPolicyOs);
-        if (perOsCommitStatuses && (perJobCounts || !upstreamJobsSucceeded || hasShardFailure || overallFailed > 0)) {
+        if (postPerOsCommitStatuses && (perJobCounts || !upstreamJobsSucceeded || hasShardFailure || overallFailed > 0)) {
             await flipPerOsCommitStatuses({
                 github,
                 context,
@@ -990,3 +1010,4 @@ module.exports.shouldFailFromScope = shouldFailFromScope;
 module.exports.statusFromTotals = statusFromTotals;
 module.exports.scopedHasShardFailure = scopedHasShardFailure;
 module.exports.hasCountsForEveryUploadedReport = hasCountsForEveryUploadedReport;
+module.exports.shouldPostPerOsCommitStatuses = shouldPostPerOsCommitStatuses;

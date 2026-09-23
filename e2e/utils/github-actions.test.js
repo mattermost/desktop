@@ -244,6 +244,42 @@ describe('e2e job timeout-minutes', () => {
     });
 });
 
+describe('CMT posts only e2e/compatibility-matrix-testing', () => {
+    const workflowsDir = path.join(__dirname, '../../.github/workflows');
+    const cmt = fs.readFileSync(path.join(workflowsDir, 'compatibility-matrix-testing.yml'), 'utf8');
+    const pr = fs.readFileSync(path.join(workflowsDir, 'e2e-functional.yml'), 'utf8');
+
+    it('does not pending-flip e2e/<os> or call updateInitialOsStatuses', () => {
+        assert.doesNotMatch(cmt, /updateInitialOsStatuses/);
+        assert.doesNotMatch(cmt, /Post pending e2e\/linux/);
+        assert.doesNotMatch(cmt, /osStatusContext/);
+    });
+
+    it('pending and final statuses use the CMT aggregate context', () => {
+        assert.match(cmt, /context: e2e\/compatibility-matrix-testing/);
+        assert.match(cmt, /COMMIT_STATUS_CONTEXT: e2e\/compatibility-matrix-testing/);
+        assert.match(cmt, /perOsCommitStatuses: false/);
+        assert.doesNotMatch(cmt, /perOsCommitStatuses: true/);
+    });
+
+    it('still posts the CMT channel (TSIO notify stays on)', () => {
+        assert.match(cmt, /MATTERMOST_CMT_WEBHOOK_URL:/);
+        assert.match(cmt, /failOnTestFailures: true/);
+        assert.doesNotMatch(cmt, /notifyChannel: false/);
+    });
+
+    it('PR/master still pending-flips e2e/<os> and policy', () => {
+        assert.match(pr, /Post pending e2e\/linux\|macos\|windows \(\+ policy\)/);
+        assert.match(pr, /includePolicy: true/);
+        assert.match(pr, /name: Post e2e\/linux/);
+        assert.match(pr, /name: Post e2e\/macos/);
+        assert.match(pr, /name: Post e2e\/windows/);
+        assert.match(pr, /Flip e2e\/macos-policy and e2e\/windows-policy/);
+        assert.equal((pr.match(/perOsCommitStatuses: true/g) || []).length, 4);
+        assert.match(pr, /perOsCommitStatuses: false/);
+    });
+});
+
 describe('e2e/policy node_modules cache key includes patches and arch', () => {
     const workflowsDir = path.join(__dirname, '../../.github/workflows');
     const restoreV8Key = /build-node-modules-v8-\$\{\{ runner\.arch \}\}-\$\{\{ hashFiles\('(\*\*\/package-lock\.json)', 'patches\/\*\*'\) \}\}/;
