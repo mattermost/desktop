@@ -96,7 +96,7 @@ export class MattermostWebContentsView extends EventEmitter {
                 ipcMain.emit(CLOSE_DOWNLOADS_DROPDOWN);
             }
         });
-        this.webContentsView.webContents.on('did-navigate-in-page', () => this.handlePageTitleUpdated(this.webContentsView.webContents.getTitle()));
+        this.webContentsView.webContents.on('did-navigate-in-page', this.handleDidNavigateInPage);
         this.webContentsView.webContents.on('page-title-updated', (_, newTitle) => this.handlePageTitleUpdated(newTitle));
         this.webContentsView.webContents.on('devtools-focused', this.emitShortcutMenuUpdate);
         this.webContentsView.webContents.on('devtools-closed', this.emitShortcutMenuUpdate);
@@ -160,6 +160,45 @@ export class MattermostWebContentsView extends EventEmitter {
                 this.log.error(error);
                 this.reload();
             }
+        }
+    };
+
+    /**
+     * A single browser-history push from the main process can be applied more than
+     * once by the web app, because `browser-history-push` is delivered to every
+     * registered listener and some web app versions end up with several - a plugin
+     * that bundles its own copy of the history module registers another one. Each
+     * copy performs its own push, leaving consecutive entries for the same URL.
+     *
+     * Back/forward then has to be clicked once per duplicate to move one page: the
+     * step between two identical entries leaves the page where it is, and only
+     * renames the tab, because the older entry carries the title captured when it
+     * was created. Collapse the duplicates as they appear so the stack matches what
+     * the user actually navigated through.
+     */
+    private collapseDuplicateHistoryEntry = () => {
+        const history = this.webContents?.navigationHistory;
+        if (!history) {
+            return;
+        }
+
+        try {
+            const activeIndex = history.getActiveIndex();
+            if (activeIndex < 1) {
+                return;
+            }
+
+            const active = history.getEntryAtIndex(activeIndex);
+            const previous = history.getEntryAtIndex(activeIndex - 1);
+            if (!active || !previous || active.url !== previous.url) {
+                return;
+            }
+
+            // Removing the entry behind the active one keeps the current page in
+            // place; Electron disallows removing the active entry itself.
+            history.removeEntryAtIndex(activeIndex - 1);
+        } catch (error) {
+            this.log.warn('Failed to collapse duplicate history entry', error);
         }
     };
 
@@ -483,6 +522,17 @@ export class MattermostWebContentsView extends EventEmitter {
         if (serverId === this.view.serverId) {
             this.reload();
         }
+    };
+
+    /**
+     * Fires for the web app's own pushState/replaceState and for popstate caused by
+     * goToOffset. This is the only point where Chromium's history stack is settled,
+     * so the root reset and the back/forward button state are both derived here.
+     */
+    private handleDidNavigateInPage = () => {
+        this.handlePageTitleUpdated(this.webContentsView.webContents.getTitle());
+        this.collapseDuplicateHistoryEntry();
+        this.updateHistoryButton();
     };
 
     private handlePageTitleUpdated = (newTitle: string) => {
