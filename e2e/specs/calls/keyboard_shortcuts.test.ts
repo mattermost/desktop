@@ -10,7 +10,7 @@ import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost, logoutFromMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {apiLogin} from '../../helpers/server_api/client';
-import {apiGetAdminTeamId, createCallsTestChannel, createCallsTestUser, deactivateCallsTestUsers, type TestUser} from '../../helpers/server_api/user';
+import {apiGetAdminTeamId, archiveCallsTestChannels, createCallsTestChannel, createCallsTestUser, deactivateCallsTestUsers, type TestUser} from '../../helpers/server_api/user';
 import type {ServerView} from '../../helpers/serverView';
 
 test.describe('calls/keyboard_shortcuts', () => {
@@ -49,8 +49,15 @@ test.describe('calls/keyboard_shortcuts', () => {
         teamId = await apiGetAdminTeamId(serverUrl, adminToken);
     });
 
+    test.afterEach(async () => {
+        if (testServerUrl && adminToken) {
+            await archiveCallsTestChannels(testServerUrl, adminToken);
+        }
+    });
+
     test.afterAll(async () => {
         if (testServerUrl && adminToken) {
+            await archiveCallsTestChannels(testServerUrl, adminToken);
             await deactivateCallsTestUsers(testServerUrl, adminToken);
         }
     });
@@ -69,7 +76,7 @@ test.describe('calls/keyboard_shortcuts', () => {
 
         await logoutFromMattermost(serverWin);
         const testUser: TestUser = await createCallsTestUser(testServerUrl, adminToken, teamId);
-        const testChannel = await createCallsTestChannel(testServerUrl, adminToken, teamId, testUser.id);
+        const testChannel = await createCallsTestChannel(testServerUrl, teamId, testUser);
         await loginToMattermost(serverWin, testUser);
         await enterCallsTestChannel(serverWin, testChannel.name);
         await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);

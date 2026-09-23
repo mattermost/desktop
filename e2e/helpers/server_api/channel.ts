@@ -63,6 +63,17 @@ export async function apiAddUserToChannel(
     });
 }
 
+/** Soft-delete. Archived channels leave the sidebar. */
+export async function apiArchiveChannel(
+    baseUrl: string,
+    token: string,
+    channelId: string,
+): Promise<void> {
+    await apiRequest<unknown>(baseUrl, token, `/api/v4/channels/${channelId}`, {
+        method: 'DELETE',
+    });
+}
+
 export function buildChannelUrl(baseUrl: string, teamName: string, channelName: string): string {
     return `${baseUrl}/${teamName}/channels/${channelName}`;
 }

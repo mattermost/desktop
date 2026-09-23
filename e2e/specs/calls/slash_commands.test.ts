@@ -10,7 +10,7 @@ import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost, logoutFromMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {apiLogin, apiRequest} from '../../helpers/server_api/client';
-import {apiGetAdminTeamId, createCallsTestChannel, createCallsTestUser, deactivateCallsTestUsers, type TestChannel, type TestUser} from '../../helpers/server_api/user';
+import {apiGetAdminTeamId, archiveCallsTestChannels, createCallsTestChannel, createCallsTestUser, deactivateCallsTestUsers, type TestChannel, type TestUser} from '../../helpers/server_api/user';
 import type {ServerView} from '../../helpers/serverView';
 
 async function sendSlashCommand(serverWin: ServerView, command: string): Promise<void> {
@@ -57,8 +57,15 @@ test.describe('calls/slash_commands', () => {
         teamId = await apiGetAdminTeamId(serverUrl, adminToken);
     });
 
+    test.afterEach(async () => {
+        if (testServerUrl && adminToken) {
+            await archiveCallsTestChannels(testServerUrl, adminToken);
+        }
+    });
+
     test.afterAll(async () => {
         if (testServerUrl && adminToken) {
+            await archiveCallsTestChannels(testServerUrl, adminToken);
             await deactivateCallsTestUsers(testServerUrl, adminToken);
         }
     });
@@ -77,7 +84,7 @@ test.describe('calls/slash_commands', () => {
 
         await logoutFromMattermost(serverWin);
         const testUser: TestUser = await createCallsTestUser(testServerUrl, adminToken, teamId);
-        testChannel = await createCallsTestChannel(testServerUrl, adminToken, teamId, testUser.id);
+        testChannel = await createCallsTestChannel(testServerUrl, teamId, testUser);
         await loginToMattermost(serverWin, testUser);
         await enterCallsTestChannel(serverWin, testChannel.name);
         await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
