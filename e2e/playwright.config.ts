@@ -129,9 +129,9 @@ export default defineConfig({
     use: {
 
         // Video/trace land in test-results/ and bloat CI artifacts (Electron
-        // userdata + webm/zip per test). Failures are debugged via the merged
-        // HTML report on S3, which includes screenshots and traces from blob.
-        trace: process.env.CI ? 'on-first-retry' : 'retain-on-failure',
+        // userdata + webm/zip per test). CI traces also record fill() passwords.
+        // Failures are debugged via the merged HTML report on S3 (screenshots).
+        trace: process.env.CI ? 'off' : 'retain-on-failure',
         screenshot: 'only-on-failure',
         video: process.env.CI ? 'off' : 'retain-on-failure',
     },
