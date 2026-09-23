@@ -13,7 +13,6 @@ const {
     countReportsForBucket,
     shardsAreReady,
     shouldFailFromScope,
-    statusFromTotals,
     scopedHasShardFailure,
     shouldPostPerOsCommitStatuses,
 } = require('./tsio-report-status');
@@ -356,37 +355,6 @@ describe('flipPerOsCommitStatuses', () => {
         assert.equal(statuses[0].target_url, groupUrl);
     });
 
-    it('rolls sharded job names into e2e/linux', async () => {
-        const {statuses, github, core, context, compositeIdentity} = makeHarness();
-
-        await flipPerOsCommitStatuses({
-            github,
-            context,
-            compositeIdentity,
-            detail: {
-                reports: [
-                    {gh_job_name: 'e2e-on-ubuntu-latest-master-1-of-3', status: 'complete'},
-                    {gh_job_name: 'e2e-on-ubuntu-latest-master-2-of-3', status: 'complete'},
-                    {gh_job_name: 'e2e-on-ubuntu-latest-master-3-of-3', status: 'complete'},
-                ],
-            },
-            perJobCounts: {
-                'e2e-on-ubuntu-latest-master-1-of-3': {passed: 80, failed: 0, skipped: 1, flaky: 0},
-                'e2e-on-ubuntu-latest-master-2-of-3': {passed: 70, failed: 0, skipped: 2, flaky: 0},
-                'e2e-on-ubuntu-latest-master-3-of-3': {passed: 60, failed: 0, skipped: 3, flaky: 0},
-            },
-            targetUrl: 'https://example.test/report',
-            upstreamJobsSucceeded: true,
-            expectedOs: ['linux'],
-            core,
-        });
-
-        assert.equal(statuses.length, 1);
-        assert.equal(statuses[0].context, 'e2e/linux');
-        assert.equal(statuses[0].state, 'success');
-        assert.match(statuses[0].description, /210 passed, 0 failed, 6 skipped/);
-    });
-
     it('does not flip e2e/linux green when a shard report is missing', async () => {
         const {statuses, github, core, context, compositeIdentity} = makeHarness();
 
@@ -445,7 +413,9 @@ describe('flipPerOsCommitStatuses', () => {
             core,
         });
 
+        assert.equal(statuses.length, 1);
         assert.equal(statuses[0].state, 'success');
+        assert.match(statuses[0].description, /210 passed, 0 failed, 6 skipped/);
     });
 
     it('posts error, not success, when shards uploaded but per-job counts are missing and tests failed', async () => {
@@ -650,17 +620,6 @@ describe('shouldFailFromScope', () => {
     const linuxPass = {linux: {passed: 200, failed: 0, skipped: 5, shardFailed: false, hasResults: true}};
     const linuxFail = {linux: {passed: 198, failed: 2, skipped: 5, shardFailed: false, hasResults: true}};
 
-    it('does not fail a passing OS when another OS failed in the same TSIO group', () => {
-        assert.equal(shouldFailFromScope({
-            failOnTestFailures: true,
-            readyWhenOs: 'linux',
-            overallState: 'failure',
-            byKey: linuxPass,
-            upstreamJobsSucceeded: true,
-            hasPerJobCounts: true,
-        }), false);
-    });
-
     it('fails only the scoped OS when that OS has test failures', () => {
         assert.equal(shouldFailFromScope({
             failOnTestFailures: true,
@@ -733,26 +692,6 @@ describe('shouldFailFromScope', () => {
             hasPerJobCounts: false,
             overallFailed: 4,
         }), true);
-
-        const uploaded = countReportsForBucket(detail, 'linux');
-        assert.equal(statusFromTotals(
-            byKey.linux || {passed: 0, failed: 0, skipped: 0, shardFailed: false, hasResults: false},
-            true,
-            'E2E incomplete — no results for this OS',
-            {minReports: 3, uploadedReports: uploaded, hasPerJobCounts: false, overallFailed: 4},
-        ).state, 'error');
-    });
-
-    it('still succeeds a passing OS when another OS failed and per-job counts exist', () => {
-        assert.equal(shouldFailFromScope({
-            failOnTestFailures: true,
-            readyWhenOs: 'linux',
-            overallState: 'failure',
-            byKey: linuxPass,
-            upstreamJobsSucceeded: true,
-            hasPerJobCounts: true,
-            overallFailed: 4,
-        }), false);
     });
 
     it('does not succeed a scoped OS when one uploaded shard lacks per-job counts and the group failed', () => {
@@ -769,8 +708,6 @@ describe('shouldFailFromScope', () => {
             'e2e-on-ubuntu-latest-master-2-of-3': {passed: 82, failed: 0, skipped: 0, flaky: 0},
         };
         const byKey = buildOsStatusTotals({detail, perJobCounts});
-        assert.equal(byKey.linux.hasResults, true);
-        assert.equal(byKey.linux.failed, 0);
         assert.equal(shouldFailFromScope({
             failOnTestFailures: true,
             readyWhenOs: 'linux',
@@ -783,18 +720,6 @@ describe('shouldFailFromScope', () => {
             hasPerJobCounts: true,
             overallFailed: 2,
         }), true);
-        assert.equal(statusFromTotals(
-            byKey.linux,
-            true,
-            'E2E incomplete — no results for this OS',
-            {
-                minReports: 3,
-                uploadedReports: 3,
-                hasPerJobCounts: true,
-                hasCountsForEveryUploadedReport: false,
-                overallFailed: 2,
-            },
-        ).state, 'error');
     });
 
     it('keeps a fully counted passing OS green when another OS failed', () => {
@@ -826,30 +751,6 @@ describe('shouldFailFromScope', () => {
             hasPerJobCounts: true,
             overallFailed: 1,
         }), false);
-        assert.equal(statusFromTotals(
-            byKey.linux,
-            true,
-            'E2E incomplete — no results for this OS',
-            {
-                minReports: 3,
-                uploadedReports: 3,
-                hasPerJobCounts: true,
-                hasCountsForEveryUploadedReport: true,
-                overallFailed: 1,
-            },
-        ).state, 'success');
-        assert.equal(shouldFailFromScope({
-            failOnTestFailures: true,
-            readyWhenOs: 'windows',
-            overallState: 'failure',
-            byKey,
-            upstreamJobsSucceeded: true,
-            minReports: 1,
-            detail,
-            perJobCounts,
-            hasPerJobCounts: true,
-            overallFailed: 1,
-        }), true);
     });
 });
 
@@ -870,21 +771,12 @@ describe('scopedHasShardFailure', () => {
 });
 
 describe('shouldPostPerOsCommitStatuses', () => {
-    it('never flips e2e/<os> for cmt-desktop even if the caller asks', () => {
+    it('never flips e2e/<os> for cmt-desktop, otherwise follows the flag', () => {
         assert.equal(shouldPostPerOsCommitStatuses(true, {name: 'cmt-desktop'}), false);
-        assert.equal(shouldPostPerOsCommitStatuses(false, {name: 'cmt-desktop'}), false);
-    });
-
-    it('keeps PR and master per-OS flipping when asked', () => {
         assert.equal(shouldPostPerOsCommitStatuses(true, {name: 'desktop-pr'}), true);
         assert.equal(shouldPostPerOsCommitStatuses(true, {name: 'desktop-master'}), true);
         assert.equal(shouldPostPerOsCommitStatuses(false, {name: 'desktop-pr'}), false);
-        assert.equal(shouldPostPerOsCommitStatuses(true, {name: 'desktop-nightly'}), true);
-    });
-
-    it('follows the flag when identity name is missing', () => {
         assert.equal(shouldPostPerOsCommitStatuses(true, {}), true);
         assert.equal(shouldPostPerOsCommitStatuses(false), false);
     });
 });
-

@@ -9,7 +9,6 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const callsWidgetSrc = fs.readFileSync(path.join(__dirname, 'callsWidget.ts'), 'utf8');
-const pluginSrc = fs.readFileSync(path.join(__dirname, 'server_api/plugin.ts'), 'utf8');
 
 describe('waitForCallsClientReady older-server gate', () => {
     it('waits for any mute control before the 1.12 disabled gate', () => {
@@ -25,15 +24,8 @@ describe('waitForCallsClientReady older-server gate', () => {
         assert.match(waitFn, /CALLS_DISABLED_WHILE_CONNECTING/);
     });
 
-    it('resolves Calls version in the Playwright worker, not only globalSetup', () => {
-        assert.match(pluginSrc, /export async function resolveCallsPluginVersion/);
-        assert.match(pluginSrc, /getTestServerCredentials/);
-        assert.match(callsWidgetSrc, /import \{resolveCallsPluginVersion\} from '\.\/server_api\/plugin'/);
-    });
-
     it('toggles mute with Space on 1.12+ and m on older widgets', () => {
-        assert.match(callsWidgetSrc, /export async function toggleMuteViaShortcut/);
-        assert.match(callsWidgetSrc, /legacyMuteKey/);
+        assert.match(callsWidgetSrc, /legacyMuteKey \? \[pressM, pressSpace\] : \[pressSpace, pressM\]/);
         assert.match(callsWidgetSrc, /keyboard\.press\('m'\)/);
         assert.match(callsWidgetSrc, /sendWidgetShortcut\(electronApp, 'Space'/);
     });

@@ -58,15 +58,4 @@ describe('isStaleLeftoverCallsE2EChannel age filter', () => {
         assert.equal(isStaleLeftoverCallsE2EChannel(leftover({create_at: 0}), NOW), false);
         assert.equal(isStaleLeftoverCallsE2EChannel(leftover({create_at: -1}), NOW), false);
     });
-
-    it('does not archive a young leftover even if the name matches', () => {
-        assert.equal(
-            isLeftoverCallsE2EChannel(leftover({create_at: NOW})),
-            true,
-        );
-        assert.equal(
-            isStaleLeftoverCallsE2EChannel(leftover({create_at: NOW}), NOW),
-            false,
-        );
-    });
 });

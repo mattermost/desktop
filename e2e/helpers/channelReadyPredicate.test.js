@@ -20,14 +20,6 @@ function isVisible(element) {
     return element.width > 0 && element.height > 0;
 }
 
-/** Spinner-first wait used by waitForChannelPostListLoaded before this fix. */
-function oldPostListLoaded({header, composer, loadingScreen}) {
-    if (isShown(loadingScreen)) {
-        return false;
-    }
-    return Boolean(header && composer);
-}
-
 function visibleBox(extra = {}) {
     return {display: 'block', visibility: 'visible', opacity: '1', width: 100, height: 24, ...extra};
 }
@@ -47,10 +39,6 @@ describe('channel ready wait vs 12.0 PostListRow sentinel', () => {
         loadingScreen: {display: 'block', visibility: 'visible', opacity: '1', width: 40, height: 16},
     };
 
-    it('old spinner-first probe stays false after the composer is ready', () => {
-        assert.equal(oldPostListLoaded(interactiveChannel), false);
-    });
-
     it('header+composer wait treats the sentinel as loaded', () => {
         assert.equal(viewLoaded(interactiveChannel), true);
     });
@@ -61,25 +49,12 @@ describe('channel ready wait vs 12.0 PostListRow sentinel', () => {
             composer: null,
             loadingScreen: {display: 'block', visibility: 'visible', opacity: '1', width: 100, height: 100},
         };
-        assert.equal(oldPostListLoaded(loading), false);
         assert.equal(viewLoaded(loading), false);
     });
 
-    it('does not treat a hidden leftover composer as ready', () => {
-        const switching = {
-            header: visibleBox({id: 'channelHeaderTitle'}),
-            composer: {display: 'none', visibility: 'hidden', opacity: '0', width: 0, height: 0},
-            loadingScreen: interactiveChannel.loadingScreen,
-        };
-        assert.equal(viewLoaded(switching), false);
-    });
-
-    it('does not treat a hidden leftover header as ready', () => {
-        const switching = {
-            header: {display: 'none', visibility: 'hidden', opacity: '0', width: 0, height: 0},
-            composer: visibleBox({id: 'post_textbox'}),
-            loadingScreen: interactiveChannel.loadingScreen,
-        };
-        assert.equal(viewLoaded(switching), false);
+    it('does not treat a hidden leftover header or composer as ready', () => {
+        const hidden = {display: 'none', visibility: 'hidden', opacity: '0', width: 0, height: 0};
+        assert.equal(viewLoaded({...interactiveChannel, composer: hidden}), false);
+        assert.equal(viewLoaded({...interactiveChannel, header: hidden}), false);
     });
 });

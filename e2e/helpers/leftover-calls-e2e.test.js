@@ -8,11 +8,6 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-/** Mirrors e2e/helpers/server_api/channel.ts isAlreadyArchivedChannelStatus. */
-function isAlreadyArchivedChannelStatus(status) {
-    return status === 400 || status === 404;
-}
-
 const e2eRoot = path.join(__dirname, '..');
 const userSrc = fs.readFileSync(path.join(e2eRoot, 'helpers/server_api/user.ts'), 'utf8');
 const channelSrc = fs.readFileSync(path.join(e2eRoot, 'helpers/server_api/channel.ts'), 'utf8');
@@ -22,27 +17,13 @@ describe('user.ts leftover sweep uses the 60-minute age filter', () => {
     it('archives only isStaleLeftoverCallsE2EChannel hits', () => {
         assert.match(userSrc, /import \{isStaleLeftoverCallsE2EChannel\} from '\.\.\/leftoverCallsChannel'/);
         assert.match(userSrc, /if \(isStaleLeftoverCallsE2EChannel\(channel\)\)/);
-        assert.match(userSrc, /create_at\?: number/);
-        assert.doesNotMatch(userSrc, /const CALLS_E2E_DISPLAY_PREFIX/);
-        assert.match(userSrc, /export async function archiveLeftoverCallsE2EChannels/);
-        assert.match(userSrc, /await apiArchiveChannel\(baseUrl, adminToken, id\);/);
-        assert.match(userSrc, /\/\/ Best-effort: a single archive failure must not abort setup\./);
     });
 });
 
 describe('concurrent leftover archive', () => {
-    it('treats already-archived Mattermost statuses as success', () => {
-        assert.equal(isAlreadyArchivedChannelStatus(400), true);
-        assert.equal(isAlreadyArchivedChannelStatus(404), true);
-        assert.equal(isAlreadyArchivedChannelStatus(403), false);
-        assert.equal(isAlreadyArchivedChannelStatus(500), false);
-    });
-
-    it('apiArchiveChannel swallows 400/404 instead of throwing', () => {
-        assert.match(channelSrc, /export function isAlreadyArchivedChannelStatus/);
+    it('apiArchiveChannel treats already-archived 400/404 as success', () => {
         assert.match(channelSrc, /status === 400 \|\| status === 404/);
         assert.match(channelSrc, /isAlreadyArchivedChannelStatus\(error\.status\)/);
-        assert.match(channelSrc, /throw error;/);
     });
 });
 

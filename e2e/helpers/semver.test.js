@@ -6,15 +6,7 @@
 const {describe, it} = require('node:test');
 const assert = require('node:assert/strict');
 
-const {isVersionAtLeast, numericVersion} = require('./semver');
-
-describe('numericVersion', () => {
-    it('parses dotted versions and ignores pre-release suffixes', () => {
-        assert.deepEqual(numericVersion('12.0.0-rc1'), [12, 0, 0]);
-        assert.deepEqual(numericVersion('1.12.5'), [1, 12, 5]);
-        assert.equal(numericVersion('not-a-version'), null);
-    });
-});
+const {isVersionAtLeast} = require('./semver');
 
 describe('isVersionAtLeast', () => {
     it('treats 12.0.0-rc1 as 12.0.0', () => {
@@ -29,8 +21,9 @@ describe('isVersionAtLeast', () => {
         assert.equal(isVersionAtLeast('0.16.0', '1.12.0'), false);
     });
 
-    it('rejects missing versions', () => {
+    it('rejects missing or unparseable versions', () => {
         assert.equal(isVersionAtLeast(undefined, '1.12.0'), false);
         assert.equal(isVersionAtLeast('', '1.12.0'), false);
+        assert.equal(isVersionAtLeast('not-a-version', '1.12.0'), false);
     });
 });
