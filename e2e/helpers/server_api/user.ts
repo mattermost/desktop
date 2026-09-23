@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {isStaleLeftoverCallsE2EChannel} from '../leftoverCallsChannel';
+
 import {apiArchiveChannel, apiCreateChannel} from './channel';
 import {apiLogin, apiRequest} from './client';
 
@@ -25,26 +27,8 @@ type ChannelRecord = {
     display_name: string;
     delete_at: number;
     type?: string;
+    create_at?: number;
 };
-
-const CALLS_E2E_DISPLAY_PREFIX = 'Calls E2E ';
-const CALLS_E2E_NAME_PATTERN = /^e2ec\d/;
-
-export function isLeftoverCallsE2EChannel(channel: {
-    name: string;
-    display_name?: string;
-    delete_at?: number;
-    type?: string;
-}): boolean {
-    if (channel.delete_at) {
-        return false;
-    }
-    if (channel.type && channel.type !== 'P') {
-        return false;
-    }
-    const displayName = channel.display_name ?? '';
-    return displayName.startsWith(CALLS_E2E_DISPLAY_PREFIX) || CALLS_E2E_NAME_PATTERN.test(channel.name);
-}
 
 async function apiListChannels(baseUrl: string, token: string, path: string): Promise<ChannelRecord[]> {
     const results: ChannelRecord[] = [];
@@ -184,6 +168,8 @@ export async function archiveCallsTestChannels(baseUrl: string, adminToken: stri
  * the admin before per-test isolation still pack the admin LHS with
  * "More unreads" and hide the hover-gated ⋮ (T1307 / T125 / T5890).
  * Per-test archive only covers channels this worker created.
+ * Only channels older than 60 minutes (`create_at`) are archived, so a late
+ * shard or another CMT OS leg cannot delete a channel a sibling is using.
  */
 export async function archiveLeftoverCallsE2EChannels(baseUrl: string, adminToken: string): Promise<number> {
     const teams = await apiRequest<Team[]>(baseUrl, adminToken, '/api/v4/users/me/teams');
@@ -230,7 +216,7 @@ export async function archiveLeftoverCallsE2EChannels(baseUrl: string, adminToke
             }
 
             for (const channel of [...memberships, ...privates, ...searchHits]) {
-                if (isLeftoverCallsE2EChannel(channel)) {
+                if (isStaleLeftoverCallsE2EChannel(channel)) {
                     ids.add(channel.id);
                 }
             }

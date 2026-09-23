@@ -63,15 +63,27 @@ export async function apiAddUserToChannel(
     });
 }
 
-/** Soft-delete. Archived channels leave the sidebar. */
+/** Mattermost returns 400 when the channel is already deleted; 404 if it is gone. */
+export function isAlreadyArchivedChannelStatus(status: number): boolean {
+    return status === 400 || status === 404;
+}
+
+/** Soft-delete. Archived channels leave the sidebar. Concurrent archive is success. */
 export async function apiArchiveChannel(
     baseUrl: string,
     token: string,
     channelId: string,
 ): Promise<void> {
-    await apiRequest<unknown>(baseUrl, token, `/api/v4/channels/${channelId}`, {
-        method: 'DELETE',
-    });
+    try {
+        await apiRequest<unknown>(baseUrl, token, `/api/v4/channels/${channelId}`, {
+            method: 'DELETE',
+        });
+    } catch (error) {
+        if (error instanceof ApiRequestError && isAlreadyArchivedChannelStatus(error.status)) {
+            return;
+        }
+        throw error;
+    }
 }
 
 export function buildChannelUrl(baseUrl: string, teamName: string, channelName: string): string {
