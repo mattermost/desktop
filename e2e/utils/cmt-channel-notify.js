@@ -75,12 +75,11 @@ function parseCmtJobName(jobName) {
         };
     }
 
-    // e2e-on-{runner}-{MM_SERVER_VERSION}[-{i}-of-{n}]. MM_SERVER_VERSION is NOT
-    // always semver: CMT and release runs pass 11.9.0 / 11.9.0-rc.3, while PR and
-    // master runs pass a branch ref such as `master` or `release-11.9`. Anchoring
-    // on the version shape therefore drops PR/master legs entirely, which is how
-    // `e2e/<os>` came to report "E2E incomplete — no results for this OS" while
-    // the tests had in fact run.
+    // e2e-on-{runner}-{MM_SERVER_VERSION}. MM_SERVER_VERSION is NOT always semver:
+    // CMT and release runs pass 11.9.0 / 11.9.0-rc.3, while PR and master runs pass a
+    // branch ref such as `master` or `release-11.9`. Anchoring on the version shape
+    // therefore drops PR/master legs entirely, which is how `e2e/<os>` came to report
+    // "E2E incomplete — no results for this OS" while the tests had in fact run.
     //
     // Split on the runner instead, which has a fixed two-token grammar
     // ({os}-{label}: ubuntu-latest, ubuntu-22.04, macos-26, windows-2022). The lazy
@@ -89,8 +88,7 @@ function parseCmtJobName(jobName) {
     // directions — a hyphenated version like `release-11.9.0` can no longer be
     // mis-attributed to the runner, and a version is never required to look like semver.
     //
-    // An optional `-{i}-of-{n}` suffix is the Playwright shard (PR/master only).
-    // CMT keeps 1-of-1 and omits the suffix so existing job names stay stable.
+    // An optional `-{i}-of-{n}` suffix is the Playwright shard; unsharded (CMT) names omit it.
     //
     // Consequence: a runner label with a third token (`ubuntu-latest-8-cores`) would
     // put its tail in serverVersion. No such label is dispatched by any workflow here,
@@ -101,16 +99,13 @@ function parseCmtJobName(jobName) {
     }
 
     const runner = match[1];
-    const parsed = {
+    return {
         os: osFromRunnerToken(runner),
         serverVersion: match[2],
         runner,
         kind: 'e2e',
+        ...(match[3] ? {shard: `${match[3]}-of-${match[4]}`} : {}),
     };
-    if (match[3] && match[4]) {
-        parsed.shard = `${match[3]}-of-${match[4]}`;
-    }
-    return parsed;
 }
 
 /**

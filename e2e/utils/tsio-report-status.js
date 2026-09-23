@@ -53,8 +53,7 @@ function statusBucketKey(parsed) {
 }
 
 /**
- * How many uploaded TSIO reports belong to one status bucket
- * (linux|macos|windows|macos-policy|windows-policy).
+ * Uploaded TSIO reports in one status bucket (linux|macos|windows|<os>-policy).
  *
  * @param {Object} [detail]
  * @param {string} bucketKey
@@ -71,9 +70,8 @@ function countReportsForBucket(detail, bucketKey) {
 }
 
 /**
- * `row.hasResults` is true if *any* shard in the bucket has counts. A sibling
- * uploaded report can still be missing from `perJobCounts`. Do not post scoped
- * success until every uploaded name has an entry.
+ * `row.hasResults` is true if *any* shard in the bucket has counts, so a sibling
+ * upload can still be missing from `perJobCounts`.
  *
  * @returns {boolean|undefined} undefined when the bucket has no uploaded reports
  */
@@ -92,21 +90,13 @@ function hasCountsForEveryUploadedReport(detail, perJobCounts, bucketKey) {
 }
 
 /**
- * Whether the poll loop can stop waiting for more uploads.
- * Per-OS status jobs stop when that OS's shards are present, not when all 10
- * reports in the group have landed.
+ * Whether the poll loop can stop. Per-OS status jobs stop once that OS's
+ * shards are uploaded, not when every report in the group has landed.
  *
- * @param {Object} params
- * @param {Object} [params.detail]
- * @param {number} params.totalReportsExpected
- * @param {string} [params.readyWhenOs]
- * @param {boolean} [params.readyWhenPolicy]
- * @param {number} [params.minReports]
  * @returns {boolean}
  */
 function shardsAreReady({detail, totalReportsExpected, readyWhenOs, readyWhenPolicy, minReports}) {
     const reports = Array.isArray(detail?.reports) ? detail.reports : [];
-    const uploaded = reports.length;
     const needed = positiveInt(minReports, 1);
 
     if (readyWhenPolicy) {
@@ -121,7 +111,7 @@ function shardsAreReady({detail, totalReportsExpected, readyWhenOs, readyWhenPol
         return countReportsForBucket(detail, readyWhenOs) >= needed;
     }
 
-    return totalReportsExpected <= 0 || uploaded >= totalReportsExpected;
+    return totalReportsExpected <= 0 || reports.length >= totalReportsExpected;
 }
 
 const EMPTY_OS_ROW = {passed: 0, failed: 0, skipped: 0, shardFailed: false, hasResults: false};
@@ -129,10 +119,8 @@ const EMPTY_OS_ROW = {passed: 0, failed: 0, skipped: 0, shardFailed: false, hasR
 /**
  * Playwright can fail while the CI job still exits 0 (TSIO is the failure
  * signal). Without per-job counts we cannot tell which OS failed, so do not
- * post success from "shards uploaded" / empty `row.failed`.
+ * post success.
  *
- * @param {{failed?: number, shardFailed?: boolean, hasResults?: boolean}} row
- * @param {{hasPerJobCounts?: boolean, hasCountsForEveryUploadedReport?: boolean, overallFailed?: number}} completeness
  * @returns {boolean}
  */
 function countsUnavailableWithFailures(row, completeness) {
@@ -150,97 +138,6 @@ function countsUnavailableWithFailures(row, completeness) {
         return true;
     }
     return !row.hasResults;
-}
-
-/**
- * @param {Object} row
- * @param {boolean} upstreamJobsSucceeded
- * @param {string} incompleteLabel
- * @param {{minReports?: number, uploadedReports?: number, hasPerJobCounts?: boolean, hasCountsForEveryUploadedReport?: boolean, overallFailed?: number}} [completeness]
- * @returns {{state: string, description: string}}
- */
-function statusFromTotals(row, upstreamJobsSucceeded, incompleteLabel, completeness = {}) {
-    const hasFailures = row.failed > 0 || row.shardFailed;
-    if (hasFailures) {
-        return {
-            state: 'failure',
-            description: `${row.passed} passed, ${row.failed} failed, ${row.skipped} skipped`,
-        };
-    }
-
-    const minReports = completeness.minReports;
-    if (Number.isInteger(minReports) && minReports > 0) {
-        let uploaded = 0;
-        if (Number.isInteger(completeness.uploadedReports)) {
-            uploaded = completeness.uploadedReports;
-        } else if (row.hasResults) {
-            uploaded = 1;
-        }
-        if (uploaded < minReports) {
-            return {
-                state: upstreamJobsSucceeded ? 'error' : 'failure',
-                description: `E2E incomplete — ${uploaded}/${minReports} shards`,
-            };
-        }
-        if (!upstreamJobsSucceeded) {
-            return {
-                state: 'failure',
-                description: 'CI job failed (untracked by TSIO)',
-            };
-        }
-        if (countsUnavailableWithFailures(row, completeness)) {
-            return {
-                state: 'error',
-                description: 'TSIO per-job counts unavailable with test failures',
-            };
-        }
-        if (completeness.hasCountsForEveryUploadedReport === false) {
-            return {
-                state: 'error',
-                description: 'TSIO per-job counts incomplete for this OS',
-            };
-        }
-        if (row.hasResults) {
-            return {
-                state: 'success',
-                description: `${row.passed} passed, ${row.failed} failed, ${row.skipped} skipped`,
-            };
-        }
-        return {
-            state: 'success',
-            description: `${uploaded}/${minReports} shards uploaded`,
-        };
-    }
-
-    if (countsUnavailableWithFailures(row, completeness)) {
-        return {
-            state: 'error',
-            description: 'TSIO per-job counts unavailable with test failures',
-        };
-    }
-    if (completeness.hasCountsForEveryUploadedReport === false) {
-        return {
-            state: 'error',
-            description: 'TSIO per-job counts incomplete for this OS',
-        };
-    }
-
-    if (row.hasResults) {
-        return {
-            state: 'success',
-            description: `${row.passed} passed, ${row.failed} failed, ${row.skipped} skipped`,
-        };
-    }
-    if (upstreamJobsSucceeded) {
-        return {
-            state: 'error',
-            description: incompleteLabel,
-        };
-    }
-    return {
-        state: 'failure',
-        description: 'CI job failed (untracked by TSIO)',
-    };
 }
 
 /**
@@ -266,56 +163,33 @@ function shouldFailFromScope({
         return false;
     }
 
-    const countMeta = {
-        hasPerJobCounts,
-        overallFailed,
-    };
+    const counts = {detail, perJobCounts, hasPerJobCounts, overallFailed};
 
     if (readyWhenOs) {
-        const row = byKey[readyWhenOs] || EMPTY_OS_ROW;
-        const uploaded = countReportsForBucket(detail, readyWhenOs);
         return statusFromTotals(
-            row,
+            byKey[readyWhenOs] || EMPTY_OS_ROW,
             upstreamJobsSucceeded,
             'E2E incomplete — no results for this OS',
-            {
-                minReports,
-                uploadedReports: uploaded,
-                ...countMeta,
-                hasCountsForEveryUploadedReport: hasCountsForEveryUploadedReport(detail, perJobCounts, readyWhenOs),
-            },
+            bucketCompleteness(readyWhenOs, minReports, counts),
         ).state !== 'success';
     }
 
     if (readyWhenPolicy) {
-        return E2E_POLICY_OS_LIST.some((os) => {
-            const key = `${os}-policy`;
-            const row = byKey[key] || EMPTY_OS_ROW;
-            const uploaded = countReportsForBucket(detail, key);
-            return statusFromTotals(
-                row,
-                upstreamJobsSucceeded,
-                'Policy incomplete — no results for this OS',
-                {
-                    minReports: 1,
-                    uploadedReports: uploaded,
-                    ...countMeta,
-                    hasCountsForEveryUploadedReport: hasCountsForEveryUploadedReport(detail, perJobCounts, key),
-                },
-            ).state !== 'success';
-        });
+        return E2E_POLICY_OS_LIST.some((os) => statusFromTotals(
+            byKey[`${os}-policy`] || EMPTY_OS_ROW,
+            upstreamJobsSucceeded,
+            'Policy incomplete — no results for this OS',
+            bucketCompleteness(`${os}-policy`, 1, counts),
+        ).state !== 'success');
     }
 
     return overallState === 'failure';
 }
 
 /**
- * Whether any *in-scope* bucket has a failed shard. Unscoped Object.values
- * would let a macos failure make a linux status job post e2e/linux as error.
+ * Whether any *in-scope* bucket has a failed shard, so a macos failure cannot
+ * make the linux status job post e2e/linux as error.
  *
- * @param {Record<string, {shardFailed?: boolean}>} byKey
- * @param {string[]|null} [expectedOs]
- * @param {string[]} [expectedPolicyOs]
  * @returns {boolean}
  */
 function scopedHasShardFailure(byKey, expectedOs, expectedPolicyOs) {
@@ -447,6 +321,95 @@ function resolveExpectedPolicyOs(expectedPolicyOs) {
 }
 
 /**
+ * @param {Object} row
+ * @param {boolean} upstreamJobsSucceeded
+ * @param {string} incompleteLabel
+ * @param {{minReports?: number, uploadedReports?: number, hasPerJobCounts?: boolean, hasCountsForEveryUploadedReport?: boolean, overallFailed?: number}} [completeness]
+ * @returns {{state: string, description: string}}
+ */
+function statusFromTotals(row, upstreamJobsSucceeded, incompleteLabel, completeness = {}) {
+    const hasFailures = row.failed > 0 || row.shardFailed;
+    if (hasFailures) {
+        return {
+            state: 'failure',
+            description: `${row.passed} passed, ${row.failed} failed, ${row.skipped} skipped`,
+        };
+    }
+
+    const {minReports} = completeness;
+    const requiresShards = Number.isInteger(minReports) && minReports > 0;
+    let uploaded = 0;
+    if (requiresShards) {
+        if (Number.isInteger(completeness.uploadedReports)) {
+            uploaded = completeness.uploadedReports;
+        } else if (row.hasResults) {
+            uploaded = 1;
+        }
+        if (uploaded < minReports) {
+            return {
+                state: upstreamJobsSucceeded ? 'error' : 'failure',
+                description: `E2E incomplete — ${uploaded}/${minReports} shards`,
+            };
+        }
+        if (!upstreamJobsSucceeded) {
+            return {
+                state: 'failure',
+                description: 'CI job failed (untracked by TSIO)',
+            };
+        }
+    }
+
+    if (countsUnavailableWithFailures(row, completeness)) {
+        return {
+            state: 'error',
+            description: 'TSIO per-job counts unavailable with test failures',
+        };
+    }
+    if (completeness.hasCountsForEveryUploadedReport === false) {
+        return {
+            state: 'error',
+            description: 'TSIO per-job counts incomplete for this OS',
+        };
+    }
+    if (row.hasResults) {
+        return {
+            state: 'success',
+            description: `${row.passed} passed, ${row.failed} failed, ${row.skipped} skipped`,
+        };
+    }
+    if (requiresShards) {
+        return {
+            state: 'success',
+            description: `${uploaded}/${minReports} shards uploaded`,
+        };
+    }
+    if (upstreamJobsSucceeded) {
+        return {
+            state: 'error',
+            description: incompleteLabel,
+        };
+    }
+    return {
+        state: 'failure',
+        description: 'CI job failed (untracked by TSIO)',
+    };
+}
+
+/**
+ * `statusFromTotals` completeness for one bucket. `minReports` is only set for
+ * the bucket this job waited on; otherwise shard counts are not enforced.
+ */
+function bucketCompleteness(bucketKey, minReports, {detail, perJobCounts, hasPerJobCounts, overallFailed}) {
+    return {
+        minReports,
+        uploadedReports: countReportsForBucket(detail, bucketKey),
+        hasPerJobCounts,
+        overallFailed,
+        hasCountsForEveryUploadedReport: hasCountsForEveryUploadedReport(detail, perJobCounts, bucketKey),
+    };
+}
+
+/**
  * @param {Object} params
  * @param {string} params.targetUrl - Group / fallback TSIO URL
  * @param {string} [params.baseUrl] - TSIO origin used to build per-leg /reports/r/{id} links
@@ -477,10 +440,7 @@ async function flipPerOsCommitStatuses({
     const policyOss = resolveExpectedPolicyOs(expectedPolicyOs);
     const emptyRow = {passed: 0, failed: 0, skipped: 0, shardFailed: false, hasResults: false};
     const reports = detail?.reports || [];
-    const countMeta = {
-        hasPerJobCounts,
-        overallFailed,
-    };
+    const counts = {detail, perJobCounts, hasPerJobCounts, overallFailed};
 
     const urlFor = (bucketKey) => reportUrlForStatusBucket({
         reports,
@@ -489,31 +449,6 @@ async function flipPerOsCommitStatuses({
         fallbackUrl: targetUrl,
     });
 
-    const osCompleteness = (os) => {
-        const extra = readyWhenOs === os ? {
-            minReports,
-            uploadedReports: countReportsForBucket(detail, os),
-        } : {};
-        return {
-            ...countMeta,
-            ...extra,
-            hasCountsForEveryUploadedReport: hasCountsForEveryUploadedReport(detail, perJobCounts, os),
-        };
-    };
-
-    const policyCompleteness = (os) => {
-        const key = `${os}-policy`;
-        const extra = readyWhenPolicy ? {
-            minReports: 1,
-            uploadedReports: countReportsForBucket(detail, key),
-        } : {};
-        return {
-            ...countMeta,
-            ...extra,
-            hasCountsForEveryUploadedReport: hasCountsForEveryUploadedReport(detail, perJobCounts, key),
-        };
-    };
-
     const posts = [
         ...oss.map(async (os) => {
             const row = byKey[os] || emptyRow;
@@ -521,7 +456,7 @@ async function flipPerOsCommitStatuses({
                 row,
                 upstreamJobsSucceeded,
                 'E2E incomplete — no results for this OS',
-                osCompleteness(os),
+                bucketCompleteness(os, readyWhenOs === os ? minReports : undefined, counts),
             );
             try {
                 await github.rest.repos.createCommitStatus({
@@ -543,7 +478,7 @@ async function flipPerOsCommitStatuses({
                 row,
                 upstreamJobsSucceeded,
                 'Policy incomplete — no results for this OS',
-                policyCompleteness(os),
+                bucketCompleteness(`${os}-policy`, readyWhenPolicy ? 1 : undefined, counts),
             );
             try {
                 await github.rest.repos.createCommitStatus({
@@ -580,19 +515,11 @@ function buildDisplayReportUrl(baseUrl, compositeIdentity) {
 }
 
 /**
- * CMT (`cmt-desktop`) must never write e2e/linux|macos|windows or policy
- * contexts — those are PR/master required checks. CMT posts only
- * `e2e/compatibility-matrix-testing` via `commitStatusContext`.
- *
- * @param {boolean} perOsCommitStatuses
- * @param {{name?: string}} [compositeIdentity]
- * @returns {boolean}
+ * CMT must never write the e2e/<os> or policy contexts — those are PR/master
+ * required checks. CMT posts only its `commitStatusContext`.
  */
 function shouldPostPerOsCommitStatuses(perOsCommitStatuses, compositeIdentity) {
-    if (compositeIdentity?.name === 'cmt-desktop') {
-        return false;
-    }
-    return Boolean(perOsCommitStatuses);
+    return Boolean(perOsCommitStatuses) && compositeIdentity?.name !== 'cmt-desktop';
 }
 
 /**
@@ -648,10 +575,7 @@ async function reportTsioStatus({
     pollAttempts,
     pollDelayMs,
 }) {
-    const postPerOsCommitStatuses = shouldPostPerOsCommitStatuses(
-        perOsCommitStatuses,
-        compositeIdentity,
-    );
+    const postPerOsCommitStatuses = shouldPostPerOsCommitStatuses(perOsCommitStatuses, compositeIdentity);
     const resolvedPollAttempts = positiveInt(
         pollAttempts ?? intEnv('TSIO_POLL_ATTEMPTS', 12),
         12,
@@ -930,26 +854,24 @@ async function reportTsioStatus({
     //   desktop-pr       → MM_DESKTOP_E2E_WEBHOOK_URL
     // Failures here must not undo a successfully written commit status.
     try {
-        if (notifyChannel) {
-            const notifyNames = new Set(['cmt-desktop', 'desktop-pr', 'desktop-master']);
-            if (notifyNames.has(compositeIdentity.name)) {
-                const {notifyCmtChannel, resolveWebhookUrl} = require('./cmt-channel-notify.js');
-                const webhookUrl = resolveWebhookUrl(compositeIdentity.name);
-                if (webhookUrl) {
-                    // Prefer TSIO links even when the poll timed out at in_progress
-                    // (commit status may still point at the Actions run URL).
-                    const channelReportUrl = displayReportUrl || groupReportUrl || targetUrl;
-                    await notifyCmtChannel({
-                        core,
-                        baseUrl,
-                        compositeIdentity,
-                        detail,
-                        reportUrl: channelReportUrl,
-                        upstreamJobsSucceeded,
-                        hasFailures,
-                        webhookUrl,
-                    });
-                }
+        const notifyNames = new Set(['cmt-desktop', 'desktop-pr', 'desktop-master']);
+        if (notifyChannel && notifyNames.has(compositeIdentity.name)) {
+            const {notifyCmtChannel, resolveWebhookUrl} = require('./cmt-channel-notify.js');
+            const webhookUrl = resolveWebhookUrl(compositeIdentity.name);
+            if (webhookUrl) {
+                // Prefer TSIO links even when the poll timed out at in_progress
+                // (commit status may still point at the Actions run URL).
+                const channelReportUrl = displayReportUrl || groupReportUrl || targetUrl;
+                await notifyCmtChannel({
+                    core,
+                    baseUrl,
+                    compositeIdentity,
+                    detail,
+                    reportUrl: channelReportUrl,
+                    upstreamJobsSucceeded,
+                    hasFailures,
+                    webhookUrl,
+                });
             }
         }
     } catch (error) {

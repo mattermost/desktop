@@ -15,29 +15,20 @@ const E2E_OS_STATUS_CONTEXTS = E2E_OS_LIST.map((os) => `e2e/${os}`);
 const E2E_POLICY_STATUS_CONTEXTS = E2E_POLICY_OS_LIST.map((os) => `e2e/${os}-policy`);
 
 /**
- * Playwright shards per OS for PR/master e2e (not CMT). Linux stays at 1
- * Playwright worker (teardown hang at 2); macOS/Windows use 3 workers.
- * Extra linux concurrency comes from more shards, not more workers.
+ * Playwright shards per OS for PR/master e2e (not CMT). Linux CI stays at one
+ * Playwright worker, so its extra concurrency comes from shards.
  */
 const E2E_PLAYWRIGHT_SHARDS = {
     linux: 3,
 
-    // macos-26 only has ~2 concurrent runners. 3 shards queued 6–8 min on
-    // f4f64f2c (linux/windows started immediately). Two shards both start;
-    // unsharded Playwright was 29 min so each is ~15 min + ~40s setup.
+    // macos-26 has ~2 concurrent runners; a third shard queues instead of starting.
     macos: 2,
-
-    // Two Windows shards were 10.2 vs 14.4 min Playwright on 9be05be3.
     windows: 3,
 };
 
 const E2E_WORKFLOW_NAME = 'Electron Playwright Tests';
 const ACTIVE_RUN_STATUSES = ['in_progress', 'queued', 'waiting'];
 const CANCELLED_STATUS_DESCRIPTION = 'E2E cancelled — tests skipped';
-
-function shardCountForOs(os) {
-    return E2E_PLAYWRIGHT_SHARDS[os] || 1;
-}
 
 /**
  * Expand canonical platform rows into one matrix entry per Playwright shard.
@@ -51,7 +42,7 @@ function expandPlatformShards(platforms) {
     const out = [];
     for (const platform of platforms || []) {
         const os = canonicalizeOs(platform.platform || platform.os, platform.runner);
-        const n = os ? shardCountForOs(os) : 1;
+        const n = (os && E2E_PLAYWRIGHT_SHARDS[os]) || 1;
         for (let i = 1; i <= n; i++) {
             out.push({
                 ...platform,
@@ -65,24 +56,13 @@ function expandPlatformShards(platforms) {
 }
 
 /**
- * @param {Array<{platform?: string, os?: string, runner?: string}>} platforms - unsharded
- * @param {{includePolicy?: boolean}} [opts]
- * @returns {number}
- */
-function totalReportsExpected(platforms, {includePolicy = true} = {}) {
-    return expandPlatformShards(platforms).length + (includePolicy ? E2E_POLICY_OS_LIST.length : 0);
-}
-
-/**
  * Split a Matterwick platform list into per-OS shard matrices for the orchestrator.
  *
  * @param {Array<{platform?: string, os?: string, runner?: string}>} platforms
  */
 function prepareE2eMatrix(platforms) {
     const sharded = expandPlatformShards(platforms);
-    const linux = sharded.filter((row) => canonicalizeOs(row.platform || row.os, row.runner) === 'linux');
-    const macos = sharded.filter((row) => canonicalizeOs(row.platform || row.os, row.runner) === 'macos');
-    const windows = sharded.filter((row) => canonicalizeOs(row.platform || row.os, row.runner) === 'windows');
+    const [linux, macos, windows] = E2E_OS_LIST.map((os) => sharded.filter((row) => row.platform === os));
     return {
         platforms: sharded,
         linux,
@@ -94,7 +74,7 @@ function prepareE2eMatrix(platforms) {
         linuxRunner: linux[0] ? linux[0].runner : '',
         macosRunner: macos[0] ? macos[0].runner : '',
         windowsRunner: windows[0] ? windows[0].runner : '',
-        totalReportsExpected: totalReportsExpected(platforms),
+        totalReportsExpected: sharded.length + E2E_POLICY_OS_LIST.length,
     };
 }
 
@@ -376,9 +356,7 @@ module.exports = {
     osStatusContext,
     policyStatusContext,
     canonicalizeOs,
-    shardCountForOs,
     expandPlatformShards,
-    totalReportsExpected,
     prepareE2eMatrix,
     E2E_PLAYWRIGHT_SHARDS,
     E2E_OS_LIST,
