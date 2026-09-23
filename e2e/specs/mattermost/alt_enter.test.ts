@@ -19,13 +19,12 @@ import type {ServerView} from '../../helpers/serverView';
 // in the textbox component via MM-14177, merged in v5.24.0).
 
 async function postListContainsLines(win: ServerView, lineOne: string, lineTwo: string): Promise<boolean> {
-    const found = await win.evaluate(({one, two}) => {
+    return win.evaluate(({one, two}) => {
         return Array.from(document.querySelectorAll('.post-message__text')).some((el) => {
             const text = el.textContent ?? '';
             return text.includes(one) && text.includes(two);
         });
     }, {one: lineOne, two: lineTwo});
-    return Boolean(found);
 }
 
 async function countPostsContaining(win: ServerView, text: string): Promise<number> {
@@ -80,17 +79,7 @@ test.describe('mattermost/alt_enter', () => {
                 'Alt+Enter must NOT send the message',
             ).toBe(false);
 
-            const sendButtonClicked = await firstServer!.evaluate(() => {
-                const sendButton = document.querySelector(
-                    '#channelHeaderSubmitButton, button[aria-label*="Send" i], [data-testid="SendMessageButton"]',
-                ) as HTMLButtonElement | null;
-                if (!sendButton) {
-                    return false;
-                }
-                sendButton.click();
-                return true;
-            });
-            expect(sendButtonClicked, 'Send button must be present before posting').toBe(true);
+            await firstServer!.click('[data-testid="SendMessageButton"]');
 
             await expect.poll(
                 () => postListContainsLines(firstServer!, lineOne, lineTwo),
