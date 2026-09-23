@@ -5,12 +5,12 @@ import type {TestInfo} from '@playwright/test';
 
 import {test, expect} from '../../fixtures/index';
 import {assertCallsSpecsOnShard1} from '../../helpers/assertCallsShard';
-import {findCallsWidgetWindow, startCall, closeCallsWidget, leaveCallIfActive} from '../../helpers/callsWidget';
+import {closeCallsWidget, enterCallsTestChannel, findCallsWidgetWindow, leaveCallIfActive, startCall} from '../../helpers/callsWidget';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost, logoutFromMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {apiLogin, apiRequest} from '../../helpers/server_api/client';
-import {apiGetAdminTeamId, createCallsTestUser, deactivateCallsTestUsers, type TestUser} from '../../helpers/server_api/user';
+import {apiGetAdminTeamId, createCallsTestChannel, createCallsTestUser, deactivateCallsTestUsers, type TestChannel, type TestUser} from '../../helpers/server_api/user';
 import type {ServerView} from '../../helpers/serverView';
 
 async function sendSlashCommand(serverWin: ServerView, command: string): Promise<void> {
@@ -37,6 +37,7 @@ test.describe('calls/slash_commands', () => {
     let adminToken: string;
     let teamId: string;
     let testServerUrl: string;
+    let testChannel: TestChannel;
 
     test.beforeAll(async ({}, testInfo: TestInfo) => {
         assertCallsSpecsOnShard1(testInfo.config.shard);
@@ -76,10 +77,9 @@ test.describe('calls/slash_commands', () => {
 
         await logoutFromMattermost(serverWin);
         const testUser: TestUser = await createCallsTestUser(testServerUrl, adminToken, teamId);
+        testChannel = await createCallsTestChannel(testServerUrl, adminToken, teamId, testUser.id);
         await loginToMattermost(serverWin, testUser);
-        await serverWin.waitForSelector('#sidebarItem_town-square', {timeout: 15_000});
-        await serverWin.click('#sidebarItem_town-square');
-        await serverWin.waitForSelector('#channelHeaderTitle', {timeout: 10_000});
+        await enterCallsTestChannel(serverWin, testChannel.name);
         await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
         await leaveCallIfActive(electronApp, serverWin);
     });
@@ -98,11 +98,9 @@ test.describe('calls/slash_commands', () => {
         'MM-T5588 host ends the call (via Calls REST API) — desktop tears the call down',
         {tag: ['@P1', '@all']},
         async ({electronApp}) => {
-            const townSquare = await apiRequest<{id: string}>(testServerUrl, adminToken, `/api/v4/teams/${teamId}/channels/name/town-square`);
-
             await startCall(electronApp, serverWin);
 
-            await apiRequest(testServerUrl, adminToken, `/plugins/com.mattermost.calls/calls/${townSquare.id}/end`, {
+            await apiRequest(testServerUrl, adminToken, `/plugins/com.mattermost.calls/calls/${testChannel.id}/end`, {
                 method: 'POST',
             });
 

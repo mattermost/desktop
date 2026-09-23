@@ -5,13 +5,26 @@ import type {TestInfo} from '@playwright/test';
 
 import {test, expect} from '../../fixtures/index';
 import {assertCallsSpecsOnShard1} from '../../helpers/assertCallsShard';
-import {waitForCallsWidgetWindow, waitForCallsClientReady, closeCallsWidget, sendWidgetShortcut, leaveCallIfActive, startCall} from '../../helpers/callsWidget';
-import {waitForMattermostShellReady} from '../../helpers/channelReadiness';
+import {
+    closeCallsWidget,
+    enterCallsTestChannel,
+    leaveCallIfActive,
+    sendWidgetShortcut,
+    startCall,
+    waitForCallsClientReady,
+    waitForCallsWidgetWindow,
+} from '../../helpers/callsWidget';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost, logoutFromMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {apiLogin} from '../../helpers/server_api/client';
-import {apiGetAdminTeamId, createCallsTestUser, deactivateCallsTestUsers, type TestUser} from '../../helpers/server_api/user';
+import {
+    apiGetAdminTeamId,
+    createCallsTestChannel,
+    createCallsTestUser,
+    deactivateCallsTestUsers,
+    type TestUser,
+} from '../../helpers/server_api/user';
 import type {ServerView} from '../../helpers/serverView';
 
 test.describe('calls/calls_functionality', () => {
@@ -70,10 +83,9 @@ test.describe('calls/calls_functionality', () => {
 
         await logoutFromMattermost(serverWin);
         const testUser: TestUser = await createCallsTestUser(testServerUrl, adminToken, teamId);
+        const testChannel = await createCallsTestChannel(testServerUrl, adminToken, teamId, testUser.id);
         await loginToMattermost(serverWin, testUser);
-        await waitForMattermostShellReady(serverWin, {channelItem: '#sidebarItem_town-square'});
-        await serverWin.click('#sidebarItem_town-square');
-        await serverWin.waitForSelector('#channelHeaderTitle', {timeout: 10_000});
+        await enterCallsTestChannel(serverWin, testChannel.name);
         await leaveCallIfActive(electronApp, serverWin);
         await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
     });

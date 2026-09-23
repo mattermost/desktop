@@ -32,6 +32,37 @@ export async function apiGetChannelByName(
     return apiRequest<Channel>(baseUrl, token, `/api/v4/teams/${teamId}/channels/name/${channelName}`);
 }
 
+export async function apiCreateChannel(
+    baseUrl: string,
+    token: string,
+    teamId: string,
+    name: string,
+    displayName: string,
+    type: 'O' | 'P' = 'P',
+): Promise<Channel> {
+    return apiRequest<Channel>(baseUrl, token, '/api/v4/channels', {
+        method: 'POST',
+        body: JSON.stringify({
+            team_id: teamId,
+            name,
+            display_name: displayName,
+            type,
+        }),
+    });
+}
+
+export async function apiAddUserToChannel(
+    baseUrl: string,
+    token: string,
+    channelId: string,
+    userId: string,
+): Promise<void> {
+    await apiRequest<unknown>(baseUrl, token, `/api/v4/channels/${channelId}/members`, {
+        method: 'POST',
+        body: JSON.stringify({user_id: userId}),
+    });
+}
+
 export function buildChannelUrl(baseUrl: string, teamName: string, channelName: string): string {
     return `${baseUrl}/${teamName}/channels/${channelName}`;
 }

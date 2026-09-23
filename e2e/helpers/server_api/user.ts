@@ -1,6 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {apiAddUserToChannel, apiCreateChannel} from './channel';
 import {apiRequest} from './client';
 
 export type TestUser = {
@@ -8,6 +9,11 @@ export type TestUser = {
     username: string;
     email: string;
     password: string;
+};
+
+export type TestChannel = {
+    id: string;
+    name: string;
 };
 
 type CreatedUser = {id: string; username: string; email: string};
@@ -67,6 +73,33 @@ export async function createCallsTestUser(
     createdUserIds.push(user.id);
     await apiAddUserToTeam(baseUrl, adminToken, teamId, user.id);
     return user;
+}
+
+let channelSeq = 0;
+
+/**
+ * Private channel for one Calls test. Town Square is shared across Windows/macOS
+ * workers (2 in CI), so parallel `/call start` hits "A call is already ongoing
+ * in the channel" and can close the other worker's widget mid-connect.
+ */
+export async function createCallsTestChannel(
+    baseUrl: string,
+    adminToken: string,
+    teamId: string,
+    userId: string,
+): Promise<TestChannel> {
+    channelSeq++;
+    const name = `e2ec${process.env.TEST_WORKER_INDEX ?? '0'}${Date.now()}${channelSeq}`;
+    const channel = await apiCreateChannel(
+        baseUrl,
+        adminToken,
+        teamId,
+        name,
+        `Calls E2E ${name}`,
+        'P',
+    );
+    await apiAddUserToChannel(baseUrl, adminToken, channel.id, userId);
+    return {id: channel.id, name: channel.name};
 }
 
 /**
