@@ -5,7 +5,7 @@ import {expect} from '@playwright/test';
 import type {ElectronApplication, Page} from 'playwright';
 
 import {waitForRendererReady} from './badServer';
-import {clearCertificateErrorCallbacks} from './dialog';
+import {answerMessageModal, clearCertificateErrorCallbacks, isMessageModalOpen} from './dialog';
 import {evaluateInMainProcessWithArg, findMainIndexWindow, resolveMainIndexWindow} from './testRefs';
 
 type WaitForErrorViewOptions = {
@@ -138,19 +138,32 @@ export async function waitForErrorView(
         }).toContain(serverName);
     }
 
-    const host = resolveErrorViewHost(app, mainWindow);
-    if (!(await host.isVisible('.ErrorView').catch(() => false))) {
-        await reloadTargetServerViews(app, serverName);
-    }
-
-    await expect.poll(async () => {
+    const isErrorViewVisible = async (): Promise<boolean> => {
         const window = resolveErrorViewHost(app, mainWindow);
         try {
             return await window.isVisible('.ErrorView');
         } catch {
             return false;
         }
-    }, {
+    };
+
+    // Do not reload on the first miss. T6176 macos CI showed ErrorView with
+    // ERR_CERT_DATE_INVALID in the failure screenshot while this helper timed
+    // out: an immediate reload races LOAD_FAILED from Cancel Connection and
+    // retriggers the certificate modal, so .ErrorView never appears in-poll.
+    const appearedBeforeReload = await expect.poll(
+        isErrorViewVisible,
+        {timeout: Math.min(timeout, 8_000), message: 'ErrorView after initial load failure'},
+    ).toBe(true).then(() => true).catch(() => false);
+
+    if (!appearedBeforeReload && !isMessageModalOpen(app)) {
+        await reloadTargetServerViews(app, serverName);
+        if (isMessageModalOpen(app)) {
+            await answerMessageModal(app, 1).catch(() => {});
+        }
+    }
+
+    await expect.poll(isErrorViewVisible, {
         timeout,
         message: 'ErrorView did not appear before timeout',
     }).toBe(true);
