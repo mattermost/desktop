@@ -1,8 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {apiAddUserToChannel, apiCreateChannel} from './channel';
-import {apiRequest} from './client';
+import {apiArchiveChannel, apiCreateChannel} from './channel';
+import {apiLogin, apiRequest} from './client';
 
 export type TestUser = {
     id: string;
@@ -76,30 +76,49 @@ export async function createCallsTestUser(
 }
 
 let channelSeq = 0;
+const createdChannelIds: string[] = [];
 
 /**
- * Private channel for one Calls test. Town Square is shared across Windows/macOS
- * workers (2 in CI), so parallel `/call start` hits "A call is already ongoing
- * in the channel" and can close the other worker's widget mid-connect.
+ * Private channel for one Calls test, created as that test user so the shared
+ * admin (LHS / channel-menu specs) never sees it. Town Square is shared across
+ * Windows/macOS workers (2 in CI), so parallel `/call start` hits "A call is
+ * already ongoing in the channel" and can close the other worker's widget.
  */
 export async function createCallsTestChannel(
     baseUrl: string,
-    adminToken: string,
     teamId: string,
-    userId: string,
+    user: TestUser,
 ): Promise<TestChannel> {
     channelSeq++;
     const name = `e2ec${process.env.TEST_WORKER_INDEX ?? '0'}${Date.now()}${channelSeq}`;
+    const userToken = await apiLogin(baseUrl, user.username, user.password);
     const channel = await apiCreateChannel(
         baseUrl,
-        adminToken,
+        userToken,
         teamId,
         name,
         `Calls E2E ${name}`,
         'P',
     );
-    await apiAddUserToChannel(baseUrl, adminToken, channel.id, userId);
+    createdChannelIds.push(channel.id);
     return {id: channel.id, name: channel.name};
+}
+
+/**
+ * Archive every Calls test channel this worker created. Best-effort — leftover
+ * private channels on the shared admin team fill the LHS ("More unreads") and
+ * break hover-gated channel menus (T1307 / T125 / T5890).
+ */
+export async function archiveCallsTestChannels(baseUrl: string, adminToken: string): Promise<void> {
+    const ids = createdChannelIds.splice(0, createdChannelIds.length);
+
+    await Promise.all(ids.map(async (id) => {
+        try {
+            await apiArchiveChannel(baseUrl, adminToken, id);
+        } catch {
+            // Leaving a stray archived-fail channel is not worth failing a spec.
+        }
+    }));
 }
 
 /**

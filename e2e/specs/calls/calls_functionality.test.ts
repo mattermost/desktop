@@ -17,6 +17,7 @@ import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {apiLogin} from '../../helpers/server_api/client';
 import {
     apiGetAdminTeamId,
+    archiveCallsTestChannels,
     createCallsTestChannel,
     createCallsTestUser,
     deactivateCallsTestUsers,
@@ -59,8 +60,15 @@ test.describe('calls/calls_functionality', () => {
         teamId = await apiGetAdminTeamId(serverUrl, adminToken);
     });
 
+    test.afterEach(async () => {
+        if (testServerUrl && adminToken) {
+            await archiveCallsTestChannels(testServerUrl, adminToken);
+        }
+    });
+
     test.afterAll(async () => {
         if (testServerUrl && adminToken) {
+            await archiveCallsTestChannels(testServerUrl, adminToken);
             await deactivateCallsTestUsers(testServerUrl, adminToken);
         }
     });
@@ -79,7 +87,7 @@ test.describe('calls/calls_functionality', () => {
 
         await logoutFromMattermost(serverWin);
         const testUser: TestUser = await createCallsTestUser(testServerUrl, adminToken, teamId);
-        const testChannel = await createCallsTestChannel(testServerUrl, adminToken, teamId, testUser.id);
+        const testChannel = await createCallsTestChannel(testServerUrl, teamId, testUser);
         await loginToMattermost(serverWin, testUser);
         await enterCallsTestChannel(serverWin, testChannel.name);
         await leaveCallIfActive(electronApp, serverWin);
