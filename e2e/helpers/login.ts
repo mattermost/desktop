@@ -55,10 +55,16 @@ async function getLoggedInUsername(win: ServerView): Promise<string | null> {
 
     try {
         return await win.runInRenderer<string | null>(`
-            return fetch('/api/v4/users/me', {credentials: 'same-origin'})
-                .then((response) => response.ok ? response.json() : null)
-                .then((me) => (typeof me?.username === 'string' ? me.username : null))
-                .catch(() => null);
+            try {
+                const response = await fetch('/api/v4/users/me', {credentials: 'same-origin'});
+                if (!response.ok) {
+                    return null;
+                }
+                const me = await response.json();
+                return typeof me?.username === 'string' ? me.username : null;
+            } catch {
+                return null;
+            }
         `);
     } catch (error) {
         if (isTransientEvaluateError(error)) {
