@@ -730,7 +730,10 @@ jobs:
             node_modules
             e2e/node_modules
           enableCrossOsArchive: false
-          key: ${{ runner.os }}-build-node-modules-v8-${{ runner.arch }}-${{ hashFiles('**/package-lock.json', 'patches/**') }}
+          # Reuse the restore step's resolved key. Recomputing the hash after
+          # npm ci can pick up lockfiles inside node_modules and save under a
+          # key PR restore never looks up.
+          key: ${{ steps.cache-node-modules.outputs.cache-primary-key }}
 
       - name: e2e/suppress-macos-dialogs
         if: runner.os == 'macOS'

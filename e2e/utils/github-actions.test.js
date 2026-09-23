@@ -246,28 +246,48 @@ describe('e2e job timeout-minutes', () => {
 
 describe('e2e/policy node_modules cache key includes patches and arch', () => {
     const workflowsDir = path.join(__dirname, '../../.github/workflows');
-    const v8Key = /build-node-modules-v8-\$\{\{ runner\.arch \}\}-\$\{\{ hashFiles\(([^)]+)\) \}\}/g;
-    const expectedHashArgs = "'**/package-lock.json', 'patches/**'";
+    const restoreV8Key = /build-node-modules-v8-\$\{\{ runner\.arch \}\}-\$\{\{ hashFiles\('(\*\*\/package-lock\.json)', 'patches\/\*\*'\) \}\}/;
+    const savePrimaryKey = /key: \$\{\{ steps\.cache-node-modules\.outputs\.cache-primary-key \}\}/;
 
-    function v8NodeModulesHashArgs(file) {
-        const yml = fs.readFileSync(path.join(workflowsDir, file), 'utf8');
-        return [...yml.matchAll(v8Key)].map((m) => m[1]);
+    function workflowSource(file) {
+        return fs.readFileSync(path.join(workflowsDir, file), 'utf8');
     }
 
-    it('template restore and save hash package-lock.json and patches/** keyed by arch', () => {
-        const args = v8NodeModulesHashArgs('e2e-functional-template.yml');
-        assert.equal(args.length, 2, 'restore + save');
-        assert.deepEqual(args, [expectedHashArgs, expectedHashArgs]);
+    function namedStep(yml, name) {
+        const marker = `- name: ${name}`;
+        const start = yml.indexOf(marker);
+        assert.ok(start >= 0, `${name} must exist`);
+        const rest = yml.slice(start);
+        const next = rest.search(/\n {6}- name: /);
+        return next === -1 ? rest : rest.slice(0, next);
+    }
+
+    function assertRestoreHashesLockAndPatches(yml) {
+        const restore = namedStep(yml, 'e2e/cache-node-modules');
+        assert.match(restore, /id: cache-node-modules/);
+        assert.match(restore, restoreV8Key);
+    }
+
+    function assertSaveReusesRestorePrimaryKey(yml) {
+        const save = namedStep(yml, 'e2e/save-node-modules');
+        assert.match(save, savePrimaryKey);
+        assert.doesNotMatch(save, /key:.*hashFiles/);
+    }
+
+    it('template restore hashes lock+patches by arch; save reuses that primary key', () => {
+        const yml = workflowSource('e2e-functional-template.yml');
+        assertRestoreHashesLockAndPatches(yml);
+        assertSaveReusesRestorePrimaryKey(yml);
     });
 
-    it('policy jobs use the same restore and save key', () => {
-        const args = v8NodeModulesHashArgs('e2e-functional.yml');
-        assert.equal(args.length, 2, 'restore + save');
-        assert.deepEqual(args, [expectedHashArgs, expectedHashArgs]);
+    it('policy jobs restore the same v8 key and save with the restore primary key', () => {
+        const yml = workflowSource('e2e-functional.yml');
+        assertRestoreHashesLockAndPatches(yml);
+        assertSaveReusesRestorePrimaryKey(yml);
     });
 
     it('ci.yaml and build-for-pr.yml do not share the e2e v8 key', () => {
-        assert.deepEqual(v8NodeModulesHashArgs('ci.yaml'), []);
-        assert.deepEqual(v8NodeModulesHashArgs('build-for-pr.yml'), []);
+        assert.doesNotMatch(workflowSource('ci.yaml'), /build-node-modules-v8-/);
+        assert.doesNotMatch(workflowSource('build-for-pr.yml'), /build-node-modules-v8-/);
     });
 });
