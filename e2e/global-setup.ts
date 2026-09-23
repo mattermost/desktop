@@ -12,6 +12,7 @@ import {ensureElectronBinary} from './helpers/config';
 import {clearAllRegistryFiles} from './helpers/electronApp';
 import {apiLogin, apiRequest} from './helpers/server_api/client';
 import {ensureCallsPlugin, waitForCallsPluginReady} from './helpers/server_api/plugin';
+import {archiveLeftoverCallsE2EChannels} from './helpers/server_api/user';
 
 const MACOS_DEFAULTS_SNAPSHOT = path.join(os.tmpdir(), 'mattermost-desktop-e2e-macos-defaults-snapshot.json');
 
@@ -55,6 +56,17 @@ async function setUpCallsPlugin(restartPlugin: boolean): Promise<void> {
     }
 
     const token = await apiLogin(serverUrl, username, password);
+    // Every shard: leftovers sit on the shared OS server, and T1307 is not on shard 1.
+    // Concurrent DELETE of an already-archived channel must not throw.
+    try {
+        const archived = await archiveLeftoverCallsE2EChannels(serverUrl, token);
+        if (archived > 0) {
+            // eslint-disable-next-line no-console -- globalSetup has no logger; CI should see the sweep ran
+            console.log(`Archived ${archived} leftover Calls E2E channel(s) from prior runs`);
+        }
+    } catch {
+        // Best-effort: leftover sweep must not block Calls plugin setup.
+    }
     if (restartPlugin) {
         await ensureCallsPlugin(serverUrl, token);
     } else {
