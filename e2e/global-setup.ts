@@ -56,6 +56,7 @@ async function setUpCallsPlugin(restartPlugin: boolean): Promise<void> {
     }
 
     const token = await apiLogin(serverUrl, username, password);
+
     // Every shard: leftovers sit on the shared OS server, and T1307 is not on shard 1.
     // Concurrent DELETE of an already-archived channel must not throw.
     try {
