@@ -8,6 +8,10 @@ import {defineConfig, type Project} from '@playwright/test';
 type Platform = 'linux' | 'darwin' | 'win32';
 
 function getActivePlatform(): Platform {
+    const override = process.env.E2E_PLATFORM;
+    if (override === 'linux' || override === 'darwin' || override === 'win32') {
+        return override;
+    }
     if (process.platform === 'darwin') {
         return 'darwin';
     }
@@ -25,15 +29,16 @@ const PLATFORM_GREP: Record<Platform, RegExp> = {
 
 // Each test gets its own isolated userDataDir (testInfo.outputDir/userdata), so each
 // Electron instance has its own SingletonLock — parallel workers never conflict.
-// Electron processes are heavy (~300MB each), so cap at 2 in CI and half the CPU
-// count locally (max 4). Override with E2E_WORKERS env var.
+// Electron processes are heavy (~300MB each). Override with E2E_WORKERS.
 const cpuCount = os.cpus().length;
 
-// Linux CI hits Playwright worker-teardown hangs with 2 parallel Electron workers;
-// one worker can finish with a stuck app.close() and burn the full 90s budget.
+// Linux CI still hits Playwright worker-teardown hangs with 2 Electron workers
+// (stuck app.close() burns the 90s budget) — keep linux at 1; extra concurrency
+// is more shards. macOS/Windows hosted runners have 3–4 CPUs / 14–16GB; 3
+// workers (~1GB) is within that. Serial describe() files stay serial.
 function getDefaultWorkers(): number {
     if (process.env.CI) {
-        return getActivePlatform() === 'linux' ? 1 : 2;
+        return getActivePlatform() === 'linux' ? 1 : 3;
     }
     return Math.min(4, Math.max(1, Math.floor(cpuCount / 2)));
 }

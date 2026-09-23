@@ -15,8 +15,9 @@ const E2E_OS_STATUS_CONTEXTS = E2E_OS_LIST.map((os) => `e2e/${os}`);
 const E2E_POLICY_STATUS_CONTEXTS = E2E_POLICY_OS_LIST.map((os) => `e2e/${os}-policy`);
 
 /**
- * Playwright shards per OS for PR/master e2e (not CMT). Keep linux at 1 worker
- * in playwright.config.ts; extra linux concurrency comes from more shards.
+ * Playwright shards per OS for PR/master e2e (not CMT). Linux stays at 1
+ * Playwright worker (teardown hang at 2); macOS/Windows use 3 workers.
+ * Extra linux concurrency comes from more shards, not more workers.
  */
 const E2E_PLAYWRIGHT_SHARDS = {
     linux: 3,
@@ -90,6 +91,9 @@ function prepareE2eMatrix(platforms) {
         linuxShardCount: linux.length,
         macosShardCount: macos.length,
         windowsShardCount: windows.length,
+        linuxRunner: linux[0] ? linux[0].runner : '',
+        macosRunner: macos[0] ? macos[0].runner : '',
+        windowsRunner: windows[0] ? windows[0].runner : '',
         totalReportsExpected: totalReportsExpected(platforms),
     };
 }

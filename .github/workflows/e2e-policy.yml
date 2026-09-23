@@ -1,0 +1,169 @@
+name: E2E policy tests
+
+on:
+  workflow_call:
+    inputs:
+      platform:
+        description: "macos or windows — must match TSIO gh-job-name policy-tests-<platform>"
+        type: string
+        required: true
+      runs-on:
+        type: string
+        required: true
+      DESKTOP_VERSION:
+        type: string
+        required: true
+      MM_SERVER_VERSION:
+        type: string
+        required: true
+      MM_TEST_USER_NAME:
+        type: string
+        required: false
+        default: ""
+      MM_TEST_PASSWORD:
+        type: string
+        required: false
+        default: ""
+      instance_details:
+        type: string
+        required: true
+      tsio-config:
+        description: "TSIO reporting config: {composite_identity, total_reports_expected}"
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  policy:
+    # Must equal gh-job-name below — TSIO upload matches this job's runtime name.
+    name: policy-tests-${{ inputs.platform }}
+    runs-on: ${{ inputs.runs-on }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+      actions: read
+    defaults:
+      run:
+        shell: bash
+    env:
+      BRANCH: ${{ github.ref_name }}
+      BUILD_TAG: ${{ github.sha }}
+      MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME || secrets.MM_DESKTOP_E2E_USER_NAME }}
+      MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD || secrets.MM_DESKTOP_E2E_USER_CREDENTIALS }}
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+      NODE_ENV: "test"
+      DEBUG_E2E: "true"
+      electron_config_cache: ${{ github.workspace }}/.cache/electron
+    steps:
+      - name: e2e/set-server-url
+        env:
+          INSTANCE_DETAILS: ${{ inputs.instance_details }}
+        run: |
+          if [ -z "${INSTANCE_DETAILS}" ]; then
+            echo "Error: instance_details input is required but was not provided" >&2
+            exit 1
+          fi
+          RUNNER_OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
+          URL=$(echo "${INSTANCE_DETAILS}" | jq -r --arg os "$RUNNER_OS" '.[] | select(.runner | ascii_downcase | contains($os)) | .url // empty' | head -1)
+          if [ -z "${URL}" ]; then
+            echo "Error: No server URL found in instance_details for runner OS: ${RUNNER_OS}" >&2
+            exit 1
+          fi
+          echo "MM_TEST_SERVER_URL=${URL}" >> $GITHUB_ENV
+
+      - name: e2e/checkout-repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.DESKTOP_VERSION }}
+
+      - name: e2e/setup-deps
+        uses: ./.github/actions/e2e-setup-deps
+        with:
+          mode: restore
+          os: ${{ runner.os }}
+
+      - name: e2e/suppress-macos-dialogs
+        if: runner.os == 'macOS'
+        run: |
+          defaults write com.github.Electron NSQuitAlwaysKeepsWindows -bool false || true
+          defaults write com.github.Electron ApplePersistenceIgnoreState -bool YES || true
+          defaults write com.apple.LaunchServices LSQuarantine -bool false || true
+          defaults write com.apple.CrashReporter DialogType none || true
+
+      - name: e2e/build-test-bundle
+        run: npm run build-test
+
+      - name: e2e/run-policy-tests-macos
+        if: runner.os == 'macOS'
+        run: |
+          cd e2e
+          set +e
+          npm run run:policy
+          echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
+          npm run send-report || true
+        env:
+          SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
+          DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
+
+      - name: e2e/run-policy-tests-windows
+        if: runner.os == 'Windows'
+        run: |
+          cd e2e
+          set +e
+          npm run run:policy
+          echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
+          npm run send-report || true
+        env:
+          SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
+          DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
+
+      - name: e2e/write-tsio-failure-stub
+        if: ${{ always() && inputs.tsio-config != '' && hashFiles('e2e/test-results/results.json') == '' && (failure() || cancelled() || (env.PLAYWRIGHT_EXIT_CODE != '0' && env.PLAYWRIGHT_EXIT_CODE != '')) }}
+        run: node e2e/utils/write-tsio-failure-stub.mjs
+        env:
+          TSIO_GH_JOB_NAME: policy-tests-${{ inputs.platform }}
+          PLAYWRIGHT_EXIT_CODE: ${{ env.PLAYWRIGHT_EXIT_CODE }}
+
+      - name: e2e/collect-tsio-screenshots
+        if: ${{ always() && inputs.tsio-config != '' && hashFiles('e2e/test-results/results.json') != '' }}
+        run: node e2e/utils/collect-tsio-screenshots.mjs
+
+      - name: e2e/upload-report-to-tsio
+        if: ${{ always() && inputs.tsio-config != '' && hashFiles('e2e/test-results/results.json') != '' }}
+        continue-on-error: true
+        uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@45fb048848edc392f398144f45e2f3e30f43aeaa # release-0.12.0 / main@45fb048 (#81 Maestro FilePath + Detox paths, #82 background finalize)
+        with:
+          composite-identity: ${{ toJSON(fromJSON(inputs.tsio-config).composite_identity) }}
+          total-reports-expected: ${{ fromJSON(inputs.tsio-config).total_reports_expected }}
+          framework: playwright
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          gh-job-name: policy-tests-${{ inputs.platform }}
+          json-path: e2e/test-results/results.json
+          screenshots-dir: e2e/test-results/tsio-screenshots
+
+      - name: e2e/handle-nonzero-playwright-exit
+        if: always()
+        run: |
+          if [ -z "${PLAYWRIGHT_EXIT_CODE:-}" ]; then
+            exit 0
+          fi
+          if [ "${PLAYWRIGHT_EXIT_CODE}" = "0" ]; then
+            exit 0
+          fi
+          echo "Playwright exited with code ${PLAYWRIGHT_EXIT_CODE}" >&2
+          exit 1
+
+      - name: Upload failure artifacts
+        if: ${{ failure() || (always() && env.PLAYWRIGHT_EXIT_CODE != '' && env.PLAYWRIGHT_EXIT_CODE != '0') }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: e2e-failure-policy-${{ runner.os }}
+          path: |
+            e2e/test-results/tsio-screenshots/**
+            e2e/playwright-report
+          if-no-files-found: ignore
+          retention-days: 3

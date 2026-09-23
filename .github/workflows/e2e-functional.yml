@@ -63,6 +63,9 @@ jobs:
       linux-shard-count: ${{ steps.generate.outputs.linux-shard-count }}
       macos-shard-count: ${{ steps.generate.outputs.macos-shard-count }}
       windows-shard-count: ${{ steps.generate.outputs.windows-shard-count }}
+      linux-runner: ${{ steps.generate.outputs.linux-runner }}
+      macos-runner: ${{ steps.generate.outputs.macos-runner }}
+      windows-runner: ${{ steps.generate.outputs.windows-runner }}
       desktop-sha: ${{ steps.resolve-sha.outputs.sha }}
       tsio-composite-identity: ${{ steps.tsio-identity.outputs.composite-identity-json }}
       tsio-total-reports-expected: ${{ steps.tsio-identity.outputs.total-reports-expected }}
@@ -119,6 +122,9 @@ jobs:
             `linux-shard-count=${matrix.linuxShardCount}`,
             `macos-shard-count=${matrix.macosShardCount}`,
             `windows-shard-count=${matrix.windowsShardCount}`,
+            `linux-runner=${matrix.linuxRunner}`,
+            `macos-runner=${matrix.macosRunner}`,
+            `windows-runner=${matrix.windowsRunner}`,
             `total-reports-expected=${matrix.totalReportsExpected}`,
           ];
           fs.appendFileSync(process.env.GITHUB_OUTPUT, `${lines.join('\n')}\n`);
@@ -185,10 +191,50 @@ jobs:
               includePolicy: true,
             });
 
+  e2e-linux-install:
+    needs:
+      - prepare-matrix
+      - update-initial-status
+    name: E2E Linux install
+    if: ${{ needs.prepare-matrix.outputs.linux != '[]' }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/e2e-install.yml
+    with:
+      runs-on: ${{ needs.prepare-matrix.outputs.linux-runner }}
+      DESKTOP_VERSION: ${{ inputs.version_name }}
+
+  e2e-macos-install:
+    needs:
+      - prepare-matrix
+      - update-initial-status
+    name: E2E macOS install
+    if: ${{ needs.prepare-matrix.outputs.macos != '[]' }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/e2e-install.yml
+    with:
+      runs-on: ${{ needs.prepare-matrix.outputs.macos-runner }}
+      DESKTOP_VERSION: ${{ inputs.version_name }}
+
+  e2e-windows-install:
+    needs:
+      - prepare-matrix
+      - update-initial-status
+    name: E2E Windows install
+    if: ${{ needs.prepare-matrix.outputs.windows != '[]' }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/e2e-install.yml
+    with:
+      runs-on: ${{ needs.prepare-matrix.outputs.windows-runner }}
+      DESKTOP_VERSION: ${{ inputs.version_name }}
+
   e2e-linux:
     needs:
       - prepare-matrix
       - update-initial-status
+      - e2e-linux-install
     name: E2E Linux (${{ matrix.shardDisplay }})
     if: ${{ needs.prepare-matrix.outputs.linux != '[]' }}
     strategy:
@@ -216,6 +262,7 @@ jobs:
     needs:
       - prepare-matrix
       - update-initial-status
+      - e2e-macos-install
     name: E2E macOS (${{ matrix.shardDisplay }})
     if: ${{ needs.prepare-matrix.outputs.macos != '[]' }}
     strategy:
@@ -243,6 +290,7 @@ jobs:
     needs:
       - prepare-matrix
       - update-initial-status
+      - e2e-windows-install
     name: E2E Windows (${{ matrix.shardDisplay }})
     if: ${{ needs.prepare-matrix.outputs.windows != '[]' }}
     strategy:
@@ -426,7 +474,8 @@ jobs:
     timeout-minutes: 10
     needs:
       - prepare-matrix
-      - e2e-policy-tests
+      - e2e-policy-macos
+      - e2e-policy-windows
     if: ${{ always() && !cancelled() }}
     permissions:
       contents: read
@@ -449,7 +498,7 @@ jobs:
           TSIO_TOTAL_REPORTS_EXPECTED: ${{ needs.prepare-matrix.outputs.tsio-total-reports-expected }}
           TSIO_POLL_ATTEMPTS: 24
           TSIO_POLL_DELAY_MS: 5000
-          UPSTREAM_JOBS_SUCCEEDED: ${{ needs.e2e-policy-tests.result == 'success' }}
+          UPSTREAM_JOBS_SUCCEEDED: ${{ needs.e2e-policy-macos.result == 'success' && needs.e2e-policy-windows.result == 'success' }}
         with:
           script: |
             const {E2E_POLICY_OS_LIST} = require('./e2e/utils/github-actions.js');
@@ -484,7 +533,8 @@ jobs:
       - e2e-linux
       - e2e-macos
       - e2e-windows
-      - e2e-policy-tests
+      - e2e-policy-macos
+      - e2e-policy-windows
     if: ${{ always() && !cancelled() }}
     permissions:
       contents: read
@@ -513,7 +563,7 @@ jobs:
           # time to attach all legs before we snapshot the group for the channel post.
           TSIO_POLL_ATTEMPTS: 36
           TSIO_POLL_DELAY_MS: 5000
-          UPSTREAM_JOBS_SUCCEEDED: ${{ (needs.e2e-linux.result == 'success' || needs.e2e-linux.result == 'skipped') && (needs.e2e-macos.result == 'success' || needs.e2e-macos.result == 'skipped') && (needs.e2e-windows.result == 'success' || needs.e2e-windows.result == 'skipped') && needs.e2e-policy-tests.result == 'success' }}
+          UPSTREAM_JOBS_SUCCEEDED: ${{ (needs.e2e-linux.result == 'success' || needs.e2e-linux.result == 'skipped') && (needs.e2e-macos.result == 'success' || needs.e2e-macos.result == 'skipped') && (needs.e2e-windows.result == 'success' || needs.e2e-windows.result == 'skipped') && (needs.e2e-policy-macos.result == 'success' || needs.e2e-policy-macos.result == 'skipped') && (needs.e2e-policy-windows.result == 'success' || needs.e2e-policy-windows.result == 'skipped') }}
           PLATFORMS: ${{ needs.prepare-matrix.outputs.platforms }}
           # PR → MM_DESKTOP_E2E_WEBHOOK_URL; master → MM_E2E_MASTER_HEALTH_WEBHOOK_URL;
           # CMT/RC uses MM_E2E_RELEASE_WEBHOOK_URL (compatibility-matrix-testing.yml).
@@ -550,7 +600,8 @@ jobs:
       - e2e-linux
       - e2e-macos
       - e2e-windows
-      - e2e-policy-tests
+      - e2e-policy-macos
+      - e2e-policy-windows
       - tsio-summary
     if: always()
     steps:
@@ -606,221 +657,50 @@ jobs:
         env:
           PR_NUMBER: ${{ inputs.pr_number }}
 
-  e2e-policy-tests:
-    # Must equal gh-job-name below — TSIO upload matches this job's runtime name.
-    name: policy-tests-${{ matrix.platform }}
+  e2e-policy-macos:
+    name: policy-tests-macos
     needs:
       - prepare-matrix
       - update-initial-status
-    # Runs untrusted PR code (npm ci / Playwright); grant only what the TSIO
-    # upload needs, never pull-requests: write.
+      - e2e-macos-install
+    if: ${{ needs.prepare-matrix.outputs.macos != '[]' }}
     permissions:
       contents: read
       id-token: write
       actions: read
-    strategy:
-      matrix:
-        include:
-          - platform: macos
-            runner: macos-26
-          - platform: windows
-            # Pinned to windows-2022 (not -2025) because the 2025 image ships
-            # Visual Studio 18 / "2026", which current node-gyp doesn't recognise —
-            # `npm ci` then fails to build the registry-js native module.
-            # The sharded e2e-windows jobs also run on windows-2022; keep them aligned.
-            runner: windows-2022
-      fail-fast: false
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 30
-    defaults:
-      run:
-        shell: bash
-    env:
-      BRANCH: ${{ github.ref_name }}
-      BUILD_TAG: ${{ github.sha }}
-      MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME || secrets.MM_DESKTOP_E2E_USER_NAME }}
-      MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD || secrets.MM_DESKTOP_E2E_USER_CREDENTIALS }}
-      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
-      NODE_ENV: "test"
-      DEBUG_E2E: "true"
-    steps:
-      - name: e2e/set-server-url
-        env:
-          INSTANCE_DETAILS: ${{ inputs.instance_details }}
-        run: |
-          if [ -z "${INSTANCE_DETAILS}" ]; then
-            echo "Error: instance_details input is required but was not provided" >&2
-            exit 1
-          fi
-          RUNNER_OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
-          URL=$(echo "${INSTANCE_DETAILS}" | jq -r --arg os "$RUNNER_OS" '.[] | select(.runner | ascii_downcase | contains($os)) | .url // empty' | head -1)
-          if [ -z "${URL}" ]; then
-            echo "Error: No server URL found in instance_details for runner OS: ${RUNNER_OS}" >&2
-            exit 1
-          fi
-          echo "MM_TEST_SERVER_URL=${URL}" >> $GITHUB_ENV
+    uses: ./.github/workflows/e2e-policy.yml
+    with:
+      platform: macos
+      runs-on: macos-26
+      DESKTOP_VERSION: ${{ inputs.version_name }}
+      MM_SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
+      MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME }}
+      MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD }}
+      instance_details: ${{ inputs.instance_details }}
+      tsio-config: ${{ format('{{"composite_identity":{0},"total_reports_expected":"{1}"}}', needs.prepare-matrix.outputs.tsio-composite-identity, needs.prepare-matrix.outputs.tsio-total-reports-expected) }}
+    secrets: inherit
 
-      - name: e2e/checkout-repo
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ inputs.version_name }}
-
-      - name: e2e/setup-node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: '22.x'
-          package-manager-cache: false
-
-      - name: e2e/use-gnu-tar-macos
-        if: runner.os == 'macOS'
-        run: |
-          # BSD tar on macOS can corrupt actions/cache v5 archives; prefer GNU tar when present.
-          # All current macOS runners are arm64 (Homebrew under /opt/homebrew); keep the
-          # -x guard so a future non-arm64 matrix entry falls back to BSD tar safely.
-          if [ -x /opt/homebrew/opt/gnu-tar/libexec/gnubin/gtar ]; then
-            echo "/opt/homebrew/opt/gnu-tar/libexec/gnubin" >> $GITHUB_PATH
-          fi
-
-      - name: e2e/cache-node-modules
-        id: cache-node-modules
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            node_modules
-            e2e/node_modules
-          enableCrossOsArchive: false
-          # v8: exact restore only — avoids probing legacy v6/v7 blobs that warn on macOS.
-          # Hash patches/** so a patch-package change cannot skip npm ci / postinstall.
-          # runner.arch so arm64 vs x64 native modules are not restored on the wrong CPU.
-          key: ${{ runner.os }}-build-node-modules-v8-${{ runner.arch }}-${{ hashFiles('**/package-lock.json', 'patches/**') }}
-
-      - name: e2e/cache-electron-gyp-windows
-        if: runner.os == 'Windows'
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: C:\Users\runneradmin\.electron-gyp
-          enableCrossOsArchive: false
-          key: ${{ runner.os }}-electron-gyp-v7-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-electron-gyp-v7-${{ hashFiles('**/package-lock.json') }}
-
-      - name: e2e/setup-python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        env:
-          PIP_NO_CACHE_DIR: "1"
-        with:
-          python-version: "3.13"
-
-      - name: e2e/install-os-dependencies
-        uses: ./.github/actions/install-os-dependencies
-        with:
-          os: ${{ runner.os }}
-
-      - name: e2e/install-node-dependencies
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: |
-          npm ci
-          cd e2e && npm ci
-
-      - name: e2e/save-node-modules
-        if: inputs.run_type == 'MASTER' && steps.cache-node-modules.outputs.cache-hit != 'true'
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            node_modules
-            e2e/node_modules
-          enableCrossOsArchive: false
-          # Reuse the restore step's resolved key. Recomputing the hash after
-          # npm ci can pick up lockfiles inside node_modules and save under a
-          # key PR restore never looks up.
-          key: ${{ steps.cache-node-modules.outputs.cache-primary-key }}
-
-      - name: e2e/suppress-macos-dialogs
-        if: runner.os == 'macOS'
-        run: |
-          # Suppress the "Reopen windows" dialog that blocks Electron startup
-          # when a previous test instance was killed by SIGTERM/SIGKILL.
-          defaults write com.github.Electron NSQuitAlwaysKeepsWindows -bool false || true
-          defaults write com.github.Electron ApplePersistenceIgnoreState -bool YES || true
-          defaults write com.apple.LaunchServices LSQuarantine -bool false || true
-          defaults write com.apple.CrashReporter DialogType none || true
-
-      - name: e2e/build-test-bundle
-        run: npm run build-test
-
-      - name: e2e/run-policy-tests-macos
-        if: runner.os == 'macOS'
-        run: |
-          cd e2e
-          set +e
-          npm run run:policy
-          echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
-          npm run send-report || true
-        env:
-          SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
-          DESKTOP_VERSION: ${{ inputs.version_name }}
-
-      - name: e2e/run-policy-tests-windows
-        if: runner.os == 'Windows'
-        run: |
-          cd e2e
-          set +e
-          npm run run:policy
-          echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
-          npm run send-report || true
-        env:
-          SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
-          DESKTOP_VERSION: ${{ inputs.version_name }}
-
-      # Joins the same TSIO report group as the sharded OS jobs — gh-job-name must match
-      # this job's rendered name (policy-tests-<platform>) above.
-      - name: e2e/write-tsio-failure-stub
-        if: ${{ always() && needs.prepare-matrix.outputs.tsio-composite-identity != '' && hashFiles('e2e/test-results/results.json') == '' && (failure() || cancelled() || (env.PLAYWRIGHT_EXIT_CODE != '0' && env.PLAYWRIGHT_EXIT_CODE != '')) }}
-        run: node e2e/utils/write-tsio-failure-stub.mjs
-        env:
-          TSIO_GH_JOB_NAME: policy-tests-${{ matrix.platform }}
-          PLAYWRIGHT_EXIT_CODE: ${{ env.PLAYWRIGHT_EXIT_CODE }}
-
-      # report-upload walks every png/jpg under screenshots-dir; Electron userdata
-      # under e2e/test-results includes cache icons, so collect failure shots only.
-      - name: e2e/collect-tsio-screenshots
-        if: ${{ always() && needs.prepare-matrix.outputs.tsio-composite-identity != '' && hashFiles('e2e/test-results/results.json') != '' }}
-        run: node e2e/utils/collect-tsio-screenshots.mjs
-
-      # Reporting only — a TSIO/upload flake (e.g. screenshot 504) must not fail
-      # the job when Playwright already passed. Commit status still comes from TSIO summary.
-      - name: e2e/upload-report-to-tsio
-        if: ${{ always() && needs.prepare-matrix.outputs.tsio-composite-identity != '' && hashFiles('e2e/test-results/results.json') != '' }}
-        continue-on-error: true
-        uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@45fb048848edc392f398144f45e2f3e30f43aeaa # release-0.12.0 / main@45fb048 (#81 Maestro FilePath + Detox paths, #82 background finalize)
-        with:
-          composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
-          total-reports-expected: ${{ needs.prepare-matrix.outputs.tsio-total-reports-expected }}
-          framework: playwright
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          gh-job-name: policy-tests-${{ matrix.platform }}
-          json-path: e2e/test-results/results.json
-          screenshots-dir: e2e/test-results/tsio-screenshots
-
-      - name: e2e/handle-nonzero-playwright-exit
-        if: always()
-        run: |
-          if [ -z "${PLAYWRIGHT_EXIT_CODE:-}" ]; then
-            exit 0
-          fi
-          if [ "${PLAYWRIGHT_EXIT_CODE}" = "0" ]; then
-            exit 0
-          fi
-          echo "Playwright exited with code ${PLAYWRIGHT_EXIT_CODE}" >&2
-          exit 1
-
-      - name: Upload failure artifacts
-        if: ${{ failure() || (always() && env.PLAYWRIGHT_EXIT_CODE != '' && env.PLAYWRIGHT_EXIT_CODE != '0') }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: e2e-failure-policy-${{ runner.os }}
-          path: |
-            e2e/test-results/tsio-screenshots/**
-            e2e/playwright-report
-          if-no-files-found: ignore
-          retention-days: 3
+  e2e-policy-windows:
+    name: policy-tests-windows
+    needs:
+      - prepare-matrix
+      - update-initial-status
+      - e2e-windows-install
+    if: ${{ needs.prepare-matrix.outputs.windows != '[]' }}
+    permissions:
+      contents: read
+      id-token: write
+      actions: read
+    uses: ./.github/workflows/e2e-policy.yml
+    with:
+      platform: windows
+      # Pinned to windows-2022 (not -2025) because the 2025 image ships
+      # Visual Studio 18 / "2026", which current node-gyp doesn't recognise.
+      runs-on: windows-2022
+      DESKTOP_VERSION: ${{ inputs.version_name }}
+      MM_SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
+      MM_TEST_USER_NAME: ${{ inputs.MM_TEST_USER_NAME }}
+      MM_TEST_PASSWORD: ${{ inputs.MM_TEST_PASSWORD }}
+      instance_details: ${{ inputs.instance_details }}
+      tsio-config: ${{ format('{{"composite_identity":{0},"total_reports_expected":"{1}"}}', needs.prepare-matrix.outputs.tsio-composite-identity, needs.prepare-matrix.outputs.tsio-total-reports-expected) }}
+    secrets: inherit

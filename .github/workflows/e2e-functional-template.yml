@@ -110,6 +110,7 @@ env:
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
   NODE_ENV: "test"
   DEBUG_E2E: "true"
+  electron_config_cache: ${{ github.workspace }}/.cache/electron
 
 jobs:
   e2e:
@@ -186,80 +187,11 @@ jobs:
         with:
           ref: ${{ inputs.DESKTOP_VERSION }}
 
-      - name: e2e/setup-node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - name: e2e/setup-deps
+        uses: ./.github/actions/e2e-setup-deps
         with:
-          node-version: '22.x'
-          package-manager-cache: false
-          # node_modules is cached in e2e/cache-node-modules; disable setup-node's
-          # npm cache so actions/cache v5 does not hit legacy entries.
-
-      - name: e2e/use-gnu-tar-macos
-        if: runner.os == 'macOS'
-        run: echo "/opt/homebrew/opt/gnu-tar/libexec/gnubin" >> $GITHUB_PATH
-
-      - name: e2e/cache-node-modules
-        id: cache-node-modules
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            node_modules
-            e2e/node_modules
-          enableCrossOsArchive: false
-          # v8: exact restore only — avoids probing legacy v6/v7 blobs that warn on macOS.
-          # Hash patches/** so a patch-package change cannot skip npm ci / postinstall.
-          # runner.arch so arm64 vs x64 native modules are not restored on the wrong CPU.
-          key: ${{ runner.os }}-build-node-modules-v8-${{ runner.arch }}-${{ hashFiles('**/package-lock.json', 'patches/**') }}
-
-      - name: e2e/cache-electron-gyp-windows
-        if: runner.os == 'Windows'
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: C:\Users\runneradmin\.electron-gyp
-          enableCrossOsArchive: false
-          key: ${{ runner.os }}-electron-gyp-v7-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-electron-gyp-v7-${{ hashFiles('**/package-lock.json') }}
-
-      - name: e2e/setup-python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        env:
-          # Bypass pip's on-disk HTTP cache entirely so a stale/corrupt entry on the
-          # runner image cannot trigger deserialization warnings (actions/setup-python#1317).
-          PIP_NO_CACHE_DIR: "1"
-        with:
-          # Use a version pre-installed on macOS-26 (3.13 is in its toolcache), so
-          # setup-python doesn't install a mismatched interpreter whose pip can't
-          # deserialize the image's pre-baked cache. PIP_NO_CACHE_DIR above is the
-          # remaining guard for non-macOS runners.
-          python-version: "3.13"
-          # Omit `cache` — setup-python only accepts pip/pipenv/poetry, not `false`.
-
-      - name: e2e/install-os-dependencies
-        uses: ./.github/actions/install-os-dependencies
-        with:
+          mode: restore
           os: ${{ runner.os }}
-
-      - name: e2e/install-node-dependencies
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: |
-          npm ci
-          cd e2e && npm ci
-
-      # Save node_modules from master only so PR runs restore the shared v8 key
-      # instead of writing a 270MB blob per PR ref.
-      - name: e2e/save-node-modules
-        if: inputs.TYPE == 'MASTER' && steps.cache-node-modules.outputs.cache-hit != 'true'
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            node_modules
-            e2e/node_modules
-          enableCrossOsArchive: false
-          # Reuse the restore step's resolved key. Recomputing the hash after
-          # npm ci can pick up lockfiles inside node_modules and save under a
-          # key PR restore never looks up.
-          key: ${{ steps.cache-node-modules.outputs.cache-primary-key }}
 
       - name: e2e/enable-public-links
         if: env.MM_TEST_SERVER_URL != ''
