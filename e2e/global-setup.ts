@@ -11,17 +11,17 @@ import {type FullConfig} from '@playwright/test';
 import {ensureElectronBinary} from './helpers/config';
 import {clearAllRegistryFiles} from './helpers/electronApp';
 import {apiLogin, apiRequest} from './helpers/server_api/client';
-import {ensureCallsPlugin, waitForCallsPluginReady} from './helpers/server_api/plugin';
+import {ensureCallsPlugin} from './helpers/server_api/plugin';
 import {archiveLeftoverCallsE2EChannels} from './helpers/server_api/user';
 
 const MACOS_DEFAULTS_SNAPSHOT = path.join(os.tmpdir(), 'mattermost-desktop-e2e-macos-defaults-snapshot.json');
 
 /**
  * Install/enable the Calls plugin and configure it for E2E — once per OS server,
- * on shard 1 (or when Playwright is not sharding). Later shards wait for full
- * readiness (active + test mode off + `/call` registered) and patch SiteURL;
- * they must not disable/re-enable or they restart Calls under a shard that is
- * already in a call.
+ * on shard 1 (or when Playwright is not sharding). Later shards still sweep
+ * leftovers and patch SiteURL; they must not disable/re-enable or wait on
+ * Calls readiness. They run no Calls specs, and `waitForCallsPluginReady` throws
+ * if shard 1's restart is still in progress.
  *
  * Restart stays on shard 1 (not "never when sharded"): it resets the in-memory
  * rate limiter, and CMT/local `--shard=1/1` still needs it per server. All four
@@ -70,10 +70,6 @@ async function setUpCallsPlugin(restartPlugin: boolean): Promise<void> {
     }
     if (restartPlugin) {
         await ensureCallsPlugin(serverUrl, token);
-    } else {
-        // Shard 1's restart can take ~30s disable + 60s enable + 30s ready,
-        // plus marketplace install. 90s was shorter than a slow restart.
-        await waitForCallsPluginReady(serverUrl, token, 180_000);
     }
 
     // SiteURL is required by the Calls plugin /logs/upload endpoint to construct DM

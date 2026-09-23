@@ -51,7 +51,7 @@ describe('globalSetup leftover sweep + shard-1 Calls restart', () => {
         assert.match(globalSetupSrc, /archiveLeftoverCallsE2EChannels\(serverUrl, token\)/);
         assert.match(globalSetupSrc, /if \(restartPlugin\) \{/);
         assert.match(globalSetupSrc, /await ensureCallsPlugin\(serverUrl, token\);/);
-        assert.match(globalSetupSrc, /await waitForCallsPluginReady\(serverUrl, token, 180_000\);/);
+        assert.doesNotMatch(globalSetupSrc, /await waitForCallsPluginReady/);
         assert.match(globalSetupSrc, /const restartCallsPlugin = !config\.shard \|\| config\.shard\.current === 1;/);
 
         const sweepIdx = globalSetupSrc.indexOf('archiveLeftoverCallsE2EChannels(serverUrl, token)');
