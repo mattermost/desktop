@@ -276,6 +276,7 @@ jobs:
   e2e-linux-status:
     name: Post e2e/linux
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     needs:
       - prepare-matrix
       - e2e-linux
@@ -324,6 +325,7 @@ jobs:
   e2e-macos-status:
     name: Post e2e/macos
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     needs:
       - prepare-matrix
       - e2e-macos
@@ -372,6 +374,7 @@ jobs:
   e2e-windows-status:
     name: Post e2e/windows
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     needs:
       - prepare-matrix
       - e2e-windows
@@ -420,6 +423,7 @@ jobs:
   e2e-policy-status:
     name: Post e2e/<os>-policy
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     needs:
       - prepare-matrix
       - e2e-policy-tests
@@ -474,6 +478,7 @@ jobs:
   tsio-summary:
     name: TSIO summary
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     needs:
       - prepare-matrix
       - e2e-linux
@@ -626,6 +631,7 @@ jobs:
             runner: windows-2022
       fail-fast: false
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
     defaults:
       run:
         shell: bash
@@ -683,9 +689,10 @@ jobs:
             node_modules
             e2e/node_modules
           enableCrossOsArchive: false
-          # v7: exact restore only — avoids probing legacy v6 blobs that warn on macOS.
+          # v8: exact restore only — avoids probing legacy v6/v7 blobs that warn on macOS.
           # Hash patches/** so a patch-package change cannot skip npm ci / postinstall.
-          key: ${{ runner.os }}-build-node-modules-v7-${{ hashFiles('**/package-lock.json', 'patches/**') }}
+          # runner.arch so arm64 vs x64 native modules are not restored on the wrong CPU.
+          key: ${{ runner.os }}-build-node-modules-v8-${{ runner.arch }}-${{ hashFiles('**/package-lock.json', 'patches/**') }}
 
       - name: e2e/cache-electron-gyp-windows
         if: runner.os == 'Windows'
@@ -723,7 +730,7 @@ jobs:
             node_modules
             e2e/node_modules
           enableCrossOsArchive: false
-          key: ${{ runner.os }}-build-node-modules-v7-${{ hashFiles('**/package-lock.json', 'patches/**') }}
+          key: ${{ runner.os }}-build-node-modules-v8-${{ runner.arch }}-${{ hashFiles('**/package-lock.json', 'patches/**') }}
 
       - name: e2e/suppress-macos-dialogs
         if: runner.os == 'macOS'

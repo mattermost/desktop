@@ -188,6 +188,7 @@ jobs:
 
   update-final-status:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     if: always()
     permissions:
       contents: read

@@ -198,30 +198,76 @@ describe('Post/TSIO skip cancelled workflow runs', () => {
     });
 });
 
-describe('e2e/policy node_modules cache key includes patches', () => {
+describe('e2e job timeout-minutes', () => {
     const workflowsDir = path.join(__dirname, '../../.github/workflows');
-    const v7Key = /build-node-modules-v7-\$\{\{ hashFiles\(([^)]+)\) \}\}/g;
-    const expectedHashArgs = "'**/package-lock.json', 'patches/**'";
+    const gha = (expr) => ['$', '{{ ', expr, ' }}'].join('');
 
-    function v7NodeModulesHashArgs(file) {
-        const yml = fs.readFileSync(path.join(workflowsDir, file), 'utf8');
-        return [...yml.matchAll(v7Key)].map((m) => m[1]);
+    function jobTimeoutMinutes(file, jobId) {
+        const source = fs.readFileSync(path.join(workflowsDir, file), 'utf8');
+        const lines = source.split(/\r?\n/);
+        const header = `  ${jobId}:`;
+        const start = lines.indexOf(header);
+        assert.ok(start >= 0, `${file} ${jobId} must exist`);
+        for (let i = start + 1; i < lines.length; i++) {
+            if ((/^ {2}\S/).test(lines[i])) {
+                break;
+            }
+            const match = lines[i].match(/^ {4}timeout-minutes: (.+)$/);
+            if (match) {
+                return match[1];
+            }
+        }
+        assert.fail(`${file} ${jobId} must have timeout-minutes`);
+        return '';
     }
 
-    it('template restore and save hash package-lock.json and patches/**', () => {
-        const args = v7NodeModulesHashArgs('e2e-functional-template.yml');
+    it('template e2e is 30 for PR/master shards and 60 for unsharded CMT', () => {
+        assert.equal(
+            jobTimeoutMinutes('e2e-functional-template.yml', 'e2e'),
+            gha('inputs.cmt && 60 || 30'),
+        );
+    });
+
+    it('policy is 30; Post e2e/* and TSIO summary are 10', () => {
+        assert.equal(jobTimeoutMinutes('e2e-functional.yml', 'e2e-policy-tests'), '30');
+        assert.equal(jobTimeoutMinutes('e2e-functional.yml', 'e2e-linux-status'), '10');
+        assert.equal(jobTimeoutMinutes('e2e-functional.yml', 'e2e-macos-status'), '10');
+        assert.equal(jobTimeoutMinutes('e2e-functional.yml', 'e2e-windows-status'), '10');
+        assert.equal(jobTimeoutMinutes('e2e-functional.yml', 'e2e-policy-status'), '10');
+        assert.equal(jobTimeoutMinutes('e2e-functional.yml', 'tsio-summary'), '10');
+    });
+
+    it('CMT TSIO final-status is 10; CMT e2e legs pass cmt: true into the template', () => {
+        assert.equal(jobTimeoutMinutes('compatibility-matrix-testing.yml', 'update-final-status'), '10');
+        const cmt = fs.readFileSync(path.join(workflowsDir, 'compatibility-matrix-testing.yml'), 'utf8');
+        assert.match(cmt, /^\s+cmt: true$/m);
+    });
+});
+
+describe('e2e/policy node_modules cache key includes patches and arch', () => {
+    const workflowsDir = path.join(__dirname, '../../.github/workflows');
+    const v8Key = /build-node-modules-v8-\$\{\{ runner\.arch \}\}-\$\{\{ hashFiles\(([^)]+)\) \}\}/g;
+    const expectedHashArgs = "'**/package-lock.json', 'patches/**'";
+
+    function v8NodeModulesHashArgs(file) {
+        const yml = fs.readFileSync(path.join(workflowsDir, file), 'utf8');
+        return [...yml.matchAll(v8Key)].map((m) => m[1]);
+    }
+
+    it('template restore and save hash package-lock.json and patches/** keyed by arch', () => {
+        const args = v8NodeModulesHashArgs('e2e-functional-template.yml');
         assert.equal(args.length, 2, 'restore + save');
         assert.deepEqual(args, [expectedHashArgs, expectedHashArgs]);
     });
 
     it('policy jobs use the same restore and save key', () => {
-        const args = v7NodeModulesHashArgs('e2e-functional.yml');
+        const args = v8NodeModulesHashArgs('e2e-functional.yml');
         assert.equal(args.length, 2, 'restore + save');
         assert.deepEqual(args, [expectedHashArgs, expectedHashArgs]);
     });
 
-    it('ci.yaml and build-for-pr.yml do not share the e2e v7 key', () => {
-        assert.deepEqual(v7NodeModulesHashArgs('ci.yaml'), []);
-        assert.deepEqual(v7NodeModulesHashArgs('build-for-pr.yml'), []);
+    it('ci.yaml and build-for-pr.yml do not share the e2e v8 key', () => {
+        assert.deepEqual(v8NodeModulesHashArgs('ci.yaml'), []);
+        assert.deepEqual(v8NodeModulesHashArgs('build-for-pr.yml'), []);
     });
 });

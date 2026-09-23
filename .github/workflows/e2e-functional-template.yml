@@ -118,6 +118,9 @@ jobs:
     # `E2E Linux (1/3)` are fine; this nested name MUST equal E2E_GH_JOB_NAME.
     name: e2e-on-${{ inputs.runs-on }}-${{ inputs.MM_SERVER_VERSION }}${{ inputs.shard != '1-of-1' && format('-{0}', inputs.shard) || '' }}
     runs-on: ${{ inputs.runs-on }}
+    # 30: sharded PR/master (slowest recent macos ~18m). 60: unsharded CMT
+    # (healthy Windows CMT legs 36–37m; 30 would cut those).
+    timeout-minutes: ${{ inputs.cmt && 60 || 30 }}
     permissions:
       contents: read
       id-token: write
@@ -203,9 +206,10 @@ jobs:
             node_modules
             e2e/node_modules
           enableCrossOsArchive: false
-          # v7: exact restore only — avoids probing legacy v6 blobs that warn on macOS.
+          # v8: exact restore only — avoids probing legacy v6/v7 blobs that warn on macOS.
           # Hash patches/** so a patch-package change cannot skip npm ci / postinstall.
-          key: ${{ runner.os }}-build-node-modules-v7-${{ hashFiles('**/package-lock.json', 'patches/**') }}
+          # runner.arch so arm64 vs x64 native modules are not restored on the wrong CPU.
+          key: ${{ runner.os }}-build-node-modules-v8-${{ runner.arch }}-${{ hashFiles('**/package-lock.json', 'patches/**') }}
 
       - name: e2e/cache-electron-gyp-windows
         if: runner.os == 'Windows'
@@ -242,7 +246,7 @@ jobs:
           npm ci
           cd e2e && npm ci
 
-      # Save node_modules from master only so PR runs restore the shared v7 key
+      # Save node_modules from master only so PR runs restore the shared v8 key
       # instead of writing a 270MB blob per PR ref.
       - name: e2e/save-node-modules
         if: inputs.TYPE == 'MASTER' && steps.cache-node-modules.outputs.cache-hit != 'true'
@@ -252,7 +256,7 @@ jobs:
             node_modules
             e2e/node_modules
           enableCrossOsArchive: false
-          key: ${{ runner.os }}-build-node-modules-v7-${{ hashFiles('**/package-lock.json', 'patches/**') }}
+          key: ${{ runner.os }}-build-node-modules-v8-${{ runner.arch }}-${{ hashFiles('**/package-lock.json', 'patches/**') }}
 
       - name: e2e/enable-public-links
         if: env.MM_TEST_SERVER_URL != ''
