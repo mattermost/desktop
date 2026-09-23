@@ -173,19 +173,6 @@ jobs:
       runs-on: ${{ needs.calculate-commit-hash.outputs.linux-runner }}
       DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
 
-  e2e-macos-install:
-    name: E2E macOS install
-    if: ${{ needs.calculate-commit-hash.outputs.has-macos == 'true' }}
-    uses: ./.github/workflows/e2e-install.yml
-    needs:
-      - calculate-commit-hash
-      - update-initial-status
-    permissions:
-      contents: read
-    with:
-      runs-on: ${{ needs.calculate-commit-hash.outputs.macos-runner }}
-      DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
-
   e2e-windows-install:
     name: E2E Windows install
     if: ${{ needs.calculate-commit-hash.outputs.has-windows == 'true' }}
@@ -232,7 +219,6 @@ jobs:
     needs:
       - calculate-commit-hash
       - update-initial-status
-      - e2e-macos-install
     strategy:
       fail-fast: false
       matrix:

@@ -19,7 +19,7 @@ function assertCallsSpecsOnShard1(shard) {
     }
     throw new Error(
         `Calls specs must run on Playwright shard 1 (got ${shard.current}/${shard.total}). ` +
-        'global-setup.ts only restarts the Calls plugin on shard 1; later shards wait for readiness.',
+        'global-setup.ts only restarts the Calls plugin on shard 1; later shards would race that restart.',
     );
 }
 

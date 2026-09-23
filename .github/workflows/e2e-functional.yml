@@ -200,19 +200,6 @@ jobs:
       runs-on: ${{ needs.prepare-matrix.outputs.linux-runner }}
       DESKTOP_VERSION: ${{ inputs.version_name }}
 
-  e2e-macos-install:
-    needs:
-      - prepare-matrix
-      - update-initial-status
-    name: E2E macOS install
-    if: ${{ needs.prepare-matrix.outputs.macos != '[]' }}
-    permissions:
-      contents: read
-    uses: ./.github/workflows/e2e-install.yml
-    with:
-      runs-on: ${{ needs.prepare-matrix.outputs.macos-runner }}
-      DESKTOP_VERSION: ${{ inputs.version_name }}
-
   e2e-windows-install:
     needs:
       - prepare-matrix
@@ -258,7 +245,6 @@ jobs:
     needs:
       - prepare-matrix
       - update-initial-status
-      - e2e-macos-install
     name: E2E macOS (${{ matrix.shardDisplay }})
     if: ${{ needs.prepare-matrix.outputs.macos != '[]' }}
     strategy:
@@ -312,10 +298,9 @@ jobs:
 
   # Flip e2e/<os> as soon as that OS's shards finish. always() still runs after a
   # failed or timed-out shard; !cancelled() skips superseded (cancelled) PR runs.
+  # Separate needs (not one matrix job) so e2e/linux does not wait on macOS.
   e2e-linux-status:
     name: Post e2e/linux
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
     needs:
       - prepare-matrix
       - e2e-linux
@@ -324,45 +309,17 @@ jobs:
       contents: read
       id-token: write
       statuses: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ inputs.version_name }}
-          persist-credentials: false
-          sparse-checkout: |
-            e2e/utils/tsio-report-status.js
-            e2e/utils/cmt-channel-notify.js
-            e2e/utils/github-actions.js
-          sparse-checkout-cone-mode: false
-      - name: Flip e2e/linux from this OS's shards
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        env:
-          TSIO_COMPOSITE_IDENTITY: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
-          TSIO_TOTAL_REPORTS_EXPECTED: ${{ needs.prepare-matrix.outputs.tsio-total-reports-expected }}
-          TSIO_POLL_ATTEMPTS: 24
-          TSIO_POLL_DELAY_MS: 5000
-          UPSTREAM_JOBS_SUCCEEDED: ${{ needs.e2e-linux.result == 'success' }}
-          READY_WHEN_OS: linux
-          MIN_REPORTS: ${{ needs.prepare-matrix.outputs.linux-shard-count }}
-        with:
-          script: |
-            const {reportUrl, status, stats} = await require('./e2e/utils/tsio-report-status.js')({
-              core, context, github,
-              compositeIdentity: JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY),
-              totalReportsExpected: parseInt(process.env.TSIO_TOTAL_REPORTS_EXPECTED, 10),
-              upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
-              perOsCommitStatuses: true,
-              expectedOs: [process.env.READY_WHEN_OS],
-              notifyChannel: false,
-              readyWhenOs: process.env.READY_WHEN_OS,
-              minReports: parseInt(process.env.MIN_REPORTS, 10),
-            });
-            core.info(`TSIO ${process.env.READY_WHEN_OS} ${reportUrl}: ${status} (${JSON.stringify(stats)})`);
+    uses: ./.github/workflows/e2e-post-os-status.yml
+    with:
+      os: linux
+      DESKTOP_VERSION: ${{ inputs.version_name }}
+      tsio-composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
+      tsio-total-reports-expected: ${{ needs.prepare-matrix.outputs.tsio-total-reports-expected }}
+      min-reports: ${{ needs.prepare-matrix.outputs.linux-shard-count }}
+      upstream-jobs-succeeded: ${{ needs.e2e-linux.result == 'success' }}
 
   e2e-macos-status:
     name: Post e2e/macos
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
     needs:
       - prepare-matrix
       - e2e-macos
@@ -371,45 +328,17 @@ jobs:
       contents: read
       id-token: write
       statuses: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ inputs.version_name }}
-          persist-credentials: false
-          sparse-checkout: |
-            e2e/utils/tsio-report-status.js
-            e2e/utils/cmt-channel-notify.js
-            e2e/utils/github-actions.js
-          sparse-checkout-cone-mode: false
-      - name: Flip e2e/macos from this OS's shards
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        env:
-          TSIO_COMPOSITE_IDENTITY: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
-          TSIO_TOTAL_REPORTS_EXPECTED: ${{ needs.prepare-matrix.outputs.tsio-total-reports-expected }}
-          TSIO_POLL_ATTEMPTS: 24
-          TSIO_POLL_DELAY_MS: 5000
-          UPSTREAM_JOBS_SUCCEEDED: ${{ needs.e2e-macos.result == 'success' }}
-          READY_WHEN_OS: macos
-          MIN_REPORTS: ${{ needs.prepare-matrix.outputs.macos-shard-count }}
-        with:
-          script: |
-            const {reportUrl, status, stats} = await require('./e2e/utils/tsio-report-status.js')({
-              core, context, github,
-              compositeIdentity: JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY),
-              totalReportsExpected: parseInt(process.env.TSIO_TOTAL_REPORTS_EXPECTED, 10),
-              upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
-              perOsCommitStatuses: true,
-              expectedOs: [process.env.READY_WHEN_OS],
-              notifyChannel: false,
-              readyWhenOs: process.env.READY_WHEN_OS,
-              minReports: parseInt(process.env.MIN_REPORTS, 10),
-            });
-            core.info(`TSIO ${process.env.READY_WHEN_OS} ${reportUrl}: ${status} (${JSON.stringify(stats)})`);
+    uses: ./.github/workflows/e2e-post-os-status.yml
+    with:
+      os: macos
+      DESKTOP_VERSION: ${{ inputs.version_name }}
+      tsio-composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
+      tsio-total-reports-expected: ${{ needs.prepare-matrix.outputs.tsio-total-reports-expected }}
+      min-reports: ${{ needs.prepare-matrix.outputs.macos-shard-count }}
+      upstream-jobs-succeeded: ${{ needs.e2e-macos.result == 'success' }}
 
   e2e-windows-status:
     name: Post e2e/windows
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
     needs:
       - prepare-matrix
       - e2e-windows
@@ -418,40 +347,14 @@ jobs:
       contents: read
       id-token: write
       statuses: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ inputs.version_name }}
-          persist-credentials: false
-          sparse-checkout: |
-            e2e/utils/tsio-report-status.js
-            e2e/utils/cmt-channel-notify.js
-            e2e/utils/github-actions.js
-          sparse-checkout-cone-mode: false
-      - name: Flip e2e/windows from this OS's shards
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        env:
-          TSIO_COMPOSITE_IDENTITY: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
-          TSIO_TOTAL_REPORTS_EXPECTED: ${{ needs.prepare-matrix.outputs.tsio-total-reports-expected }}
-          TSIO_POLL_ATTEMPTS: 24
-          TSIO_POLL_DELAY_MS: 5000
-          UPSTREAM_JOBS_SUCCEEDED: ${{ needs.e2e-windows.result == 'success' }}
-          READY_WHEN_OS: windows
-          MIN_REPORTS: ${{ needs.prepare-matrix.outputs.windows-shard-count }}
-        with:
-          script: |
-            const {reportUrl, status, stats} = await require('./e2e/utils/tsio-report-status.js')({
-              core, context, github,
-              compositeIdentity: JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY),
-              totalReportsExpected: parseInt(process.env.TSIO_TOTAL_REPORTS_EXPECTED, 10),
-              upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
-              perOsCommitStatuses: true,
-              expectedOs: [process.env.READY_WHEN_OS],
-              notifyChannel: false,
-              readyWhenOs: process.env.READY_WHEN_OS,
-              minReports: parseInt(process.env.MIN_REPORTS, 10),
-            });
-            core.info(`TSIO ${process.env.READY_WHEN_OS} ${reportUrl}: ${status} (${JSON.stringify(stats)})`);
+    uses: ./.github/workflows/e2e-post-os-status.yml
+    with:
+      os: windows
+      DESKTOP_VERSION: ${{ inputs.version_name }}
+      tsio-composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
+      tsio-total-reports-expected: ${{ needs.prepare-matrix.outputs.tsio-total-reports-expected }}
+      min-reports: ${{ needs.prepare-matrix.outputs.windows-shard-count }}
+      upstream-jobs-succeeded: ${{ needs.e2e-windows.result == 'success' }}
 
   e2e-policy-status:
     name: Post e2e/<os>-policy
@@ -647,7 +550,6 @@ jobs:
     needs:
       - prepare-matrix
       - update-initial-status
-      - e2e-macos-install
     if: ${{ needs.prepare-matrix.outputs.macos != '[]' }}
     permissions:
       contents: read

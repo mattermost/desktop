@@ -82,7 +82,7 @@ jobs:
       - name: e2e/setup-deps
         uses: ./.github/actions/e2e-setup-deps
         with:
-          mode: restore
+          mode: ${{ runner.os == 'macOS' && 'restore-or-install' || 'restore' }}
           os: ${{ runner.os }}
 
       - name: e2e/suppress-macos-dialogs

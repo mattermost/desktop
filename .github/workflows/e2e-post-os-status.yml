@@ -1,0 +1,74 @@
+name: E2E post OS commit status
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        description: "linux, macos, or windows — e2e/<os> context"
+        type: string
+        required: true
+      DESKTOP_VERSION:
+        type: string
+        required: true
+      tsio-composite-identity:
+        type: string
+        required: true
+      tsio-total-reports-expected:
+        type: string
+        required: true
+      min-reports:
+        description: "Shard count required for this OS before flipping e2e/<os>"
+        type: string
+        required: true
+      upstream-jobs-succeeded:
+        type: boolean
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+  statuses: write
+
+jobs:
+  post:
+    name: Flip e2e/${{ inputs.os }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+      statuses: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.DESKTOP_VERSION }}
+          persist-credentials: false
+          sparse-checkout: |
+            e2e/utils/tsio-report-status.js
+            e2e/utils/cmt-channel-notify.js
+            e2e/utils/github-actions.js
+          sparse-checkout-cone-mode: false
+      - name: Flip e2e/${{ inputs.os }} from this OS's shards
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          TSIO_COMPOSITE_IDENTITY: ${{ inputs.tsio-composite-identity }}
+          TSIO_TOTAL_REPORTS_EXPECTED: ${{ inputs.tsio-total-reports-expected }}
+          TSIO_POLL_ATTEMPTS: 24
+          TSIO_POLL_DELAY_MS: 5000
+          UPSTREAM_JOBS_SUCCEEDED: ${{ inputs.upstream-jobs-succeeded }}
+          READY_WHEN_OS: ${{ inputs.os }}
+          MIN_REPORTS: ${{ inputs.min-reports }}
+        with:
+          script: |
+            const {reportUrl, status, stats} = await require('./e2e/utils/tsio-report-status.js')({
+              core, context, github,
+              compositeIdentity: JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY),
+              totalReportsExpected: parseInt(process.env.TSIO_TOTAL_REPORTS_EXPECTED, 10),
+              upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
+              perOsCommitStatuses: true,
+              expectedOs: [process.env.READY_WHEN_OS],
+              notifyChannel: false,
+              readyWhenOs: process.env.READY_WHEN_OS,
+              minReports: parseInt(process.env.MIN_REPORTS, 10),
+            });
+            core.info(`TSIO ${process.env.READY_WHEN_OS} ${reportUrl}: ${status} (${JSON.stringify(stats)})`);

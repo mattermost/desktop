@@ -36,7 +36,20 @@ const cpuCount = os.cpus().length;
 // app.close() burns the 90s budget), so it stays at 1 and scales via shards.
 function getDefaultWorkers(): number {
     if (process.env.CI) {
-        return getActivePlatform() === 'linux' ? 1 : 3;
+        const platform = getActivePlatform();
+        switch (platform) {
+        case 'linux':
+            return 1;
+        case 'darwin':
+            // macos-26 is 3-core / 7 GB; 3 Electron workers oversubscribe.
+            return 2;
+        case 'win32':
+            return 3;
+        default: {
+            const exhaustive: never = platform;
+            throw new Error(`Unhandled platform: ${exhaustive}`);
+        }
+        }
     }
     return Math.min(4, Math.max(1, Math.floor(cpuCount / 2)));
 }

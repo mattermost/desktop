@@ -24,7 +24,7 @@ const MACOS_DEFAULTS_SNAPSHOT = path.join(os.tmpdir(), 'mattermost-desktop-e2e-m
  *
  * This MUST NOT move back into a spec's `beforeAll`. `ensureCallsPlugin` disables and
  * re-enables the plugin server-wide to reset its rate limiter, and the Calls specs run
- * across multiple workers (2 in CI on macOS/Windows). A `beforeAll` in one file would
+ * across multiple workers (2 in CI on macOS, 3 on Windows). A `beforeAll` in one file would
  * tear the plugin down underneath a call another worker had already started — the
  * widget opens, then never finishes connecting. globalSetup runs once per shard with no
  * workers alive, so the restart is safe on shard 1 only.

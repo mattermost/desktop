@@ -2,12 +2,13 @@
 # See LICENSE.txt for license information.
 name: 'E2E setup Node, caches, and optional npm ci'
 description: >
-  Shared e2e setup. mode=install runs npm ci on a node_modules miss and saves
-  caches (one writer per OS). mode=restore requires a hit from that install job.
+  Shared e2e setup. install: npm ci + save on a miss (Linux/Windows install job).
+  restore: require a cache hit (Linux/Windows shards). restore-or-install: restore,
+  or npm ci + best-effort save on a miss (macOS shards).
 
 inputs:
   mode:
-    description: 'install (npm ci + save on miss) or restore (require cache hit)'
+    description: 'install, restore, or restore-or-install'
     required: true
   os:
     description: 'Operating system for install-os-dependencies (Linux, macOS, Windows)'
@@ -57,7 +58,8 @@ runs:
           node_modules
           e2e/node_modules
         enableCrossOsArchive: false
-        # .nvmrc is in the hash for the Node ABI. The install job is the single writer.
+        # .nvmrc is in the hash for the Node ABI. Linux/Windows install jobs
+        # write this key; macOS shards save on a miss (best-effort).
         key: ${{ runner.os }}-build-node-modules-v9-${{ runner.arch }}-${{ hashFiles('**/package-lock.json', 'patches/**', '.nvmrc') }}
 
     - name: e2e/cache-electron-zip
@@ -70,7 +72,7 @@ runs:
         key: ${{ runner.os }}-electron-zip-v1-${{ runner.arch }}-${{ hashFiles('package-lock.json') }}
 
     - name: e2e/cache-electron-gyp-windows
-      if: ${{ runner.os == 'Windows' && inputs.mode == 'install' && steps.cache-node-modules.outputs.cache-hit != 'true' }}
+      if: ${{ runner.os == 'Windows' && inputs.mode != 'restore' && steps.cache-node-modules.outputs.cache-hit != 'true' }}
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: C:\Users\runneradmin\.electron-gyp
@@ -80,7 +82,7 @@ runs:
           ${{ runner.os }}-electron-gyp-v7-${{ hashFiles('**/package-lock.json') }}
 
     - name: e2e/setup-python
-      if: ${{ inputs.mode == 'install' && steps.cache-node-modules.outputs.cache-hit != 'true' }}
+      if: ${{ inputs.mode != 'restore' && steps.cache-node-modules.outputs.cache-hit != 'true' }}
       uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
       env:
         PIP_NO_CACHE_DIR: "1"
@@ -88,7 +90,7 @@ runs:
         python-version: "3.13"
 
     - name: e2e/install-os-dependencies
-      if: ${{ inputs.mode == 'restore' || steps.cache-node-modules.outputs.cache-hit != 'true' }}
+      if: ${{ inputs.mode != 'install' || steps.cache-node-modules.outputs.cache-hit != 'true' }}
       uses: ./.github/actions/install-os-dependencies
       with:
         os: ${{ inputs.os }}
@@ -101,7 +103,7 @@ runs:
         exit 1
 
     - name: e2e/install-node-dependencies
-      if: ${{ inputs.mode == 'install' && steps.cache-node-modules.outputs.cache-hit != 'true' }}
+      if: ${{ inputs.mode != 'restore' && steps.cache-node-modules.outputs.cache-hit != 'true' }}
       shell: bash
       env:
         PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
@@ -110,7 +112,8 @@ runs:
         cd e2e && npm ci
 
     - name: e2e/save-node-modules
-      if: ${{ inputs.mode == 'install' && steps.cache-node-modules.outputs.cache-hit != 'true' }}
+      if: ${{ inputs.mode != 'restore' && steps.cache-node-modules.outputs.cache-hit != 'true' }}
+      continue-on-error: ${{ inputs.mode == 'restore-or-install' }}
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: |
@@ -122,7 +125,8 @@ runs:
         key: ${{ steps.cache-node-modules.outputs.cache-primary-key }}
 
     - name: e2e/save-electron-zip
-      if: ${{ inputs.mode == 'install' && steps.cache-electron-zip.outputs.cache-hit != 'true' && steps.cache-node-modules.outputs.cache-hit != 'true' }}
+      if: ${{ inputs.mode != 'restore' && steps.cache-electron-zip.outputs.cache-hit != 'true' && steps.cache-node-modules.outputs.cache-hit != 'true' }}
+      continue-on-error: ${{ inputs.mode == 'restore-or-install' }}
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: .cache/electron

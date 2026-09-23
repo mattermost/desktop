@@ -136,6 +136,11 @@ describe('e2e-functional.yml status jobs', () => {
     it('parses job blocks on CRLF checkouts (Windows CI)', () => {
         const crlf = yml.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
         assert.equal(jobField(crlf, 'tsio-summary', 'if'), gha('always() && !cancelled()'));
+        assert.equal(
+            jobField(crlf, 'e2e-linux-status', 'if'),
+            gha("always() && !cancelled() && needs.prepare-matrix.outputs.linux != '[]'"),
+        );
+        assert.doesNotMatch(crlf, /e2e-macos-install/);
     });
 
     it('pending-flips e2e/<os> and policy, then posts each from its own job', () => {
@@ -143,17 +148,35 @@ describe('e2e-functional.yml status jobs', () => {
             assert.match(yml, new RegExp(`name: Post e2e/${os}\\r?\\n`));
         }
         assert.match(yml, /includePolicy: true/);
-        assert.equal((yml.match(/perOsCommitStatuses: true/g) || []).length, 4);
+        assert.equal((yml.match(/perOsCommitStatuses: true/g) || []).length, 1);
         assert.match(yml, /perOsCommitStatuses: false/);
+        const postOs = workflow('e2e-post-os-status.yml');
+        assert.match(postOs, /perOsCommitStatuses: true/);
+        assert.match(postOs, /readyWhenOs: process\.env\.READY_WHEN_OS/);
+        assert.match(postOs, /notifyChannel: false/);
+        assert.doesNotMatch(workflow('compatibility-matrix-testing.yml'), /e2e-post-os-status/);
     });
 
     it('shards and policy legs wait only on their own OS install job', () => {
-        for (const os of ['linux', 'macos', 'windows']) {
+        for (const os of ['linux', 'windows']) {
             const block = jobLines(yml, `e2e-${os}`).join('\n');
             assert.match(block, new RegExp(`- e2e-${os}-install`));
         }
-        assert.match(jobLines(yml, 'e2e-policy-macos').join('\n'), /- e2e-macos-install/);
+        assert.doesNotMatch(yml, /e2e-macos-install/);
+        assert.doesNotMatch(jobLines(yml, 'e2e-macos').join('\n'), /e2e-.*-install/);
+        assert.doesNotMatch(jobLines(yml, 'e2e-policy-macos').join('\n'), /e2e-.*-install/);
         assert.match(jobLines(yml, 'e2e-policy-windows').join('\n'), /- e2e-windows-install/);
+    });
+
+    it('posts each OS status as soon as that OS finishes (separate needs, shared workflow)', () => {
+        for (const os of ['linux', 'macos', 'windows']) {
+            const block = jobLines(yml, `e2e-${os}-status`).join('\n');
+            assert.match(block, new RegExp(`- e2e-${os}$`, 'm'));
+            assert.match(block, /uses: \.\/\.github\/workflows\/e2e-post-os-status\.yml/);
+            for (const other of ['linux', 'macos', 'windows'].filter((o) => o !== os)) {
+                assert.doesNotMatch(block, new RegExp(`- e2e-${other}$`, 'm'));
+            }
+        }
     });
 });
 
@@ -165,8 +188,9 @@ describe('e2e job timeout-minutes', () => {
     it('policy 30, install 25, status and summary jobs 10', () => {
         assert.equal(jobField(workflow('e2e-policy.yml'), 'policy', 'timeout-minutes'), '30');
         assert.equal(jobField(workflow('e2e-install.yml'), 'install', 'timeout-minutes'), '25');
+        assert.equal(jobField(workflow('e2e-post-os-status.yml'), 'post', 'timeout-minutes'), '10');
         const yml = workflow('e2e-functional.yml');
-        for (const job of ['e2e-linux-status', 'e2e-macos-status', 'e2e-windows-status', 'e2e-policy-status', 'tsio-summary']) {
+        for (const job of ['e2e-policy-status', 'tsio-summary']) {
             assert.equal(jobField(yml, job, 'timeout-minutes'), '10', job);
         }
         assert.equal(jobField(workflow('compatibility-matrix-testing.yml'), 'update-final-status', 'timeout-minutes'), '10');
@@ -190,11 +214,14 @@ describe('CMT posts only e2e/compatibility-matrix-testing', () => {
         assert.doesNotMatch(cmt, /notifyChannel: false/);
     });
 
-    it('runs unsharded per-OS legs that wait only on their own install job', () => {
+    it('runs unsharded per-OS legs; linux/windows wait on their install job, macos does not', () => {
         assert.match(cmt, /^\s+cmt: true$/m);
-        const block = jobLines(cmt, 'e2e-linux').join('\n');
-        assert.match(block, /- e2e-linux-install/);
-        assert.doesNotMatch(block, /e2e-(macos|windows)-install/);
+        assert.doesNotMatch(cmt, /e2e-macos-install/);
+        const linux = jobLines(cmt, 'e2e-linux').join('\n');
+        assert.match(linux, /- e2e-linux-install/);
+        assert.doesNotMatch(linux, /e2e-(macos|windows)-install/);
+        assert.doesNotMatch(jobLines(cmt, 'e2e-macos').join('\n'), /e2e-.*-install/);
+        assert.match(jobLines(cmt, 'e2e-windows').join('\n'), /- e2e-windows-install/);
     });
 });
 
@@ -218,13 +245,16 @@ describe('e2e node_modules and Electron zip caches', () => {
         assert.match(namedStep('e2e/save-node-modules'), /key: \$\{\{ steps\.cache-node-modules\.outputs\.cache-primary-key \}\}/);
         assert.match(namedStep('e2e/save-electron-zip'), /cache-electron-zip\.outputs\.cache-hit != 'true'/);
         assert.match(namedStep('e2e/save-electron-zip'), /cache-node-modules\.outputs\.cache-hit != 'true'/);
+        assert.match(namedStep('e2e/save-node-modules'), /continue-on-error: \$\{\{ inputs\.mode == 'restore-or-install' \}\}/);
+        assert.match(namedStep('e2e/save-electron-zip'), /continue-on-error: \$\{\{ inputs\.mode == 'restore-or-install' \}\}/);
         assert.match(setupDeps, /node-version-file: "\.nvmrc"/);
     });
 
-    it('install workflow is the only npm ci writer; template and policy restore', () => {
+    it('Linux/Windows install job writes caches; macOS shards restore-or-install', () => {
         assert.match(workflow('e2e-install.yml'), /mode: install/);
+        const macOrRestore = /runner\.os == 'macOS' && 'restore-or-install' \|\| 'restore'/;
         for (const file of ['e2e-functional-template.yml', 'e2e-policy.yml']) {
-            assert.match(workflow(file), /mode: restore/);
+            assert.match(workflow(file), macOrRestore);
             assert.doesNotMatch(workflow(file), /^\s+npm ci$/m);
         }
     });
@@ -236,8 +266,12 @@ describe('e2e node_modules and Electron zip caches', () => {
 });
 
 describe('CI Playwright workers and serial files', () => {
-    it('keeps linux CI at 1 worker and raises macOS/Windows CI to 3', () => {
-        assert.match(read('e2e/playwright.config.ts'), /getActivePlatform\(\) === 'linux' \? 1 : 3/);
+    it('keeps linux CI at 1 worker, macOS at 2, and Windows at 3', () => {
+        const src = read('e2e/playwright.config.ts');
+        assert.match(src, /macos-26 is 3-core \/ 7 GB/);
+        assert.match(src, /case 'linux':\s*return 1;/);
+        assert.match(src, /case 'darwin':[\s\S]*?return 2;/);
+        assert.match(src, /case 'win32':\s*return 3;/);
     });
 
     it('postinstall wraps electron/install.js', () => {
