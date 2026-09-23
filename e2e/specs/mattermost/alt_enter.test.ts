@@ -79,17 +79,7 @@ test.describe('mattermost/alt_enter', () => {
                 'Alt+Enter must NOT send the message',
             ).toBe(false);
 
-            const sendButtonClicked = await firstServer!.evaluate(() => {
-                const sendButton = document.querySelector(
-                    '#channelHeaderSubmitButton, button[aria-label*="Send" i], [data-testid="SendMessageButton"]',
-                ) as HTMLButtonElement | null;
-                if (!sendButton) {
-                    return false;
-                }
-                sendButton.click();
-                return true;
-            });
-            expect(sendButtonClicked, 'Send button must be present before posting').toBe(true);
+            await firstServer!.click('[data-testid="SendMessageButton"]');
 
             await expect.poll(
                 () => postListContainsLines(firstServer!, lineOne, lineTwo),

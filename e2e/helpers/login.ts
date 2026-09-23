@@ -48,12 +48,36 @@ async function hasLoginForm(win: ServerView): Promise<boolean> {
     `);
 }
 
+async function getLoggedInUsername(win: ServerView): Promise<string | null> {
+    if (!(await isMattermostServerUrl(win))) {
+        return null;
+    }
+
+    try {
+        return await win.runInRenderer<string | null>(`
+            return fetch('/api/v4/users/me', {credentials: 'same-origin'})
+                .then((response) => response.ok ? response.json() : null)
+                .then((me) => (typeof me?.username === 'string' ? me.username : null))
+                .catch(() => null);
+        `);
+    } catch (error) {
+        if (isTransientEvaluateError(error)) {
+            return null;
+        }
+        throw error;
+    }
+}
+
 /**
  * Log out the current Mattermost session and wait for the login form.
  * Safe to call when no session is active — the logout fetch will fail silently.
+ * A loading hex shell still has cookies, so logout must not wait for the app shell.
  */
 export async function logoutFromMattermost(win: ServerView): Promise<void> {
-    if (!(await hasAppShell(win).catch(() => false))) {
+    if (!(await isMattermostServerUrl(win))) {
+        return;
+    }
+    if (await hasLoginForm(win).catch(() => false)) {
         return;
     }
 
@@ -115,7 +139,13 @@ export async function loginToMattermost(
     }).not.toBe('loading');
 
     if (await hasAppShell(win)) {
-        return;
+        // Default callers keep the existing session. Explicit credentials (Calls
+        // test users) must match /users/me — otherwise the admin shell is reused
+        // and that user's private e2ec channel never appears in the LHS.
+        if (!credentials || (await getLoggedInUsername(win) === username)) {
+            return;
+        }
+        await logoutFromMattermost(win);
     }
 
     await win.fill(loginSelector, username);
