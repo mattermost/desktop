@@ -17,7 +17,6 @@ const CALLS_MUTE_SELECTOR = [
     'button[aria-label*="Unmute" i]',
 ].join(', ');
 
-/** 1.12.5 paints mute while clientConnecting; the control is `disabled` until RTC connects. */
 const CALLS_DISABLED_WHILE_CONNECTING = '1.12.0';
 
 export function findCallsWidgetWindow(electronApp: ElectronApplication): Page | null {

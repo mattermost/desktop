@@ -191,8 +191,7 @@ test.describe('multi_window/multi_window', () => {
             ).toMatch(/off[- ]topic/i);
             await closeAllPopouts(electronApp);
         } else {
-            // 10.11 webapp has no "Open in new window" item (pre-existing on
-            // v6.3.1-rc.1 CMT). Desktop modifier-click below still covers popout.
+            // 10.11 webapp has no "Open in new window" item; modifier-click below still covers popout.
             await mmServer.keyboard.press('Escape').catch(() => undefined);
         }
 

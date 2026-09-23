@@ -3,13 +3,7 @@
 
 'use strict';
 
-/**
- * Compare dotted numeric versions. Pre-release suffixes are ignored so
- * `12.0.0-rc1` counts as 12.0.0 for CMT feature gates.
- *
- * @param {string} version
- * @returns {[number, number, number] | null}
- */
+/** Pre-release suffixes are ignored so `12.0.0-rc1` counts as 12.0.0 for CMT feature gates. */
 function numericVersion(version) {
     const match = String(version).match(/^(\d+)\.(\d+)\.(\d+)/);
     if (!match) {
@@ -18,11 +12,6 @@ function numericVersion(version) {
     return [Number(match[1]), Number(match[2]), Number(match[3])];
 }
 
-/**
- * @param {string | null | undefined} version
- * @param {string} minimum
- * @returns {boolean}
- */
 function isVersionAtLeast(version, minimum) {
     const current = numericVersion(version ?? '');
     const need = numericVersion(minimum);

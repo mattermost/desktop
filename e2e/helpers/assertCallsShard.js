@@ -3,8 +3,8 @@
 
 /**
  * Calls specs must stay on Playwright shard 1 (or unsharded / 1-of-1).
- * `global-setup.ts` only restarts the plugin on shard 1; later shards wait
- * for that restart. A shard shift would race it and flake instead of failing.
+ * `global-setup.ts` only restarts the plugin on shard 1, so a Calls spec on a
+ * later shard would race that restart and flake instead of failing.
  *
  * Do not "fix" this with per-shard `--grep` / `grepInvert`. Playwright
  * `--shard=i/n` partitions the post-grep list independently in each job, so

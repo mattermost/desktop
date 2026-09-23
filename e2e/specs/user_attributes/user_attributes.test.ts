@@ -203,14 +203,12 @@ test.describe('user_attributes/user_attributes', () => {
                 const apiSeeded = String(apiValues[created.id] ?? '').includes(TEST_DEPARTMENT);
 
                 if (apiSeeded) {
-                    // 11.x GET /users/me still carries CPA values; seed via API like v6.3.1.
+                    // 11.x GET /users/me still carries CPA values, so the API seed shows up.
                     await editTextCustomAttribute(win, created.id, 'Changed Value', false);
                     await cancelCustomAttributeEdit(win, created.id);
                 } else {
-                    // 12.0 GET /users/me omits CPA values; Save does not write them onto
-                    // props.user. Seed via Edit → type → Save, then reload so settings
-                    // mount runs getCustomProfileAttributeValues and Engineering is on
-                    // screen before the unsaved edit.
+                    // 12.0 GET /users/me omits CPA values: seed via the UI, then reload so
+                    // settings fetch the saved value before the unsaved edit.
                     await editTextCustomAttribute(win, created.id, TEST_DEPARTMENT);
                     await reloadAndOpenProfileSettings(win, created.id);
                     const seededFieldId = created.id;
