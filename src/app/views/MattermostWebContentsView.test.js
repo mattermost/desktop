@@ -376,7 +376,7 @@ describe('main/views/MattermostWebContentsView', () => {
         it('should drop the older entry when the web app pushed the same URL twice', () => {
             setStack(['http://server-1.com/', 'http://server-1.com/team/a', 'http://server-1.com/team/a'], 2);
 
-            mattermostView.handleDidNavigateInPage();
+            mattermostView.handleDidNavigateInPage({}, 'http://server-1.com/team/a', true);
 
             expect(history.removeEntryAtIndex).toHaveBeenCalledWith(1);
         });
@@ -384,7 +384,7 @@ describe('main/views/MattermostWebContentsView', () => {
         it('should leave distinct consecutive entries alone', () => {
             setStack(['http://server-1.com/', 'http://server-1.com/team/a', 'http://server-1.com/team/b'], 2);
 
-            mattermostView.handleDidNavigateInPage();
+            mattermostView.handleDidNavigateInPage({}, 'http://server-1.com/team/b', true);
 
             expect(history.removeEntryAtIndex).not.toHaveBeenCalled();
         });
@@ -392,7 +392,7 @@ describe('main/views/MattermostWebContentsView', () => {
         it('should do nothing at the start of the stack', () => {
             setStack(['http://server-1.com/'], 0);
 
-            mattermostView.handleDidNavigateInPage();
+            mattermostView.handleDidNavigateInPage({}, 'http://server-1.com/', true);
 
             expect(history.removeEntryAtIndex).not.toHaveBeenCalled();
         });
@@ -403,7 +403,15 @@ describe('main/views/MattermostWebContentsView', () => {
                 throw new Error('cannot remove');
             });
 
-            expect(() => mattermostView.handleDidNavigateInPage()).not.toThrow();
+            expect(() => mattermostView.handleDidNavigateInPage({}, '', true)).not.toThrow();
+        });
+
+        it('should skip history cleanup for subframe navigations', () => {
+            setStack(['http://server-1.com/', 'http://server-1.com/team/a', 'http://server-1.com/team/a'], 2);
+
+            mattermostView.handleDidNavigateInPage({}, 'http://server-1.com/team/a', false);
+
+            expect(history.removeEntryAtIndex).not.toHaveBeenCalled();
         });
     });
 

@@ -529,10 +529,12 @@ export class MattermostWebContentsView extends EventEmitter {
      * goToOffset. This is the only point where Chromium's history stack is settled,
      * so the root reset and the back/forward button state are both derived here.
      */
-    private handleDidNavigateInPage = () => {
+    private handleDidNavigateInPage = (_event: Event, _url: string, isMainFrame: boolean) => {
         this.handlePageTitleUpdated(this.webContentsView.webContents.getTitle());
-        this.collapseDuplicateHistoryEntry();
-        this.updateHistoryButton();
+        if (isMainFrame) {
+            this.collapseDuplicateHistoryEntry();
+            this.updateHistoryButton();
+        }
     };
 
     private handlePageTitleUpdated = (newTitle: string) => {
