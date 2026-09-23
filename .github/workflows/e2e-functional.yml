@@ -38,11 +38,8 @@ on:
 permissions:
   contents: read
 
-# Duplicate E2E/Run dispatches on the same PR used to sit on macos-26 for
-# 25+ minutes — cancel the older PR run. Master dispatches share no PR number
-# and used to share group `e2e-functional-master`, so a newer merge cancelled
-# the previous commit. Key master by SHA and never cancel-in-progress unless
-# this is a PR run.
+# Cancel superseded PR runs. Master runs are keyed by SHA and never cancelled,
+# so a newer merge cannot cancel the previous commit's results.
 concurrency:
   group: e2e-functional-${{ inputs.pr_number || github.sha }}
   cancel-in-progress: ${{ inputs.pr_number != '' }}
@@ -110,7 +107,6 @@ jobs:
             exit 1
           fi
           echo "platforms=${platforms}" >> "$GITHUB_OUTPUT"
-          # Shard counts live in e2e/utils/github-actions.js (E2E_PLAYWRIGHT_SHARDS).
           PLATFORMS="${platforms}" node --input-type=commonjs <<'NODE'
           const fs = require('fs');
           const {prepareE2eMatrix} = require('./e2e/utils/github-actions.js');
@@ -314,13 +310,8 @@ jobs:
       tsio-config: ${{ format('{{"composite_identity":{0},"total_reports_expected":"{1}"}}', needs.prepare-matrix.outputs.tsio-composite-identity, needs.prepare-matrix.outputs.tsio-total-reports-expected) }}
     secrets: inherit
 
-  # Flip e2e/<os> as soon as that OS's shards finish — do not wait for the other
-  # platforms or the channel-notify summary.
-  #
-  # always() keeps these jobs on a failed or timed-out shard (a job timeout
-  # cancels that job, not the workflow). !cancelled() skips the TSIO poll when
-  # the *run* is cancelled (superseded PR). Master is keyed by SHA with
-  # cancel-in-progress only when pr_number is set, so this cannot hide a master result.
+  # Flip e2e/<os> as soon as that OS's shards finish. always() still runs after a
+  # failed or timed-out shard; !cancelled() skips superseded (cancelled) PR runs.
   e2e-linux-status:
     name: Post e2e/linux
     runs-on: ubuntu-24.04
@@ -362,8 +353,6 @@ jobs:
               upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
               perOsCommitStatuses: true,
               expectedOs: [process.env.READY_WHEN_OS],
-              expectedPolicyOs: [],
-              failOnTestFailures: true,
               notifyChannel: false,
               readyWhenOs: process.env.READY_WHEN_OS,
               minReports: parseInt(process.env.MIN_REPORTS, 10),
@@ -411,8 +400,6 @@ jobs:
               upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
               perOsCommitStatuses: true,
               expectedOs: [process.env.READY_WHEN_OS],
-              expectedPolicyOs: [],
-              failOnTestFailures: true,
               notifyChannel: false,
               readyWhenOs: process.env.READY_WHEN_OS,
               minReports: parseInt(process.env.MIN_REPORTS, 10),
@@ -460,8 +447,6 @@ jobs:
               upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
               perOsCommitStatuses: true,
               expectedOs: [process.env.READY_WHEN_OS],
-              expectedPolicyOs: [],
-              failOnTestFailures: true,
               notifyChannel: false,
               readyWhenOs: process.env.READY_WHEN_OS,
               minReports: parseInt(process.env.MIN_REPORTS, 10),

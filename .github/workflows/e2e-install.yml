@@ -23,9 +23,6 @@ jobs:
     defaults:
       run:
         shell: bash
-    env:
-      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
-      electron_config_cache: ${{ github.workspace }}/.cache/electron
     steps:
       - name: e2e/checkout-repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

@@ -57,7 +57,6 @@ jobs:
       PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
       NODE_ENV: "test"
       DEBUG_E2E: "true"
-      electron_config_cache: ${{ github.workspace }}/.cache/electron
     steps:
       - name: e2e/set-server-url
         env:
@@ -97,20 +96,8 @@ jobs:
       - name: e2e/build-test-bundle
         run: npm run build-test
 
-      - name: e2e/run-policy-tests-macos
-        if: runner.os == 'macOS'
-        run: |
-          cd e2e
-          set +e
-          npm run run:policy
-          echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
-          npm run send-report || true
-        env:
-          SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
-          DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
-
-      - name: e2e/run-policy-tests-windows
-        if: runner.os == 'Windows'
+      - name: e2e/run-policy-tests
+        if: runner.os == 'macOS' || runner.os == 'Windows'
         run: |
           cd e2e
           set +e
@@ -148,10 +135,7 @@ jobs:
       - name: e2e/handle-nonzero-playwright-exit
         if: always()
         run: |
-          if [ -z "${PLAYWRIGHT_EXIT_CODE:-}" ]; then
-            exit 0
-          fi
-          if [ "${PLAYWRIGHT_EXIT_CODE}" = "0" ]; then
+          if [ "${PLAYWRIGHT_EXIT_CODE:-0}" = "0" ]; then
             exit 0
           fi
           echo "Playwright exited with code ${PLAYWRIGHT_EXIT_CODE}" >&2

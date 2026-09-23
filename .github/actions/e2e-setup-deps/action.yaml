@@ -57,8 +57,7 @@ runs:
           node_modules
           e2e/node_modules
         enableCrossOsArchive: false
-        # v9: Node 24 ABI (.nvmrc in the hash). Install job is the single writer
-        # so PR shards can restore the same lockfile key.
+        # .nvmrc is in the hash for the Node ABI. The install job is the single writer.
         key: ${{ runner.os }}-build-node-modules-v9-${{ runner.arch }}-${{ hashFiles('**/package-lock.json', 'patches/**', '.nvmrc') }}
 
     - name: e2e/cache-electron-zip
@@ -106,9 +105,7 @@ runs:
       shell: bash
       env:
         PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
-        electron_config_cache: ${{ github.workspace }}/.cache/electron
       run: |
-        mkdir -p .cache/electron
         npm ci
         cd e2e && npm ci
 
