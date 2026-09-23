@@ -7,7 +7,18 @@ import type {ElectronApplication} from 'playwright';
 import {expect} from '../fixtures/index';
 
 import {waitForMattermostShellReady} from './channelReadiness';
+import {isVersionAtLeast} from './semver';
+import {resolveCallsPluginVersion} from './server_api/plugin';
 import type {ServerView} from './serverView';
+
+const CALLS_MUTE_SELECTOR = [
+    '#voice-mute-unmute',
+    'button[aria-label*="Mute" i]',
+    'button[aria-label*="Unmute" i]',
+].join(', ');
+
+/** 1.12.5 paints mute while clientConnecting; the control is `disabled` until RTC connects. */
+const CALLS_DISABLED_WHILE_CONNECTING = '1.12.0';
 
 export function findCallsWidgetWindow(electronApp: ElectronApplication): Page | null {
     return electronApp.windows().find((w) => {
@@ -51,10 +62,47 @@ export async function waitForCallsWidgetWindow(
     }).catch(() => null);
 }
 
-// Calls 1.12.5 paints mute/leave/shortcut controls while Redux `clientConnecting`
-// is still true. Clicks and keyboard handlers no-op until RTC connect clears that
-// flag (the mute button is `disabled` until then).
+export type CallsMuteState = {
+    label: string | null;
+    pressed: string | null;
+};
+
+export async function getCallsMuteState(widgetWindow: Page): Promise<CallsMuteState> {
+    return widgetWindow.evaluate((selector) => {
+        const button = document.querySelector(selector);
+        return {
+            label: button?.getAttribute('aria-label') ?? null,
+            pressed: button?.getAttribute('aria-pressed') ?? null,
+        };
+    }, CALLS_MUTE_SELECTOR);
+}
+
+export function callsMuteStateKey(state: CallsMuteState): string {
+    return `${state.label ?? ''}|${state.pressed ?? ''}`;
+}
+
+// Calls 1.12 paints mute while Redux `clientConnecting` and sets `disabled` until
+// RTC connects. Older widgets (10.11 marketplace) may omit `#voice-mute-unmute`
+// or never use that disabled gate — wait for any mute control, then only wait
+// out `disabled` when this is 1.12+ (or the version is unknown).
 export async function waitForCallsClientReady(widgetWindow: Page, timeoutMs = 30_000) {
+    const mute = await widgetWindow.waitForSelector(CALLS_MUTE_SELECTOR, {
+        state: 'visible',
+        timeout: timeoutMs,
+    });
+    const muteById = await widgetWindow.$('#voice-mute-unmute');
+    if (!muteById) {
+        return mute;
+    }
+    if (await muteById.getAttribute('disabled') === null) {
+        return muteById;
+    }
+
+    const callsVersion = await resolveCallsPluginVersion();
+    if (callsVersion && !isVersionAtLeast(callsVersion, CALLS_DISABLED_WHILE_CONNECTING)) {
+        return muteById;
+    }
+
     return widgetWindow.waitForSelector('#voice-mute-unmute:not([disabled])', {
         state: 'visible',
         timeout: timeoutMs,
@@ -83,6 +131,46 @@ export async function sendWidgetShortcut(
         win.webContents.sendInputEvent({type: 'keyDown', keyCode: args.keyCode, modifiers: args.modifiers} as Electron.KeyboardInputEvent);
         win.webContents.sendInputEvent({type: 'keyUp', keyCode: args.keyCode, modifiers: args.modifiers} as Electron.KeyboardInputEvent);
     }, {keyCode, modifiers});
+}
+
+/** 1.12+ binds Ctrl/Cmd+Shift+Space; older widgets bind "m" (desktop v6.3.1 T5411). */
+export async function toggleMuteViaShortcut(
+    electronApp: ElectronApplication,
+    widgetWindow: Page,
+): Promise<void> {
+    const initialMute = callsMuteStateKey(await getCallsMuteState(widgetWindow));
+    const callsVersion = await resolveCallsPluginVersion();
+    const legacyMuteKey = Boolean(
+        callsVersion && !isVersionAtLeast(callsVersion, CALLS_DISABLED_WHILE_CONNECTING),
+    );
+    const isMac = process.platform === 'darwin';
+
+    const assertToggled = async (timeout: number, message: string) => {
+        await expect.poll(
+            async () => callsMuteStateKey(await getCallsMuteState(widgetWindow)),
+            {timeout, message},
+        ).not.toBe(initialMute);
+    };
+
+    if (legacyMuteKey) {
+        await widgetWindow.keyboard.press('m');
+        try {
+            await assertToggled(3_000, 'Mute must toggle after the "m" keyboard shortcut');
+            return;
+        } catch {
+            await sendWidgetShortcut(electronApp, 'Space', isMac ? ['shift', 'meta'] : ['shift', 'control']);
+            await assertToggled(5_000, 'Mute must toggle after Ctrl/Cmd+Shift+Space');
+            return;
+        }
+    }
+
+    await sendWidgetShortcut(electronApp, 'Space', isMac ? ['shift', 'meta'] : ['shift', 'control']);
+    try {
+        await assertToggled(3_000, 'Mute must toggle after Ctrl/Cmd+Shift+Space');
+    } catch {
+        await widgetWindow.keyboard.press('m');
+        await assertToggled(5_000, 'Mute must toggle after the "m" keyboard shortcut');
+    }
 }
 
 export async function enterCallsTestChannel(serverWin: ServerView, channelName: string): Promise<void> {

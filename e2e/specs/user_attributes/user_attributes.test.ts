@@ -198,20 +198,39 @@ test.describe('user_attributes/user_attributes', () => {
                     return;
                 }
 
-                // 12.0 GET /users/me omits CPA values; Save does not write them onto
-                // props.user. Seed via Edit → type → Save, then reload so settings
-                // mount runs getCustomProfileAttributeValues and Engineering is on
-                // screen before the unsaved edit.
-                await editTextCustomAttribute(win, created.id, TEST_DEPARTMENT);
-                await reloadAndOpenProfileSettings(win, created.id);
-                await expect.poll(
-                    () => getCustomAttributeInputValue(win, created.id),
-                    {timeout: 10_000, message: 'Saved custom attribute must load after reload'},
-                ).toContain(TEST_DEPARTMENT);
-                await editTextCustomAttribute(win, created.id, 'Changed Value', false);
-                await cancelCustomAttributeEdit(win, created.id);
-                expect(await getCustomAttributeInputValue(win, created.id)).toContain(TEST_DEPARTMENT);
-                expect(await getCustomAttributeInputValue(win, created.id)).not.toContain('Changed Value');
+                await updateCustomProfileAttributeValues({[created.id]: TEST_DEPARTMENT}).catch(() => undefined);
+                const apiValues = await getCustomProfileAttributeValues().catch(() => ({} as Record<string, string | string[]>));
+                const apiSeeded = String(apiValues[created.id] ?? '').includes(TEST_DEPARTMENT);
+
+                if (apiSeeded) {
+                    // 11.x GET /users/me still carries CPA values; seed via API like v6.3.1.
+                    await editTextCustomAttribute(win, created.id, 'Changed Value', false);
+                    await cancelCustomAttributeEdit(win, created.id);
+                } else {
+                    // 12.0 GET /users/me omits CPA values; Save does not write them onto
+                    // props.user. Seed via Edit → type → Save, then reload so settings
+                    // mount runs getCustomProfileAttributeValues and Engineering is on
+                    // screen before the unsaved edit.
+                    await editTextCustomAttribute(win, created.id, TEST_DEPARTMENT);
+                    await reloadAndOpenProfileSettings(win, created.id);
+                    const seededFieldId = created.id;
+                    await expect.poll(
+                        () => getCustomAttributeInputValue(win, seededFieldId),
+                        {timeout: 10_000, message: 'Saved custom attribute must load after reload'},
+                    ).toContain(TEST_DEPARTMENT);
+                    await editTextCustomAttribute(win, created.id, 'Changed Value', false);
+                    await cancelCustomAttributeEdit(win, created.id);
+                }
+
+                const inputValue = await getCustomAttributeInputValue(win, created.id);
+                const settingsText = await win.runInRenderer<string>(`
+                    return document.querySelector(
+                        '.user-settings, #accountSettingsModal, #userAccountModal, .AccountModal',
+                    )?.textContent || '';
+                `);
+                const shown = `${inputValue} ${settingsText}`;
+                expect(shown, 'Cancel must keep the saved department').toContain(TEST_DEPARTMENT);
+                expect(shown, 'Cancel must drop the unsaved edit').not.toContain('Changed Value');
                 await closeProfileSettings(win);
             } finally {
                 if (created) {

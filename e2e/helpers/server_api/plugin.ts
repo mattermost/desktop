@@ -1,14 +1,54 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {apiRequest} from './client';
+import {apiLogin, apiRequest} from './client';
+import {getTestServerCredentials} from './credentials';
 
 export const CALLS_PLUGIN_ID = 'com.mattermost.calls';
 
-type PluginList = {
-    active: Array<{id: string}>;
-    inactive: Array<{id: string}>;
+type PluginManifest = {
+    id: string;
+    version?: string;
 };
+
+type PluginList = {
+    active: PluginManifest[];
+    inactive: PluginManifest[];
+};
+
+let cachedCallsPluginVersion: string | undefined;
+
+export function getCachedCallsPluginVersion(): string | undefined {
+    return cachedCallsPluginVersion;
+}
+
+function pluginVersion(plugin: PluginManifest | undefined): string | undefined {
+    return plugin?.version || undefined;
+}
+
+export async function getCallsPluginVersion(baseUrl: string, token: string): Promise<string | undefined> {
+    const plugins = await apiRequest<PluginList>(baseUrl, token, '/api/v4/plugins');
+    const version = pluginVersion(plugins.active.find((plugin) => plugin.id === CALLS_PLUGIN_ID));
+    cachedCallsPluginVersion = version;
+    return version;
+}
+
+/**
+ * Calls version for the current Playwright worker. globalSetup's cache does
+ * not survive into workers, so this re-reads GET /api/v4/plugins once.
+ */
+export async function resolveCallsPluginVersion(): Promise<string | undefined> {
+    if (cachedCallsPluginVersion) {
+        return cachedCallsPluginVersion;
+    }
+    try {
+        const {baseUrl, username, password} = getTestServerCredentials();
+        const token = await apiLogin(baseUrl, username, password);
+        return await getCallsPluginVersion(baseUrl, token);
+    } catch {
+        return undefined;
+    }
+}
 
 type ServerConfig = {
     PluginSettings?: {
@@ -178,4 +218,5 @@ export async function ensureCallsPlugin(baseUrl: string, token: string): Promise
 
     await disableCallsTestMode(baseUrl, token);
     await waitForCallsPluginReady(baseUrl, token, 30_000);
+    await getCallsPluginVersion(baseUrl, token);
 }

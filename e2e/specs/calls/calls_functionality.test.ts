@@ -6,11 +6,13 @@ import type {TestInfo} from '@playwright/test';
 import {test, expect} from '../../fixtures/index';
 import {assertCallsSpecsOnShard1} from '../../helpers/assertCallsShard';
 import {
+    callsMuteStateKey,
     closeCallsWidget,
     enterCallsTestChannel,
+    getCallsMuteState,
     leaveCallIfActive,
-    sendWidgetShortcut,
     startCall,
+    toggleMuteViaShortcut,
     waitForCallsClientReady,
     waitForCallsWidgetWindow,
 } from '../../helpers/callsWidget';
@@ -119,19 +121,15 @@ test.describe('calls/calls_functionality', () => {
 
             const muteButton = await waitForCallsClientReady(widgetWindow);
 
-            // Widget uses aria-label toggling ("Mute" / "Unmute") — no aria-pressed.
-            const initialLabel = await widgetWindow.evaluate(() => {
-                return document.querySelector('#voice-mute-unmute')?.getAttribute('aria-label') ?? null;
-            });
+            // 1.12+ toggles aria-label ("Mute" / "Unmute"); older widgets use aria-pressed.
+            const initialMute = callsMuteStateKey(await getCallsMuteState(widgetWindow));
 
             await muteButton.click();
 
             await expect.poll(
-                () => widgetWindow.evaluate(() => {
-                    return document.querySelector('#voice-mute-unmute')?.getAttribute('aria-label') ?? null;
-                }),
-                {timeout: 5_000, message: 'Mute button aria-label must toggle after click'},
-            ).not.toBe(initialLabel);
+                async () => callsMuteStateKey(await getCallsMuteState(widgetWindow)),
+                {timeout: 5_000, message: 'Mute button must toggle after click'},
+            ).not.toBe(initialMute);
 
             await closeCallsWidget(electronApp, widgetWindow, serverWin);
         },
@@ -164,21 +162,7 @@ test.describe('calls/calls_functionality', () => {
 
             await waitForCallsClientReady(widgetWindow);
             await widgetWindow.bringToFront();
-
-            const initialLabel = await widgetWindow.evaluate(() => {
-                return document.querySelector('#voice-mute-unmute')?.getAttribute('aria-label') ?? null;
-            });
-
-            const isMac = process.platform === 'darwin';
-            await sendWidgetShortcut(electronApp, 'Space', isMac ? ['shift', 'meta'] : ['shift', 'control']);
-
-            await expect.poll(
-                () => widgetWindow.evaluate(() => {
-                    return document.querySelector('#voice-mute-unmute')?.getAttribute('aria-label') ?? null;
-                }),
-                {timeout: 5_000, message: 'Mute button aria-label must toggle after pressing the mute keyboard shortcut'},
-            ).not.toBe(initialLabel);
-
+            await toggleMuteViaShortcut(electronApp, widgetWindow);
             await closeCallsWidget(electronApp, widgetWindow, serverWin);
         },
     );

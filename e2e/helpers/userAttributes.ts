@@ -123,17 +123,36 @@ export async function createCustomProfileAttributeField(
 ): Promise<UserPropertyField> {
     const {baseUrl, username, password} = getTestServerCredentials();
     const token = await apiLogin(baseUrl, username, password);
-    return apiRequest<UserPropertyField>(baseUrl, token, CPA_FIELDS_PATH, {
-        method: 'POST',
-        body: JSON.stringify({
-            name: field.name,
-            type: field.type ?? 'text',
-            attrs: {
-                sort_order: sortOrder,
-                ...field.attrs,
-            },
-        }),
-    });
+    const existingFields = await apiRequest<UserPropertyField[]>(baseUrl, token, CPA_FIELDS_PATH);
+    const already = existingFields.find((candidate) => candidate.name === field.name);
+    if (already) {
+        return already;
+    }
+    try {
+        return await apiRequest<UserPropertyField>(baseUrl, token, CPA_FIELDS_PATH, {
+            method: 'POST',
+            body: JSON.stringify({
+                name: field.name,
+                type: field.type ?? 'text',
+                attrs: {
+                    sort_order: sortOrder,
+                    ...field.attrs,
+                },
+            }),
+        });
+    } catch (error) {
+        // 11.7 CMT: leftover rows hit idx_propertyfields_unique_legacy (500) even
+        // after GET+DELETE of E2E_UA_* names. Reuse the existing field by name.
+        if (!(error instanceof ApiRequestError) || ![400, 500].includes(error.status)) {
+            throw error;
+        }
+        const fields = await apiRequest<UserPropertyField[]>(baseUrl, token, CPA_FIELDS_PATH);
+        const existing = fields.find((candidate) => candidate.name === field.name);
+        if (!existing) {
+            throw error;
+        }
+        return existing;
+    }
 }
 
 export async function patchCustomProfileAttributeField(

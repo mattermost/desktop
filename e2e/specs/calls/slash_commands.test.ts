@@ -140,15 +140,19 @@ test.describe('calls/slash_commands', () => {
             // /call stats posts an ephemeral response with the stats JSON.
             // CallsClientStats keys: initTime, channelID, tracksInfo, rtcStats.
             // Use :has-text() to find the post by content, independent of class or position.
+            // CallsClientStats: initTime is stable. channelID replaced callID in
+            // mattermost-plugin-calls#1220 (1.12); 11.7 / 10.11 still post callID.
             await expect.poll(
                 async () => serverWin.locator(".post__body:has-text('initTime')").last().textContent(),
                 {timeout: 15_000, message: '/call stats must post a response containing call statistics'},
             ).toContain('initTime');
 
-            await expect.poll(
-                async () => serverWin.locator(".post__body:has-text('channelID')").last().textContent(),
-                {timeout: 15_000, message: '/call stats post must contain channelID'},
-            ).toContain('channelID');
+            const statsText = String(await serverWin.locator(".post__body:has-text('initTime')").last().textContent() ?? '');
+            const hasCallIdentity = statsText.includes('channelID') || statsText.includes('callID');
+            expect(
+                hasCallIdentity,
+                '/call stats JSON must include channelID (1.12+) or callID (older Calls)',
+            ).toBe(true);
         },
     );
 

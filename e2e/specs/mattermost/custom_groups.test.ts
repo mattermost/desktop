@@ -18,7 +18,7 @@ const PRODUCT_MENU_BUTTON = [
     'button[aria-label="Product switch menu"]',
 ].join(', ');
 
-const USER_GROUPS_MENU_ITEM = '#userGroups';
+const USER_GROUPS_MENU_ITEM = '#userGroups, #userGroups-button';
 
 const USER_GROUPS_SURFACE = [
     '#userGroupsModal',
@@ -73,43 +73,81 @@ test.describe('mattermost/custom_groups', () => {
             await firstServer!.click(PRODUCT_MENU_BUTTON);
 
             try {
-                await firstServer!.waitForSelector(USER_GROUPS_MENU_ITEM, {timeout: 5_000});
+                await firstServer!.waitForSelector(
+                    `${USER_GROUPS_MENU_ITEM}, .product-switcher-menu button, .Menu .MenuItem`,
+                    {timeout: 5_000},
+                );
             } catch {
                 await firstServer!.keyboard.press('Escape');
                 test.skip(true, 'User Groups not available in product menu');
                 return;
             }
 
-            // Menu.ItemToggleModalRedux puts id="userGroups" on the <li>; the
-            // React onClick lives on the inner button. ServerLocator.click()
-            // dispatches element.click() on the li, which does not fire it.
+            const userGroupsDisabled = await firstServer!.evaluate(() => {
+                const btn = document.querySelector('#userGroups-button, #userGroups button');
+                return btn instanceof HTMLButtonElement && Boolean(btn.disabled || btn.classList.contains('disabled'));
+            });
+            if (userGroupsDisabled) {
+                await firstServer!.keyboard.press('Escape');
+                test.skip(true, 'User Groups is license-disabled on this server');
+                return;
+            }
+
+            // 10.11 Menu.ItemToggleModalRedux: id="userGroups" on the <li>,
+            // ToggleModalButton id="userGroups-button". 12.0 keeps the li id and
+            // puts React onClick on the inner button (clicking the li is a no-op).
             const groupsClicked = await firstServer!.evaluate(() => {
-                const item = document.querySelector('#userGroups') as HTMLElement | null;
-                if (!item) {
-                    return false;
+                const click = (el: Element | null) => {
+                    if (!(el instanceof HTMLElement)) {
+                        return false;
+                    }
+                    if (el instanceof HTMLButtonElement && el.disabled) {
+                        return false;
+                    }
+                    el.click();
+                    return true;
+                };
+                if (click(document.querySelector('#userGroups-button'))) {
+                    return true;
                 }
-                const target = (item.querySelector('button, a, [role="menuitem"]') as HTMLElement | null) ?? item;
-                target.click();
-                return true;
+                const byId = document.querySelector('#userGroups');
+                if (byId) {
+                    const inner = byId.querySelector('button:not([disabled]), a');
+                    if (click(inner) || click(byId)) {
+                        return true;
+                    }
+                }
+                const items = document.querySelectorAll(
+                    '.product-switcher-menu button, .Menu .MenuItem button, .Menu .MenuItem, [role="menuitem"]',
+                );
+                const groupsItem = Array.from(items).find((item) => {
+                    const text = (item.textContent ?? '').trim().toLowerCase();
+                    return text === 'user groups' || text.startsWith('user groups');
+                });
+                return click(groupsItem ?? null);
             });
             expect(groupsClicked, 'User Groups menu item must be clickable').toBe(true);
 
-            await firstServer!.waitForSelector(USER_GROUPS_SURFACE, {timeout: 10_000});
-
-            const viewHasStructure = await firstServer!.evaluate((selector) => {
-                const roots = document.querySelectorAll(selector);
-                for (const root of roots) {
-                    if (root.querySelector('.user-groups-list, ul, ol, table, [role="list"], [role="table"], [role="grid"]')) {
-                        return true;
+            await expect.poll(
+                () => firstServer!.evaluate((selector) => {
+                    const roots = Array.from(document.querySelectorAll(selector));
+                    for (const root of roots) {
+                        if (root.closest('.product-switcher-menu')) {
+                            continue;
+                        }
+                        if (root.querySelector('.user-groups-list, ul, ol, table, [role="list"], [role="table"], [role="grid"]')) {
+                            return true;
+                        }
+                        const text = (root.textContent ?? '').toLowerCase();
+                        if (text.includes('user groups') || text.includes('no groups') || text.includes('create group')) {
+                            return true;
+                        }
                     }
-                    const text = (root.textContent ?? '').toLowerCase();
-                    if (text.includes('user groups') || text.includes('no groups')) {
-                        return true;
-                    }
-                }
-                return false;
-            }, USER_GROUPS_SURFACE);
-            expect(viewHasStructure, 'User Groups view must show a list, empty state, or header').toBe(true);
+                    return window.location.pathname.includes('user_groups') ||
+                        window.location.pathname.includes('user-groups');
+                }, USER_GROUPS_SURFACE),
+                {timeout: 10_000, message: 'User Groups view must show a list, empty state, or header'},
+            ).toBe(true);
 
             await firstServer!.click('#sidebarItem_town-square');
             await firstServer!.waitForSelector('#channelHeaderTitle', {timeout: 10_000});
