@@ -19,6 +19,62 @@ export type TestChannel = {
 type CreatedUser = {id: string; username: string; email: string};
 type Team = {id: string; name: string};
 
+type ChannelRecord = {
+    id: string;
+    name: string;
+    display_name: string;
+    delete_at: number;
+    type?: string;
+};
+
+const CALLS_E2E_DISPLAY_PREFIX = 'Calls E2E ';
+const CALLS_E2E_NAME_PATTERN = /^e2ec\d/;
+
+export function isLeftoverCallsE2EChannel(channel: {
+    name: string;
+    display_name?: string;
+    delete_at?: number;
+    type?: string;
+}): boolean {
+    if (channel.delete_at) {
+        return false;
+    }
+    if (channel.type && channel.type !== 'P') {
+        return false;
+    }
+    const displayName = channel.display_name ?? '';
+    return displayName.startsWith(CALLS_E2E_DISPLAY_PREFIX) || CALLS_E2E_NAME_PATTERN.test(channel.name);
+}
+
+async function apiListChannels(baseUrl: string, token: string, path: string): Promise<ChannelRecord[]> {
+    const results: ChannelRecord[] = [];
+    for (let page = 0; page < 50; page++) {
+        const joiner = path.includes('?') ? '&' : '?';
+        let batch: ChannelRecord[];
+        try {
+            batch = await apiRequest<ChannelRecord[]>(
+                baseUrl,
+                token,
+                `${path}${joiner}page=${page}&per_page=200`,
+            );
+        } catch {
+            if (page === 0) {
+                const all = await apiRequest<ChannelRecord[]>(baseUrl, token, path);
+                return Array.isArray(all) ? all : [];
+            }
+            break;
+        }
+        if (!Array.isArray(batch) || batch.length === 0) {
+            break;
+        }
+        results.push(...batch);
+        if (batch.length < 200) {
+            break;
+        }
+    }
+    return results;
+}
+
 export async function apiCreateUser(
     baseUrl: string,
     adminToken: string,
@@ -119,6 +175,79 @@ export async function archiveCallsTestChannels(baseUrl: string, adminToken: stri
             // Leaving a stray archived-fail channel is not worth failing a spec.
         }
     }));
+}
+
+/**
+ * Archive leftover Calls E2E private channels on the shared test server.
+ *
+ * PR E2E servers (`desktop-pr-*`) are reused across runs. Channels created as
+ * the admin before per-test isolation still pack the admin LHS with
+ * "More unreads" and hide the hover-gated ⋮ (T1307 / T125 / T5890).
+ * Per-test archive only covers channels this worker created.
+ */
+export async function archiveLeftoverCallsE2EChannels(baseUrl: string, adminToken: string): Promise<number> {
+    const teams = await apiRequest<Team[]>(baseUrl, adminToken, '/api/v4/users/me/teams');
+    const ids = new Set<string>();
+    if (!Array.isArray(teams)) {
+        return 0;
+    }
+
+    for (const team of teams) {
+        try {
+            const memberships = await apiListChannels(
+                baseUrl,
+                adminToken,
+                `/api/v4/users/me/teams/${team.id}/channels`,
+            );
+
+            let privates: ChannelRecord[] = [];
+            try {
+                privates = await apiListChannels(
+                    baseUrl,
+                    adminToken,
+                    `/api/v4/teams/${team.id}/channels/private`,
+                );
+            } catch {
+                // Listing all private channels needs sysadmin; memberships still cover the admin LHS.
+            }
+
+            let searchHits: ChannelRecord[] = [];
+            try {
+                const found = await apiRequest<ChannelRecord[]>(
+                    baseUrl,
+                    adminToken,
+                    `/api/v4/teams/${team.id}/channels/search`,
+                    {
+                        method: 'POST',
+                        body: JSON.stringify({term: 'Calls E2E'}),
+                    },
+                );
+                if (Array.isArray(found)) {
+                    searchHits = found;
+                }
+            } catch {
+                // Search is extra; membership + private listing is enough for the admin sidebar.
+            }
+
+            for (const channel of [...memberships, ...privates, ...searchHits]) {
+                if (isLeftoverCallsE2EChannel(channel)) {
+                    ids.add(channel.id);
+                }
+            }
+        } catch {
+            // Best-effort: a single team's listing failure must not abort the rest of setup.
+        }
+    }
+
+    await Promise.all([...ids].map(async (id) => {
+        try {
+            await apiArchiveChannel(baseUrl, adminToken, id);
+        } catch {
+            // Best-effort: a single archive failure must not abort setup.
+        }
+    }));
+
+    return ids.size;
 }
 
 /**

@@ -10,6 +10,7 @@ import {ensureElectronBinary} from './helpers/config';
 import {clearAllRegistryFiles} from './helpers/electronApp';
 import {apiLogin, apiRequest} from './helpers/server_api/client';
 import {ensureCallsPlugin} from './helpers/server_api/plugin';
+import {archiveLeftoverCallsE2EChannels} from './helpers/server_api/user';
 
 const MACOS_DEFAULTS_SNAPSHOT = path.join(os.tmpdir(), 'mattermost-desktop-e2e-macos-defaults-snapshot.json');
 
@@ -44,6 +45,15 @@ async function setUpCallsPlugin(): Promise<void> {
     }
 
     const token = await apiLogin(serverUrl, username, password);
+    try {
+        const archived = await archiveLeftoverCallsE2EChannels(serverUrl, token);
+        if (archived > 0) {
+            // eslint-disable-next-line no-console -- globalSetup has no logger; CI should see the sweep ran
+            console.log(`Archived ${archived} leftover Calls E2E channel(s) from prior runs`);
+        }
+    } catch {
+        // Best-effort: leftover sweep must not block Calls plugin setup.
+    }
     await ensureCallsPlugin(serverUrl, token);
 
     // SiteURL is required by the Calls plugin /logs/upload endpoint to construct DM
