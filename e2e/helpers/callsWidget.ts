@@ -5,6 +5,8 @@ import type {Page} from '@playwright/test';
 import type {ElectronApplication} from 'playwright';
 
 import {expect} from '../fixtures/index';
+
+import {waitForMattermostShellReady} from './channelReadiness';
 import type {ServerView} from './serverView';
 
 export function findCallsWidgetWindow(electronApp: ElectronApplication): Page | null {
@@ -81,6 +83,13 @@ export async function sendWidgetShortcut(
         win.webContents.sendInputEvent({type: 'keyDown', keyCode: args.keyCode, modifiers: args.modifiers} as Electron.KeyboardInputEvent);
         win.webContents.sendInputEvent({type: 'keyUp', keyCode: args.keyCode, modifiers: args.modifiers} as Electron.KeyboardInputEvent);
     }, {keyCode, modifiers});
+}
+
+export async function enterCallsTestChannel(serverWin: ServerView, channelName: string): Promise<void> {
+    const channelItem = `#sidebarItem_${channelName}`;
+    await waitForMattermostShellReady(serverWin, {channelItem});
+    await serverWin.click(channelItem);
+    await serverWin.waitForSelector('#channelHeaderTitle', {timeout: 10_000});
 }
 
 export async function startCall(electronApp: ElectronApplication, serverWin: ServerView): Promise<Page> {

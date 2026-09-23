@@ -2,12 +2,12 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../../fixtures/index';
-import {findCallsWidgetWindow, startCall, closeCallsWidget, sendWidgetShortcut, leaveCallIfActive} from '../../helpers/callsWidget';
+import {closeCallsWidget, enterCallsTestChannel, findCallsWidgetWindow, leaveCallIfActive, sendWidgetShortcut, startCall} from '../../helpers/callsWidget';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost, logoutFromMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {apiLogin} from '../../helpers/server_api/client';
-import {apiGetAdminTeamId, createCallsTestUser, deactivateCallsTestUsers, type TestUser} from '../../helpers/server_api/user';
+import {apiGetAdminTeamId, createCallsTestChannel, createCallsTestUser, deactivateCallsTestUsers, type TestUser} from '../../helpers/server_api/user';
 import type {ServerView} from '../../helpers/serverView';
 
 test.describe('calls/keyboard_shortcuts', () => {
@@ -65,10 +65,9 @@ test.describe('calls/keyboard_shortcuts', () => {
 
         await logoutFromMattermost(serverWin);
         const testUser: TestUser = await createCallsTestUser(testServerUrl, adminToken, teamId);
+        const testChannel = await createCallsTestChannel(testServerUrl, adminToken, teamId, testUser.id);
         await loginToMattermost(serverWin, testUser);
-        await serverWin.waitForSelector('#sidebarItem_town-square', {timeout: 15_000});
-        await serverWin.click('#sidebarItem_town-square');
-        await serverWin.waitForSelector('#channelHeaderTitle', {timeout: 10_000});
+        await enterCallsTestChannel(serverWin, testChannel.name);
         await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
         await leaveCallIfActive(electronApp, serverWin);
     });
