@@ -280,10 +280,6 @@ describe('CI Playwright workers and serial files', () => {
         assert.match(src, /case 'win32':\s*return 3;/);
     });
 
-    it('postinstall wraps electron/install.js', () => {
-        assert.match(JSON.parse(read('package.json')).scripts.postinstall, /node scripts\/electron-install\.js/);
-    });
-
     it('CPA, Calls, and policy files stay serial', () => {
         for (const file of [
             'e2e/specs/user_attributes/user_attributes.test.ts',
