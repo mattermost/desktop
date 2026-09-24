@@ -280,6 +280,26 @@ describe('CI Playwright workers and serial files', () => {
         assert.match(src, /case 'win32':\s*return 3;/);
     });
 
+    it('MM-T1668 races menu quit with app close', () => {
+        const src = read('e2e/specs/menu_bar/quit_menu.test.ts');
+        assert.match(src, /Promise\.race\(\[clickQuitRole\(electronApp\), closePromise\]\)/);
+        assert.match(src, /waitForAppClose\(electronApp, 20_000\)/);
+    });
+
+    it('closeElectronApp short-circuits when the Electron PID is already gone', () => {
+        const src = read('e2e/helpers/electronApp.ts');
+        assert.match(src, /if \(!pid \|\| !isProcessAlive\(pid\)\) \{/);
+        assert.match(src, /attemptClose\(app, 2_000\)/);
+        assert.match(src, /settleElectronClose\(closePromise, pid, 5_000\)/);
+    });
+
+    it('MM-T821 treats closeDevTools as best-effort after asserting open', () => {
+        const src = read('e2e/specs/menu_bar/devtools_current_server.test.ts');
+        assert.match(src, /DevTools must open for the current server webContents after menu click/);
+        assert.match(src, /isRetryable: \(\) => false/);
+        assert.match(src, /Promise\.race/);
+    });
+
     it('CPA, Calls, and policy files stay serial', () => {
         for (const file of [
             'e2e/specs/user_attributes/user_attributes.test.ts',
