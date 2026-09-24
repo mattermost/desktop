@@ -68,8 +68,10 @@ const createListener: ExternalAPI['createListener'] = (channel: string, listener
     };
 };
 
-// Tracks the remover for the single registered onBrowserHistoryPush listener.
-// Module-level so it resets automatically on page reload when the preload re-runs.
+// One listener fans out to all JS subscribers (e.g. core webapp, Boards) so that
+// multiple callers don't each register their own listener and fire duplicate
+// history.push calls. Unique function references only — Set deduplicates identical refs.
+const browserHistoryPushCallbacks = new Set<(...args: never[]) => void>();
 let browserHistoryPushRemover: (() => void) | undefined;
 
 const desktopAPI: DesktopAPI = {
@@ -102,13 +104,28 @@ const desktopAPI: DesktopAPI = {
     requestBrowserHistoryStatus: () => ipcRenderer.invoke(REQUEST_BROWSER_HISTORY_STATUS),
     onBrowserHistoryStatusUpdated: (listener) => createListener(BROWSER_HISTORY_STATUS_UPDATED, listener),
     onBrowserHistoryPush: (listener) => {
-        if (browserHistoryPushRemover) {
-            return () => {};
+        browserHistoryPushCallbacks.add(listener);
+        if (!browserHistoryPushRemover) {
+            browserHistoryPushRemover = createListener(BROWSER_HISTORY_PUSH, (...args) => {
+                browserHistoryPushCallbacks.forEach((cb) => {
+                    try {
+                        cb(...args);
+                    } catch (e) {
+                        // isolate — one subscriber throwing must not prevent others from receiving the event
+                    }
+                });
+            });
         }
-        browserHistoryPushRemover = createListener(BROWSER_HISTORY_PUSH, listener);
+        let removed = false;
         return () => {
-            browserHistoryPushRemover?.();
-            browserHistoryPushRemover = undefined;
+            if (!removed) {
+                removed = true;
+                browserHistoryPushCallbacks.delete(listener);
+                if (browserHistoryPushCallbacks.size === 0) {
+                    browserHistoryPushRemover?.();
+                    browserHistoryPushRemover = undefined;
+                }
+            }
         };
     },
     sendBrowserHistoryPush: (path) => ipcRenderer.send(BROWSER_HISTORY_PUSH, path),
