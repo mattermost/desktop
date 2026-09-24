@@ -203,6 +203,7 @@ export class NavigationManager {
                 break;
             }
         }
+
         navigationView.sendToRenderer(BROWSER_HISTORY_PUSH, cleanedPathName);
         navigationView.updateHistoryButton();
     };

@@ -68,6 +68,10 @@ const createListener: ExternalAPI['createListener'] = (channel: string, listener
     };
 };
 
+// Tracks the remover for the single registered onBrowserHistoryPush listener.
+// Module-level so it resets automatically on page reload when the preload re-runs.
+let browserHistoryPushRemover: (() => void) | undefined;
+
 const desktopAPI: DesktopAPI = {
 
     // Initialization
@@ -97,7 +101,16 @@ const desktopAPI: DesktopAPI = {
     // Navigation
     requestBrowserHistoryStatus: () => ipcRenderer.invoke(REQUEST_BROWSER_HISTORY_STATUS),
     onBrowserHistoryStatusUpdated: (listener) => createListener(BROWSER_HISTORY_STATUS_UPDATED, listener),
-    onBrowserHistoryPush: (listener) => createListener(BROWSER_HISTORY_PUSH, listener),
+    onBrowserHistoryPush: (listener) => {
+        if (browserHistoryPushRemover) {
+            return () => {};
+        }
+        browserHistoryPushRemover = createListener(BROWSER_HISTORY_PUSH, listener);
+        return () => {
+            browserHistoryPushRemover?.();
+            browserHistoryPushRemover = undefined;
+        };
+    },
     sendBrowserHistoryPush: (path) => ipcRenderer.send(BROWSER_HISTORY_PUSH, path),
 
     updateTheme: (theme) => ipcRenderer.send(UPDATE_THEME, theme),

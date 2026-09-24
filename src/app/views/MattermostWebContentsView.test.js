@@ -45,9 +45,6 @@ jest.mock('electron', () => ({
                 canGoForward: jest.fn(),
                 goToOffset: jest.fn(),
                 canGoToOffset: jest.fn(),
-                getActiveIndex: jest.fn(() => 0),
-                getEntryAtIndex: jest.fn(),
-                removeEntryAtIndex: jest.fn(),
             },
             isDestroyed: jest.fn(() => false),
         },
@@ -127,8 +124,6 @@ jest.mock('common/views/viewManager', () => ({
         verbose: jest.fn(),
         error: jest.fn(),
         silly: jest.fn(),
-        warn: jest.fn(),
-        debug: jest.fn(),
     }),
 }));
 
@@ -356,62 +351,6 @@ describe('main/views/MattermostWebContentsView', () => {
             mattermostView.updateHistoryButton();
             expect(mattermostView.webContentsView.webContents.navigationHistory.clear).toHaveBeenCalled();
             expect(mattermostView.isAtRoot).toBe(true);
-        });
-    });
-
-    describe('collapseDuplicateHistoryEntry', () => {
-        const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
-        const mattermostView = new MattermostWebContentsView(view, {}, window);
-        const history = mattermostView.webContentsView.webContents.navigationHistory;
-
-        const setStack = (urls, activeIndex) => {
-            history.getActiveIndex.mockReturnValue(activeIndex);
-            history.getEntryAtIndex.mockImplementation((index) => (urls[index] ? {url: urls[index]} : undefined));
-        };
-
-        beforeEach(() => {
-            jest.clearAllMocks();
-        });
-
-        it('should drop the older entry when the web app pushed the same URL twice', () => {
-            setStack(['http://server-1.com/', 'http://server-1.com/team/a', 'http://server-1.com/team/a'], 2);
-
-            mattermostView.handleDidNavigateInPage({}, 'http://server-1.com/team/a', true);
-
-            expect(history.removeEntryAtIndex).toHaveBeenCalledWith(1);
-        });
-
-        it('should leave distinct consecutive entries alone', () => {
-            setStack(['http://server-1.com/', 'http://server-1.com/team/a', 'http://server-1.com/team/b'], 2);
-
-            mattermostView.handleDidNavigateInPage({}, 'http://server-1.com/team/b', true);
-
-            expect(history.removeEntryAtIndex).not.toHaveBeenCalled();
-        });
-
-        it('should do nothing at the start of the stack', () => {
-            setStack(['http://server-1.com/'], 0);
-
-            mattermostView.handleDidNavigateInPage({}, 'http://server-1.com/', true);
-
-            expect(history.removeEntryAtIndex).not.toHaveBeenCalled();
-        });
-
-        it('should not throw when removing the entry fails', () => {
-            setStack(['http://server-1.com/', 'http://server-1.com/team/a', 'http://server-1.com/team/a'], 2);
-            history.removeEntryAtIndex.mockImplementation(() => {
-                throw new Error('cannot remove');
-            });
-
-            expect(() => mattermostView.handleDidNavigateInPage({}, '', true)).not.toThrow();
-        });
-
-        it('should skip history cleanup for subframe navigations', () => {
-            setStack(['http://server-1.com/', 'http://server-1.com/team/a', 'http://server-1.com/team/a'], 2);
-
-            mattermostView.handleDidNavigateInPage({}, 'http://server-1.com/team/a', false);
-
-            expect(history.removeEntryAtIndex).not.toHaveBeenCalled();
         });
     });
 
