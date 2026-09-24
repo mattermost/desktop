@@ -109,7 +109,7 @@ const desktopAPI: DesktopAPI = {
             browserHistoryPushRemover = createListener(BROWSER_HISTORY_PUSH, (...args) => {
                 browserHistoryPushCallbacks.forEach((cb) => {
                     try {
-                        cb(...args as never[]);
+                        cb(...(args as unknown as never[]));
                     } catch (e) {
                         // isolate — one subscriber throwing must not prevent others from receiving the event
                     }
