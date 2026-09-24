@@ -259,6 +259,12 @@ describe('e2e node_modules and Electron zip caches', () => {
         }
     });
 
+    it('skips Windows OS deps on restore so shards do not hit Chocolatey', () => {
+        const step = namedStep('e2e/install-os-dependencies');
+        assert.match(step, /runner\.os != 'Windows' \|\| inputs\.mode != 'restore'/);
+        assert.match(step, /inputs\.mode != 'install' \|\| steps\.cache-node-modules\.outputs\.cache-hit != 'true'/);
+    });
+
     it('ci.yaml and build-for-pr.yml do not share the e2e v9 key', () => {
         assert.doesNotMatch(workflow('ci.yaml'), /build-node-modules-v9-/);
         assert.doesNotMatch(workflow('build-for-pr.yml'), /build-node-modules-v9-/);
