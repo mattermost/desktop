@@ -68,6 +68,15 @@ const createListener: ExternalAPI['createListener'] = (channel: string, listener
     };
 };
 
+// BROWSER_HISTORY_PUSH is the only channel that needs a shared listener. A plugin that
+// bundles its own copy of utils/browser_history.tsx will call onBrowserHistoryPush a
+// second time, and multiple listeners on the same channel each fire per event — producing
+// duplicate history.push calls. One shared listener dispatches to all registered callbacks,
+// preventing accumulation. Other channels use createListener directly.
+// Unique function references only — Set deduplicates identical refs.
+const browserHistoryPushCallbacks = new Set<(...args: never[]) => void>();
+let browserHistoryPushRemover: (() => void) | undefined;
+
 const desktopAPI: DesktopAPI = {
 
     // Initialization
@@ -97,7 +106,31 @@ const desktopAPI: DesktopAPI = {
     // Navigation
     requestBrowserHistoryStatus: () => ipcRenderer.invoke(REQUEST_BROWSER_HISTORY_STATUS),
     onBrowserHistoryStatusUpdated: (listener) => createListener(BROWSER_HISTORY_STATUS_UPDATED, listener),
-    onBrowserHistoryPush: (listener) => createListener(BROWSER_HISTORY_PUSH, listener),
+    onBrowserHistoryPush: (listener) => {
+        browserHistoryPushCallbacks.add(listener);
+        if (!browserHistoryPushRemover) {
+            browserHistoryPushRemover = createListener(BROWSER_HISTORY_PUSH, (...args) => {
+                browserHistoryPushCallbacks.forEach((cb) => {
+                    try {
+                        cb(...(args as unknown as never[]));
+                    } catch (e) {
+                        // isolate — one subscriber throwing must not prevent others from receiving the event
+                    }
+                });
+            });
+        }
+        let removed = false;
+        return () => {
+            if (!removed) {
+                removed = true;
+                browserHistoryPushCallbacks.delete(listener);
+                if (browserHistoryPushCallbacks.size === 0) {
+                    browserHistoryPushRemover?.();
+                    browserHistoryPushRemover = undefined;
+                }
+            }
+        };
+    },
     sendBrowserHistoryPush: (path) => ipcRenderer.send(BROWSER_HISTORY_PUSH, path),
 
     updateTheme: (theme) => ipcRenderer.send(UPDATE_THEME, theme),
