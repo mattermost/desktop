@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserWindow, desktopCapturer, systemPreferences, ipcMain} from 'electron';
+import {BrowserWindow, desktopCapturer, screen, systemPreferences, ipcMain} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import NavigationManager from 'app/navigationManager';
@@ -46,6 +46,9 @@ jest.mock('electron', () => ({
     },
     desktopCapturer: {
         getSources: jest.fn(),
+    },
+    screen: {
+        getDisplayMatching: jest.fn(),
     },
     systemPreferences: {
         getUserDefault: jest.fn(),
@@ -308,6 +311,39 @@ describe('main/windows/callsWidgetWindow', () => {
                 width: 150,
                 height: 50,
             });
+        });
+    });
+
+    describe('setBounds', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+        let actualBounds;
+        callsWidgetWindow.win = {
+            getBounds: jest.fn(() => actualBounds),
+            setBounds: jest.fn((b) => {
+                actualBounds = {...b};
+            }),
+        };
+
+        beforeEach(() => {
+            actualBounds = {x: 12, y: 618, width: MINIMUM_CALLS_WIDGET_WIDTH, height: MINIMUM_CALLS_WIDGET_HEIGHT};
+            callsWidgetWindow.boundsErr = {x: 0, y: 0, width: 0, height: 0};
+            screen.getDisplayMatching.mockReturnValue({workArea: {x: 0, y: 0, width: 1920, height: 1080}});
+        });
+
+        it('should pass through sizes within the work area', () => {
+            callsWidgetWindow.setBounds({x: 12, y: 600, width: 300, height: 100});
+            expect(callsWidgetWindow.win.setBounds).toHaveBeenCalledWith({x: 12, y: 600, width: 300, height: 100});
+        });
+
+        it('should clamp oversized requests to the work area without accumulating bounds error', () => {
+            callsWidgetWindow.setBounds({x: 12, y: -999000, width: 1000000, height: 1000000});
+            expect(callsWidgetWindow.win.setBounds).toHaveBeenCalledWith({x: 12, y: -999000, width: 1920, height: 1080});
+            expect(callsWidgetWindow.boundsErr).toEqual({x: 0, y: 0, width: 0, height: 0});
+        });
+
+        it('should clamp sizes below 1', () => {
+            callsWidgetWindow.setBounds({x: 12, y: 600, width: 0, height: -5});
+            expect(callsWidgetWindow.win.setBounds).toHaveBeenCalledWith({x: 12, y: 600, width: 1, height: 1});
         });
     });
 
