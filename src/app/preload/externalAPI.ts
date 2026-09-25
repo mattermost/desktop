@@ -68,9 +68,12 @@ const createListener: ExternalAPI['createListener'] = (channel: string, listener
     };
 };
 
-// One listener fans out to all JS subscribers (e.g. core webapp, Boards) so that
-// multiple callers don't each register their own listener and fire duplicate
-// history.push calls. Unique function references only — Set deduplicates identical refs.
+// BROWSER_HISTORY_PUSH is the only channel that needs a shared listener. A plugin that
+// bundles its own copy of utils/browser_history.tsx will call onBrowserHistoryPush a
+// second time, and multiple listeners on the same channel each fire per event — producing
+// duplicate history.push calls. One shared listener dispatches to all registered callbacks,
+// preventing accumulation. Other channels use createListener directly.
+// Unique function references only — Set deduplicates identical refs.
 const browserHistoryPushCallbacks = new Set<(...args: never[]) => void>();
 let browserHistoryPushRemover: (() => void) | undefined;
 
