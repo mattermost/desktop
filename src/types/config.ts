@@ -67,6 +67,7 @@ export type ConfigV4 = {
     themeSyncing?: boolean;
     skippedVersions?: string[];
     useNativeTitleBar?: boolean;
+    showUnreadsInWindowTitle?: boolean;
     trustedEmbeddedMediaOrigins?: TrustedEmbeddedMediaOrigin[];
 }
 

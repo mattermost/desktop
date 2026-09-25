@@ -239,6 +239,7 @@ describe('common/Validator', () => {
             enableSentry: true,
             enableSessionAttributes: true,
             useNativeTitleBar: false,
+            showUnreadsInWindowTitle: false,
             trustedEmbeddedMediaOrigins: [
                 {
                     serverOrigin: 'https://chat.example.com',

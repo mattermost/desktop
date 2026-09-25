@@ -204,6 +204,7 @@ const configDataSchemaV4 = Joi.object<ConfigV4>({
     themeSyncing: Joi.boolean().default(true),
     skippedVersions: Joi.array().items(Joi.string()).default([]),
     useNativeTitleBar: Joi.boolean().default(false),
+    showUnreadsInWindowTitle: Joi.boolean().default(false),
     trustedEmbeddedMediaOrigins: Joi.array().items(Joi.object({
         serverOrigin: originOnlyStringSchema.required(),
         embeddedOrigin: originOnlyStringSchema.required(),
