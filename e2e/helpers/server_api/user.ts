@@ -1,7 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {apiRequest} from './client';
+import {isStaleLeftoverCallsE2EChannel} from '../leftoverCallsChannel';
+
+import {apiArchiveChannel, apiCreateChannel} from './channel';
+import {apiLogin, apiRequest} from './client';
 
 export type TestUser = {
     id: string;
@@ -10,8 +13,51 @@ export type TestUser = {
     password: string;
 };
 
+export type TestChannel = {
+    id: string;
+    name: string;
+};
+
 type CreatedUser = {id: string; username: string; email: string};
 type Team = {id: string; name: string};
+
+type ChannelRecord = {
+    id: string;
+    name: string;
+    display_name: string;
+    delete_at: number;
+    type?: string;
+    create_at?: number;
+};
+
+async function apiListChannels(baseUrl: string, token: string, path: string): Promise<ChannelRecord[]> {
+    const results: ChannelRecord[] = [];
+    for (let page = 0; page < 50; page++) {
+        const joiner = path.includes('?') ? '&' : '?';
+        let batch: ChannelRecord[];
+        try {
+            batch = await apiRequest<ChannelRecord[]>(
+                baseUrl,
+                token,
+                `${path}${joiner}page=${page}&per_page=200`,
+            );
+        } catch {
+            if (page === 0) {
+                const all = await apiRequest<ChannelRecord[]>(baseUrl, token, path);
+                return Array.isArray(all) ? all : [];
+            }
+            break;
+        }
+        if (!Array.isArray(batch) || batch.length === 0) {
+            break;
+        }
+        results.push(...batch);
+        if (batch.length < 200) {
+            break;
+        }
+    }
+    return results;
+}
 
 export async function apiCreateUser(
     baseUrl: string,
@@ -67,6 +113,118 @@ export async function createCallsTestUser(
     createdUserIds.push(user.id);
     await apiAddUserToTeam(baseUrl, adminToken, teamId, user.id);
     return user;
+}
+
+let channelSeq = 0;
+const createdChannelIds: string[] = [];
+
+/**
+ * Private channel for one Calls test, created as that test user so the shared
+ * admin never sees it. A shared channel (Town Square) lets parallel workers'
+ * `/call start` collide ("A call is already ongoing").
+ */
+export async function createCallsTestChannel(
+    baseUrl: string,
+    teamId: string,
+    user: TestUser,
+): Promise<TestChannel> {
+    channelSeq++;
+    const name = `e2ec${process.env.TEST_WORKER_INDEX ?? '0'}${Date.now()}${channelSeq}`;
+    const userToken = await apiLogin(baseUrl, user.username, user.password);
+    const channel = await apiCreateChannel(
+        baseUrl,
+        userToken,
+        teamId,
+        name,
+        `Calls E2E ${name}`,
+        'P',
+    );
+    createdChannelIds.push(channel.id);
+    return {id: channel.id, name: channel.name};
+}
+
+/** Archive every Calls test channel this worker created (best-effort). */
+export async function archiveCallsTestChannels(baseUrl: string, adminToken: string): Promise<void> {
+    const ids = createdChannelIds.splice(0, createdChannelIds.length);
+
+    await Promise.all(ids.map(async (id) => {
+        try {
+            await apiArchiveChannel(baseUrl, adminToken, id);
+        } catch {
+            // Leaving a stray archived-fail channel is not worth failing a spec.
+        }
+    }));
+}
+
+/**
+ * Archive leftover Calls E2E private channels on the reused test server. They
+ * pack the admin LHS with "More unreads" and hide hover-gated channel menus.
+ * Only channels older than 60 minutes are archived, so a late shard or another
+ * CMT OS leg cannot delete a channel a sibling is still using.
+ */
+export async function archiveLeftoverCallsE2EChannels(baseUrl: string, adminToken: string): Promise<number> {
+    const teams = await apiRequest<Team[]>(baseUrl, adminToken, '/api/v4/users/me/teams');
+    const ids = new Set<string>();
+    if (!Array.isArray(teams)) {
+        return 0;
+    }
+
+    for (const team of teams) {
+        try {
+            const memberships = await apiListChannels(
+                baseUrl,
+                adminToken,
+                `/api/v4/users/me/teams/${team.id}/channels`,
+            );
+
+            let privates: ChannelRecord[] = [];
+            try {
+                privates = await apiListChannels(
+                    baseUrl,
+                    adminToken,
+                    `/api/v4/teams/${team.id}/channels/private`,
+                );
+            } catch {
+                // Listing all private channels needs sysadmin; memberships still cover the admin LHS.
+            }
+
+            let searchHits: ChannelRecord[] = [];
+            try {
+                const found = await apiRequest<ChannelRecord[]>(
+                    baseUrl,
+                    adminToken,
+                    `/api/v4/teams/${team.id}/channels/search`,
+                    {
+                        method: 'POST',
+                        body: JSON.stringify({term: 'Calls E2E'}),
+                    },
+                );
+                if (Array.isArray(found)) {
+                    searchHits = found;
+                }
+            } catch {
+                // Search is extra; membership + private listing is enough for the admin sidebar.
+            }
+
+            for (const channel of [...memberships, ...privates, ...searchHits]) {
+                if (isStaleLeftoverCallsE2EChannel(channel)) {
+                    ids.add(channel.id);
+                }
+            }
+        } catch {
+            // Best-effort: a single team's listing failure must not abort the rest of setup.
+        }
+    }
+
+    await Promise.all([...ids].map(async (id) => {
+        try {
+            await apiArchiveChannel(baseUrl, adminToken, id);
+        } catch {
+            // Best-effort: a single archive failure must not abort setup.
+        }
+    }));
+
+    return ids.size;
 }
 
 /**

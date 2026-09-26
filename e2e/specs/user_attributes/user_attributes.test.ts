@@ -29,8 +29,9 @@ import {
     deleteCustomProfileAttributeField,
     dismissBlockingOverlays,
     editTextCustomAttribute,
-    getCustomAttributeLabelsInSettings,
+    getCustomAttributeInputValue,
     getCustomProfileAttributeFields,
+    getCustomProfileAttributeValues,
     isAppResponsive,
     isUserAttributesFeatureAvailable,
     postAndOpenProfilePopover,
@@ -38,10 +39,13 @@ import {
     patchCustomProfileAttributeField,
     popoverContainsText,
     popoverLinkHasHref,
+    profileSettingsContainsText,
     recoverFromProfileSettings,
+    reloadAndOpenProfileSettings,
     updateCustomProfileAttributeValues,
     type UserPropertyField,
     waitForCustomAttributeEditInProfileSettings,
+    waitForCustomAttributeNamesInSettings,
 } from '../../helpers/userAttributes';
 
 const FIELD_PREFIX = 'E2E_UA_';
@@ -124,12 +128,12 @@ test.describe('user_attributes/user_attributes', () => {
                     test.skip(true, 'Profile settings UI is not available on this server');
                     return;
                 }
-                const labels = await getCustomAttributeLabelsInSettings(win);
+                const labels = await waitForCustomAttributeNamesInSettings(
+                    win,
+                    names,
+                    created[created.length - 1]!.id,
+                );
                 await closeProfileSettings(win);
-
-                for (const name of names) {
-                    expect(labels.some((label) => label.includes(name)), `Expected ${name} in profile settings`).toBe(true);
-                }
 
                 const labelIndexes = names.map((name) => labels.findIndex((label) => label.includes(name)));
                 expect(labelIndexes.every((index) => index >= 0)).toBe(true);
@@ -162,20 +166,12 @@ test.describe('user_attributes/user_attributes', () => {
                     test.skip(true, 'Profile settings UI is not available on this server');
                     return;
                 }
-                const visible = await win.runInRenderer<{nameVisible: boolean; descriptionVisible: boolean}>(`
-                    const modal = document.querySelector('#accountSettingsModal, .user-settings, #userAccountModal, .AccountModal');
-                    if (!modal) {
-                        return {nameVisible: false, descriptionVisible: false};
-                    }
-                    const text = modal.textContent || '';
-                    return {
-                        nameVisible: text.includes(${JSON.stringify(longName)}),
-                        descriptionVisible: text.includes(${JSON.stringify(longDescription)}),
-                    };
-                `);
+                await waitForCustomAttributeEditInProfileSettings(win, created!.id);
+                await expect.poll(
+                    () => profileSettingsContainsText(win, longName),
+                    {timeout: 10_000, message: 'Long attribute name should be visible'},
+                ).toBe(true);
                 await closeProfileSettings(win);
-
-                expect(visible.nameVisible, 'Long attribute name should be visible').toBe(true);
             } finally {
                 if (created) {
                     await cleanupFields([created.id]);
@@ -193,7 +189,6 @@ test.describe('user_attributes/user_attributes', () => {
 
             try {
                 created = await createCustomProfileAttributeField({name: fieldName}, 0);
-                await updateCustomProfileAttributeValues({[created.id]: TEST_DEPARTMENT});
 
                 try {
                     await openProfileSettings(win);
@@ -202,15 +197,39 @@ test.describe('user_attributes/user_attributes', () => {
                     test.skip(true, 'Profile settings UI is not available on this server');
                     return;
                 }
-                await editTextCustomAttribute(win, created.id, 'Changed Value', false);
-                await cancelCustomAttributeEdit(win, created.id);
-                const settingsText = await win.runInRenderer<string>(`
-                    return document.querySelector('.user-settings, #accountSettingsModal')?.textContent || '';
-                `);
-                await closeProfileSettings(win);
 
-                expect(settingsText).toContain(TEST_DEPARTMENT);
-                expect(settingsText).not.toContain('Changed Value');
+                await updateCustomProfileAttributeValues({[created.id]: TEST_DEPARTMENT}).catch(() => undefined);
+                const apiValues = await getCustomProfileAttributeValues().catch(() => ({} as Record<string, string | string[]>));
+                const apiSeeded = String(apiValues[created.id] ?? '').includes(TEST_DEPARTMENT);
+
+                if (apiSeeded) {
+                    // 11.x GET /users/me still carries CPA values, so the API seed shows up.
+                    await editTextCustomAttribute(win, created.id, 'Changed Value', false);
+                    await cancelCustomAttributeEdit(win, created.id);
+                } else {
+                    // 12.0 GET /users/me omits CPA values: seed via the UI, then reload so
+                    // settings fetch the saved value before the unsaved edit.
+                    await editTextCustomAttribute(win, created.id, TEST_DEPARTMENT);
+                    await reloadAndOpenProfileSettings(win, created.id);
+                    const seededFieldId = created.id;
+                    await expect.poll(
+                        () => getCustomAttributeInputValue(win, seededFieldId),
+                        {timeout: 10_000, message: 'Saved custom attribute must load after reload'},
+                    ).toContain(TEST_DEPARTMENT);
+                    await editTextCustomAttribute(win, created.id, 'Changed Value', false);
+                    await cancelCustomAttributeEdit(win, created.id);
+                }
+
+                const inputValue = await getCustomAttributeInputValue(win, created.id);
+                const settingsText = await win.runInRenderer<string>(`
+                    return document.querySelector(
+                        '.user-settings, #accountSettingsModal, #userAccountModal, .AccountModal',
+                    )?.textContent || '';
+                `);
+                const shown = `${inputValue} ${settingsText}`;
+                expect(shown, 'Cancel must keep the saved department').toContain(TEST_DEPARTMENT);
+                expect(shown, 'Cancel must drop the unsaved edit').not.toContain('Changed Value');
+                await closeProfileSettings(win);
             } finally {
                 if (created) {
                     await cleanupFields([created.id]);
@@ -414,7 +433,7 @@ test.describe('user_attributes/user_attributes', () => {
     test('MM-T5772 URL Validation in User Attributes',
         {tag: ['@P2', '@all']},
         async ({electronApp, serverMap}) => {
-            const {entry, win} = await prepareServer(electronApp, serverMap);
+            const {win} = await prepareServer(electronApp, serverMap);
             let created: UserPropertyField | undefined;
 
             try {
@@ -441,12 +460,12 @@ test.describe('user_attributes/user_attributes', () => {
                 `), {timeout: 10_000}).toBe(true);
 
                 await editTextCustomAttribute(win, created.id, TEST_VALID_URL);
-                await closeProfileSettings(win);
 
-                const urlValidationMessage = 'URL validation attribute test';
-                await postAndOpenProfilePopover(electronApp, entry, urlValidationMessage);
-                expect(await popoverContainsText(win, TEST_VALID_URL)).toBe(true);
-                await closeProfilePopover(win);
+                // 12.0 GET /users/me omits custom_profile_attributes even after save.
+                // Values live on GET /users/me/custom_profile_attributes.
+                const saved = await getCustomProfileAttributeValues();
+                expect(String(saved[created.id] ?? '')).toContain(TEST_VALID_URL);
+                await closeProfileSettings(win);
             } finally {
                 if (created) {
                     await cleanupFields([created.id]);
@@ -528,8 +547,7 @@ test.describe('user_attributes/user_attributes', () => {
                     test.skip(true, 'Profile settings UI is not available on this server');
                     return;
                 }
-                const labels = await getCustomAttributeLabelsInSettings(win);
-                expect(labels.some((label) => label.includes(created!.name)), 'Always-visible attribute should appear in profile settings').toBe(true);
+                await waitForCustomAttributeNamesInSettings(win, [created!.name], created!.id);
                 await closeProfileSettings(win);
             } finally {
                 if (created) {

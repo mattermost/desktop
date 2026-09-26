@@ -31,7 +31,7 @@
     "test": "run-s lint:js test:unit",
     "test:unit": "jest",
     "test:unit-coverage": "jest --coverage",
-    "test:ci-utils": "node --test \"e2e/utils/*.test.js\"",
+    "test:ci-utils": "node --test \"e2e/utils/*.test.js\" \"e2e/helpers/*.test.js\"",
     "e2e": "npm run build-test && npm --prefix e2e test",
     "build": "run-p build:*",
     "build:main": "webpack-cli --config webpack.config.main.js",

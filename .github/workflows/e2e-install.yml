@@ -1,0 +1,61 @@
+name: E2E install dependencies
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        type: string
+        required: true
+      DESKTOP_VERSION:
+        type: string
+        required: true
+
+# Least-privilege: checkout + cache read/write. No test secrets.
+permissions:
+  contents: read
+
+jobs:
+  install:
+    name: install-${{ inputs.runs-on }}
+    runs-on: ${{ inputs.runs-on }}
+    # Windows npm ci has been 6–11 min on a cold miss; 25 leaves headroom.
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: e2e/checkout-repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.DESKTOP_VERSION }}
+
+      - name: e2e/setup-deps
+        uses: ./.github/actions/e2e-setup-deps
+        with:
+          mode: install
+          os: ${{ runner.os }}
+
+      - name: e2e/collect-npm-debug-logs
+        if: failure()
+        shell: bash
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/.npm-ci-logs"
+          cache="$(npm config get cache 2>/dev/null || true)"
+          if [ -n "${cache}" ] && [ -d "${cache}/_logs" ]; then
+            cp -R "${cache}/_logs/." "${GITHUB_WORKSPACE}/.npm-ci-logs/" || true
+          fi
+          for d in "${HOME}/.npm/_logs" "/c/npm/cache/_logs" "C:/npm/cache/_logs"; do
+            if [ -d "${d}" ]; then
+              cp -R "${d}/." "${GITHUB_WORKSPACE}/.npm-ci-logs/" || true
+            fi
+          done
+          ls -la "${GITHUB_WORKSPACE}/.npm-ci-logs" || true
+
+      - name: e2e/upload-npm-debug-logs
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: e2e-npm-debug-${{ runner.os }}-${{ runner.arch }}
+          path: .npm-ci-logs/**
+          if-no-files-found: ignore
+          retention-days: 3

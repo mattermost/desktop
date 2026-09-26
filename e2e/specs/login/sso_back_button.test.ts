@@ -27,7 +27,7 @@ import {
 // Real user flow on desktop:
 // 1. Login page → click an external provider button (Open ID, enabled via client-config fetch patch)
 // 2. App navigates to /login/desktop (DesktopAuthToken) with login-header Back visible
-// 3. window.open would launch the IdP — stubbed to an in-window mock page (no real IdP)
+// 3. window.open would launch the IdP — stubbed to an in-window mock overlay (no real IdP)
 // 4. User returns via login-header Back (during /login/desktop) or browser-back after mock IdP
 //
 // Note: Global-header [aria-label="Back"] (HistoryButtons) only renders when logged in;

@@ -8,15 +8,75 @@ const E2E_OS_LIST = ['linux', 'macos', 'windows'];
 /** Platforms that run dedicated policy-test legs (PR / master only). */
 const E2E_POLICY_OS_LIST = ['macos', 'windows'];
 
-/** Per-OS commit status contexts for PR / master / CMT (restored from pre-TSIO merge). */
+/** Per-OS commit status contexts for PR / master required checks. CMT must not write these. */
 const E2E_OS_STATUS_CONTEXTS = E2E_OS_LIST.map((os) => `e2e/${os}`);
 
 /** Policy commit status contexts: e2e/macos-policy, e2e/windows-policy. */
 const E2E_POLICY_STATUS_CONTEXTS = E2E_POLICY_OS_LIST.map((os) => `e2e/${os}-policy`);
 
+/**
+ * Playwright shards per OS for PR/master e2e (not CMT). Linux CI stays at one
+ * Playwright worker, so its extra concurrency comes from shards.
+ */
+const E2E_PLAYWRIGHT_SHARDS = {
+    linux: 3,
+
+    // macos-26 has ~2 concurrent runners; a third shard queues instead of starting.
+    macos: 2,
+    windows: 3,
+};
+
 const E2E_WORKFLOW_NAME = 'Electron Playwright Tests';
 const ACTIVE_RUN_STATUSES = ['in_progress', 'queued', 'waiting'];
 const CANCELLED_STATUS_DESCRIPTION = 'E2E cancelled — tests skipped';
+
+/**
+ * Expand canonical platform rows into one matrix entry per Playwright shard.
+ * Adds `shard: "i-of-n"` (TSIO / `--shard` machine id) and `shardDisplay: "i/n"`
+ * (GitHub Actions job title only).
+ *
+ * @param {Array<{platform?: string, os?: string, runner?: string}>} platforms
+ * @returns {Array<Record<string, unknown>>}
+ */
+function expandPlatformShards(platforms) {
+    const out = [];
+    for (const platform of platforms || []) {
+        const os = canonicalizeOs(platform.platform || platform.os, platform.runner);
+        const n = (os && E2E_PLAYWRIGHT_SHARDS[os]) || 1;
+        for (let i = 1; i <= n; i++) {
+            out.push({
+                ...platform,
+                ...(os ? {platform: os} : {}),
+                shard: `${i}-of-${n}`,
+                shardDisplay: `${i}/${n}`,
+            });
+        }
+    }
+    return out;
+}
+
+/**
+ * Split a Matterwick platform list into per-OS shard matrices for the orchestrator.
+ *
+ * @param {Array<{platform?: string, os?: string, runner?: string}>} platforms
+ */
+function prepareE2eMatrix(platforms) {
+    const sharded = expandPlatformShards(platforms);
+    const [linux, macos, windows] = E2E_OS_LIST.map((os) => sharded.filter((row) => row.platform === os));
+    return {
+        platforms: sharded,
+        linux,
+        macos,
+        windows,
+        linuxShardCount: linux.length,
+        macosShardCount: macos.length,
+        windowsShardCount: windows.length,
+        linuxRunner: linux[0] ? linux[0].runner : '',
+        macosRunner: macos[0] ? macos[0].runner : '',
+        windowsRunner: windows[0] ? windows[0].runner : '',
+        totalReportsExpected: sharded.length + E2E_POLICY_OS_LIST.length,
+    };
+}
 
 /**
  * @param {string} [value] - platform / os field from matrix
@@ -59,6 +119,7 @@ function policyStatusContext(os) {
 
 /**
  * Post pending e2e/<os> (and optionally e2e/<os>-policy) statuses for this run.
+ * Callers: PR/master `e2e-functional.yml` only. CMT must not invoke this.
  *
  * @param {Object} params
  * @param {Object} params.github
@@ -295,6 +356,9 @@ module.exports = {
     osStatusContext,
     policyStatusContext,
     canonicalizeOs,
+    expandPlatformShards,
+    prepareE2eMatrix,
+    E2E_PLAYWRIGHT_SHARDS,
     E2E_OS_LIST,
     E2E_POLICY_OS_LIST,
     E2E_OS_STATUS_CONTEXTS,

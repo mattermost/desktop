@@ -516,10 +516,13 @@ export class ServerView {
                     if (!wc || wc.isDestroyed()) {
                         throw new Error(`webContents ${payload.id} is not available`);
                     }
+
+                    // Await inside the renderer. Electron cannot structured-clone a
+                    // Promise nested in {__e2eResult}; a later .then() in Node is too late.
                     const result = await wc.executeJavaScript(`
-                        (() => {
+                        (async () => {
                             try {
-                                return {__e2eResult: (() => {${payload.body}})()};
+                                return {__e2eResult: await (async () => {${payload.body}})()};
                             } catch (error) {
                                 return {
                                     __e2eError: error instanceof Error ? error.message : String(error),
@@ -533,11 +536,7 @@ export class ServerView {
                         throw new Error(`${result.__e2eError}${result.__e2eStack ? `\n${result.__e2eStack}` : ''}`);
                     }
 
-                    let value = result?.__e2eResult;
-                    if (value && typeof (value as Promise<unknown>).then === 'function') {
-                        value = await value;
-                    }
-                    return value;
+                    return result?.__e2eResult;
                 }, {id: this.webContentsId, body, userGesture}) as Promise<T>;
             } catch (error) {
                 if (!isTransientEvaluateError(error) || attempt === maxAttempts - 1) {

@@ -9,6 +9,12 @@ import {waitForWindow} from './electronApp';
 
 const MESSAGE_MODAL_URL_FRAGMENT = 'message.html';
 
+function isTargetClosedDuringClick(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return message.includes('Target page, context or browser has been closed') ||
+        message.includes('Target closed');
+}
+
 export type OpenDialogResult = {
     canceled?: boolean;
     filePaths: string[];
@@ -62,11 +68,16 @@ export async function answerMessageModal(app: ElectronApplication, response: num
     const button = modal.locator('.Modal__button').nth(response);
     await button.waitFor({state: 'visible', timeout});
 
-    // Clicking dismisses the modal, which tears down its WebContentsView. Fire a
-    // DOM click rather than a Playwright click so we don't race actionability
-    // retries against the fade-in/teardown ("element is not stable" followed by
-    // "Target page has been closed").
-    await button.evaluate((el) => (el as HTMLElement).click());
+    // Clicking dismisses the modal and tears down its WebContentsView. Use a DOM
+    // click so Playwright does not retry actionability against that teardown, and
+    // ignore the target-closed error if the page closes before evaluate returns.
+    try {
+        await button.evaluate((el) => (el as HTMLElement).click());
+    } catch (error) {
+        if (!isTargetClosedDuringClick(error)) {
+            throw error;
+        }
+    }
 
     // Wait until this modal's page is fully gone before returning, so a following
     // answerMessageModal (e.g. the certificate flow's two sequential modals) can't
