@@ -1,4 +1,20 @@
 name: Electron Playwright Tests
+# Matterwick uses this identity for PR cancellation and server cleanup. The
+# workflow source SHA can belong to master while version_name is a fork SHA.
+run-name: >-
+  ${{ (inputs.run_type == 'PR' || inputs.run_type == '') && inputs.pr_number != ''
+    && format('E2E PR #{0} @ {1}', inputs.pr_number, inputs.version_name)
+    || format('E2E {0} @ {1}', inputs.run_type || 'PR', inputs.version_name) }}
+
+concurrency:
+  # MASTER/MAIN: github.sha is the workflow-source commit at dispatch.
+  # Matterwick push sends version_name=master, so that input is not unique.
+  group: >-
+    ${{ (inputs.run_type == 'MASTER' || inputs.run_type == 'MAIN')
+      && format('e2e-{0}-{1}', inputs.run_type, github.sha)
+      || (inputs.pr_number != '' && format('e2e-pr-{0}', inputs.pr_number))
+      || format('e2e-{0}-{1}', inputs.run_type || 'PR', github.sha) }}
+  cancel-in-progress: true
 
 on:
   workflow_dispatch:
@@ -90,6 +106,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.version_name }}
+          persist-credentials: false
 
       - id: resolve-sha
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
@@ -368,6 +385,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.version_name }}
+          persist-credentials: false
 
       - name: e2e/setup-node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
