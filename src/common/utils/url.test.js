@@ -12,6 +12,7 @@ import {
     isInternalURL,
     isCallsPopOutURL,
     isTrustedURL,
+    shouldUseFindInPage,
 } from 'common/utils/url';
 
 describe('common/utils/url', () => {
@@ -239,6 +240,38 @@ describe('common/utils/url', () => {
         it('should not identify other url', () => {
             const adminURL = new URL('http://mattermost.com/some/other/path');
             expect(isUrlType('url-type', serverURL, adminURL)).toBe(false);
+        });
+    });
+
+    describe('shouldUseFindInPage', () => {
+        const serverURL = new URL('http://mattermost.com');
+        const subpathServerURL = new URL('http://mattermost.com/subpath');
+
+        it('should match team integrations routes', () => {
+            expect(shouldUseFindInPage(serverURL, new URL('http://mattermost.com/team/integrations'))).toBe(true);
+            expect(shouldUseFindInPage(serverURL, new URL('http://mattermost.com/team/integrations/bots'))).toBe(true);
+            expect(shouldUseFindInPage(serverURL, new URL('http://mattermost.com/team/integrations/incoming_webhooks'))).toBe(true);
+        });
+
+        it('should match team custom emoji routes', () => {
+            expect(shouldUseFindInPage(serverURL, new URL('http://mattermost.com/team/emoji'))).toBe(true);
+            expect(shouldUseFindInPage(serverURL, new URL('http://mattermost.com/team/emoji/add'))).toBe(true);
+        });
+
+        it('should match integrations and emoji routes with a server subpath', () => {
+            expect(shouldUseFindInPage(subpathServerURL, new URL('http://mattermost.com/subpath/team/integrations/bots'))).toBe(true);
+            expect(shouldUseFindInPage(subpathServerURL, new URL('http://mattermost.com/subpath/team/emoji'))).toBe(true);
+        });
+
+        it('should not match channel, login, or System Console routes', () => {
+            expect(shouldUseFindInPage(serverURL, new URL('http://mattermost.com/team/channels/town-square'))).toBe(false);
+            expect(shouldUseFindInPage(serverURL, new URL('http://mattermost.com/login'))).toBe(false);
+            expect(shouldUseFindInPage(serverURL, new URL('http://mattermost.com/admin_console'))).toBe(false);
+            expect(shouldUseFindInPage(serverURL, new URL('http://mattermost.com/admin_console/integrations/bot_accounts'))).toBe(false);
+        });
+
+        it('should not match a different origin', () => {
+            expect(shouldUseFindInPage(serverURL, new URL('http://example.org/team/integrations'))).toBe(false);
         });
     });
 
