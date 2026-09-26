@@ -208,6 +208,9 @@ const configDataSchemaV4 = Joi.object<ConfigV4>({
         serverOrigin: originOnlyStringSchema.required(),
         embeddedOrigin: originOnlyStringSchema.required(),
     })).default([]),
+    channelNotificationSounds: Joi.object().pattern(Joi.string(), Joi.string()).optional(),
+    channelNotificationSoundNames: Joi.object().pattern(Joi.string(), Joi.string()).optional(),
+    dmNotificationSound: Joi.string().allow('').optional(),
 });
 
 // eg. data['community.mattermost.com'] = { data: 'certificate data', issuerName: 'COMODO RSA Domain Validation Secure Server CA'};
