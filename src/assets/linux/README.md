@@ -16,7 +16,7 @@ Otherwise, first locate the extracted directory in your desired directory (e.g. 
 
 ### Desktop launcher
 
-Execute the script file to create a `Mattermost.desktop` file.
+Execute the script file to create a `com.Mattermost.Desktop.desktop` file.
 
 ```
 /opt/mattermost-desktop/create_desktop_file.sh
@@ -25,7 +25,7 @@ Execute the script file to create a `Mattermost.desktop` file.
 Then move it to the appropriate directory of your desktop environment. For example, on Ubuntu Unity it's `~/.local/share/applications/` for the current user.
 
 ```
-mv Mattermost.desktop ~/.local/share/applications/
+mv com.Mattermost.Desktop.desktop ~/.local/share/applications/
 ```
 
 ### Terminal command
@@ -33,14 +33,14 @@ mv Mattermost.desktop ~/.local/share/applications/
 Set a `PATH` environment variable to enable launching from the terminal. For example, you can append the following line into `~/.bashrc`.
 
 ```sh
-# assuming that /opt/mattermost-desktop/mattermost-desktop is the executable file.
+# assuming that /opt/mattermost-desktop/com.Mattermost.Desktop is the executable file.
 export PATH=$PATH:/opt/mattermost-desktop
 ```
 
 Alternatively, you can also create a symbolic link for the application.
 
 ```sh
-sudo ln -s /opt/mattermost-desktop/mattermost-desktop /usr/local/bin/
+sudo ln -s /opt/mattermost-desktop/com.Mattermost.Desktop /usr/local/bin/mattermost-desktop
 ```
 
 You're now all set! See the [User Guide](#user-guide) below for instructions.

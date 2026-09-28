@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent, Rectangle, Event, IpcMainInvokeEvent, WebContentsWillRedirectEventParams} from 'electron';
-import {BrowserWindow, desktopCapturer, ipcMain, systemPreferences} from 'electron';
+import {BrowserWindow, desktopCapturer, ipcMain, screen, systemPreferences} from 'electron';
 import Joi from 'joi';
 
 import MainWindow from 'app/mainWindow/mainWindow';
@@ -78,7 +78,7 @@ export class CallsWidgetWindow {
     constructor() {
         ipcMain.on(CALLS_WIDGET_RESIZE, ipcValidate(
             this.handleResize,
-            [Joi.number().required(), Joi.number().required()],
+            [Joi.number().integer().min(0).required(), Joi.number().integer().min(0).required()],
         ));
         ipcMain.on(CALLS_WIDGET_SHARE_SCREEN, ipcValidate(
             this.handleShareScreen,
@@ -264,6 +264,11 @@ export class CallsWidgetWindow {
         bounds.y += this.boundsErr.y;
         bounds.height += this.boundsErr.height;
         bounds.width += this.boundsErr.width;
+
+        // Electron crashes natively on sizes far beyond the display, so keep them on-screen.
+        const {workArea} = screen.getDisplayMatching(this.win.getBounds());
+        bounds.width = Math.min(Math.max(bounds.width, 1), workArea.width);
+        bounds.height = Math.min(Math.max(bounds.height, 1), workArea.height);
 
         this.win.setBounds(bounds);
         this.boundsErr = Utils.boundsDiff(bounds, this.win.getBounds());

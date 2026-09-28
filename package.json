@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "author": "Mattermost, Inc. <feedback@mattermost.com>",
   "license": "Apache-2.0",
-  "desktopName": "Mattermost.Desktop",
+  "desktopName": "com.Mattermost.Desktop",
   "homepage": "https://mattermost.com",
   "engines": {
     "node": ">=24.0.0"

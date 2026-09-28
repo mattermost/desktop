@@ -431,8 +431,8 @@ export const joinCallOptsSchema = Joi.object({
 export const desktopSourcesOptsSchema = Joi.object({
     types: Joi.array().items(Joi.string().valid('screen', 'window')).required(),
     thumbnailSize: Joi.object({
-        height: Joi.number().required(),
-        width: Joi.number().required(),
+        height: Joi.number().integer().min(0).max(4096).required(),
+        width: Joi.number().integer().min(0).max(4096).required(),
     }),
     fetchWindowIcons: Joi.boolean(),
 });
