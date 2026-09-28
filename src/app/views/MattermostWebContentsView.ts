@@ -221,6 +221,21 @@ export class MattermostWebContentsView extends EventEmitter {
         this.webContents?.send(BROWSER_HISTORY_STATUS_UPDATED, canGoBack, canGoForward);
     };
 
+    /**
+     * Reports the button state without going through getBrowserHistoryStatus, which
+     * clears the whole navigation stack when the current URL is the loading URL.
+     * Callers that run after a navigation has committed must use this: at that point
+     * getURL() is the new URL, so the clear would fire on an ordinary in-page
+     * navigation back to the loading URL and wipe the forward history with it.
+     */
+    private sendHistoryStatus = () => {
+        this.webContents?.send(
+            BROWSER_HISTORY_STATUS_UPDATED,
+            this.webContents?.navigationHistory.canGoBack() ?? false,
+            this.webContents?.navigationHistory.canGoForward() ?? false,
+        );
+    };
+
     load = (someURL?: URL | string) => {
         if (this.isDestroyed()) {
             return;
@@ -533,7 +548,7 @@ export class MattermostWebContentsView extends EventEmitter {
         this.handlePageTitleUpdated(this.webContentsView.webContents.getTitle());
         if (isMainFrame) {
             this.collapseDuplicateHistoryEntry();
-            this.updateHistoryButton();
+            this.sendHistoryStatus();
         }
     };
 

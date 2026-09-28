@@ -413,6 +413,18 @@ describe('main/views/MattermostWebContentsView', () => {
 
             expect(history.removeEntryAtIndex).not.toHaveBeenCalled();
         });
+
+        it('should not clear the stack when navigation lands back on the loading URL', () => {
+            // getURL() returns the loading URL here, which is the state that makes
+            // getBrowserHistoryStatus wipe the whole stack. did-navigate-in-page fires
+            // after commit, so going back to the loading URL must not destroy the
+            // forward history the user just came from.
+            setStack(['http://server-1.com/', 'http://server-1.com/team/a'], 0);
+
+            mattermostView.handleDidNavigateInPage({}, 'http://server-1.com/', true);
+
+            expect(history.clear).not.toHaveBeenCalled();
+        });
     });
 
     describe('destroy', () => {
