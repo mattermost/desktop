@@ -6,6 +6,8 @@ const path = require('path');
 
 const {flipFuses, FuseVersion, FuseV1Options} = require('@electron/fuses');
 
+const {patchIcuTzData} = require('./patch_icu_tzdata');
+
 const SETUID_PERMISSIONS = '4755';
 
 function fixSetuid(context) {
@@ -35,6 +37,16 @@ function getAppFileName(context) {
     }
 }
 
+function getIcuDataPath(context) {
+    switch (context.electronPlatformName) {
+    case 'darwin':
+    case 'mas':
+        return path.join(context.appOutDir, getAppFileName(context), 'Contents/Frameworks/Electron Framework.framework/Resources/icudtl.dat');
+    default:
+        return path.join(context.appOutDir, 'icudtl.dat');
+    }
+}
+
 exports.default = async function afterPack(context) {
     try {
         await flipFuses(
@@ -50,6 +62,8 @@ exports.default = async function afterPack(context) {
                 [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: context.electronPlatformName === 'darwin' || context.electronPlatformName === 'mas',
                 [FuseV1Options.OnlyLoadAppFromAsar]: true,
             });
+
+        patchIcuTzData(getIcuDataPath(context));
 
         if (context.electronPlatformName === 'linux') {
             context.targets.forEach(fixSetuid(context));
