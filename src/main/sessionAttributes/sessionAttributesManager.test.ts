@@ -75,6 +75,8 @@ const server = {
     url: new URL('https://chat.example.com'),
 };
 
+const apiURL = 'https://chat.example.com/api/v4/users/me';
+
 const ConfigMock = jest.mocked(Config);
 const ServerManagerMock = jest.mocked(ServerManager);
 const WebContentsManagerMock = jest.mocked(WebContentsManager);
@@ -120,7 +122,7 @@ describe('main/sessionAttributes/sessionAttributesManager', () => {
     it('returns undefined when session attributes are disabled', () => {
         ConfigMock.enableSessionAttributes = false;
 
-        const header = manager.getHeaderForRequest(server.url.toString(), {
+        const header = manager.getHeaderForRequest(apiURL, {
             Cookie: `${COOKIE_NAME_AUTH_TOKEN}=abc123`,
         });
 
@@ -129,12 +131,21 @@ describe('main/sessionAttributes/sessionAttributesManager', () => {
     });
 
     it('returns undefined without MMAUTHTOKEN cookie', () => {
-        const result = manager.getHeaderForRequest(server.url.toString(), {});
+        const result = manager.getHeaderForRequest(apiURL, {});
         expect(result).toBeUndefined();
     });
 
+    it('returns undefined for non-API requests', () => {
+        const header = manager.getHeaderForRequest('https://chat.example.com/static/main.js', {
+            Cookie: `${COOKIE_NAME_AUTH_TOKEN}=abc123`,
+        });
+
+        expect(header).toBeUndefined();
+        expect(mockCollector.getClientIPAddress).not.toHaveBeenCalled();
+    });
+
     it('builds a base64 header for expired attributes', () => {
-        const header = manager.getHeaderForRequest(server.url.toString(), {
+        const header = manager.getHeaderForRequest(apiURL, {
             Cookie: `${COOKIE_NAME_AUTH_TOKEN}=abc123`,
         });
 
@@ -157,7 +168,7 @@ describe('main/sessionAttributes/sessionAttributesManager', () => {
         const sentMap = new Map([['client_ip_address', Date.now()]]);
         (manager as unknown as {lastSentAt: Map<string, Map<string, number>>}).lastSentAt.set(server.id, sentMap);
 
-        const header = manager.getHeaderForRequest(server.url.toString(), {
+        const header = manager.getHeaderForRequest(apiURL, {
             Cookie: `${COOKIE_NAME_AUTH_TOKEN}=abc123`,
         });
 
@@ -172,7 +183,7 @@ describe('main/sessionAttributes/sessionAttributesManager', () => {
         });
         (manager as unknown as {lastSentAt: Map<string, Map<string, number>>}).lastSentAt.set(server.id, new Map([['os_platform', Date.now()]]));
 
-        const header = manager.getHeaderForRequest(server.url.toString(), {
+        const header = manager.getHeaderForRequest(apiURL, {
             Cookie: `${COOKIE_NAME_AUTH_TOKEN}=abc123`,
         });
 
@@ -191,7 +202,7 @@ describe('main/sessionAttributes/sessionAttributesManager', () => {
             ],
         });
 
-        const header = manager.getHeaderForRequest(server.url.toString(), {
+        const header = manager.getHeaderForRequest(apiURL, {
             Cookie: `${COOKIE_NAME_AUTH_TOKEN}=abc123`,
         });
 

@@ -64,6 +64,10 @@ export class SessionAttributesManager {
             return undefined;
         }
 
+        if (requestURL.indexOf('/api/v4/') === -1) {
+            return undefined;
+        }
+
         const manifest = ServerManager.getRemoteInfo(server.id)?.sessionAttributesManifest;
         if (!manifest?.length) {
             return undefined;
