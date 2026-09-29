@@ -49,13 +49,39 @@ async function hasLoginForm(win: ServerView): Promise<boolean> {
 }
 
 /**
+ * Log out the current Mattermost session and wait for the login form.
+ * Safe to call when no session is active — the logout fetch will fail silently.
+ */
+export async function logoutFromMattermost(win: ServerView): Promise<void> {
+    if (!(await hasAppShell(win).catch(() => false))) {
+        return;
+    }
+
+    // Fire logout and reload. Page navigation interrupts runInRenderer so we
+    // don't await it — we just wait for the login form to appear instead.
+    win.runInRenderer<void>(`
+        fetch('/api/v4/users/logout', {method: 'POST'})
+            .catch(() => {})
+            .then(() => window.location.reload());
+    `).catch(() => {});
+
+    await win.waitForSelector('#input_loginId', {timeout: 20_000});
+}
+
+/**
  * Log in to a Mattermost server in the given window/page.
  * Callers must ensure the server WebContentsView is loaded first
  * (switch server, prepareMattermostServerView, waitForMattermostShell).
+ *
+ * Pass `credentials` to log in as a specific user instead of the default
+ * MM_TEST_USER_NAME / MM_TEST_PASSWORD env vars.
  */
-export async function loginToMattermost(win: ServerView): Promise<void> {
-    const username = process.env.MM_TEST_USER_NAME;
-    const password = process.env.MM_TEST_PASSWORD;
+export async function loginToMattermost(
+    win: ServerView,
+    credentials?: {username: string; password: string},
+): Promise<void> {
+    const username = credentials?.username ?? process.env.MM_TEST_USER_NAME;
+    const password = credentials?.password ?? process.env.MM_TEST_PASSWORD;
 
     if (!username || !password) {
         throw new Error('MM_TEST_USER_NAME and MM_TEST_PASSWORD must be set for tests requiring login');

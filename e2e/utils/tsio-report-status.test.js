@@ -112,6 +112,47 @@ describe('flipPerOsCommitStatuses', () => {
         assert.match(byContext['e2e/windows'].description, /8 passed, 2 failed/);
     });
 
+    // Regression: PR/master runs name their legs e2e-on-<runner>-master. Those job
+    // names used to fail to parse, so every e2e/<os> came back "E2E incomplete — no
+    // results for this OS" while e2e/<os>-policy showed real counts.
+    it('flips real counts for legs whose server version is a branch ref', async () => {
+        const {statuses, github, core, context, compositeIdentity} = makeHarness();
+
+        await flipPerOsCommitStatuses({
+            github,
+            context,
+            compositeIdentity,
+            detail: {
+                reports: [
+                    {gh_job_name: 'e2e-on-ubuntu-latest-master', status: 'complete'},
+                    {gh_job_name: 'e2e-on-macos-26-master', status: 'complete'},
+                    {gh_job_name: 'e2e-on-windows-2022-master', status: 'complete'},
+                ],
+            },
+            perJobCounts: {
+                'e2e-on-ubuntu-latest-master': {passed: 234, failed: 1, skipped: 8, flaky: 0},
+                'e2e-on-macos-26-master': {passed: 228, failed: 0, skipped: 18, flaky: 0},
+                'e2e-on-windows-2022-master': {passed: 240, failed: 0, skipped: 17, flaky: 2},
+            },
+            targetUrl: 'https://example.test/report',
+            upstreamJobsSucceeded: true,
+            expectedOs: ['linux', 'macos', 'windows'],
+            core,
+        });
+
+        const byContext = Object.fromEntries(statuses.map((s) => [s.context, s]));
+        assert.equal(byContext['e2e/linux'].state, 'failure');
+        assert.match(byContext['e2e/linux'].description, /234 passed, 1 failed, 8 skipped/);
+        assert.equal(byContext['e2e/macos'].state, 'success');
+        assert.match(byContext['e2e/macos'].description, /228 passed, 0 failed, 18 skipped/);
+        assert.equal(byContext['e2e/windows'].state, 'success');
+        assert.match(byContext['e2e/windows'].description, /242 passed, 0 failed, 17 skipped/);
+
+        for (const status of statuses) {
+            assert.doesNotMatch(status.description, /incomplete/i);
+        }
+    });
+
     it('flips separate e2e/<os>-policy contexts', async () => {
         const {statuses, github, core, context, compositeIdentity} = makeHarness();
 
