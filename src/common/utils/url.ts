@@ -4,7 +4,7 @@
 import {isHttpsUri, isHttpUri, isUri} from 'valid-url';
 
 import buildConfig from 'common/config/buildConfig';
-import {MAX_URL_LENGTH} from 'common/constants';
+import {MAX_URL_LENGTH, WEBSOCKET_PROTOCOL_EQUIVALENTS} from 'common/constants';
 import {nonTeamUrlPaths, CALLS_PLUGIN_ID} from 'common/utils/constants';
 
 export const getFormattedPathName = (pn: string) => (pn.endsWith('/') ? pn : `${pn}/`);
@@ -49,12 +49,12 @@ export function isHttpLink(link: string | undefined): link is string {
 
 // isInternalURL determines if the target url is internal to the application.
 // - currentURL is the current url inside the webview
-export const isInternalURL = (targetURL: URL, currentURL: URL, ignoreScheme?: boolean) => {
+export const isInternalURL = (targetURL: URL, currentURL: URL, ignoreScheme = false, allowWebSocketProtocol = false) => {
     if (targetURL.host !== currentURL.host) {
         return false;
     }
 
-    if (!ignoreScheme && targetURL.protocol !== currentURL.protocol) {
+    if (!ignoreScheme && targetURL.protocol !== currentURL.protocol && (!allowWebSocketProtocol || WEBSOCKET_PROTOCOL_EQUIVALENTS[targetURL.protocol] !== currentURL.protocol)) {
         return false;
     }
 
