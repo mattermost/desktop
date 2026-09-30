@@ -385,4 +385,17 @@ describe('common/Validator', () => {
             expect(handler).toHaveBeenCalledWith(event, 'Title', 'Body', '', '', '', false, '');
         });
     });
+
+    describe('desktopSourcesOptsSchema', () => {
+        const opts = (thumbnailSize) => ({types: ['screen', 'window'], thumbnailSize});
+
+        it('accepts a typical thumbnail size', () => {
+            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: 400, height: 400})).error).toBeUndefined();
+        });
+
+        it('rejects oversized thumbnail dimensions', () => {
+            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: 1000000, height: 400})).error).toBeDefined();
+            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: 400, height: 1000000})).error).toBeDefined();
+        });
+    });
 });
