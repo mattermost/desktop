@@ -285,6 +285,7 @@ jobs:
     if: >-
       always()
       && needs.prepare-matrix.outputs.tsio-composite-identity != ''
+      && needs.tsio-summary.result != 'success'
     permissions:
       contents: read
       statuses: write
