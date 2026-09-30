@@ -275,7 +275,7 @@ jobs:
   # verdict cannot be attributed to one leg; enforce mode here reports rather than
   # unblocks until the group carries per-OS attribution.
   tsio-triage:
-    name: Triage E2E failures
+    name: Triage E2E failures (${{ matrix.platform }})
     runs-on: ubuntu-24.04
     needs:
       - prepare-matrix
@@ -290,14 +290,28 @@ jobs:
       contents: read
       statuses: write
       pull-requests: write
+    # One triage per operating system, over the same matrix the tests ran on.
+    # A run uploads one report per OS into a shared group, so a single triage
+    # could only ever write one status covering all of them -- which is why this
+    # used to write a decorative e2e/triage rather than the e2e/<os> contexts
+    # that actually gate the pull request. Narrowing by report name gives each OS
+    # its own verdict and lets it write the status it is answerable for.
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.prepare-matrix.outputs.platforms) }}
     steps:
       # Triage must never change the outcome of the E2E run itself.
       - name: e2e/triage
         continue-on-error: true
-        uses: mattermost/mattermost-test-automation-toolkit/actions/e2e-triage@8ac48c6d8e5f5a9c818bd46d7108a834d5c855b2 # actions/e2e-triage
+        uses: mattermost/mattermost-test-automation-toolkit/actions/e2e-triage@c7829630c67fa362d449b6dc007924e6d6a5162f # actions/e2e-triage
         with:
           composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
-          status-context: e2e/triage
+          # The reports are named e2e-on-<runner>-<version>; the version moves
+          # every release, so match on the stable prefix.
+          report-name: e2e-on-${{ matrix.runner }}
+          status-context: e2e/${{ matrix.platform }}
+          lane: ${{ matrix.platform }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           mode: ${{ vars.E2E_TRIAGE_MODE || 'report-only' }}
