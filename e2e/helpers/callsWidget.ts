@@ -88,10 +88,10 @@ export async function startCall(electronApp: ElectronApplication, serverWin: Ser
         throw new Error('Calls widget did not open — is the Calls plugin enabled on this server?');
     }
 
-    // Wait for the mute button (React mounted + call connected in widget),
-    // then wait for the sidebar icon which confirms channelHasCall is true in
-    // the main webapp's Redux state — required before any /call slash commands.
-    await widgetWindow.waitForSelector('button[aria-label*="Mute"], button[aria-label*="mute"]', {timeout: 30_000});
+    await widgetWindow.waitForSelector('#voice-mute-unmute:not([disabled])', {timeout: 30_000});
+
+    // The sidebar icon confirms channelHasCall is true in the main webapp's
+    // Redux state — required before any /call slash commands.
     await serverWin.waitForSelector('[data-testid="calls-sidebar-active-call-icon"]', {timeout: 15_000});
 
     // Wait for the WebRTC peer to be established before any shortcut is sent.
@@ -116,21 +116,17 @@ export async function closeCallsWidget(
     widgetWindow: Page,
     serverWin?: ServerView,
 ): Promise<void> {
-    // Leave via the keyboard shortcut, which calls disconnect() directly (see the
-    // "MM Calls - Leave call keyboard shortcut" test).
-    // If the shortcut ever proves unreliable, the faithful alternative is the menu
-    // route used by the Calls plugin's own suite: click #calls-widget-leave-button,
-    // then click "Leave call" inside getByTestId('dropdownmenu').
     if (!widgetWindow.isClosed()) {
-        const isMac = process.platform === 'darwin';
-        await sendWidgetShortcut(
-            electronApp,
-            'L',
-            isMac ? ['shift', 'meta'] : ['shift', 'control'],
-        ).catch(() => {
-            // Widget disappeared between the isClosed() check and the shortcut; the
-            // poll below is the real assertion.
-        });
+        await widgetWindow.locator('#calls-widget-leave-button').click();
+        const leaveMenuItem = widgetWindow.getByTestId('dropdownmenu').getByText('Leave call', {exact: true});
+        await expect.poll(
+            () => widgetWindow.isClosed() || leaveMenuItem.isVisible().catch(() => false),
+            {timeout: 10_000, message: 'Calls widget must close or show the leave-call menu'},
+        ).toBe(true);
+
+        if (!widgetWindow.isClosed()) {
+            await leaveMenuItem.click();
+        }
     }
 
     await expect.poll(
