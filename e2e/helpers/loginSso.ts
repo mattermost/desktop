@@ -5,8 +5,6 @@ import {expect} from '@playwright/test';
 
 import type {ServerView} from './serverView';
 
-const MOCK_IDP_TITLE_SELECTOR = '#mock-idp-title';
-
 export async function waitForLoginForm(serverWin: ServerView): Promise<void> {
     await serverWin.waitForSelector('#input_loginId', {timeout: 60_000});
 }
@@ -95,38 +93,13 @@ export async function clickLoginHeaderBack(serverWin: ServerView): Promise<void>
     await backButton.click();
 }
 
-/**
- * Desktop global-header history control (visible only when logged in).
- * MM-T2633 login SSO uses clickLoginHeaderBack instead; this is used when the
- * webapp shell is still mounted after in-window navigation.
- */
-export async function clickWebappHistoryBackIfVisible(serverWin: ServerView): Promise<boolean> {
-    const back = serverWin.locator('[aria-label="Back"]');
-    if ((await back.count()) === 0) {
-        return false;
-    }
-    await back.nth(0).click();
-    return true;
-}
-
-export type WindowOpenStubMode = 'noop' | 'mock-idp';
-
-export async function installWindowOpenStub(serverWin: ServerView, mode: WindowOpenStubMode): Promise<void> {
-    await serverWin.evaluate((stubMode) => {
+export async function installWindowOpenStub(serverWin: ServerView): Promise<void> {
+    await serverWin.evaluate(() => {
         (window as any).__e2eOriginalWindowOpen = window.open.bind(window);
         window.open = () => {
-            if (stubMode === 'noop') {
-                return null;
-            }
-
-            const mockHtml = '<!DOCTYPE html><html><head><title>Mock SSO</title></head>' +
-                '<body><h1 id="mock-idp-title">Mock SSO Provider</h1></body></html>';
-            document.open();
-            document.write(mockHtml);
-            document.close();
             return null;
         };
-    }, mode);
+    });
 }
 
 export async function restoreWindowOpen(serverWin: ServerView): Promise<void> {
@@ -147,30 +120,6 @@ export async function clickOpenIdLoginButton(serverWin: ServerView): Promise<voi
 export async function waitForDesktopAuthPage(serverWin: ServerView): Promise<void> {
     await serverWin.waitForURL((url) => url.pathname.includes('/login/desktop'), {timeout: 30_000});
     await serverWin.waitForSelector('.DesktopAuthToken', {timeout: 15_000});
-}
-
-export async function waitForMockIdpPage(serverWin: ServerView): Promise<void> {
-    await serverWin.waitForSelector(MOCK_IDP_TITLE_SELECTOR, {timeout: 15_000});
-}
-
-/** Browser-style back after mock in-window IdP (same WebContentsView). */
-export async function navigateBackInServerView(serverWin: ServerView): Promise<void> {
-    if (await clickWebappHistoryBackIfVisible(serverWin)) {
-        return;
-    }
-
-    await serverWin.evaluate(() => {
-        window.history.back();
-    });
-
-    await expect.poll(
-        () => serverWin.evaluate(() => {
-            return Boolean(document.querySelector('#input_loginId')) ||
-                Boolean(document.querySelector('.DesktopAuthToken')) ||
-                window.location.pathname.includes('/login');
-        }).catch(() => false),
-        {timeout: 10_000, message: 'Server view must navigate back after history.back()'},
-    ).toBe(true);
 }
 
 export async function clickOpenIdAndWaitForDesktopAuth(serverWin: ServerView): Promise<void> {
