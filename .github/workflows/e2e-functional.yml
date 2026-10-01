@@ -270,10 +270,10 @@ jobs:
   # too is a streak, not a flake, and stays red. A master run has no PR to comment
   # on, so the story lands in the job summary.
   #
-  # The context below is deliberately not one of the five required per-OS
-  # contexts. One desktop run is a single TSIO group covering every OS, so a
-  # verdict cannot be attributed to one leg; enforce mode here reports rather than
-  # unblocks until the group carries per-OS attribution.
+  # Enforced: each leg narrows to its own OS report and writes the e2e/<os>
+  # status that tsio-summary turned red -- success only when every failure is
+  # attributable to trunk or other PRs, failure otherwise. Setting the
+  # E2E_TRIAGE_MODE variable to report-only switches this back off.
   tsio-triage:
     name: Triage E2E failures (${{ matrix.platform }})
     runs-on: ubuntu-24.04
@@ -315,7 +315,7 @@ jobs:
           test-root: e2e/specs
           github-token: ${{ secrets.GITHUB_TOKEN }}
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
-          mode: ${{ vars.E2E_TRIAGE_MODE || 'report-only' }}
+          mode: ${{ vars.E2E_TRIAGE_MODE || 'enforce' }}
           post-pr-comment: "false"
 
   remove-e2e-label:
