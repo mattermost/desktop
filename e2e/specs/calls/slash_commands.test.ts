@@ -1,16 +1,20 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import type {TestInfo} from '@playwright/test';
+
 import {test, expect} from '../../fixtures/index';
-import {findCallsWidgetWindow, startCall, closeCallsWidget, leaveCallIfActive} from '../../helpers/callsWidget';
+import {assertCallsSpecsOnShard1} from '../../helpers/assertCallsShard';
+import {closeCallsWidget, enterCallsTestChannel, findCallsWidgetWindow, leaveCallIfActive, startCall} from '../../helpers/callsWidget';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost, logoutFromMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {apiLogin, apiRequest} from '../../helpers/server_api/client';
-import {apiGetAdminTeamId, createCallsTestUser, deactivateCallsTestUsers, type TestUser} from '../../helpers/server_api/user';
+import {apiGetAdminTeamId, archiveCallsTestChannels, createCallsTestChannel, createCallsTestUser, deactivateCallsTestUsers, type TestChannel, type TestUser} from '../../helpers/server_api/user';
 import type {ServerView} from '../../helpers/serverView';
 
 async function sendSlashCommand(serverWin: ServerView, command: string): Promise<void> {
+    await serverWin.waitForSelector('#post_textbox', {timeout: 10_000});
     await serverWin.type('#post_textbox', command);
     await serverWin.click('[data-testid="SendMessageButton"]');
 }
@@ -33,8 +37,10 @@ test.describe('calls/slash_commands', () => {
     let adminToken: string;
     let teamId: string;
     let testServerUrl: string;
+    let testChannel: TestChannel;
 
-    test.beforeAll(async () => {
+    test.beforeAll(async ({}, testInfo: TestInfo) => {
+        assertCallsSpecsOnShard1(testInfo.config.shard);
         const serverUrl = process.env.MM_TEST_SERVER_URL;
         const username = process.env.MM_TEST_USER_NAME;
         const password = process.env.MM_TEST_PASSWORD;
@@ -51,8 +57,15 @@ test.describe('calls/slash_commands', () => {
         teamId = await apiGetAdminTeamId(serverUrl, adminToken);
     });
 
+    test.afterEach(async () => {
+        if (testServerUrl && adminToken) {
+            await archiveCallsTestChannels(testServerUrl, adminToken);
+        }
+    });
+
     test.afterAll(async () => {
         if (testServerUrl && adminToken) {
+            await archiveCallsTestChannels(testServerUrl, adminToken);
             await deactivateCallsTestUsers(testServerUrl, adminToken);
         }
     });
@@ -71,12 +84,11 @@ test.describe('calls/slash_commands', () => {
 
         await logoutFromMattermost(serverWin);
         const testUser: TestUser = await createCallsTestUser(testServerUrl, adminToken, teamId);
+        testChannel = await createCallsTestChannel(testServerUrl, teamId, testUser);
         await loginToMattermost(serverWin, testUser);
-        await serverWin.waitForSelector('#sidebarItem_town-square', {timeout: 15_000});
-        await serverWin.click('#sidebarItem_town-square');
-        await serverWin.waitForSelector('#channelHeaderTitle', {timeout: 10_000});
+        await enterCallsTestChannel(serverWin, testChannel.name);
         await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
-        await leaveCallIfActive(electronApp);
+        await leaveCallIfActive(electronApp, serverWin);
     });
 
     // NOTE: this does NOT exercise the `/call end` slash command, despite MM-T5588's
@@ -93,11 +105,9 @@ test.describe('calls/slash_commands', () => {
         'MM-T5588 host ends the call (via Calls REST API) — desktop tears the call down',
         {tag: ['@P1', '@all']},
         async ({electronApp}) => {
-            const townSquare = await apiRequest<{id: string}>(testServerUrl, adminToken, `/api/v4/teams/${teamId}/channels/name/town-square`);
-
             await startCall(electronApp, serverWin);
 
-            await apiRequest(testServerUrl, adminToken, `/plugins/com.mattermost.calls/calls/${townSquare.id}/end`, {
+            await apiRequest(testServerUrl, adminToken, `/plugins/com.mattermost.calls/calls/${testChannel.id}/end`, {
                 method: 'POST',
             });
 
@@ -130,15 +140,18 @@ test.describe('calls/slash_commands', () => {
             // /call stats posts an ephemeral response with the stats JSON.
             // CallsClientStats keys: initTime, channelID, tracksInfo, rtcStats.
             // Use :has-text() to find the post by content, independent of class or position.
+            // Calls 1.12+ posts channelID; older versions post callID.
             await expect.poll(
                 async () => serverWin.locator(".post__body:has-text('initTime')").last().textContent(),
                 {timeout: 15_000, message: '/call stats must post a response containing call statistics'},
             ).toContain('initTime');
 
-            await expect.poll(
-                async () => serverWin.locator(".post__body:has-text('channelID')").last().textContent(),
-                {timeout: 15_000, message: '/call stats post must contain channelID'},
-            ).toContain('channelID');
+            const statsText = String(await serverWin.locator(".post__body:has-text('initTime')").last().textContent() ?? '');
+            const hasCallIdentity = statsText.includes('channelID') || statsText.includes('callID');
+            expect(
+                hasCallIdentity,
+                '/call stats JSON must include channelID (1.12+) or callID (older Calls)',
+            ).toBe(true);
         },
     );
 
@@ -146,15 +159,15 @@ test.describe('calls/slash_commands', () => {
         'MM-T5590 /call logs — returns call log output',
         {tag: ['@P1', '@all']},
         async () => {
-            // No call start here — this suite is serial so T5588/T5589 already
-            // confirmed plugin availability. Starting a call would consume rate
-            // limiter tokens immediately before /logs/upload hits the same limiter.
-            // T5589 also left call logs in localStorage from its own call.
+            // beforeEach logs out and creates a new user, which wipes in-memory
+            // Calls logs. Seed both storages: Calls getPersistentStorage() uses
+            // localStorage when window.desktop is set, otherwise sessionStorage.
             await serverWin.runInRenderer<void>(`
-                if (!(localStorage.getItem('calls_client_logs') || '').trim()) {
-                    localStorage.setItem('calls_client_logs',
-                        'debug [e2e] pre-seeded call log for MM-T5590\\n',
-                    );
+                const seed = 'debug [e2e] pre-seeded call log for MM-T5590\\n';
+                for (const storage of [localStorage, sessionStorage]) {
+                    if (!(storage.getItem('calls_client_logs') || '').trim()) {
+                        storage.setItem('calls_client_logs', seed);
+                    }
                 }
             `);
 

@@ -6,9 +6,9 @@
  * Post a CMT rollup to a Mattermost incoming webhook.
  *
  * Expected job names from e2e-functional-template.yml:
- *   e2e-on-{runner}-{serverVersion}
+ *   e2e-on-{runner}-{serverVersion}[-{i}-of-{n}]
  * e.g. e2e-on-ubuntu-latest-11.9.0, e2e-on-windows-2022-10.5.14,
- *      e2e-on-ubuntu-latest-master (PR/master runs pass a branch ref, not semver)
+ *      e2e-on-ubuntu-latest-master, e2e-on-ubuntu-latest-master-1-of-3
  *
  * Per-leg pass/fail counts come from TSIO consolidated specs grouped by
  * contributing report id → gh_job_name (group report only has upload status).
@@ -88,10 +88,12 @@ function parseCmtJobName(jobName) {
     // directions — a hyphenated version like `release-11.9.0` can no longer be
     // mis-attributed to the runner, and a version is never required to look like semver.
     //
+    // An optional `-{i}-of-{n}` suffix is the Playwright shard; unsharded (CMT) names omit it.
+    //
     // Consequence: a runner label with a third token (`ubuntu-latest-8-cores`) would
     // put its tail in serverVersion. No such label is dispatched by any workflow here,
     // and `os` — the only field the per-OS rollup uses — stays correct regardless.
-    const match = jobName.match(/^e2e-on-((?:ubuntu|linux|macos|darwin|windows)-[\w.]+?)-(.+)$/);
+    const match = jobName.match(/^e2e-on-((?:ubuntu|linux|macos|darwin|windows)-[\w.]+?)-(.+?)(?:-(\d+)-of-(\d+))?$/);
     if (!match) {
         return null;
     }
@@ -102,6 +104,7 @@ function parseCmtJobName(jobName) {
         serverVersion: match[2],
         runner,
         kind: 'e2e',
+        ...(match[3] ? {shard: `${match[3]}-of-${match[4]}`} : {}),
     };
 }
 
@@ -181,7 +184,7 @@ function buildLegSummaries(perJobCounts, uploadedReports, baseUrl) {
         }
 
         rows.push({
-            label: `${parsed.serverVersion}-${parsed.os}`,
+            label: parsed.shard ? `${parsed.serverVersion}-${parsed.os}-${parsed.shard}` : `${parsed.serverVersion}-${parsed.os}`,
             status,
             passed,
             failed,

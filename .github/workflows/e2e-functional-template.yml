@@ -38,13 +38,18 @@ on:
         type: string
         required: true
       # Packed as one JSON input, not two, because workflow_call caps reusable
-      # workflows at 10 inputs total — this file was already at 8.
+      # workflows at 10 inputs total — this file is at the cap (shard is the 10th).
       # Shape: {"composite_identity": {...}, "total_reports_expected": "N"}
       tsio-config:
         description: "TSIO reporting config: {composite_identity, total_reports_expected}. Empty disables TSIO reporting for this leg."
         required: false
         type: string
         default: ""
+      shard:
+        description: "Playwright shard as INDEX-of-TOTAL (e.g. 1-of-3). Default 1-of-1 omits the job-name suffix."
+        required: false
+        type: string
+        default: "1-of-1"
   workflow_dispatch:
     inputs:
       MM_TEST_SERVER_URL:
@@ -87,6 +92,11 @@ on:
         required: false
         type: string
         default: ""
+      shard:
+        description: "Playwright shard as INDEX-of-TOTAL (e.g. 1-of-3). Default 1-of-1 omits the job-name suffix."
+        required: false
+        type: string
+        default: "1-of-1"
 
 env:
   BRANCH: ${{ github.head_ref || github.ref_name }}
@@ -105,8 +115,10 @@ jobs:
     # Includes MM_SERVER_VERSION, not just runs-on: CMT tests multiple server
     # versions against the same runner (e.g. macos-26 x 11.9.0 and macos-26 x
     # 11.8.4).
-    name: e2e-on-${{ inputs.runs-on }}-${{ inputs.MM_SERVER_VERSION }}
+    name: e2e-on-${{ inputs.runs-on }}-${{ inputs.MM_SERVER_VERSION }}${{ inputs.shard != '1-of-1' && format('-{0}', inputs.shard) || '' }}
     runs-on: ${{ inputs.runs-on }}
+    # Unsharded CMT legs take up to ~37m; sharded PR/master legs finish well under 30.
+    timeout-minutes: ${{ inputs.cmt && 60 || 30 }}
     permissions:
       contents: read
       id-token: write
@@ -114,6 +126,10 @@ jobs:
     defaults:
       run:
         shell: bash
+    env:
+      # Must equal this job's `name:` — TSIO upload matches gh-job-name to it.
+      E2E_GH_JOB_NAME: e2e-on-${{ inputs.runs-on }}-${{ inputs.MM_SERVER_VERSION }}${{ inputs.shard != '1-of-1' && format('-{0}', inputs.shard) || '' }}
+      PLAYWRIGHT_SHARD: ${{ inputs.shard }}
     steps:
       - name: e2e/set-required-variables
         id: variables
@@ -123,7 +139,7 @@ jobs:
           # Report-only tag for Playwright blob/HTML output (@ci-* avoids colliding with
           # platform selection grep tokens @linux/@darwin/@win32 in playwright.config.ts).
           echo "CI_ENVIRONMENT_NAME=@ci-${RUNNER_OS}" >> $GITHUB_ENV
-          
+
           # Define build type and suffix
           # inputs.TYPE takes precedence when provided by the caller (PR, MASTER, CMT).
           INPUT_TYPE="${{ inputs.TYPE }}"
@@ -167,62 +183,11 @@ jobs:
         with:
           ref: ${{ inputs.DESKTOP_VERSION }}
 
-      - name: e2e/setup-node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - name: e2e/setup-deps
+        uses: ./.github/actions/e2e-setup-deps
         with:
-          node-version: '22.x'
-          package-manager-cache: false
-          # node_modules is cached in e2e/cache-node-modules; disable setup-node's
-          # npm cache so actions/cache v5 does not hit legacy entries.
-
-      - name: e2e/use-gnu-tar-macos
-        if: runner.os == 'macOS'
-        run: echo "/opt/homebrew/opt/gnu-tar/libexec/gnubin" >> $GITHUB_PATH
-
-      - name: e2e/cache-node-modules
-        id: cache-node-modules
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            node_modules
-            e2e/node_modules
-          enableCrossOsArchive: false
-          # v7: exact restore only — avoids probing legacy v6 blobs that warn on macOS
-          key: ${{ runner.os }}-build-node-modules-v7-${{ hashFiles('**/package-lock.json') }}
-
-      - name: e2e/cache-electron-gyp-windows
-        if: runner.os == 'Windows'
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: C:\Users\runneradmin\.electron-gyp
-          enableCrossOsArchive: false
-          key: ${{ runner.os }}-electron-gyp-v7-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-electron-gyp-v7-${{ hashFiles('**/package-lock.json') }}
-
-      - name: e2e/setup-python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        env:
-          # Bypass pip's on-disk HTTP cache entirely so a stale/corrupt entry on the
-          # runner image cannot trigger deserialization warnings (actions/setup-python#1317).
-          PIP_NO_CACHE_DIR: "1"
-        with:
-          # Use a version pre-installed on macOS-26 (3.13 is in its toolcache), so
-          # setup-python doesn't install a mismatched interpreter whose pip can't
-          # deserialize the image's pre-baked cache. PIP_NO_CACHE_DIR above is the
-          # remaining guard for non-macOS runners.
-          python-version: "3.13"
-          # Omit `cache` — setup-python only accepts pip/pipenv/poetry, not `false`.
-
-      - name: e2e/install-os-dependencies
-        uses: ./.github/actions/install-os-dependencies
-        with:
+          mode: ${{ runner.os == 'macOS' && 'restore-or-install' || 'restore' }}
           os: ${{ runner.os }}
-
-      - name: e2e/install-node-dependencies
-        run: |
-          npm ci
-          cd e2e && npm ci
 
       - name: e2e/enable-public-links
         if: env.MM_TEST_SERVER_URL != ''
@@ -249,7 +214,7 @@ jobs:
           cd e2e
           export PW_CHROMIUM_ARGS="--disable-gpu --no-sandbox --disable-dev-shm-usage"
           set +e
-          xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' npm test -- --project=linux
+          xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' npm test -- --project=linux --shard="${PLAYWRIGHT_SHARD%%-of-*}/${PLAYWRIGHT_SHARD##*-of-}"
           echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
@@ -265,7 +230,7 @@ jobs:
           echo "Running E2E tests…"
           cd e2e
           set +e
-          npm test -- --project=darwin
+          npm test -- --project=darwin --shard="${PLAYWRIGHT_SHARD%%-of-*}/${PLAYWRIGHT_SHARD##*-of-}"
           echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
@@ -278,7 +243,7 @@ jobs:
           npm run build-test
           cd e2e
           set +e
-          npm test -- --project=win32
+          npm test -- --project=win32 --shard="${PLAYWRIGHT_SHARD%%-of-*}/${PLAYWRIGHT_SHARD##*-of-}"
           echo "PLAYWRIGHT_EXIT_CODE=$?" >> $GITHUB_ENV
         env:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
@@ -289,7 +254,7 @@ jobs:
         if: ${{ always() && inputs.tsio-config != '' && hashFiles('e2e/test-results/results.json') == '' && (failure() || cancelled() || (env.PLAYWRIGHT_EXIT_CODE != '0' && env.PLAYWRIGHT_EXIT_CODE != '')) }}
         run: node e2e/utils/write-tsio-failure-stub.mjs
         env:
-          TSIO_GH_JOB_NAME: e2e-on-${{ inputs.runs-on }}-${{ inputs.MM_SERVER_VERSION }}
+          TSIO_GH_JOB_NAME: ${{ env.E2E_GH_JOB_NAME }}
           PLAYWRIGHT_EXIT_CODE: ${{ env.PLAYWRIGHT_EXIT_CODE }}
 
       # report-upload walks every png/jpg under screenshots-dir; Electron userdata
@@ -310,7 +275,7 @@ jobs:
           framework: playwright
           github-token: ${{ secrets.GITHUB_TOKEN }}
           # MUST match this job's `name:` field above.
-          gh-job-name: e2e-on-${{ inputs.runs-on }}-${{ inputs.MM_SERVER_VERSION }}
+          gh-job-name: ${{ env.E2E_GH_JOB_NAME }}
           json-path: e2e/test-results/results.json
           screenshots-dir: e2e/test-results/tsio-screenshots
 
@@ -329,3 +294,14 @@ jobs:
         env:
           TSIO_CONFIG: ${{ inputs.tsio-config }}
 
+      # Screenshots only — Playwright traces record fill() arguments, which include
+      # MM_TEST_PASSWORD. Never glob e2e/test-results (Electron userdata is GB).
+      - name: e2e/upload-failure-artifacts
+        if: ${{ failure() || (always() && env.PLAYWRIGHT_EXIT_CODE != '' && env.PLAYWRIGHT_EXIT_CODE != '0') }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: e2e-failure-${{ env.E2E_GH_JOB_NAME }}
+          path: |
+            e2e/test-results/tsio-screenshots/**
+          if-no-files-found: ignore
+          retention-days: 3

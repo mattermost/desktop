@@ -143,7 +143,10 @@ async function openAndCloseDevTools(app: ElectronApplication): Promise<void> {
         if (!win) {
             throw new Error('Main window not found');
         }
-        win.webContents.openDevTools({mode: 'detach'});
+
+        // Docked, not detach: on macOS a detached DevTools BrowserWindow can stay
+        // open after closeDevTools() and hang the next main-process evaluate.
+        win.webContents.openDevTools({mode: 'bottom'});
     });
 
     await expect.poll(
