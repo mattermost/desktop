@@ -304,7 +304,7 @@ jobs:
       # Triage must never change the outcome of the E2E run itself.
       - name: e2e/triage
         continue-on-error: true
-        uses: mattermost/mattermost-test-automation-toolkit/actions/e2e-triage@5d164f18649bf74b9df5d17536a3de26cea17a69 # actions/e2e-triage
+        uses: mattermost/mattermost-test-automation-toolkit/actions/e2e-triage@24864c1f9ed21de582f6e0902c0ccc5ae4fe88e0 # actions/e2e-triage
         with:
           composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
           # The reports are named e2e-on-<runner>-<version>; the version moves
@@ -315,6 +315,10 @@ jobs:
           test-root: e2e/specs
           github-token: ${{ secrets.GITHUB_TOKEN }}
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Desktop's leftovers are the hard cases -- few runs per OS since the
+          # runner images changed -- so the judge gets the most capable model.
+          # The toolkit default stays on Haiku for the other repos.
+          claude-model: claude-opus-5-5
           mode: ${{ vars.E2E_TRIAGE_MODE || 'enforce' }}
           post-pr-comment: "false"
 
