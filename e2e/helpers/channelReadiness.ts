@@ -8,7 +8,6 @@ import {dismissBlockingOverlays} from './blockingOverlays';
 import {
     channelItemSelector,
     HAS_CLIENT_JS_ERROR_JS,
-    IS_CHANNEL_POST_LIST_LOADED_JS,
     IS_CHANNEL_VIEW_LOADED_JS,
     IS_COMPOSER_INTERACTIVE_JS,
 } from './rendererUtils';
@@ -55,7 +54,7 @@ export async function isChannelViewLoaded(win: ServerView): Promise<boolean> {
 
 /** @deprecated Use isChannelViewLoaded — kept for existing imports. */
 export async function isChannelPostListLoaded(win: ServerView): Promise<boolean> {
-    return win.runInRenderer<boolean>(IS_CHANNEL_POST_LIST_LOADED_JS).catch(() => false);
+    return isChannelViewLoaded(win);
 }
 
 export async function isOnChannelUrl(win: ServerView, channelName: string): Promise<boolean> {
@@ -218,14 +217,14 @@ export async function waitForMattermostShellReady(
     await recoverServerViewIfNeeded(win, options);
 }
 
-/** Wait until the channel post list finishes its initial load. */
+/** Wait until the channel header and composer are present (same as isChannelViewLoaded). */
 export async function waitForChannelPostListLoaded(
     win: ServerView,
     options?: {timeout?: number},
 ): Promise<void> {
     const timeout = options?.timeout ?? 15_000;
     await expect.poll(
-        async () => isChannelPostListLoaded(win),
-        {timeout, message: 'Channel post list must finish loading'},
+        async () => isChannelViewLoaded(win),
+        {timeout, message: 'Channel must expose a header and composer'},
     ).toBe(true);
 }

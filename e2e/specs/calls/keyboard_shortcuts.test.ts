@@ -1,13 +1,16 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import type {TestInfo} from '@playwright/test';
+
 import {test, expect} from '../../fixtures/index';
-import {findCallsWidgetWindow, startCall, closeCallsWidget, sendWidgetShortcut, leaveCallIfActive} from '../../helpers/callsWidget';
+import {assertCallsSpecsOnShard1} from '../../helpers/assertCallsShard';
+import {closeCallsWidget, enterCallsTestChannel, findCallsWidgetWindow, leaveCallIfActive, sendWidgetShortcut, startCall} from '../../helpers/callsWidget';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost, logoutFromMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {apiLogin} from '../../helpers/server_api/client';
-import {apiGetAdminTeamId, createCallsTestUser, deactivateCallsTestUsers, type TestUser} from '../../helpers/server_api/user';
+import {apiGetAdminTeamId, archiveCallsTestChannels, createCallsTestChannel, createCallsTestUser, deactivateCallsTestUsers, type TestUser} from '../../helpers/server_api/user';
 import type {ServerView} from '../../helpers/serverView';
 
 test.describe('calls/keyboard_shortcuts', () => {
@@ -29,7 +32,8 @@ test.describe('calls/keyboard_shortcuts', () => {
     let teamId: string;
     let testServerUrl: string;
 
-    test.beforeAll(async () => {
+    test.beforeAll(async ({}, testInfo: TestInfo) => {
+        assertCallsSpecsOnShard1(testInfo.config.shard);
         const serverUrl = process.env.MM_TEST_SERVER_URL;
         const username = process.env.MM_TEST_USER_NAME;
         const password = process.env.MM_TEST_PASSWORD;
@@ -45,8 +49,15 @@ test.describe('calls/keyboard_shortcuts', () => {
         teamId = await apiGetAdminTeamId(serverUrl, adminToken);
     });
 
+    test.afterEach(async () => {
+        if (testServerUrl && adminToken) {
+            await archiveCallsTestChannels(testServerUrl, adminToken);
+        }
+    });
+
     test.afterAll(async () => {
         if (testServerUrl && adminToken) {
+            await archiveCallsTestChannels(testServerUrl, adminToken);
             await deactivateCallsTestUsers(testServerUrl, adminToken);
         }
     });
@@ -65,12 +76,11 @@ test.describe('calls/keyboard_shortcuts', () => {
 
         await logoutFromMattermost(serverWin);
         const testUser: TestUser = await createCallsTestUser(testServerUrl, adminToken, teamId);
+        const testChannel = await createCallsTestChannel(testServerUrl, teamId, testUser);
         await loginToMattermost(serverWin, testUser);
-        await serverWin.waitForSelector('#sidebarItem_town-square', {timeout: 15_000});
-        await serverWin.click('#sidebarItem_town-square');
-        await serverWin.waitForSelector('#channelHeaderTitle', {timeout: 10_000});
+        await enterCallsTestChannel(serverWin, testChannel.name);
         await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
-        await leaveCallIfActive(electronApp);
+        await leaveCallIfActive(electronApp, serverWin);
     });
 
     // Covered by MM-T5411 in calls_functionality.test.ts (smoke test). Skip here to avoid duplicate coverage.

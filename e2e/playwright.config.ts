@@ -8,6 +8,10 @@ import {defineConfig, type Project} from '@playwright/test';
 type Platform = 'linux' | 'darwin' | 'win32';
 
 function getActivePlatform(): Platform {
+    const override = process.env.E2E_PLATFORM;
+    if (override === 'linux' || override === 'darwin' || override === 'win32') {
+        return override;
+    }
     if (process.platform === 'darwin') {
         return 'darwin';
     }
@@ -25,15 +29,27 @@ const PLATFORM_GREP: Record<Platform, RegExp> = {
 
 // Each test gets its own isolated userDataDir (testInfo.outputDir/userdata), so each
 // Electron instance has its own SingletonLock — parallel workers never conflict.
-// Electron processes are heavy (~300MB each), so cap at 2 in CI and half the CPU
-// count locally (max 4). Override with E2E_WORKERS env var.
+// Electron processes are heavy (~300MB each). Override with E2E_WORKERS.
 const cpuCount = os.cpus().length;
 
-// Linux CI hits Playwright worker-teardown hangs with 2 parallel Electron workers;
-// one worker can finish with a stuck app.close() and burn the full 90s budget.
+// Linux CI hits Playwright worker-teardown hangs with 2 Electron workers (a stuck
+// app.close() burns the 90s budget), so it stays at 1 and scales via shards.
 function getDefaultWorkers(): number {
     if (process.env.CI) {
-        return getActivePlatform() === 'linux' ? 1 : 2;
+        const platform = getActivePlatform();
+        switch (platform) {
+        case 'linux':
+            return 1;
+        case 'darwin':
+            // macos-26 is 3-core / 7 GB; 3 Electron workers oversubscribe.
+            return 2;
+        case 'win32':
+            return 3;
+        default: {
+            const exhaustive: never = platform;
+            throw new Error(`Unhandled platform: ${exhaustive}`);
+        }
+        }
     }
     return Math.min(4, Math.max(1, Math.floor(cpuCount / 2)));
 }
@@ -129,9 +145,8 @@ export default defineConfig({
     use: {
 
         // Video/trace land in test-results/ and bloat CI artifacts (Electron
-        // userdata + webm/zip per test). Failures are debugged via the merged
-        // HTML report on S3, which includes screenshots and traces from blob.
-        trace: process.env.CI ? 'on-first-retry' : 'retain-on-failure',
+        // userdata + webm/zip per test). CI traces would also record fill() passwords.
+        trace: process.env.CI ? 'off' : 'retain-on-failure',
         screenshot: 'only-on-failure',
         video: process.env.CI ? 'off' : 'retain-on-failure',
     },

@@ -60,18 +60,18 @@ test.describe('menu_bar/devtools_current_server', () => {
                 {timeout: 15_000, message: 'DevTools must open for the current server webContents after menu click'},
             ).toBe(true);
 
-            // MattermostWebContentsView.openDevTools() uses detach mode. toggleDevTools() does not
-            // reliably close detached DevTools on Linux/Windows, and isDevToolsOpened() can lie on
-            // macOS — close explicitly and assert the server view stays usable.
-            if (process.platform === 'darwin') {
-                await new Promise((resolve) => setTimeout(resolve, 750));
-            }
-            await evaluateInMainProcessWithArg(electronApp, ({webContents}, id) => {
-                const wc = webContents.fromId(id);
-                if (wc && !wc.isDestroyed() && wc.isDevToolsOpened()) {
-                    wc.closeDevTools();
-                }
-            }, webContentsId);
+            // Detached DevTools (product default) can invalidate Playwright's
+            // Electron evaluate. Close is cleanup after the open assertion.
+            await new Promise((resolve) => setTimeout(resolve, 750));
+            await Promise.race([
+                evaluateInMainProcessWithArg(electronApp, ({webContents}, id) => {
+                    const wc = webContents.fromId(id);
+                    if (wc && !wc.isDestroyed() && wc.isDevToolsOpened()) {
+                        wc.closeDevTools();
+                    }
+                }, webContentsId, {timeoutMs: 2_000, isRetryable: () => false}).catch(() => undefined),
+                new Promise((resolve) => setTimeout(resolve, 5_000)),
+            ]);
 
             // DevTools attach/detach can briefly invalidate Playwright's Electron context.
             await prepareMattermostServerView(electronApp, webContentsId);

@@ -1,0 +1,137 @@
+# Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+# See LICENSE.txt for license information.
+name: 'E2E setup Node, caches, and optional npm ci'
+description: >
+  Shared e2e setup. install: npm ci + save on a miss (Linux/Windows install job).
+  restore: require a cache hit (Linux/Windows shards). restore-or-install: restore,
+  or npm ci + best-effort save on a miss (macOS shards).
+
+inputs:
+  mode:
+    description: 'install, restore, or restore-or-install'
+    required: true
+  os:
+    description: 'Operating system for install-os-dependencies (Linux, macOS, Windows)'
+    required: true
+
+outputs:
+  node-modules-cache-hit:
+    description: Whether the v9 node_modules cache was restored
+    value: ${{ steps.cache-node-modules.outputs.cache-hit }}
+  electron-zip-cache-hit:
+    description: Whether the Electron zip cache was restored
+    value: ${{ steps.cache-electron-zip.outputs.cache-hit }}
+
+runs:
+  using: composite
+  steps:
+    - name: e2e/set-electron-cache-dir
+      shell: bash
+      run: |
+        # github.workspace is a Node-friendly path on Windows (D:\a\...); bash
+        # GITHUB_WORKSPACE is /d/a/... which undici/fs will not open.
+        mkdir -p .cache/electron
+        printf 'electron_config_cache=%s/.cache/electron\n' "${{ github.workspace }}" >> "$GITHUB_ENV"
+
+    - name: e2e/setup-node
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      with:
+        node-version-file: ".nvmrc"
+        package-manager-cache: false
+        # node_modules is cached below; disable setup-node's npm cache so
+        # actions/cache v5 does not hit legacy entries.
+
+    - name: e2e/use-gnu-tar-macos
+      if: ${{ runner.os == 'macOS' }}
+      shell: bash
+      run: |
+        # BSD tar on macOS can corrupt actions/cache v5 archives; prefer GNU tar when present.
+        if [ -x /opt/homebrew/opt/gnu-tar/libexec/gnubin/gtar ]; then
+          echo "/opt/homebrew/opt/gnu-tar/libexec/gnubin" >> $GITHUB_PATH
+        fi
+
+    - name: e2e/cache-node-modules
+      id: cache-node-modules
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          node_modules
+          e2e/node_modules
+        enableCrossOsArchive: false
+        # .nvmrc is in the hash for the Node ABI. Linux/Windows install jobs
+        # write this key; macOS shards save on a miss (best-effort).
+        key: ${{ runner.os }}-build-node-modules-v9-${{ runner.arch }}-${{ hashFiles('**/package-lock.json', 'patches/**', '.nvmrc') }}
+
+    - name: e2e/cache-electron-zip
+      id: cache-electron-zip
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: .cache/electron
+        enableCrossOsArchive: false
+        # Public GitHub Releases zip; safe to restore/save from PRs.
+        key: ${{ runner.os }}-electron-zip-v1-${{ runner.arch }}-${{ hashFiles('package-lock.json') }}
+
+    - name: e2e/cache-electron-gyp-windows
+      if: ${{ runner.os == 'Windows' && inputs.mode != 'restore' && steps.cache-node-modules.outputs.cache-hit != 'true' }}
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: C:\Users\runneradmin\.electron-gyp
+        enableCrossOsArchive: false
+        key: ${{ runner.os }}-electron-gyp-v7-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-electron-gyp-v7-${{ hashFiles('**/package-lock.json') }}
+
+    - name: e2e/setup-python
+      if: ${{ inputs.mode != 'restore' && steps.cache-node-modules.outputs.cache-hit != 'true' }}
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      env:
+        PIP_NO_CACHE_DIR: "1"
+      with:
+        python-version: "3.13"
+
+    # Windows restore shards already have natives in the v9 cache. Skip
+    # Chocolatey there so concurrent shards do not 504 chocolatey.org.
+    # Linux restore still needs xvfb; macOS restore still needs nss.
+    - name: e2e/install-os-dependencies
+      if: ${{ (runner.os != 'Windows' || inputs.mode != 'restore') && (inputs.mode != 'install' || steps.cache-node-modules.outputs.cache-hit != 'true') }}
+      uses: ./.github/actions/install-os-dependencies
+      with:
+        os: ${{ inputs.os }}
+
+    - name: e2e/require-node-modules
+      if: ${{ inputs.mode == 'restore' && steps.cache-node-modules.outputs.cache-hit != 'true' }}
+      shell: bash
+      run: |
+        echo "::error::node_modules cache miss on restore. The per-OS install job must save the v9 key first."
+        exit 1
+
+    - name: e2e/install-node-dependencies
+      if: ${{ inputs.mode != 'restore' && steps.cache-node-modules.outputs.cache-hit != 'true' }}
+      shell: bash
+      env:
+        PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+      run: |
+        npm ci
+        cd e2e && npm ci
+
+    - name: e2e/save-node-modules
+      if: ${{ inputs.mode != 'restore' && steps.cache-node-modules.outputs.cache-hit != 'true' }}
+      continue-on-error: ${{ inputs.mode == 'restore-or-install' }}
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          node_modules
+          e2e/node_modules
+        enableCrossOsArchive: false
+        # Reuse the restore step's resolved key. Recomputing hashFiles after
+        # npm ci can pick up lockfiles inside node_modules.
+        key: ${{ steps.cache-node-modules.outputs.cache-primary-key }}
+
+    - name: e2e/save-electron-zip
+      if: ${{ inputs.mode != 'restore' && steps.cache-electron-zip.outputs.cache-hit != 'true' && steps.cache-node-modules.outputs.cache-hit != 'true' }}
+      continue-on-error: ${{ inputs.mode == 'restore-or-install' }}
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: .cache/electron
+        enableCrossOsArchive: false
+        key: ${{ steps.cache-electron-zip.outputs.cache-primary-key }}

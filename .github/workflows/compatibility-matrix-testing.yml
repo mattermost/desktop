@@ -45,6 +45,13 @@ jobs:
       CMT_MATRIX: ${{ steps.matrix.outputs.matrix }}
       TSIO_COMPOSITE_IDENTITY: ${{ steps.tsio-identity.outputs.composite-identity-json }}
       TSIO_TOTAL_REPORTS_EXPECTED: ${{ steps.tsio-identity.outputs.total-reports-expected }}
+      servers: ${{ steps.os.outputs.servers }}
+      has-linux: ${{ steps.os.outputs.has-linux }}
+      has-macos: ${{ steps.os.outputs.has-macos }}
+      has-windows: ${{ steps.os.outputs.has-windows }}
+      linux-runner: ${{ steps.os.outputs.linux-runner }}
+      macos-runner: ${{ steps.os.outputs.macos-runner }}
+      windows-runner: ${{ steps.os.outputs.windows-runner }}
     steps:
       - name: cmt/checkout-desktop
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -86,6 +93,25 @@ jobs:
             '{repository:$repo, commit_sha:$sha, gh_run_id:$run_id, name:$name, gh_run_attempt:$attempt, branch:$branch}')
           echo "composite-identity-json=${COMPOSITE_IDENTITY}" >> "$GITHUB_OUTPUT"
 
+      - name: cmt/os-install-axes
+        id: os
+        env:
+          CMT_MATRIX: ${{ steps.matrix.outputs.matrix }}
+        run: |
+          echo "servers=$(echo "${CMT_MATRIX}" | jq -c '.server')" >> "$GITHUB_OUTPUT"
+          for os in linux macos windows; do
+            runner=$(echo "${CMT_MATRIX}" | jq -r --arg os "$os" '[.environment[] | select(.os == $os) | .runner] | first // empty')
+            if [ -n "${runner}" ]; then
+              echo "has-${os}=true" >> "$GITHUB_OUTPUT"
+              echo "${os}-runner=${runner}" >> "$GITHUB_OUTPUT"
+            else
+              echo "has-${os}=false" >> "$GITHUB_OUTPUT"
+            fi
+          done
+
+  # Pending + final statuses: e2e/compatibility-matrix-testing only.
+  # Do not write e2e/linux|macos|windows or policy — those are PR/master required
+  # checks, and writing them here clobbers E2E/Run on the same SHA.
   update-initial-status:
     runs-on: ubuntu-24.04
     needs:
@@ -95,7 +121,7 @@ jobs:
       statuses: write
     steps:
       # Best-effort: a transient status-API hiccup here must never block the
-      # actual test matrix from running — the `e2e` job below needs this job.
+      # actual test matrix from running — the per-OS e2e jobs below need this job.
       - uses: mattermost/actions/delivery/update-commit-status@218fd96a63451259dc100e1292a5e44af92fe15d
         continue-on-error: true
         env:
@@ -106,33 +132,6 @@ jobs:
           context: e2e/compatibility-matrix-testing
           description: "Compatibility Matrix Testing for ${{ inputs.DESKTOP_VERSION }} version"
           status: pending
-
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        continue-on-error: true
-        with:
-          ref: ${{ inputs.DESKTOP_VERSION }}
-          persist-credentials: false
-          sparse-checkout: |
-            e2e/utils/github-actions.js
-          sparse-checkout-cone-mode: false
-
-      - name: Post pending e2e/linux|macos|windows
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        continue-on-error: true
-        env:
-          DESKTOP_SHA: ${{ needs.calculate-commit-hash.outputs.DESKTOP_SHA }}
-          CMT_MATRIX: ${{ needs.calculate-commit-hash.outputs.CMT_MATRIX }}
-        with:
-          script: |
-            const {updateInitialOsStatuses} = require('./e2e/utils/github-actions.js');
-            const matrix = JSON.parse(process.env.CMT_MATRIX || '{}');
-            const platforms = (matrix.environment || []).map((env) => ({platform: env.os}));
-            await updateInitialOsStatuses({
-              github,
-              context,
-              sha: process.env.DESKTOP_SHA,
-              platforms,
-            });
 
   # Input follows the below schema (Matterwick ≥ v0.4.16).
   # {
@@ -161,41 +160,123 @@ jobs:
   #     }
   #   ]
   # }
-  e2e:
-    name: ${{ matrix.environment.os }}-${{ matrix.server.version }}
+  e2e-linux-install:
+    name: E2E Linux install
+    if: ${{ needs.calculate-commit-hash.outputs.has-linux == 'true' }}
+    uses: ./.github/workflows/e2e-install.yml
+    needs:
+      - calculate-commit-hash
+      - update-initial-status
+    permissions:
+      contents: read
+    with:
+      runs-on: ${{ needs.calculate-commit-hash.outputs.linux-runner }}
+      DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
+
+  e2e-windows-install:
+    name: E2E Windows install
+    if: ${{ needs.calculate-commit-hash.outputs.has-windows == 'true' }}
+    uses: ./.github/workflows/e2e-install.yml
+    needs:
+      - calculate-commit-hash
+      - update-initial-status
+    permissions:
+      contents: read
+    with:
+      runs-on: ${{ needs.calculate-commit-hash.outputs.windows-runner }}
+      DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
+
+  e2e-linux:
+    name: E2E Linux · MM ${{ matrix.server.version }}
+    if: ${{ needs.calculate-commit-hash.outputs.has-linux == 'true' }}
     uses: ./.github/workflows/e2e-functional-template.yml
     needs:
       - calculate-commit-hash
       - update-initial-status
+      - e2e-linux-install
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.calculate-commit-hash.outputs.CMT_MATRIX) }}
+      matrix:
+        server: ${{ fromJson(needs.calculate-commit-hash.outputs.servers) }}
     permissions:
       contents: read
       actions: read
       id-token: write
     secrets: inherit
     with:
-      runs-on: ${{ matrix.environment.runner }}
+      runs-on: ${{ needs.calculate-commit-hash.outputs.linux-runner }}
       cmt: true
       MM_TEST_SERVER_URL: ${{ matrix.server.url }}
       DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
       MM_SERVER_VERSION: ${{ matrix.server.version }}
       TYPE: "CMT"
-      # Packed as one JSON input (see e2e-functional-template.yml's tsio-config) —
-      # workflow_call caps reusable workflows at 10 inputs total.
+      tsio-config: ${{ format('{{"composite_identity":{0},"total_reports_expected":"{1}"}}', needs.calculate-commit-hash.outputs.TSIO_COMPOSITE_IDENTITY, needs.calculate-commit-hash.outputs.TSIO_TOTAL_REPORTS_EXPECTED) }}
+
+  e2e-macos:
+    name: E2E macOS · MM ${{ matrix.server.version }}
+    if: ${{ needs.calculate-commit-hash.outputs.has-macos == 'true' }}
+    uses: ./.github/workflows/e2e-functional-template.yml
+    needs:
+      - calculate-commit-hash
+      - update-initial-status
+    strategy:
+      fail-fast: false
+      matrix:
+        server: ${{ fromJson(needs.calculate-commit-hash.outputs.servers) }}
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    secrets: inherit
+    with:
+      runs-on: ${{ needs.calculate-commit-hash.outputs.macos-runner }}
+      cmt: true
+      MM_TEST_SERVER_URL: ${{ matrix.server.url }}
+      DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
+      MM_SERVER_VERSION: ${{ matrix.server.version }}
+      TYPE: "CMT"
+      tsio-config: ${{ format('{{"composite_identity":{0},"total_reports_expected":"{1}"}}', needs.calculate-commit-hash.outputs.TSIO_COMPOSITE_IDENTITY, needs.calculate-commit-hash.outputs.TSIO_TOTAL_REPORTS_EXPECTED) }}
+
+  e2e-windows:
+    name: E2E Windows · MM ${{ matrix.server.version }}
+    if: ${{ needs.calculate-commit-hash.outputs.has-windows == 'true' }}
+    uses: ./.github/workflows/e2e-functional-template.yml
+    needs:
+      - calculate-commit-hash
+      - update-initial-status
+      - e2e-windows-install
+    strategy:
+      fail-fast: false
+      matrix:
+        server: ${{ fromJson(needs.calculate-commit-hash.outputs.servers) }}
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    secrets: inherit
+    with:
+      runs-on: ${{ needs.calculate-commit-hash.outputs.windows-runner }}
+      cmt: true
+      MM_TEST_SERVER_URL: ${{ matrix.server.url }}
+      DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
+      MM_SERVER_VERSION: ${{ matrix.server.version }}
+      TYPE: "CMT"
       tsio-config: ${{ format('{{"composite_identity":{0},"total_reports_expected":"{1}"}}', needs.calculate-commit-hash.outputs.TSIO_COMPOSITE_IDENTITY, needs.calculate-commit-hash.outputs.TSIO_TOTAL_REPORTS_EXPECTED) }}
 
   update-final-status:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     if: always()
     permissions:
       contents: read
+      actions: read
       id-token: write
       statuses: write
     needs:
       - calculate-commit-hash
-      - e2e
+      - e2e-linux
+      - e2e-macos
+      - e2e-windows
     steps:
       # tsio-report-status.js is repo code, not fetched by github-script itself.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -226,24 +307,15 @@ jobs:
           # TSIO only sees test-case-level results — a job-level failure with no
           # matching failed test (hung worker teardown, crashed runner, npm ci
           # failure) would otherwise still read as "100% passed".
-          UPSTREAM_JOBS_SUCCEEDED: ${{ needs.e2e.result == 'success' }}
-          CMT_MATRIX: ${{ needs.calculate-commit-hash.outputs.CMT_MATRIX }}
+          UPSTREAM_JOBS_SUCCEEDED: ${{ (needs.calculate-commit-hash.outputs.has-linux != 'true' || needs.e2e-linux.result == 'success') && (needs.calculate-commit-hash.outputs.has-macos != 'true' || needs.e2e-macos.result == 'success') && (needs.calculate-commit-hash.outputs.has-windows != 'true' || needs.e2e-windows.result == 'success') }}
         with:
           script: |
-            const {canonicalizeOs} = require('./e2e/utils/github-actions.js');
-            const matrix = JSON.parse(process.env.CMT_MATRIX || '{}');
-            const expectedOs = [...new Set(
-              (matrix.environment || []).
-                map((env) => canonicalizeOs(env.os, env.runner)).
-                filter(Boolean),
-            )];
             const {reportUrl, status, stats} = await require('./e2e/utils/tsio-report-status.js')({
               core, context, github,
               compositeIdentity: JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY),
               totalReportsExpected: parseInt(process.env.TSIO_TOTAL_REPORTS_EXPECTED, 10),
               commitStatusContext: process.env.COMMIT_STATUS_CONTEXT,
-              perOsCommitStatuses: true,
-              expectedOs,
+              perOsCommitStatuses: false,
               upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
               failOnTestFailures: true,
             });

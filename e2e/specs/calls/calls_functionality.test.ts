@@ -1,14 +1,32 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import type {TestInfo} from '@playwright/test';
+
 import {test, expect} from '../../fixtures/index';
-import {waitForCallsWidgetWindow, closeCallsWidget, sendWidgetShortcut, leaveCallIfActive, startCall} from '../../helpers/callsWidget';
-import {waitForMattermostShellReady} from '../../helpers/channelReadiness';
+import {assertCallsSpecsOnShard1} from '../../helpers/assertCallsShard';
+import {
+    closeCallsWidget,
+    enterCallsTestChannel,
+    getCallsMuteStateKey,
+    leaveCallIfActive,
+    startCall,
+    toggleMuteViaShortcut,
+    waitForCallsClientReady,
+    waitForCallsWidgetWindow,
+} from '../../helpers/callsWidget';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost, logoutFromMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {apiLogin} from '../../helpers/server_api/client';
-import {apiGetAdminTeamId, createCallsTestUser, deactivateCallsTestUsers, type TestUser} from '../../helpers/server_api/user';
+import {
+    apiGetAdminTeamId,
+    archiveCallsTestChannels,
+    createCallsTestChannel,
+    createCallsTestUser,
+    deactivateCallsTestUsers,
+    type TestUser,
+} from '../../helpers/server_api/user';
 import type {ServerView} from '../../helpers/serverView';
 
 test.describe('calls/calls_functionality', () => {
@@ -30,7 +48,8 @@ test.describe('calls/calls_functionality', () => {
     let teamId: string;
     let testServerUrl: string;
 
-    test.beforeAll(async () => {
+    test.beforeAll(async ({}, testInfo: TestInfo) => {
+        assertCallsSpecsOnShard1(testInfo.config.shard);
         const serverUrl = process.env.MM_TEST_SERVER_URL;
         const username = process.env.MM_TEST_USER_NAME;
         const password = process.env.MM_TEST_PASSWORD;
@@ -46,8 +65,15 @@ test.describe('calls/calls_functionality', () => {
         teamId = await apiGetAdminTeamId(serverUrl, adminToken);
     });
 
+    test.afterEach(async () => {
+        if (testServerUrl && adminToken) {
+            await archiveCallsTestChannels(testServerUrl, adminToken);
+        }
+    });
+
     test.afterAll(async () => {
         if (testServerUrl && adminToken) {
+            await archiveCallsTestChannels(testServerUrl, adminToken);
             await deactivateCallsTestUsers(testServerUrl, adminToken);
         }
     });
@@ -66,11 +92,10 @@ test.describe('calls/calls_functionality', () => {
 
         await logoutFromMattermost(serverWin);
         const testUser: TestUser = await createCallsTestUser(testServerUrl, adminToken, teamId);
+        const testChannel = await createCallsTestChannel(testServerUrl, teamId, testUser);
         await loginToMattermost(serverWin, testUser);
-        await waitForMattermostShellReady(serverWin, {channelItem: '#sidebarItem_town-square'});
-        await serverWin.click('#sidebarItem_town-square');
-        await serverWin.waitForSelector('#channelHeaderTitle', {timeout: 10_000});
-        await leaveCallIfActive(electronApp);
+        await enterCallsTestChannel(serverWin, testChannel.name);
+        await leaveCallIfActive(electronApp, serverWin);
         await prepareMattermostServerView(electronApp, serverEntry!.webContentsId);
     });
 
@@ -93,31 +118,16 @@ test.describe('calls/calls_functionality', () => {
                 '/plugins/com.mattermost.calls/standalone/widget.html',
             );
 
-            // Wait for mute button directly — covers React mount + call connection in one step.
-            const muteButton = await widgetWindow.waitForSelector(
-                'button[aria-label*="Mute"], button[aria-label*="mute"]',
-                {timeout: 30_000},
-            );
-            expect(muteButton, 'Mute button must exist in Calls widget').toBeTruthy();
+            const muteButton = await waitForCallsClientReady(widgetWindow);
 
-            await widgetWindow.waitForFunction(
-                () => Boolean(((window as unknown as Record<string, unknown>).callsClient as Record<string, unknown> | undefined)?.peer),
-                {timeout: 15_000},
-            );
-
-            // Widget uses aria-label toggling ("Mute" / "Unmute") — no aria-pressed.
-            const initialLabel = await widgetWindow.evaluate(() => {
-                return document.querySelector('#voice-mute-unmute')?.getAttribute('aria-label') ?? null;
-            });
+            const initialMute = await getCallsMuteStateKey(widgetWindow);
 
             await muteButton.click();
 
             await expect.poll(
-                () => widgetWindow.evaluate(() => {
-                    return document.querySelector('#voice-mute-unmute')?.getAttribute('aria-label') ?? null;
-                }),
-                {timeout: 5_000, message: 'Mute button aria-label must toggle after click'},
-            ).not.toBe(initialLabel);
+                () => getCallsMuteStateKey(widgetWindow),
+                {timeout: 5_000, message: 'Mute button must toggle after click'},
+            ).not.toBe(initialMute);
 
             await closeCallsWidget(electronApp, widgetWindow, serverWin);
         },
@@ -148,31 +158,9 @@ test.describe('calls/calls_functionality', () => {
                 throw new Error('Calls widget did not open — is the Calls plugin enabled and media available?');
             }
 
-            // Wait for mute button directly — covers React mount + call connection in one step.
-            await widgetWindow.waitForSelector('button[aria-label*="Mute"], button[aria-label*="mute"]', {timeout: 30_000});
+            await waitForCallsClientReady(widgetWindow);
             await widgetWindow.bringToFront();
-
-            const initialLabel = await widgetWindow.evaluate(() => {
-                return document.querySelector('#voice-mute-unmute')?.getAttribute('aria-label') ?? null;
-            });
-
-            // callsClient.unmute() silently bails when this.peer is null (no WebRTC connection yet).
-            // The mute button can appear before the peer is established, so wait explicitly.
-            await widgetWindow.waitForFunction(
-                () => Boolean(((window as unknown as Record<string, unknown>).callsClient as Record<string, unknown> | undefined)?.peer),
-                {timeout: 15_000},
-            );
-
-            const isMac = process.platform === 'darwin';
-            await sendWidgetShortcut(electronApp, 'Space', isMac ? ['shift', 'meta'] : ['shift', 'control']);
-
-            await expect.poll(
-                () => widgetWindow.evaluate(() => {
-                    return document.querySelector('#voice-mute-unmute')?.getAttribute('aria-label') ?? null;
-                }),
-                {timeout: 5_000, message: 'Mute button aria-label must toggle after pressing the mute keyboard shortcut'},
-            ).not.toBe(initialLabel);
-
+            await toggleMuteViaShortcut(electronApp, widgetWindow);
             await closeCallsWidget(electronApp, widgetWindow, serverWin);
         },
     );

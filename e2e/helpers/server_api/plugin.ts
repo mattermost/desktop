@@ -1,14 +1,45 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {apiRequest} from './client';
+import {apiLogin, apiRequest} from './client';
+import {getTestServerCredentials} from './credentials';
 
 export const CALLS_PLUGIN_ID = 'com.mattermost.calls';
 
-type PluginList = {
-    active: Array<{id: string}>;
-    inactive: Array<{id: string}>;
+type PluginManifest = {
+    id: string;
+    version?: string;
 };
+
+type PluginList = {
+    active: PluginManifest[];
+    inactive: PluginManifest[];
+};
+
+let cachedCallsPluginVersion: string | undefined;
+
+async function getCallsPluginVersion(baseUrl: string, token: string): Promise<string | undefined> {
+    const plugins = await apiRequest<PluginList>(baseUrl, token, '/api/v4/plugins');
+    cachedCallsPluginVersion = plugins.active.find((plugin) => plugin.id === CALLS_PLUGIN_ID)?.version || undefined;
+    return cachedCallsPluginVersion;
+}
+
+/**
+ * Calls version for the current Playwright worker. globalSetup's cache does
+ * not survive into workers, so this re-reads GET /api/v4/plugins once.
+ */
+export async function resolveCallsPluginVersion(): Promise<string | undefined> {
+    if (cachedCallsPluginVersion) {
+        return cachedCallsPluginVersion;
+    }
+    try {
+        const {baseUrl, username, password} = getTestServerCredentials();
+        const token = await apiLogin(baseUrl, username, password);
+        return await getCallsPluginVersion(baseUrl, token);
+    } catch {
+        return undefined;
+    }
+}
 
 type ServerConfig = {
     PluginSettings?: {
@@ -19,6 +50,64 @@ type ServerConfig = {
 export async function isCallsPluginEnabled(baseUrl: string, token: string): Promise<boolean> {
     const plugins = await apiRequest<PluginList>(baseUrl, token, '/api/v4/plugins');
     return plugins.active.some((p) => p.id === CALLS_PLUGIN_ID);
+}
+
+function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function isCallsTestModeOff(baseUrl: string, token: string): Promise<boolean> {
+    const config = await apiRequest<ServerConfig>(baseUrl, token, '/api/v4/config');
+    const current = config.PluginSettings?.Plugins?.[CALLS_PLUGIN_ID] ?? {};
+
+    // Both keys must be true — see disableCallsTestMode.
+    return current.DefaultEnabled === true && current.defaultenabled === true;
+}
+
+async function isCallsSlashCommandRegistered(baseUrl: string, token: string): Promise<boolean> {
+    const teams = await apiRequest<Array<{id: string}>>(baseUrl, token, '/api/v4/users/me/teams');
+    if (teams.length === 0) {
+        throw new Error('Calls setup user belongs to no teams — cannot verify /call is registered');
+    }
+    const commands = await apiRequest<Array<{trigger: string}>>(
+        baseUrl,
+        token,
+        `/api/v4/commands?team_id=${teams[0].id}`,
+    );
+    return commands.some((c) => c.trigger === 'call');
+}
+
+/**
+ * Wait until Calls is usable: plugin active, test mode off, `/call` registered.
+ * The plugin can report active before slash commands exist, so "active" alone is not enough.
+ */
+async function waitForCallsPluginReady(
+    baseUrl: string,
+    token: string,
+    timeoutMs = 60_000,
+): Promise<void> {
+    const deadline = Date.now() + timeoutMs;
+    let lastReason = 'plugin not active';
+
+    while (Date.now() < deadline) {
+        if (await isCallsPluginEnabled(baseUrl, token)) {
+            if (await isCallsTestModeOff(baseUrl, token)) {
+                if (await isCallsSlashCommandRegistered(baseUrl, token)) {
+                    return;
+                }
+                lastReason = '/call slash command not registered';
+            } else {
+                lastReason = 'test mode still enabled';
+            }
+        } else {
+            lastReason = 'plugin not active';
+        }
+        await sleep(2_000);
+    }
+
+    throw new Error(
+        `Calls plugin (${CALLS_PLUGIN_ID}) not ready within ${Math.round(timeoutMs / 1000)}s (${lastReason})`,
+    );
 }
 
 /**
@@ -77,7 +166,7 @@ export async function ensureCallsPlugin(baseUrl: string, token: string): Promise
             if (!await isCallsPluginEnabled(baseUrl, token)) {
                 break;
             }
-            await new Promise((resolve) => setTimeout(resolve, 1_000));
+            await sleep(1_000);
         }
 
         if (await isCallsPluginEnabled(baseUrl, token)) {
@@ -111,7 +200,7 @@ export async function ensureCallsPlugin(baseUrl: string, token: string): Promise
         if (await isCallsPluginEnabled(baseUrl, token)) {
             break;
         }
-        await new Promise((resolve) => setTimeout(resolve, 2_000));
+        await sleep(2_000);
     }
 
     if (!await isCallsPluginEnabled(baseUrl, token)) {
@@ -119,25 +208,6 @@ export async function ensureCallsPlugin(baseUrl: string, token: string): Promise
     }
 
     await disableCallsTestMode(baseUrl, token);
-
-    // Poll until OnActivate has registered the 'call' slash command.
-    // The plugin reports active before slash commands are ready, so /call start
-    // can briefly return "command with trigger not found".
-    const teams = await apiRequest<Array<{id: string}>>(baseUrl, token, '/api/v4/users/me/teams');
-    if (teams.length > 0) {
-        const firstTeamId = teams[0].id;
-        let callCommandReady = false;
-        const cmdDeadline = Date.now() + 30_000;
-        while (Date.now() < cmdDeadline) {
-            const commands = await apiRequest<Array<{trigger: string}>>(baseUrl, token, `/api/v4/commands?team_id=${firstTeamId}`);
-            if (commands.some((c) => c.trigger === 'call')) {
-                callCommandReady = true;
-                break;
-            }
-            await new Promise((resolve) => setTimeout(resolve, 1_000));
-        }
-        if (!callCommandReady) {
-            throw new Error('Calls plugin did not register the /call slash command within 30 seconds');
-        }
-    }
+    await waitForCallsPluginReady(baseUrl, token, 30_000);
+    await getCallsPluginVersion(baseUrl, token);
 }
