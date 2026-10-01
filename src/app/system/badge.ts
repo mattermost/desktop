@@ -110,6 +110,19 @@ export function showBadgeOSX(sessionExpired: boolean, mentionCount: number, show
     app.dock?.setBadge(badge);
 }
 
+export function showBadgeLinux(sessionExpired: boolean, mentionCount: number, showUnreadBadge: boolean) {
+    let count = 0;
+    if (sessionExpired) {
+        count = 1;
+    }
+    if (mentionCount > 0) {
+        count += mentionCount;
+    } else if (showUnreadBadge && showUnreadBadgeSetting) {
+        count += 1;
+    }
+    app.setBadgeCount(count);
+}
+
 function showBadge(sessionExpired: boolean, mentionCount: number, showUnreadBadge: boolean) {
     log.silly('showBadge', {sessionExpired, mentionCount, showUnreadBadge});
 
@@ -121,6 +134,7 @@ function showBadge(sessionExpired: boolean, mentionCount: number, showUnreadBadg
         showBadgeOSX(sessionExpired, mentionCount, showUnreadBadge);
         break;
     case 'linux':
+        showBadgeLinux(sessionExpired, mentionCount, showUnreadBadge);
         break;
     }
 

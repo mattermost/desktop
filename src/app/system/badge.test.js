@@ -13,6 +13,7 @@ jest.mock('electron', () => ({
         dock: {
             setBadge: jest.fn(),
         },
+        setBadgeCount: jest.fn(),
     },
     nativeImage: {
         createFromDataURL: jest.fn(),
@@ -114,6 +115,42 @@ describe('main/badge', () => {
             Badge.setUnreadBadgeSetting(true);
             Badge.showBadgeOSX(false, 0, true);
             expect(app.dock.setBadge).toBeCalledWith('•');
+        });
+    });
+
+    describe('showBadgeLinux', () => {
+        beforeEach(() => {
+            Badge.setUnreadBadgeSetting(false);
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should show 1 when session expired', () => {
+            Badge.showBadgeLinux(true, 0, false);
+            expect(app.setBadgeCount).toBeCalledWith(1);
+        });
+
+        it('should show mention count when has mention count', () => {
+            Badge.showBadgeLinux(false, 50, false);
+            expect(app.setBadgeCount).toBeCalledWith(50);
+        });
+
+        it('should show mention count + 1 when has mention count and session expired', () => {
+            Badge.showBadgeLinux(true, 50, false);
+            expect(app.setBadgeCount).toBeCalledWith(51);
+        });
+
+        it('should not show badge when has unreads but setting is off', () => {
+            Badge.showBadgeLinux(false, 0, true);
+            expect(app.setBadgeCount).toBeCalledWith(0);
+        });
+
+        it('should show 1 when has unreads', () => {
+            Badge.setUnreadBadgeSetting(true);
+            Badge.showBadgeLinux(false, 0, true);
+            expect(app.setBadgeCount).toBeCalledWith(1);
         });
     });
 });
