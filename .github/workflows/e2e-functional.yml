@@ -531,10 +531,22 @@ jobs:
       matrix:
         include: ${{ fromJson(needs.prepare-matrix.outputs.platforms) }}
     steps:
+      # Answers from an earlier attempt at the same commit, so a re-run does not
+      # pay for the same question twice. Restore and save are separate steps:
+      # the cache action saves only when the job succeeds, and a red run is the
+      # one most likely to be re-run.
+      - name: Restore triage answers
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: e2e-triage-answers.json
+          key: e2e-triage-answers-${{ matrix.platform }}-${{ fromJSON(needs.prepare-matrix.outputs.tsio-composite-identity).commit_sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: e2e-triage-answers-${{ matrix.platform }}-${{ fromJSON(needs.prepare-matrix.outputs.tsio-composite-identity).commit_sha }}-
       # Triage must never change the outcome of the E2E run itself.
       - name: e2e/triage
         continue-on-error: true
-        uses: mattermost/mattermost-test-automation-toolkit/actions/e2e-triage@b22f85821d4fa0e724f9b7c2308e2a05879e1910 # actions/e2e-triage
+        uses: mattermost/mattermost-test-automation-toolkit/actions/e2e-triage@440ae09a9b204a89f4ca5e164ce2724000cfd5c0 # actions/e2e-triage
         with:
           composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
           # The reports are named e2e-on-<runner>-<version>; the version moves
@@ -545,12 +557,16 @@ jobs:
           test-root: e2e/specs
           github-token: ${{ secrets.GITHUB_TOKEN }}
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
-          # Desktop's leftovers are the hard cases -- few runs per OS since the
-          # runner images changed -- so the judge gets the most capable model.
-          # The toolkit default stays on Haiku for the other repos.
-          claude-model: claude-opus-5-5
           mode: ${{ vars.E2E_TRIAGE_MODE || 'enforce' }}
+          answers-cache: e2e-triage-answers.json
           post-pr-comment: "false"
+      - name: Save triage answers
+        if: always() && hashFiles('e2e-triage-answers.json') != ''
+        continue-on-error: true
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: e2e-triage-answers.json
+          key: e2e-triage-answers-${{ matrix.platform }}-${{ fromJSON(needs.prepare-matrix.outputs.tsio-composite-identity).commit_sha }}-${{ github.run_id }}-${{ github.run_attempt }}
 
   remove-e2e-label:
     name: Remove E2E label from PR
