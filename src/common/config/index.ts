@@ -257,6 +257,10 @@ export class Config extends EventEmitter {
         return this.combinedData?.useNativeTitleBar ?? false;
     }
 
+    get showUnreadsInWindowTitle() {
+        return this.combinedData?.showUnreadsInWindowTitle ?? false;
+    }
+
     getWindowsSystemDarkMode = () => {
         return !policyConfigLoader.getAppsUseLightTheme();
     };
