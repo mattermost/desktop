@@ -20,8 +20,8 @@ import {
     parseURL,
 } from 'common/utils/url';
 import ContextMenu from 'main/contextMenu';
-
-import allowProtocolDialog from '../../main/security/allowProtocolDialog';
+import allowProtocolDialog from 'main/security/allowProtocolDialog';
+import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
 
 const log = new Logger('PluginsPopUpsManager');
 
@@ -45,6 +45,7 @@ export class PluginsPopUpsManager {
             parentId,
             win,
         };
+        LocalNetworkAccessManager.registerWebContents(win.webContents);
 
         // We take a conservative approach for the time being and disallow most events coming from popups:
         // - Redirects
@@ -110,6 +111,7 @@ export class PluginsPopUpsManager {
         win.once('closed', () => {
             log.debug('removing popup window', details.url, webContentsId);
             Reflect.deleteProperty(this.popups, webContentsId);
+            LocalNetworkAccessManager.unregisterWebContents(webContentsId);
             contextMenu.dispose();
         });
 

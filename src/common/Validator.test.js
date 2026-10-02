@@ -8,6 +8,24 @@ import Joi from 'joi';
 import * as Validator from './Validator';
 
 describe('common/Validator', () => {
+    describe('validateAppState', () => {
+        const installId = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
+
+        it('should preserve installId so it is not regenerated on every launch', () => {
+            expect(Validator.validateAppState({installId})).toStrictEqual({installId});
+        });
+
+        it('should preserve installId alongside the other app state fields', () => {
+            const state = {lastAppVersion: '6.3.0', installId};
+            expect(Validator.validateAppState(state)).toStrictEqual(state);
+        });
+
+        it('should not discard sibling state when installId is not a UUID', () => {
+            const state = {lastAppVersion: '6.3.0', installId: 'not-a-uuid'};
+            expect(Validator.validateAppState(state)).toStrictEqual(state);
+        });
+    });
+
     describe('validateV0ConfigData', () => {
         const config = {url: 'http://server-1.com'};
 
@@ -365,6 +383,19 @@ describe('common/Validator', () => {
 
             expect(wrapped(event, 'Title', 'Body', '', '', '', false, '')).toBe('ok');
             expect(handler).toHaveBeenCalledWith(event, 'Title', 'Body', '', '', '', false, '');
+        });
+    });
+
+    describe('desktopSourcesOptsSchema', () => {
+        const opts = (thumbnailSize) => ({types: ['screen', 'window'], thumbnailSize});
+
+        it('accepts a typical thumbnail size', () => {
+            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: 400, height: 400})).error).toBeUndefined();
+        });
+
+        it('rejects oversized thumbnail dimensions', () => {
+            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: 1000000, height: 400})).error).toBeDefined();
+            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: 400, height: 1000000})).error).toBeDefined();
         });
     });
 });

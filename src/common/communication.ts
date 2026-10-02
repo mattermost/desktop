@@ -164,6 +164,8 @@ export const UPDATE_APPSTATE_FOR_SERVER_ID = 'update-appstate-for-server-id';
 export const MAIN_WINDOW_CREATED = 'main-window-created';
 export const MAIN_WINDOW_RESIZED = 'main-window-resized';
 export const MAIN_WINDOW_FOCUSED = 'main-window-focused';
+export const MAIN_WINDOW_MINIMIZE_TO_TRAY = 'main-window-minimize-to-tray';
+export const MAIN_WINDOW_CLOSE_CONFIRM = 'main-window-close-confirm';
 
 export const VALIDATE_SERVER_URL = 'validate-server-url';
 
@@ -264,3 +266,4 @@ export const RESET_THEME = 'reset-theme';
 export const SESSION_ATTRIBUTES_MANIFEST_INVALIDATED = 'session-attributes-manifest-invalidated';
 export const SESSION_ATTRIBUTES_RESEND_REQUESTED = 'session-attributes-resend-requested';
 export const SESSION_ATTRIBUTES_FIELD_UPDATED = 'session-attributes-field-updated';
+export const GET_SESSION_ATTRIBUTES = 'get-session-attributes';

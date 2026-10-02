@@ -2,10 +2,11 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
-import {dialog, ipcMain} from 'electron';
+import {ipcMain} from 'electron';
 import Joi from 'joi';
 
 import MainWindow from 'app/mainWindow/mainWindow';
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import ServerHub from 'app/serverHub';
 import TabManager from 'app/tabs/tabManager';
@@ -49,7 +50,7 @@ export class NavigationManager {
         const parsedURL = parseURL(url);
         if (!parsedURL) {
             log.warn(`Ignoring invalid URL: ${url}`);
-            dialog.showErrorBox(
+            MessageModal.showErrorModal(
                 localizeMessage('app.navigationManager.invalidLinkTitle', 'Invalid Link'),
                 localizeMessage('app.navigationManager.invalidLinkDescription', 'The link you clicked appears to be malformed and cannot be opened. Please check the URL for errors before trying again.'),
             );
@@ -90,7 +91,7 @@ export class NavigationManager {
                 webContentsView.load(urlWithSchema);
             }
         } else if (!Config.enableServerManagement) {
-            dialog.showErrorBox(
+            MessageModal.showErrorModal(
                 localizeMessage('app.navigationManager.serverManagementDisabledTitle', 'Unable to add server'),
                 localizeMessage('app.navigationManager.serverManagementDisabledDescription', 'Your organization\'s settings don\'t allow adding new servers, so this link couldn\'t be opened. Contact your system administrator for more information.'),
             );
@@ -152,7 +153,7 @@ export class NavigationManager {
     };
 
     private showViewLimitReachedError = () => {
-        dialog.showErrorBox(
+        MessageModal.showErrorModal(
             localizeMessage('app.navigationManager.viewLimitReached', 'View limit reached'),
             localizeMessage('app.navigationManager.viewLimitReached.description', 'You have reached the maximum number of open windows and tabs for this server. Please close an existing window or tab, or adjust the view limit in the Settings modal.'),
         );

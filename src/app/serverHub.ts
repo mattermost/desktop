@@ -392,32 +392,31 @@ export class ServerHub {
         }
 
         // If the URL doesn't match the Site URL, set the URL to the correct one
-        if (remoteInfo.siteURL && remoteURL.toString() !== new URL(remoteInfo.siteURL).toString()) {
+        const parsedSiteURL = remoteInfo.siteURL ? parseURL(remoteInfo.siteURL) : undefined;
+        if (parsedSiteURL && remoteURL.toString() !== parsedSiteURL.toString()) {
             log.verbose('handleServerURLValidation: Remote URL does not match Site URL, checking Site URL');
-            const parsedSiteURL = parseURL(remoteInfo.siteURL);
-            if (parsedSiteURL) {
-                // Check the Site URL as well to see if it's already pre-configured
-                const existingServer = ServerManager.lookupServerByURL(parsedSiteURL, true);
-                if (existingServer && existingServer.id !== currentId) {
-                    log.info('handleServerURLValidation: Site URL already exists, returning URLExists');
-                    return {
-                        status: URLValidationStatus.URLExists,
-                        existingServerName: existingServer.name,
-                        validatedURL: existingServer.url.toString(),
-                    };
-                }
 
-                // If we can't reach the remote Site URL, there's probably a configuration issue
-                const remoteSiteURLResult = await this.testRemoteServer(parsedSiteURL);
-                if ('error' in remoteSiteURLResult) {
-                    log.debug('handleServerURLValidation: Site URL not reachable, returning URLNotMatched');
-                    return {
-                        status: URLValidationStatus.URLNotMatched,
-                        serverVersion: remoteInfo.serverVersion,
-                        serverName: remoteServerName,
-                        validatedURL: remoteURL.toString(),
-                    };
-                }
+            // Check the Site URL as well to see if it's already pre-configured
+            const existingServer = ServerManager.lookupServerByURL(parsedSiteURL, true);
+            if (existingServer && existingServer.id !== currentId) {
+                log.info('handleServerURLValidation: Site URL already exists, returning URLExists');
+                return {
+                    status: URLValidationStatus.URLExists,
+                    existingServerName: existingServer.name,
+                    validatedURL: existingServer.url.toString(),
+                };
+            }
+
+            // If we can't reach the remote Site URL, there's probably a configuration issue
+            const remoteSiteURLResult = await this.testRemoteServer(parsedSiteURL);
+            if ('error' in remoteSiteURLResult) {
+                log.debug('handleServerURLValidation: Site URL not reachable, returning URLNotMatched');
+                return {
+                    status: URLValidationStatus.URLNotMatched,
+                    serverVersion: remoteInfo.serverVersion,
+                    serverName: remoteServerName,
+                    validatedURL: remoteURL.toString(),
+                };
             }
 
             // Otherwise fix it for them and return
@@ -426,7 +425,7 @@ export class ServerHub {
                 status: URLValidationStatus.URLUpdated,
                 serverVersion: remoteInfo.serverVersion,
                 serverName: remoteServerName,
-                validatedURL: remoteInfo.siteURL,
+                validatedURL: parsedSiteURL.toString(),
             };
         }
 
@@ -455,10 +454,10 @@ export class ServerHub {
         const serverInfo = new ServerInfo(server);
         try {
             // Ping server first for pre-auth - config endpoint might be whitelisted
-            await serverInfo.pingServer();
+            await serverInfo.pingServer(session.fromPartition('server-validation'));
 
             // Only proceed to fetch config if ping is successful
-            const remoteInfo = await serverInfo.fetchConfigData();
+            const remoteInfo = await serverInfo.fetchConfigData(session.fromPartition('server-validation'));
             return {data: remoteInfo};
         } catch (error) {
             return {error: error as Error & { errorReason?: ErrorReason }};

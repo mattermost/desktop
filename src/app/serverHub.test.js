@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {session} from 'electron';
+
 import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import {MattermostServer} from 'common/servers/MattermostServer';
@@ -26,6 +28,7 @@ jest.mock('electron', () => ({
             allowNTLMCredentialsForDomains: jest.fn(),
             clearData: jest.fn(),
         },
+        fromPartition: jest.fn(),
     },
 }));
 
@@ -282,8 +285,10 @@ describe('app/serverViewState', () => {
 
     describe('handleServerURLValidation', () => {
         const serverViewState = new ServerHub();
+        const validationSession = {id: 'validation-session'};
 
         beforeEach(() => {
+            session.fromPartition.mockReturnValue(validationSession);
             MattermostServer.mockImplementation(({url}) => ({url}));
             ServerInfo.mockImplementation(({url}) => ({
                 pingServer: jest.fn().mockImplementation(() => ({
@@ -315,6 +320,22 @@ describe('app/serverViewState', () => {
             const result = await serverViewState.handleServerURLValidation({}, 'server.com');
             expect(result.status).toBe(URLValidationStatus.OK);
             expect(result.validatedURL).toBe('https://server.com/');
+        });
+
+        it('should test the server on a separate session', async () => {
+            const pingServer = jest.fn();
+            const fetchConfigData = jest.fn().mockReturnValue({
+                serverVersion: '7.8.0',
+                siteName: 'Mattermost',
+                siteURL: 'https://server.com/',
+            });
+            ServerInfo.mockImplementation(() => ({pingServer, fetchConfigData}));
+
+            await serverViewState.handleServerURLValidation({}, 'https://server.com');
+
+            expect(session.fromPartition).toHaveBeenCalledWith('server-validation');
+            expect(pingServer).toHaveBeenCalledWith(validationSession);
+            expect(fetchConfigData).toHaveBeenCalledWith(validationSession);
         });
 
         it('should correct typos in the protocol', async () => {
@@ -458,6 +479,25 @@ describe('app/serverViewState', () => {
             const result = await serverViewState.handleServerURLValidation({}, 'https://server.com');
             expect(result.status).toBe(URLValidationStatus.URLUpdated);
             expect(result.validatedURL).toBe('https://mainserver.com/');
+        });
+
+        it('should not update the users URL when the Site URL cannot be parsed', async () => {
+            ServerInfo.mockImplementation(() => ({
+                pingServer: jest.fn().mockImplementation(() => ({
+                    status: 'OK',
+                })),
+                fetchConfigData: jest.fn().mockImplementation(() => {
+                    return {
+                        serverVersion: '7.8.0',
+                        siteName: 'Mattermost',
+                        siteURL: 'not-a-url',
+                    };
+                }),
+            }));
+
+            const result = await serverViewState.handleServerURLValidation({}, 'https://server.com');
+            expect(result.status).toBe(URLValidationStatus.OK);
+            expect(result.validatedURL).toBe('https://server.com/');
         });
 
         it('should not update the users URL when the Site URL is blank', async () => {

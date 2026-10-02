@@ -4,7 +4,9 @@
 
 import fs from 'fs';
 
-import {shell, dialog} from 'electron';
+import {shell} from 'electron';
+
+import MessageModal from 'app/mainWindow/modals/messageModal';
 
 import {AllowProtocolDialog} from './allowProtocolDialog';
 
@@ -23,11 +25,15 @@ jest.mock('electron', () => ({
     app: {
         getPath: jest.fn(),
     },
-    dialog: {
-        showMessageBox: jest.fn(),
-    },
     shell: {
         openExternal: jest.fn(),
+    },
+}));
+
+jest.mock('app/mainWindow/modals/messageModal', () => ({
+    __esModule: true,
+    default: {
+        showMessageModal: jest.fn(),
     },
 }));
 
@@ -141,7 +147,7 @@ describe('main/allowProtocolDialog', () => {
         it('should preserve the original URL with embedded scheme colons', async () => {
             const promise = Promise.resolve({response: 0});
             MainWindow.get.mockImplementation(() => ({}));
-            dialog.showMessageBox.mockImplementation(() => promise);
+            MessageModal.showMessageModal.mockImplementation(() => promise);
             allowProtocolDialog.handleDialogEvent('myapp://https://myapp.com/v/13123123123');
             await promise;
 
@@ -152,7 +158,7 @@ describe('main/allowProtocolDialog', () => {
             MainWindow.get.mockImplementation(() => null);
             allowProtocolDialog.handleDialogEvent('mattermost://community.mattermost.com');
             expect(shell.openExternal).not.toBeCalled();
-            expect(dialog.showMessageBox).not.toBeCalled();
+            expect(MessageModal.showMessageModal).not.toBeCalled();
         });
 
         describe('main window not null', () => {
@@ -162,7 +168,7 @@ describe('main/allowProtocolDialog', () => {
 
             it('should open the window but not save when clicking Yes', async () => {
                 const promise = Promise.resolve({response: 0});
-                dialog.showMessageBox.mockImplementation(() => promise);
+                MessageModal.showMessageModal.mockImplementation(() => promise);
                 allowProtocolDialog.handleDialogEvent('mattermost://community.mattermost.com');
                 await promise;
 
@@ -173,7 +179,7 @@ describe('main/allowProtocolDialog', () => {
 
             it('should open the window and save when clicking Yes and Save', async () => {
                 const promise = Promise.resolve({response: 1});
-                dialog.showMessageBox.mockImplementation(() => promise);
+                MessageModal.showMessageModal.mockImplementation(() => promise);
                 allowProtocolDialog.handleDialogEvent('mattermost://community.mattermost.com');
                 await promise;
 
@@ -184,7 +190,7 @@ describe('main/allowProtocolDialog', () => {
 
             it('should do nothing when clicking No', async () => {
                 const promise = Promise.resolve({response: 2});
-                dialog.showMessageBox.mockImplementation(() => promise);
+                MessageModal.showMessageModal.mockImplementation(() => promise);
                 allowProtocolDialog.handleDialogEvent('mattermost://community.mattermost.com');
                 await promise;
 
@@ -195,7 +201,7 @@ describe('main/allowProtocolDialog', () => {
 
             it('should not throw error when shell.openExternal fails', async () => {
                 const promise = Promise.resolve({response: 0});
-                dialog.showMessageBox.mockImplementation(() => promise);
+                MessageModal.showMessageModal.mockImplementation(() => promise);
                 shell.openExternal.mockReturnValue(Promise.reject(new Error('bad protocol')));
                 allowProtocolDialog.handleDialogEvent('bad-protocol://community.mattermost.com');
                 await promise;
@@ -225,7 +231,7 @@ describe('main/allowProtocolDialog', () => {
         ])('should silently block %s without opening dialog or shell', async (urlStr) => {
             await allowProtocolDialog.handleDialogEvent(urlStr);
 
-            expect(dialog.showMessageBox).not.toBeCalled();
+            expect(MessageModal.showMessageModal).not.toBeCalled();
             expect(shell.openExternal).not.toBeCalled();
         });
     });

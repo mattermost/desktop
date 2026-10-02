@@ -12,6 +12,7 @@ import ServerManager from 'common/servers/serverManager';
 import {MattermostView, ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import {updateServerInfos} from 'main/app/utils';
+import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
 import {getServerAPI} from 'main/server/serverAPI';
 
 import {MattermostWebContentsView} from './MattermostWebContentsView';
@@ -92,6 +93,13 @@ jest.mock('main/performanceMonitor', () => ({
     registerView: jest.fn(),
     registerServerView: jest.fn(),
     unregisterView: jest.fn(),
+}));
+jest.mock('main/security/localNetworkAccess', () => ({
+    __esModule: true,
+    default: {
+        registerWebContents: jest.fn(),
+        unregisterWebContents: jest.fn(),
+    },
 }));
 jest.mock('common/servers/serverManager', () => ({
     getRemoteInfo: jest.fn(),
@@ -359,8 +367,10 @@ describe('main/views/MattermostWebContentsView', () => {
 
         it('should remove browser view from window', () => {
             const mattermostView = new MattermostWebContentsView(view, {}, window);
+            expect(jest.mocked(LocalNetworkAccessManager.registerWebContents)).toHaveBeenCalledWith(mattermostView.webContentsView.webContents);
             mattermostView.webContentsView.webContents.close = jest.fn();
             mattermostView.destroy();
+            expect(jest.mocked(LocalNetworkAccessManager.unregisterWebContents)).toHaveBeenCalledWith(mattermostView.webContentsId);
             expect(window.contentView.removeChildView).toBeCalledWith(mattermostView.webContentsView);
         });
 

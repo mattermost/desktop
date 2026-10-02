@@ -30,6 +30,30 @@ describe('main/server/serverInfo', () => {
             expect(callback).toHaveBeenCalledWith(testData);
         });
 
+        it('should pass the provided session along with the request', async () => {
+            const requestSession = {id: 'validation-session'};
+
+            await serverInfo.pingServer(requestSession);
+            expect(getServerAPI).toHaveBeenLastCalledWith(
+                expect.anything(),
+                false,
+                expect.any(Function),
+                expect.any(Function),
+                expect.any(Function),
+                requestSession,
+            );
+
+            await serverInfo.fetchConfigData(requestSession);
+            expect(getServerAPI).toHaveBeenLastCalledWith(
+                expect.anything(),
+                false,
+                expect.any(Function),
+                expect.any(Function),
+                expect.any(Function),
+                requestSession,
+            );
+        });
+
         it('should reject when URL is missing', async () => {
             await expect(serverInfo.getRemoteInfo(callback)).rejects.toThrow();
             expect(callback).not.toHaveBeenCalled();

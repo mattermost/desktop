@@ -8,6 +8,7 @@ import {ipcRenderer, contextBridge} from 'electron';
 
 import {
     GET_LANGUAGE_INFORMATION,
+    GET_SESSION_ATTRIBUTES,
     QUIT,
     OPEN_APP_MENU,
     CLOSE_SERVERS_DROPDOWN,
@@ -217,6 +218,7 @@ contextBridge.exposeInMainWorld('desktop', {
     getLocalConfiguration: () => ipcRenderer.invoke(GET_LOCAL_CONFIGURATION),
     getDownloadLocation: (downloadLocation) => ipcRenderer.invoke(GET_DOWNLOAD_LOCATION, downloadLocation),
     getLanguageInformation: () => ipcRenderer.invoke(GET_LANGUAGE_INFORMATION),
+    getSessionAttributes: () => ipcRenderer.invoke(GET_SESSION_ATTRIBUTES),
     getTheme: () => ipcRenderer.invoke(GET_THEME),
 
     onReloadConfiguration: (listener) => {

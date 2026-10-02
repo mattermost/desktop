@@ -32,6 +32,48 @@ export async function apiGetChannelByName(
     return apiRequest<Channel>(baseUrl, token, `/api/v4/teams/${teamId}/channels/name/${channelName}`);
 }
 
+export async function apiCreateChannel(
+    baseUrl: string,
+    token: string,
+    teamId: string,
+    name: string,
+    displayName: string,
+    type: 'O' | 'P' = 'P',
+): Promise<Channel> {
+    return apiRequest<Channel>(baseUrl, token, '/api/v4/channels', {
+        method: 'POST',
+        body: JSON.stringify({
+            team_id: teamId,
+            name,
+            display_name: displayName,
+            type,
+        }),
+    });
+}
+
+/** Mattermost returns 400 when the channel is already deleted; 404 if it is gone. */
+export function isAlreadyArchivedChannelStatus(status: number): boolean {
+    return status === 400 || status === 404;
+}
+
+/** Soft-delete. Archived channels leave the sidebar. Concurrent archive is success. */
+export async function apiArchiveChannel(
+    baseUrl: string,
+    token: string,
+    channelId: string,
+): Promise<void> {
+    try {
+        await apiRequest<unknown>(baseUrl, token, `/api/v4/channels/${channelId}`, {
+            method: 'DELETE',
+        });
+    } catch (error) {
+        if (error instanceof ApiRequestError && isAlreadyArchivedChannelStatus(error.status)) {
+            return;
+        }
+        throw error;
+    }
+}
+
 export function buildChannelUrl(baseUrl: string, teamName: string, channelName: string): string {
     return `${baseUrl}/${teamName}/channels/${channelName}`;
 }

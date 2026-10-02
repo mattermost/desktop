@@ -13,9 +13,69 @@ const {
     buildLegSummaries,
     formatLegResultText,
     formatCmtChannelMessage,
+    collapseSpecAttempts,
+    resolveChannelTotals,
 } = require('./cmt-channel-notify');
 
 describe('cmt-channel-notify', () => {
+    describe('collapseSpecAttempts', () => {
+        it('counts a double-failed retry as one failure', () => {
+            assert.equal(
+                collapseSpecAttempts([{status: 'failed'}, {status: 'failed'}]),
+                'failed',
+            );
+        });
+
+        it('treats failed-then-passed as flaky', () => {
+            assert.equal(
+                collapseSpecAttempts([{status: 'failed'}, {status: 'passed'}]),
+                'flaky',
+            );
+        });
+
+        it('keeps explicit flaky and single pass/skip', () => {
+            assert.equal(collapseSpecAttempts([{status: 'flaky'}]), 'flaky');
+            assert.equal(collapseSpecAttempts([{status: 'passed'}]), 'passed');
+            assert.equal(collapseSpecAttempts([{status: 'skipped'}]), 'skipped');
+            assert.equal(collapseSpecAttempts([]), null);
+        });
+    });
+
+    describe('resolveChannelTotals', () => {
+        it('sums unique per-leg counts and folds flaky into passed', () => {
+            assert.deepEqual(
+                resolveChannelTotals({
+                    'e2e-on-ubuntu-latest-11.9.0': {passed: 218, failed: 1, skipped: 11, flaky: 0},
+                    'e2e-on-windows-2022-10.11.23': {passed: 214, failed: 2, skipped: 34, flaky: 1},
+                }),
+                {passed: 433, failed: 3, skipped: 45},
+            );
+        });
+
+        it('falls back to test_stats when per-leg counts are empty', () => {
+            assert.deepEqual(
+                resolveChannelTotals({}, {passed: 200, failed: 14, skipped: 5, flaky: 3}),
+                {passed: 203, failed: 14, skipped: 5},
+            );
+        });
+
+        it('falls back to aggregate stats when an expected leg is missing from per-job counts', () => {
+            assert.deepEqual(
+                resolveChannelTotals(
+                    {
+                        'e2e-on-ubuntu-latest-11.9.0': {passed: 218, failed: 0, skipped: 11, flaky: 0},
+                    },
+                    {passed: 400, failed: 5, skipped: 20, flaky: 0},
+                    [
+                        'e2e-on-ubuntu-latest-11.9.0',
+                        'e2e-on-windows-2022-11.9.0',
+                    ],
+                ),
+                {passed: 400, failed: 5, skipped: 20},
+            );
+        });
+    });
+
     describe('formatLegResultText', () => {
         it('renders all-skipped legs as not executed instead of ✅ 0/0', () => {
             assert.equal(
@@ -53,6 +113,47 @@ describe('cmt-channel-notify', () => {
             });
         });
 
+        // PR and master runs dispatch MM_SERVER_VERSION as a branch ref, not semver.
+        // These used to return null, which silently dropped the leg from the per-OS
+        // rollup and left e2e/<os> reporting "E2E incomplete — no results for this OS".
+        it('parses job names whose server version is a branch ref, not semver', () => {
+            assert.deepEqual(parseCmtJobName('e2e-on-ubuntu-latest-master'), {
+                os: 'linux',
+                serverVersion: 'master',
+                runner: 'ubuntu-latest',
+                kind: 'e2e',
+            });
+            assert.deepEqual(parseCmtJobName('e2e-on-macos-26-master'), {
+                os: 'macos',
+                serverVersion: 'master',
+                runner: 'macos-26',
+                kind: 'e2e',
+            });
+            assert.deepEqual(parseCmtJobName('e2e-on-windows-2022-master'), {
+                os: 'windows',
+                serverVersion: 'master',
+                runner: 'windows-2022',
+                kind: 'e2e',
+            });
+            assert.deepEqual(parseCmtJobName('e2e-on-ubuntu-22.04-release-11.9'), {
+                os: 'linux',
+                serverVersion: 'release-11.9',
+                runner: 'ubuntu-22.04',
+                kind: 'e2e',
+            });
+        });
+
+        // Splitting on the version shape instead of the runner would read this as
+        // runner `ubuntu-latest-release` + version `11.9.0`.
+        it('keeps a hyphenated version out of the runner capture', () => {
+            assert.deepEqual(parseCmtJobName('e2e-on-ubuntu-latest-release-11.9.0'), {
+                os: 'linux',
+                serverVersion: 'release-11.9.0',
+                runner: 'ubuntu-latest',
+                kind: 'e2e',
+            });
+        });
+
         it('parses policy-tests job names', () => {
             assert.deepEqual(parseCmtJobName('policy-tests-macos'), {
                 os: 'macos',
@@ -66,6 +167,37 @@ describe('cmt-channel-notify', () => {
                 runner: 'windows',
                 kind: 'policy',
             });
+        });
+
+        it('parses Playwright shard suffixes without folding them into the runner or version', () => {
+            assert.deepEqual(parseCmtJobName('e2e-on-ubuntu-latest-master-1-of-3'), {
+                os: 'linux',
+                serverVersion: 'master',
+                runner: 'ubuntu-latest',
+                kind: 'e2e',
+                shard: '1-of-3',
+            });
+            assert.deepEqual(parseCmtJobName('e2e-on-macos-26-release-11.9.0-2-of-2'), {
+                os: 'macos',
+                serverVersion: 'release-11.9.0',
+                runner: 'macos-26',
+                kind: 'e2e',
+                shard: '2-of-2',
+            });
+            assert.deepEqual(parseCmtJobName('e2e-on-windows-2022-12.0.0-rc1-1-of-3'), {
+                os: 'windows',
+                serverVersion: '12.0.0-rc1',
+                runner: 'windows-2022',
+                kind: 'e2e',
+                shard: '1-of-3',
+            });
+        });
+
+        it('keeps unsharded CMT names without a shard field, including rc versions', () => {
+            assert.equal(parseCmtJobName('e2e-on-ubuntu-latest-9.6.1').shard, undefined);
+            const macRc = parseCmtJobName('e2e-on-macos-26-11.9.0-rc.3');
+            assert.equal(macRc.serverVersion, '11.9.0-rc.3');
+            assert.equal(macRc.shard, undefined);
         });
 
         it('returns null for unexpected names', () => {
@@ -159,12 +291,47 @@ describe('cmt-channel-notify', () => {
             assert.match(text, /\*\*Branch:\*\* `v6\.2\.0-rc\.1` · \*\*Commit:\*\* `55afc0b`/);
             assert.match(text, /🔴 \*\*1 failing test\*\*/);
             assert.match(text, /\| 🪟 Windows \| Server `11\.9\.0` \| 1 \|/);
-            assert.match(text, /\| ❌ Failed \| \*\*460\*\* \| \*\*1\*\* \| \*\*40\*\* \|/);
+
+            // Overall totals come from unique per-leg counts (not inflated TSIO test_stats).
+            assert.match(text, /\| ❌ Failed \| \*\*461\*\* \| \*\*1\*\* \| \*\*40\*\* \|/);
             assert.match(text, /#### Detailed results/);
             assert.doesNotMatch(text, /<details>/);
             assert.match(text, /\| 🐧 Linux \| Server `11\.9\.0` \| ✅ 231\/231 \| \[View\]\(https:\/\/test-io\.test\.mattermost\.com\/reports\/r\/rid-linux\) \|/);
             assert.match(text, /\| 🪟 Windows \| Server `11\.9\.0` \| ❌ 230\/231 \| \[View\]\(https:\/\/test-io\.test\.mattermost\.com\/reports\/r\/rid-windows\) \|/);
             assert.match(text, /➡️ \*\*Full report:\*\* https:\/\/test-io\.test\.mattermost\.com\/reports\/desktop\/v6\.2\.0-rc\.1\/55afc0b\/cmt-desktop/);
+        });
+
+        it('prefers unique per-leg failed counts over inflated TSIO attempt totals', () => {
+            const text = formatCmtChannelMessage({
+                compositeIdentity: {
+                    branch: 'master',
+                    commit_sha: '5eda917312db037975bac5c3535272c61a664674',
+                    name: 'cmt-desktop',
+                },
+                detail: {
+                    status: 'completed',
+
+                    // Inflated: each retry attempt counted (e.g. 1 unique fail × 2 attempts).
+                    test_stats: {passed: 218, failed: 2, skipped: 11, total: 231},
+                    reports: [
+                        {id: 'rid-linux', gh_job_name: 'e2e-on-ubuntu-latest-11.9.1', status: 'complete'},
+                    ],
+                },
+                reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/5eda917/cmt-desktop',
+                baseUrl: 'https://test-io.test.mattermost.com',
+                perJobCounts: {
+
+                    // Unique Playwright-style count after collapsing retries.
+                    'e2e-on-ubuntu-latest-11.9.1': {passed: 218, failed: 1, skipped: 11, flaky: 0},
+                },
+                upstreamJobsSucceeded: true,
+            });
+
+            assert.match(text, /🔴 \*\*1 failing test\*\*/);
+            assert.match(text, /\| 🐧 Linux \| Server `11\.9\.1` \| 1 \|/);
+            assert.match(text, /\| ❌ Failed \| \*\*218\*\* \| \*\*1\*\* \| \*\*11\*\* \|/);
+            assert.match(text, /\| 🐧 Linux \| Server `11\.9\.1` \| ❌ 218\/219 \|/);
+            assert.doesNotMatch(text, /🔴 \*\*2 failing tests\*\*/);
         });
 
         it('renders a passed PR report with PR link and no failure banner', () => {
@@ -247,7 +414,9 @@ describe('cmt-channel-notify', () => {
                 upstreamJobsSucceeded: true,
             });
             assert.match(text, /^## ✅ Desktop PR E2E\n/);
-            assert.match(text, /\| ✅ Passed \| \*\*674\*\* \| \*\*0\*\* \| \*\*51\*\* \|/);
+
+            // Unique per-leg sum: 216+220+237+9 = 682 passed, 30 skipped (not TSIO test_stats 674/51).
+            assert.match(text, /\| ✅ Passed \| \*\*682\*\* \| \*\*0\*\* \| \*\*30\*\* \|/);
             assert.match(text, /TSIO report status: `in_progress` \(consolidation still catching up; not treated as a test failure\)/);
             assert.match(text, /Missing or empty leg report\(s\): 🍎 macOS \/ Policy/);
             assert.match(text, /\| 🍎 macOS \| Policy \| ⚠️ missing \|/);
