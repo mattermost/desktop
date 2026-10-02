@@ -21,7 +21,7 @@ import notMockedPermissionsManager from 'main/security/permissionsManager';
 
 import getLinuxDoNotDisturb from './dnd-linux';
 
-import NotificationManager from './index';
+import NotificationManager, {isDirectMessageRoute, matchesNotificationRoute} from './index';
 
 const Notification = jest.mocked(NotMockedNotification);
 const getFocusAssist = jest.mocked(notMockedGetFocusAssist);
@@ -155,6 +155,8 @@ describe('main/notifications', () => {
                 bounceIcon: false,
                 bounceIconType: 'informational',
             };
+            Config.channelNotificationSounds = {};
+            Config.dmNotificationSound = '';
             MainWindow.get.mockReturnValue(mainWindow);
 
             // Setup mocks for the notification flow
@@ -181,6 +183,8 @@ describe('main/notifications', () => {
                 bounceIcon: false,
                 bounceIconType: 'informational',
             };
+            Config.channelNotificationSounds = {};
+            Config.dmNotificationSound = '';
         });
 
         it('should do nothing when Notification is not supported', async () => {
@@ -525,6 +529,60 @@ describe('main/notifications', () => {
             expect(MainWindow.sendToRenderer).not.toHaveBeenCalledWith(PLAY_SOUND, expect.anything());
         });
 
+        it('should play custom sound for DM when dmNotificationSound is configured', async () => {
+            Config.dmNotificationSound = 'Ripple';
+            await NotificationManager.displayMention(
+                'test', 'test body', 'channel_id', 'team_id',
+                'http://server-1.com/team_id/messages/@alice', false,
+                {id: 1} as WebContents, 'Ding',
+            );
+            expect(MainWindow.sendToRenderer).toHaveBeenCalledWith(PLAY_SOUND, 'Ripple');
+        });
+
+        it('should play custom sound for specific channel when channelNotificationSounds is configured by channelId', async () => {
+            Config.channelNotificationSounds = {
+                channel_id: 'Upstairs',
+            };
+            await NotificationManager.displayMention(
+                'test', 'test body', 'channel_id', 'team_id',
+                'http://server-1.com/team_id/channels/town-square', false,
+                {id: 1} as WebContents, 'Ding',
+            );
+            expect(MainWindow.sendToRenderer).toHaveBeenCalledWith(PLAY_SOUND, 'Upstairs');
+        });
+
+        it('should play custom sound for specific channel/user when channelNotificationSounds is configured by username in URL', async () => {
+            Config.channelNotificationSounds = {
+                '@alice': 'Hello',
+            };
+            await NotificationManager.displayMention(
+                'test', 'test body', 'channel_id', 'team_id',
+                'http://server-1.com/team_id/messages/@alice', false,
+                {id: 1} as WebContents, 'Ding',
+            );
+            expect(MainWindow.sendToRenderer).toHaveBeenCalledWith(PLAY_SOUND, 'Hello');
+        });
+
+        it('should not match prefixes of channel or user names', async () => {
+            Config.channelNotificationSounds = {
+                town: 'Upstairs',
+                '@ann': 'Hello',
+            };
+            await NotificationManager.displayMention(
+                'test', 'test body', 'channel_id', 'team_id',
+                'http://server-1.com/team_id/channels/town-square', false,
+                {id: 1} as WebContents, 'Ding',
+            );
+            expect(MainWindow.sendToRenderer).toHaveBeenCalledWith(PLAY_SOUND, 'Ding');
+
+            await NotificationManager.displayMention(
+                'test', 'test body', 'channel_id_2', 'team_id',
+                'http://server-1.com/team_id/messages/@anna', false,
+                {id: 1} as WebContents, 'Ding',
+            );
+            expect(MainWindow.sendToRenderer).toHaveBeenCalledWith(PLAY_SOUND, 'Ding');
+        });
+
         describe('notification failed events', () => {
             beforeEach(() => {
                 mockBlockShow = true;
@@ -823,4 +881,72 @@ describe('main/notifications', () => {
             expect(getLinuxDoNotDisturb()).toBe(true);
         });
     });
+
+    describe('matchesNotificationRoute', () => {
+        it('should return false for empty or falsy key', () => {
+            expect(matchesNotificationRoute('http://localhost/team/channels/town-square', '')).toBe(false);
+        });
+
+        it('should match exact channel segment in URL', () => {
+            expect(matchesNotificationRoute('http://server.com/myteam/channels/town-square', 'town-square')).toBe(true);
+            expect(matchesNotificationRoute('http://server.com/myteam/channels/town-square/', 'town-square')).toBe(true);
+        });
+
+        it('should not match prefix or substring of channel name', () => {
+            expect(matchesNotificationRoute('http://server.com/myteam/channels/town-square', 'town')).toBe(false);
+            expect(matchesNotificationRoute('http://server.com/myteam/channels/town-square', 'square')).toBe(false);
+        });
+
+        it('should match username in messages route with or without @ prefix', () => {
+            expect(matchesNotificationRoute('http://server.com/myteam/messages/@alice', '@alice')).toBe(true);
+            expect(matchesNotificationRoute('http://server.com/myteam/messages/@alice', 'alice')).toBe(true);
+            expect(matchesNotificationRoute('http://server.com/myteam/messages/alice', '@alice')).toBe(true);
+            expect(matchesNotificationRoute('http://server.com/myteam/messages/alice', 'alice')).toBe(true);
+        });
+
+        it('should not match prefix or substring of username', () => {
+            expect(matchesNotificationRoute('http://server.com/myteam/messages/@anna', '@ann')).toBe(false);
+            expect(matchesNotificationRoute('http://server.com/myteam/messages/@anna', 'ann')).toBe(false);
+        });
+
+        it('should match case-insensitively', () => {
+            expect(matchesNotificationRoute('http://server.com/myteam/channels/town-square', 'Town-Square')).toBe(true);
+            expect(matchesNotificationRoute('http://server.com/myteam/messages/@alice', '@Alice')).toBe(true);
+        });
+
+        it('should return false for malformed URLs gracefully', () => {
+            expect(matchesNotificationRoute(':::invalid-url:::', 'town-square')).toBe(false);
+        });
+    });
+
+    describe('isDirectMessageRoute', () => {
+        it('should return false for empty or falsy URL', () => {
+            expect(isDirectMessageRoute('')).toBe(false);
+        });
+
+        it('should return true for valid direct message routes with username', () => {
+            expect(isDirectMessageRoute('http://server.com/myteam/messages/@alice')).toBe(true);
+            expect(isDirectMessageRoute('http://server.com/myteam/messages/alice')).toBe(true);
+            expect(isDirectMessageRoute('http://server.com/messages/@bob')).toBe(true);
+        });
+
+        it('should return false for channels named messages', () => {
+            expect(isDirectMessageRoute('http://server.com/myteam/channels/messages')).toBe(false);
+            expect(isDirectMessageRoute('http://server.com/myteam/channels/messages/')).toBe(false);
+        });
+
+        it('should return false for messages route missing username segment', () => {
+            expect(isDirectMessageRoute('http://server.com/myteam/messages')).toBe(false);
+            expect(isDirectMessageRoute('http://server.com/myteam/messages/')).toBe(false);
+        });
+
+        it('should return false for regular channel routes', () => {
+            expect(isDirectMessageRoute('http://server.com/myteam/channels/town-square')).toBe(false);
+        });
+
+        it('should return false for malformed URLs', () => {
+            expect(isDirectMessageRoute(':::invalid-url:::')).toBe(false);
+        });
+    });
 });
+

@@ -58,6 +58,9 @@ const defaultPreferences: ConfigV4 = {
     themeSyncing: true,
     useNativeTitleBar: false,
     trustedEmbeddedMediaOrigins: [],
+    channelNotificationSounds: {},
+    channelNotificationSoundNames: {},
+    dmNotificationSound: '',
 };
 
 export default defaultPreferences;

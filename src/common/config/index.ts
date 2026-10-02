@@ -176,6 +176,27 @@ export class Config extends EventEmitter {
     get notifications() {
         return this.combinedData?.notifications ?? defaultPreferences.notifications;
     }
+
+    /**
+     * Map of channel/user identifiers to custom notification sound names.
+     */
+    get channelNotificationSounds() {
+        return this.combinedData?.channelNotificationSounds ?? defaultPreferences.channelNotificationSounds;
+    }
+
+    /**
+     * Map of channel identifiers to cached channel display names.
+     */
+    get channelNotificationSoundNames() {
+        return this.combinedData?.channelNotificationSoundNames ?? defaultPreferences.channelNotificationSoundNames;
+    }
+
+    /**
+     * Custom notification sound name for direct messages.
+     */
+    get dmNotificationSound() {
+        return this.combinedData?.dmNotificationSound ?? defaultPreferences.dmNotificationSound;
+    }
     get showUnreadBadge() {
         return this.combinedData?.showUnreadBadge ?? defaultPreferences.showUnreadBadge;
     }

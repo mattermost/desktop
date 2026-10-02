@@ -8,7 +8,7 @@ import type {Theme} from '@mattermost/desktop-api';
 import type {CombinedConfig, LocalConfiguration, UniqueServer, Server, UniqueView} from './config';
 import type {DownloadedItem, DownloadedItems, DownloadsMenuOpenEventPayload} from './downloads';
 import type {UniqueServerWithPermissions, Permissions} from './permissions';
-import type {URLValidationResult} from './server';
+import type {ChannelInfo, URLValidationResult} from './server';
 import type {SaveQueueItem} from './settings';
 
 import type {Language} from '../../i18n/i18n';
@@ -96,6 +96,7 @@ declare global {
             getFullScreenStatus: () => Promise<boolean>;
             getAvailableSpellCheckerLanguages: () => Promise<string[]>;
             getAvailableLanguages: () => Promise<string[]>;
+            getAvailableChannels: () => Promise<ChannelInfo[]>;
             getLocalConfiguration: () => Promise<LocalConfiguration>;
             getDownloadLocation: (downloadLocation?: string) => Promise<string>;
             getLanguageInformation: () => Promise<Language>;

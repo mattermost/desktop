@@ -181,6 +181,7 @@ export default function SettingsModal({
                             id={setting.id}
                             onSave={save}
                             value={config[setting.id]}
+                            config={config}
                             {...setting.props}
                         />
                     ))}
