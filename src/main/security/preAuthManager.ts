@@ -132,7 +132,7 @@ export class PreAuthManager {
 
     private handleClientCert = (
         event: Event,
-        _: WebContents,
+        _: WebContents | null,
         url: string,
         list: Certificate[],
         callback: (certificate?: Certificate) => void,
@@ -166,7 +166,7 @@ export class PreAuthManager {
 
     private handleBasicAuth = (
         event: Event,
-        _: WebContents,
+        _: WebContents | null,
         request: AuthenticationResponseDetails,
         authInfo: AuthInfo,
         callback: (username?: string, password?: string) => void,
