@@ -105,6 +105,34 @@ export const isTeamUrl = (serverURL: URL, inputURL: URL, withApi?: boolean) => {
     return !(paths.some((testPath) => isUrlType(testPath, serverURL, inputURL)));
 };
 
+// Pages where Ctrl/Cmd+F should open desktop find-in-page instead of channel search.
+// Add patterns here to expand coverage (e.g. System Console) without changing call sites.
+const FIND_IN_PAGE_PATH_PATTERNS = [
+    /^\/(?!admin_console)[a-z0-9\-_]+\/(?:integrations|emoji)(?:\/|$)/,
+];
+
+function getPathRelativeToServer(serverURL: URL, inputURL: URL): string | undefined {
+    if (!isInternalURL(inputURL, serverURL)) {
+        return undefined;
+    }
+
+    const serverPath = getFormattedPathName(serverURL.pathname);
+    const inputPath = getFormattedPathName(inputURL.pathname);
+    if (serverPath === '/') {
+        return inputPath;
+    }
+    if (!inputPath.startsWith(serverPath)) {
+        return undefined;
+    }
+
+    return `/${inputPath.slice(serverPath.length)}`;
+}
+
+export const shouldUseFindInPage = (serverURL: URL, inputURL: URL) => {
+    const relativePath = getPathRelativeToServer(serverURL, inputURL);
+    return Boolean(relativePath && FIND_IN_PAGE_PATH_PATTERNS.some((pattern) => pattern.test(relativePath)));
+};
+
 export const isCallsPopOutURL = (serverURL: URL, inputURL: URL, callID: string) => {
     const matches = inputURL.pathname.match(new RegExp(`^${escapeRegExp(getFormattedPathName(serverURL.pathname))}([A-Za-z0-9-_]+)/`, 'i'));
     if (matches?.length !== 2) {

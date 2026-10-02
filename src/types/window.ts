@@ -130,6 +130,15 @@ declare global {
             onUpdateMentionsForServer: (listener: (serverId: string, expired: boolean, mentions: number, unreads: boolean) => void) => void;
             onSetURLForURLView: (listener: (link?: string) => void) => void;
             updateURLViewWidth: (width?: number) => void;
+            findBar: {
+                find: (text: string, options?: {forward?: boolean; findNext?: boolean}) => void;
+                findNext: () => void;
+                findPrevious: () => void;
+                close: () => void;
+                onOpen: (listener: () => void) => void;
+                onFocus: (listener: () => void) => void;
+                onResult: (listener: (result: {activeMatchOrdinal: number; matches: number}) => void) => void;
+            };
             openNotificationPreferences: () => void;
             openWindowsCameraPreferences: () => void;
             openWindowsMicrophonePreferences: () => void;

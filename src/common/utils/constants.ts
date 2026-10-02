@@ -15,6 +15,9 @@ export const MAX_LOADING_SCREEN_SECONDS = 4 * SECOND;
 
 export const TAB_BAR_HEIGHT = 40;
 export const TAB_BAR_PADDING = 4;
+export const FIND_BAR_WIDTH = 360;
+export const FIND_BAR_HEIGHT = 44;
+export const FIND_BAR_MARGIN = 8;
 export const THREE_DOT_MENU_WIDTH = 40;
 export const THREE_DOT_MENU_WIDTH_MAC = 80;
 export const MENU_SHADOW_WIDTH = 24;
