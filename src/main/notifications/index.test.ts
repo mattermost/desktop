@@ -358,7 +358,7 @@ describe('main/notifications', () => {
                 'team_id',
                 'http://server-1.com/team_id/channel_id',
                 false,
-                {id: 1, send: jest.fn()} as unknown as WebContents,
+                {id: 1, send: jest.fn(), isDestroyed: () => false} as unknown as WebContents,
                 '',
             );
             const mention = mentions.find((m) => m.body === 'mention_click_body');
@@ -371,6 +371,61 @@ describe('main/notifications', () => {
 
             expect(MainWindow.show).toHaveBeenCalled();
             expect(TabManager.switchToTab).toHaveBeenCalledWith('view-1');
+        });
+
+        it('should show window and switch tab when webContents is destroyed on notification click', async () => {
+            const webcontents = {
+                id: 1,
+                send: jest.fn(),
+                isDestroyed: () => true,
+            } as unknown as WebContents;
+            await NotificationManager.displayMention(
+                'click_test',
+                'mention_destroyed_body',
+                'channel_id',
+                'team_id',
+                'http://server-1.com/team_id/channel_id',
+                false,
+                webcontents,
+                '',
+            );
+            const mention = mentions.find((m) => m.body === 'mention_destroyed_body');
+            expect(() => mention?.value.click()).not.toThrow();
+            expect(webcontents.send).not.toHaveBeenCalled();
+            expect(MainWindow.show).toHaveBeenCalled();
+            expect(TabManager.switchToTab).toHaveBeenCalledWith('view-1');
+            expect(ipcMain.on).not.toHaveBeenCalled();
+        });
+
+        it('should not crash when webContents.send throws Object has been destroyed', async () => {
+            const webcontents = {
+                id: 1,
+                send: jest.fn(() => {
+                    throw new TypeError('Object has been destroyed');
+                }),
+                isDestroyed: () => false,
+            } as unknown as WebContents;
+            await NotificationManager.displayMention(
+                'click_test',
+                'mention_send_throws_body',
+                'channel_id',
+                'team_id',
+                'http://server-1.com/team_id/channel_id',
+                false,
+                webcontents,
+                '',
+            );
+            const mention = mentions.find((m) => m.body === 'mention_send_throws_body');
+            expect(() => mention?.value.click()).not.toThrow();
+            expect(webcontents.send).toHaveBeenCalledWith(
+                NOTIFICATION_CLICKED,
+                'channel_id',
+                'team_id',
+                'http://server-1.com/team_id/channel_id',
+            );
+            expect(MainWindow.show).toHaveBeenCalled();
+            expect(TabManager.switchToTab).toHaveBeenCalledWith('view-1');
+            expect(ipcMain.off).toHaveBeenCalled();
         });
 
         it('linux/windows - should not flash frame when config item is not set', async () => {
@@ -598,7 +653,7 @@ describe('main/notifications', () => {
         });
 
         it('NM-09: should send NOTIFICATION_CLICKED with channelId, teamId, and url when clicked', async () => {
-            const webcontents = {id: 1, send: jest.fn()} as unknown as WebContents;
+            const webcontents = {id: 1, send: jest.fn(), isDestroyed: () => false} as unknown as WebContents;
             const url = 'http://server-1.com/team_id/channel_id';
             await NotificationManager.displayMention(
                 'test', 'test body', 'channel_id', 'team_id', url, false, webcontents, '',
