@@ -2,6 +2,7 @@
   "app.menus.contextMenu.copyEmailAddress": "Copy Email Address",
   "app.menus.contextMenu.openInNewTab": "Open in new tab",
   "app.menus.contextMenu.openInNewWindow": "Open in new window",
+  "app.menus.contextMenu.openLinkInBrowser": "Open Link in Browser",
   "app.navigationManager.invalidLinkDescription": "The link you clicked appears to be malformed and cannot be opened. Please check the URL for errors before trying again.",
   "app.navigationManager.invalidLinkTitle": "Invalid Link",
   "app.navigationManager.serverManagementDisabledDescription": "Your organization's settings don't allow adding new servers, so this link couldn't be opened. Contact your system administrator for more information.",
