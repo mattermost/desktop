@@ -546,7 +546,7 @@ jobs:
       # Triage must never change the outcome of the E2E run itself.
       - name: e2e/triage
         continue-on-error: true
-        uses: mattermost/mattermost-test-automation-toolkit/actions/e2e-triage@39c6c2d2cab50e3fcf23e68bd8247337b4a12878 # actions/e2e-triage
+        uses: mattermost/mattermost-test-automation-toolkit/actions/e2e-triage@fc4a5cd2867bff5a4eec98fc93f57ac1d03e2004 # actions/e2e-triage
         with:
           composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
           # The reports are named e2e-on-<runner>-<version>; the version moves
