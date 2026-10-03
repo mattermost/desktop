@@ -546,13 +546,16 @@ jobs:
       # Triage must never change the outcome of the E2E run itself.
       - name: e2e/triage
         continue-on-error: true
-        uses: mattermost/mattermost-test-automation-toolkit/actions/e2e-triage@65ea0eee0e21e38d87989774db650bf39b729b41 # actions/e2e-triage
+        uses: mattermost/mattermost-test-automation-toolkit/actions/e2e-triage@39c6c2d2cab50e3fcf23e68bd8247337b4a12878 # actions/e2e-triage
         with:
           composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
           # The reports are named e2e-on-<runner>-<version>; the version moves
           # every release, so match on the stable prefix.
           report-name: e2e-on-${{ matrix.runner }}
           status-context: e2e/${{ matrix.platform }}
+          # One triage check for the whole PR, summarising every OS.
+          triage-status-context: e2e/triage
+          triage-lanes: e2e/linux,e2e/macos,e2e/windows
           lane: ${{ matrix.platform }}
           test-root: e2e/specs
           github-token: ${{ secrets.GITHUB_TOKEN }}
