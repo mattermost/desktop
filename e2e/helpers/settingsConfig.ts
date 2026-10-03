@@ -17,7 +17,18 @@ export async function waitForConfigValue<T>(
     timeout = 15_000,
 ): Promise<void> {
     await expect.poll(
-        () => readConfigValue<T>(configFilePath, key),
+        () => {
+            try {
+                return readConfigValue<T>(configFilePath, key);
+            } catch (error) {
+                // The app rewrites config.json in place, so a read can land on a
+                // half-written file; poll again rather than fail the test.
+                if (error instanceof SyntaxError) {
+                    return undefined;
+                }
+                throw error;
+            }
+        },
         {timeout, message: `config.json ${key} must become ${String(expected)}`},
     ).toBe(expected);
 }

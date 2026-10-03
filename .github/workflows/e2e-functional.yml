@@ -478,6 +478,98 @@ jobs:
             });
             core.info(`TSIO report ${reportUrl}: ${status} (${JSON.stringify(stats)})`);
 
+
+
+  # Is this red E2E run the PR's fault? The job asks Test System IO for the past
+  # executions of exactly the tests that failed, applies history rules (broken on
+  # trunk, flaky on trunk, recurring on other PRs, owned by the PR's own diff) and
+  # escalates only what the rules cannot settle to a second judge that must cite
+  # evidence a reviewer can open.
+  #
+  # Deliberately its own job rather than a step in tsio-summary: that job checks
+  # out the branch under test and loads its helper files into github-script, so it
+  # must never hold pull-requests: write. This job checks out nothing and runs a
+  # single SHA-pinned action.
+  #
+  # It needs tsio-summary only for ordering — that job polls until every leg has
+  # joined the group, so by the time this runs the group is settled.
+  #
+  # It runs on master as well as on PRs. On master the question changes from "is
+  # this the PR's fault" to "is master noisy or actually broken", and only
+  # intermittency clears a failure: a test that failed in the previous master run
+  # too is a streak, not a flake, and stays red. A master run has no PR to comment
+  # on, so the story lands in the job summary.
+  #
+  # Enforced: each leg narrows to its own OS report and writes the e2e/<os>
+  # status that tsio-summary turned red -- success only when every failure is
+  # attributable to trunk or other PRs, failure otherwise. Setting the
+  # E2E_TRIAGE_MODE variable to report-only switches this back off.
+  tsio-triage:
+    name: Triage E2E failures (${{ matrix.platform }})
+    runs-on: ubuntu-24.04
+    needs:
+      - prepare-matrix
+      - tsio-summary
+    # prepare-matrix is skipped when instance_details is empty and can finish
+    # without an identity when preparation fails, so guard on the identity itself.
+    if: >-
+      always()
+      && needs.prepare-matrix.outputs.tsio-composite-identity != ''
+      && needs.tsio-summary.result != 'success'
+    permissions:
+      contents: read
+      statuses: write
+      pull-requests: read
+    # One triage per operating system, over the same matrix the tests ran on.
+    # A run uploads one report per OS into a shared group, so a single triage
+    # could only ever write one status covering all of them -- which is why this
+    # used to write a decorative e2e/triage rather than the e2e/<os> contexts
+    # that actually gate the pull request. Narrowing by report name gives each OS
+    # its own verdict and lets it write the status it is answerable for.
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.prepare-matrix.outputs.platforms) }}
+    steps:
+      # Answers from an earlier attempt at the same commit, so a re-run does not
+      # pay for the same question twice. Restore and save are separate steps:
+      # the cache action saves only when the job succeeds, and a red run is the
+      # one most likely to be re-run.
+      - name: Restore triage answers
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: e2e-triage-answers.json
+          key: e2e-triage-answers-${{ matrix.platform }}-${{ fromJSON(needs.prepare-matrix.outputs.tsio-composite-identity).commit_sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: e2e-triage-answers-${{ matrix.platform }}-${{ fromJSON(needs.prepare-matrix.outputs.tsio-composite-identity).commit_sha }}-
+      # Triage must never change the outcome of the E2E run itself.
+      - name: e2e/triage
+        continue-on-error: true
+        uses: mattermost/mattermost-test-automation-toolkit/actions/e2e-triage@fc4a5cd2867bff5a4eec98fc93f57ac1d03e2004 # actions/e2e-triage
+        with:
+          composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
+          # The reports are named e2e-on-<runner>-<version>; the version moves
+          # every release, so match on the stable prefix.
+          report-name: e2e-on-${{ matrix.runner }}
+          status-context: e2e/${{ matrix.platform }}
+          # One triage check for the whole PR, summarising every OS.
+          triage-status-context: e2e/triage
+          triage-lanes: e2e/linux,e2e/macos,e2e/windows
+          lane: ${{ matrix.platform }}
+          test-root: e2e/specs
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          mode: ${{ vars.E2E_TRIAGE_MODE || 'enforce' }}
+          answers-cache: e2e-triage-answers.json
+      - name: Save triage answers
+        if: always() && hashFiles('e2e-triage-answers.json') != ''
+        continue-on-error: true
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: e2e-triage-answers.json
+          key: e2e-triage-answers-${{ matrix.platform }}-${{ fromJSON(needs.prepare-matrix.outputs.tsio-composite-identity).commit_sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+
   remove-e2e-label:
     name: Remove E2E label from PR
     runs-on: ubuntu-24.04
