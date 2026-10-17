@@ -36,7 +36,7 @@ concurrency:
 jobs:
   fork-e2e-policy:
     if: >-
-      github.event_name == 'workflow_dispatch'
+      (github.event_name == 'workflow_dispatch' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch))
       || (github.event.label.name == 'E2E/Override'
           && github.event.pull_request.head.repo.full_name != github.repository
           && github.event.pull_request.base.ref == 'master')
@@ -94,13 +94,20 @@ jobs:
                 return false;
               }
             };
-            const reset = (why) => {
+            const reset = async (why, refused = false) => {
               core.setOutput('mode', 'pending');
               core.info(`Fork PR #${pr.number}: ${why}; resetting any waived contexts.`);
+              // A refused waiver must not be silent: the checks just stay pending otherwise.
+              if (refused && process.env.DRY_RUN !== 'true') {
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number: pr.number,
+                  body: `E2E waiver refused: ${why}. The required E2E checks stay pending; a maintainer with write access must re-apply \`${label}\`.`,
+                });
+              }
             };
 
             if (!pr.labels.some((l) => l.name === label)) {
-              reset(`${label} is not applied`);
+              await reset(`${label} is not applied`);
               return;
             }
 
@@ -118,7 +125,7 @@ jobs:
               filter((e) => Date.parse(e.created_at) === newest).
               map((e) => e.actor?.login || ''))];
             if (newestActors.length > 1) {
-              reset(`${label} was applied by ${newestActors.join(', ')} at the same time`);
+              await reset(`${label} was applied by ${newestActors.join(', ')} at the same time`, waiving);
               return;
             }
             const latest = newestActors[0] || '';
@@ -126,7 +133,7 @@ jobs:
             const required = [...new Set([approver, latest].filter(Boolean))];
             for (const user of required.length ? required : ['']) {
               if (!(await hasWriteAccess(user))) {
-                reset(`${label} was applied by '${user}', who lacks write access`);
+                await reset(`${label} was applied by '${user}', who lacks write access`, waiving);
                 return;
               }
             }
@@ -201,15 +208,25 @@ jobs:
                 state = 'pending';
                 description = 'E2E/Override missing or not applied by a writer; fork PRs need it to merge';
               }
-              try {
-                await github.rest.repos.createCommitStatus({
-                  owner, repo, sha, state, context: statusContext,
-                  description: description.substring(0, 140),
-                  ...(waive ? {target_url: targetUrl} : {}),
-                });
-                core.info(`Published ${state} for ${statusContext} on ${sha}`);
-              } catch (err) {
-                failures.push(`${statusContext}: ${err.message}`);
+              // One retry: a transient 5xx would otherwise leave a context absent that a manual
+              // re-check can't fill in (it never creates a waiver).
+              let lastError;
+              for (let attempt = 0; attempt < 2; attempt++) {
+                try {
+                  await github.rest.repos.createCommitStatus({
+                    owner, repo, sha, state, context: statusContext,
+                    description: description.substring(0, 140),
+                    ...(waive ? {target_url: targetUrl} : {}),
+                  });
+                  core.info(`Published ${state} for ${statusContext} on ${sha}`);
+                  lastError = undefined;
+                  break;
+                } catch (err) {
+                  lastError = err;
+                }
+              }
+              if (lastError) {
+                failures.push(`${statusContext}: ${lastError.message}`);
               }
             }
             if (failures.length > 0) {
