@@ -33,24 +33,29 @@ jobs:
       pull-requests: write
       actions: write
       statuses: write
+    # Fork PRs only get a read-only token here (label edits 403) and never run E2E; their
+    # required e2e/* statuses are waived by e2e-fork-policy.yml instead.
     if: >-
-      (
-        !github.event.pull_request.draft
-        && contains(fromJSON('["opened", "reopened", "ready_for_review", "synchronize"]'), github.event.action)
-      )
-      || (
-        github.event.action == 'labeled'
-        && github.event.label.name == 'E2E/Override'
-      )
-      || (
-        !github.event.pull_request.draft
-        && github.event.action == 'unlabeled'
-        && github.event.label.name == 'E2E/Override'
-      )
-      || (
-        github.event.action == 'unlabeled'
-        && github.event.label.name == 'E2E/Run'
-        && github.event.sender.login != 'github-actions[bot]'
+      github.event.pull_request.head.repo.full_name == github.repository
+      && (
+        (
+          !github.event.pull_request.draft
+          && contains(fromJSON('["opened", "reopened", "ready_for_review", "synchronize"]'), github.event.action)
+        )
+        || (
+          github.event.action == 'labeled'
+          && github.event.label.name == 'E2E/Override'
+        )
+        || (
+          !github.event.pull_request.draft
+          && github.event.action == 'unlabeled'
+          && github.event.label.name == 'E2E/Override'
+        )
+        || (
+          github.event.action == 'unlabeled'
+          && github.event.label.name == 'E2E/Run'
+          && github.event.sender.login != 'github-actions[bot]'
+        )
       )
     steps:
       # Always the base ref's own reviewed copy — this job holds write-scoped
