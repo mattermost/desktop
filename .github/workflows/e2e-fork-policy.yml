@@ -167,64 +167,82 @@ jobs:
         env:
           MODE: ${{ steps.decide.outputs.mode }}
           HEAD_SHA: ${{ steps.decide.outputs.head_sha }}
+          PR_NUMBER: ${{ steps.decide.outputs.pr_number }}
           APPROVER: ${{ steps.decide.outputs.approver }}
         with:
           script: |
             const {E2E_OS_STATUS_CONTEXTS, E2E_POLICY_STATUS_CONTEXTS} = require('./e2e/utils/github-actions.js');
             const {owner, repo} = context.repo;
-            const sha = process.env.HEAD_SHA;
             const waive = process.env.MODE === 'success';
             // Present only in descriptions written here, so a reset never touches a real result.
             const MARKER = 'e2e overridden';
             const targetUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
 
-            const statuses = await github.paginate(github.rest.repos.listCommitStatusesForRef, {
-              owner, repo, ref: sha, per_page: 100,
-            });
-            // Newest first: the first entry per context is its current state.
-            const latest = new Map();
-            for (const status of statuses) {
-              if (!latest.has(status.context)) {
-                latest.set(status.context, status);
+            // A reset must also reach commits waived earlier: the author could push away and back.
+            // The waiver comment (written by this workflow's bot) records each waived SHA.
+            const shas = [process.env.HEAD_SHA];
+            if (!waive) {
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                owner, repo, issue_number: Number(process.env.PR_NUMBER), per_page: 100,
+              });
+              for (const comment of comments) {
+                const waived = comment.user?.login === 'github-actions[bot]' &&
+                  /^E2E checks waived by @\S+ for this fork PR at ([0-9a-f]{40})\./.exec(comment.body || '');
+                if (waived && !shas.includes(waived[1])) {
+                  shas.push(waived[1]);
+                }
               }
             }
 
             const failures = [];
-            for (const statusContext of [...E2E_OS_STATUS_CONTEXTS, ...E2E_POLICY_STATUS_CONTEXTS]) {
-              const current = latest.get(statusContext);
-              let state;
-              let description;
-              if (waive) {
-                if (current?.state === 'success') {
-                  continue;
-                }
-                state = 'success';
-                description = `${MARKER} by @${process.env.APPROVER} (fork PR, E2E not run)`;
-              } else {
-                if (!current?.description?.includes(MARKER)) {
-                  continue;
-                }
-                state = 'pending';
-                description = 'E2E/Override missing or not applied by a writer; fork PRs need it to merge';
-              }
-              // Retry once: a manual re-check can't fill in a context missed on a transient error.
-              let lastError;
-              for (let attempt = 0; attempt < 2; attempt++) {
-                try {
-                  await github.rest.repos.createCommitStatus({
-                    owner, repo, sha, state, context: statusContext,
-                    description: description.substring(0, 140),
-                    ...(waive ? {target_url: targetUrl} : {}),
-                  });
-                  core.info(`Published ${state} for ${statusContext} on ${sha}`);
-                  lastError = undefined;
-                  break;
-                } catch (err) {
-                  lastError = err;
+            for (const sha of shas) {
+              const statuses = await github.paginate(github.rest.repos.listCommitStatusesForRef, {
+                owner, repo, ref: sha, per_page: 100,
+              });
+              // Newest first: the first entry per context is its current state.
+              const latest = new Map();
+              for (const status of statuses) {
+                if (!latest.has(status.context)) {
+                  latest.set(status.context, status);
                 }
               }
-              if (lastError) {
-                failures.push(`${statusContext}: ${lastError.message}`);
+
+              for (const statusContext of [...E2E_OS_STATUS_CONTEXTS, ...E2E_POLICY_STATUS_CONTEXTS]) {
+                const current = latest.get(statusContext);
+                let state;
+                let description;
+                if (waive) {
+                  if (current?.state === 'success') {
+                    continue;
+                  }
+                  state = 'success';
+                  description = `${MARKER} by @${process.env.APPROVER} (fork PR, E2E not run)`;
+                } else {
+                  if (!current?.description?.includes(MARKER)) {
+                    continue;
+                  }
+                  state = 'pending';
+                  description = 'E2E/Override missing or not applied by a writer; fork PRs need it to merge';
+                }
+                // Retry once: a manual re-check can't fill in a context missed on a transient error.
+                let lastError;
+                for (let attempt = 0; attempt < 2; attempt++) {
+                  try {
+                    await github.rest.repos.createCommitStatus({
+                      owner, repo, sha, state, context: statusContext,
+                      description: description.substring(0, 140),
+                      ...(waive ? {target_url: targetUrl} : {}),
+                    });
+                    core.info(`Published ${state} for ${statusContext} on ${sha}`);
+                    lastError = undefined;
+                    break;
+                  } catch (err) {
+                    lastError = err;
+                  }
+                }
+                if (lastError) {
+                  failures.push(`${statusContext} on ${sha}: ${lastError.message}`);
+                }
               }
             }
             if (failures.length > 0) {
