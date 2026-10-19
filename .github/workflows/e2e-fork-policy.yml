@@ -42,7 +42,8 @@ jobs:
     permissions:
       contents: read
       issues: write
-      pull-requests: read
+      # Commenting on a PR through the issues API needs pull-requests: write; issues: write alone gets a 403.
+      pull-requests: write
       statuses: write
     steps:
       - name: Decide what to post
