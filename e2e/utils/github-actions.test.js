@@ -275,6 +275,22 @@ describe('e2e node_modules and Electron zip caches', () => {
         assert.doesNotMatch(workflow('ci.yaml'), /build-node-modules-v9-/);
         assert.doesNotMatch(workflow('build-for-pr.yml'), /build-node-modules-v9-/);
     });
+
+    it('Windows package jobs restore node_modules and do not save the Electron rebuild', () => {
+        for (const [file, buildJob] of [
+            ['ci.yaml', 'build-win-no-installer'],
+            ['build-for-pr.yml', 'build-win-for-pr'],
+        ]) {
+            const source = workflow(file);
+            const install = jobLines(source, 'windows-install-deps').join('\n');
+            const build = jobLines(source, buildJob).join('\n');
+            assert.match(install, /build-node-modules-v2-/);
+            assert.match(install, /uses: actions\/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9/);
+            assert.match(build, /uses: actions\/cache\/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9/);
+            assert.doesNotMatch(build, /uses: actions\/cache@/);
+            assert.match(build, /build-node-modules-v2-/);
+        }
+    });
 });
 
 describe('CI Playwright workers and serial files', () => {
