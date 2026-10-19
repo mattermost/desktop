@@ -66,10 +66,3 @@ runs:
         # Trust them so Homebrew does not warn on every brew invocation.
         brew trust aws/tap azure/bicep 2>/dev/null || true
         brew install nss
-
-    - name: Install Windows Dependencies
-      if: inputs.os == 'Windows'
-      shell: bash
-      run: |
-        choco install yq --version 4.15.1 -y
-        choco install vcredist-all -y

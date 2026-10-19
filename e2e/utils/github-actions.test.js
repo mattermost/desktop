@@ -263,6 +263,12 @@ describe('e2e node_modules and Electron zip caches', () => {
         const step = namedStep('e2e/install-os-dependencies');
         assert.match(step, /runner\.os != 'Windows' \|\| inputs\.mode != 'restore'/);
         assert.match(step, /inputs\.mode != 'install' \|\| steps\.cache-node-modules\.outputs\.cache-hit != 'true'/);
+        assert.doesNotMatch(read('.github/actions/install-os-dependencies/action.yaml'), /choco install/);
+        assert.doesNotMatch(workflow('ci.yaml'), /choco install/);
+        assert.doesNotMatch(workflow('build-for-pr.yml'), /choco install/);
+        assert.doesNotMatch(workflow('nightly-main.yml'), /choco install/);
+        assert.doesNotMatch(workflow('nightly-rainforest.yml'), /choco install/);
+        assert.doesNotMatch(workflow('release.yaml'), /choco install/);
     });
 
     it('ci.yaml and build-for-pr.yml do not share the e2e v9 key', () => {
