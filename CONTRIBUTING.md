@@ -44,3 +44,5 @@ npm run test
 ```
 2. If you are fixing a bug, consider writing a unit test for the change so that the issue does not resurface. If you are adding a new feature, consider additionally writing end-to-end (E2E) tests to thoroughly test the changes.
 3. Please complete the [Mattermost CLA](https://mattermost.com/contribute/) prior to submitting a PR.
+
+<!-- Test PR for the fork E2E override policy (#4025). Do not merge. -->
