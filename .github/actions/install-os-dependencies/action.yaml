@@ -19,6 +19,13 @@ runs:
         # Update package lists
         sudo apt-get update || true
 
+        # 22.04 still ships libgtk-3-0. 24.04 and newer only have libgtk-3-0t64.
+        . /etc/os-release
+        gtk_package=libgtk-3-0t64
+        if [ "${VERSION_ID}" = "22.04" ]; then
+          gtk_package=libgtk-3-0
+        fi
+
         # Install required packages
         sudo apt-get install -y \
           build-essential \
@@ -47,7 +54,7 @@ runs:
           xsel \
           xvfb \
           x11-utils \
-          libgtk-3-0t64 \
+          "${gtk_package}" \
           libnss3 \
           libasound2t64 \
           dbus \

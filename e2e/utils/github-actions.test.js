@@ -267,8 +267,10 @@ describe('e2e node_modules and Electron zip caches', () => {
         assert.doesNotMatch(osDeps, /choco install/);
         assert.doesNotMatch(osDeps, /apt-key add/);
         assert.doesNotMatch(osDeps, /openjdk-8-jre/);
-        assert.match(osDeps, /libgtk-3-0t64/);
-        assert.doesNotMatch(osDeps, /libgtk-3-0 \\/);
+        assert.match(osDeps, /gtk_package=libgtk-3-0t64/);
+        assert.match(osDeps, /VERSION_ID}" = "22\.04"/);
+        assert.match(osDeps, /gtk_package=libgtk-3-0/);
+        assert.match(osDeps, /"\$\{gtk_package\}"/);
         assert.doesNotMatch(workflow('ci.yaml'), /choco install/);
         assert.doesNotMatch(workflow('build-for-pr.yml'), /choco install/);
         assert.doesNotMatch(workflow('nightly-main.yml'), /choco install/);
