@@ -48,11 +48,6 @@ export function shouldBeHiddenOnStartup(parsedArgv: Args) {
     if (parsedArgv.hidden) {
         return true;
     }
-    if (process.platform === 'darwin') {
-        if (app.getLoginItemSettings().wasOpenedAsHidden) {
-            return true;
-        }
-    }
     return false;
 }
 

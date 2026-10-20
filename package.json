@@ -131,7 +131,7 @@
     "copy-webpack-plugin": "10.2.4",
     "cross-env": "7.0.3",
     "css-loader": "6.7.1",
-    "electron": "43.3.0",
+    "electron": "44.5.1",
     "electron-builder": "26.6.0",
     "eslint": "8.57.0",
     "eslint-import-resolver-webpack": "0.13.8",
@@ -187,6 +187,9 @@
     "yargs": "17.7.2"
   },
   "overrides": {
-    "yauzl": "3.3.1"
+    "yauzl": "3.3.1",
+    "@electron/rebuild": {
+      "node-abi": "4.35.0"
+    }
   }
 }

@@ -8,9 +8,6 @@ import * as Utils from './utils';
 
 jest.mock('electron', () => ({
     app: {
-        getLoginItemSettings: () => ({
-            wasOpenedAsHidden: true,
-        }),
         getAppPath: () => '/path/to/app',
     },
 }));
@@ -46,8 +43,8 @@ describe('main/utils', () => {
             });
         });
 
-        it('should be hidden on mac when opened as hidden', () => {
-            expect(Utils.shouldBeHiddenOnStartup({})).toBe(true);
+        it('should be hidden when --hidden is passed', () => {
+            expect(Utils.shouldBeHiddenOnStartup({hidden: true})).toBe(true);
         });
 
         afterAll(() => {

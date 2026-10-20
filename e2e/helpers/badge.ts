@@ -163,17 +163,13 @@ export async function readOsBadge(electronApp: ElectronApplication): Promise<OsB
         }
 
         if (process.platform === 'linux') {
-            // app.getBadgeCount()/setBadgeCount() are no-ops without a running Unity
-            // desktop (true in headless CI), so fall back to re-deriving the count
-            // from the same inputs showBadgeLinux() would have passed to
-            // setBadgeCount() — mentionCount plus 1 for an expired session.
+            // app.setBadgeCount() no longer updates the OS badge on Linux (Unity support removed).
+            // Re-derive the count from the same inputs showBadgeLinux() used to pass to setBadgeCount().
             let count: number;
-            if (app.isUnityRunning()) {
-                count = app.getBadgeCount();
-            } else if (testState) {
+            if (testState) {
                 count = testState.mentionCount + (testState.sessionExpired ? 1 : 0);
             } else {
-                count = 0;
+                count = app.getBadgeCount();
             }
             const symbol = testState?.resolvedType ?? (count > 0 ? 'mention' : 'none');
             return {count, symbol, hasOverlay: false};
