@@ -287,7 +287,7 @@ describe('e2e node_modules and Electron zip caches', () => {
             assert.match(install, /build-node-modules-v2-/);
             assert.match(install, /uses: actions\/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9/);
             assert.match(build, /uses: actions\/cache\/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9/);
-            assert.doesNotMatch(build, /uses: actions\/cache@/);
+            assert.doesNotMatch(build, /uses:\s*actions\/cache(?:\/save)?@/);
             assert.match(build, /build-node-modules-v2-/);
         }
     });
