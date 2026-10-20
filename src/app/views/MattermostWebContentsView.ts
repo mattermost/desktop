@@ -37,6 +37,8 @@ import performanceMonitor from 'main/performanceMonitor';
 import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
 import {getServerAPI} from 'main/server/serverAPI';
 
+import type {ErrorReason} from 'types/server';
+
 import WebContentsEventManager from './webContentEvents';
 
 import ContextMenu from '../../main/contextMenu';
@@ -423,7 +425,16 @@ export class MattermostWebContentsView extends EventEmitter {
                     this.reload(loadURL);
                 },
                 () => {},
-                (error: Error) => {
+                (error: Error, errorReason?: ErrorReason) => {
+                    // This probe can't present a client certificate, so for servers that require one it can never
+                    // succeed. The server is reachable though, and the web contents can answer the certificate request.
+                    // This can't spin: a failed load goes through loadRetry (RELOAD_INTERVAL apart, MAX_SERVER_RETRIES
+                    // times) before we end up back here.
+                    if (errorReason?.needsClientCert) {
+                        this.log.debug(`Server requires a client certificate, reloading: ${error}`);
+                        this.reload(loadURL);
+                        return;
+                    }
                     this.log.debug(`Cannot reach server: ${error}`);
                     this.retryLoad = setTimeout(this.retryInBackground(loadURL), RELOAD_INTERVAL);
                 });
