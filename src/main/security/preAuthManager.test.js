@@ -18,6 +18,11 @@ jest.mock('common/utils/url', () => {
     };
 });
 
+jest.mock('common/log', () => {
+    const mockLogger = {info: jest.fn(), debug: jest.fn(), warn: jest.fn(), error: jest.fn()};
+    return {Logger: jest.fn(() => mockLogger), mockLogger};
+});
+
 jest.mock('electron', () => ({
     app: {
         getPath: jest.fn(),
@@ -101,6 +106,50 @@ describe('main/preAuthManager', () => {
             preAuthManager.handleClientCert({preventDefault: jest.fn()}, null, 'http://anormalurl.com/', [{data: 'test 1'}, {data: 'test 2'}, {data: 'test 3'}], callback);
             expect(ModalManager.addModal).not.toBeCalled();
             expect(callback).not.toBeCalled();
+        });
+
+        it('should leave the default selection to Electron when there is at most one certificate', () => {
+            const event = {preventDefault: jest.fn()};
+            preAuthManager.handleClientCert(event, null, 'http://someurl.com/', [{}], jest.fn());
+            preAuthManager.handleClientCert(event, null, 'http://someurl.com/', [], jest.fn());
+            expect(event.preventDefault).not.toBeCalled();
+        });
+
+        // The request has to be visible at the default log level to tell whether a server asked for a client
+        // certificate at all, but certificate subjects can identify people so they must never be logged.
+        describe('logging', () => {
+            const {mockLogger} = jest.requireMock('common/log');
+            const logged = () => mockLogger.info.mock.calls.map((call) => call.join(' ')).join('\n');
+
+            it('should log which host asked and how many candidates there were, without certificate details', () => {
+                ServerManager.lookupServerByURL.mockReturnValue({id: 'test-view', url: new URL('https://login.example.com')});
+                ModalManager.addModal.mockImplementationOnce(() => new Promise(() => {}));
+                preAuthManager.handleClientCert(
+                    {preventDefault: jest.fn()},
+                    null,
+                    'login.example.com:443',
+                    [
+                        {subjectName: 'Jane Doe 1234567890', issuerName: 'Example Issuing CA', serialNumber: 'ABCDEF'},
+                        {subjectName: 'Jane Doe 1234567890', issuerName: 'Example Issuing CA', serialNumber: '012345'},
+                    ],
+                    jest.fn(),
+                );
+
+                expect(logged()).toContain('login.example.com:443');
+                expect(logged()).toMatch(/\b2\b/);
+                expect(logged()).not.toContain('Jane Doe');
+                expect(logged()).not.toContain('1234567890');
+                expect(logged()).not.toContain('Example Issuing CA');
+                expect(logged()).not.toContain('ABCDEF');
+            });
+
+            it('should log the request even when there are no candidates, and drop any query string from the URL', () => {
+                preAuthManager.handleClientCert({preventDefault: jest.fn()}, null, 'https://login.example.com/auth?state=SECRETSTATE', [], jest.fn());
+
+                expect(logged()).toContain('login.example.com');
+                expect(logged()).toMatch(/\b0\b/);
+                expect(logged()).not.toContain('SECRETSTATE');
+            });
         });
 
         it('should return the chosen certificate when modal resolves', async () => {
