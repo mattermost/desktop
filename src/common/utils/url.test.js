@@ -12,6 +12,7 @@ import {
     isInternalURL,
     isCallsPopOutURL,
     isTrustedURL,
+    isTrustedAuthOrigin,
 } from 'common/utils/url';
 
 describe('common/utils/url', () => {
@@ -309,6 +310,71 @@ describe('common/utils/url', () => {
                 new URL('http://example.org//path\\(a\\+\\)\\+/team/com.mattermost.calls/expanded/callid'),
                 'callid',
             )).toBe(false);
+        });
+    });
+
+    describe('isTrustedAuthOrigin', () => {
+        const trusted = ['https://login.example.com'];
+
+        it('should match the exact https origin regardless of path and query', () => {
+            expect(isTrustedAuthOrigin(new URL('https://login.example.com/auth/realms/x?state=abc&nonce=def'), trusted)).toBe(true);
+        });
+
+        it('should match when the configured entry has a trailing slash', () => {
+            expect(isTrustedAuthOrigin(new URL('https://login.example.com/auth'), ['https://login.example.com/'])).toBe(true);
+        });
+
+        it('should match when the configured entry differs only by host case', () => {
+            expect(isTrustedAuthOrigin(new URL('https://login.example.com/auth'), ['https://LOGIN.example.com'])).toBe(true);
+        });
+
+        it('should match an explicit non-default port only when the entry has that port', () => {
+            expect(isTrustedAuthOrigin(new URL('https://login.example.com:8443/auth'), ['https://login.example.com:8443'])).toBe(true);
+            expect(isTrustedAuthOrigin(new URL('https://login.example.com:8443/auth'), trusted)).toBe(false);
+            expect(isTrustedAuthOrigin(new URL('https://login.example.com/auth'), ['https://login.example.com:8443'])).toBe(false);
+        });
+
+        it('should not match http even when the host is listed', () => {
+            expect(isTrustedAuthOrigin(new URL('http://login.example.com/auth'), trusted)).toBe(false);
+        });
+
+        it('should not match a subdomain of a listed host', () => {
+            expect(isTrustedAuthOrigin(new URL('https://evil.login.example.com/auth'), trusted)).toBe(false);
+        });
+
+        it('should not match a lookalike host that only starts with the listed host', () => {
+            expect(isTrustedAuthOrigin(new URL('https://login.example.com.evil.com/auth'), trusted)).toBe(false);
+        });
+
+        it('should not be fooled by userinfo in the URL', () => {
+            expect(isTrustedAuthOrigin(new URL('https://login.example.com@evil.com/auth'), trusted)).toBe(false);
+        });
+
+        it('should ignore configured entries that are http', () => {
+            expect(isTrustedAuthOrigin(new URL('http://login.example.com/auth'), ['http://login.example.com'])).toBe(false);
+            expect(isTrustedAuthOrigin(new URL('https://login.example.com/auth'), ['http://login.example.com'])).toBe(false);
+        });
+
+        it('should ignore configured entries that carry a path, query or credentials', () => {
+            expect(isTrustedAuthOrigin(new URL('https://login.example.com/auth'), ['https://login.example.com/auth'])).toBe(false);
+            expect(isTrustedAuthOrigin(new URL('https://login.example.com/auth'), ['https://login.example.com/?a=b'])).toBe(false);
+            expect(isTrustedAuthOrigin(new URL('https://login.example.com/auth'), ['https://user:pw@login.example.com'])).toBe(false);
+        });
+
+        it('should ignore malformed entries without throwing and still honour valid ones', () => {
+            expect(isTrustedAuthOrigin(new URL('https://login.example.com/auth'), ['not a url', '', 'https://login.example.com'])).toBe(true);
+            expect(isTrustedAuthOrigin(new URL('https://login.example.com/auth'), ['not a url', ''])).toBe(false);
+        });
+
+        it('should ignore entries that are not strings without throwing', () => {
+            const url = new URL('https://login.example.com/auth');
+            expect(isTrustedAuthOrigin(url, [123, null, undefined, {}, ['https://login.example.com'], '', 'https://login.example.com'])).toBe(true);
+            expect(isTrustedAuthOrigin(url, [123, null, undefined, {}, ['https://login.example.com'], ''])).toBe(false);
+        });
+
+        it('should return false when nothing is configured', () => {
+            expect(isTrustedAuthOrigin(new URL('https://login.example.com/auth'), [])).toBe(false);
+            expect(isTrustedAuthOrigin(new URL('https://login.example.com/auth'), undefined)).toBe(false);
         });
     });
 });
