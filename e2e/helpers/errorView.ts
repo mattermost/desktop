@@ -91,10 +91,12 @@ async function reloadTargetServerViews(
     await clearCertificateErrorCallbacks(app).catch(() => {});
     await evaluateServerReloadState(app, 'reload', serverName);
 
+    // Best-effort. An obsolete-cipher handshake can stay in isLoading() until
+    // the platform connect timeout. The caller still polls ErrorView.
     await expect.poll(
         () => evaluateServerReloadState(app, 'checkLoading', serverName),
         {timeout: 15_000, message: 'Server views should finish reloading after renderer is ready'},
-    ).toBe(true);
+    ).toBe(true).catch(() => undefined);
 }
 
 function resolveErrorViewHost(app: ElectronApplication, fallback: Page): Page {
@@ -155,9 +157,16 @@ export async function waitForErrorView(
     ).toBe(true).then(() => true).catch(() => false);
 
     if (!appearedBeforeReload && !isMessageModalOpen(app)) {
-        await reloadTargetServerViews(app, serverName);
-        if (isMessageModalOpen(app)) {
-            await answerMessageModal(app, 1).catch(() => {});
+        // Reload only after the current navigation has settled. RC4 and other
+        // obsolete TLS hosts can still be handshaking here (loading screen up,
+        // isLoading() true). Reloading restarts that handshake, and the settle
+        // poll then fails the spec before ErrorView can render.
+        const navigationSettled = await evaluateServerReloadState(app, 'checkLoading', serverName);
+        if (navigationSettled && !(await isErrorViewVisible()) && !isMessageModalOpen(app)) {
+            await reloadTargetServerViews(app, serverName);
+            if (isMessageModalOpen(app)) {
+                await answerMessageModal(app, 1).catch(() => {});
+            }
         }
     }
 

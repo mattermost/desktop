@@ -263,11 +263,40 @@ describe('e2e node_modules and Electron zip caches', () => {
         const step = namedStep('e2e/install-os-dependencies');
         assert.match(step, /runner\.os != 'Windows' \|\| inputs\.mode != 'restore'/);
         assert.match(step, /inputs\.mode != 'install' \|\| steps\.cache-node-modules\.outputs\.cache-hit != 'true'/);
+        const osDeps = read('.github/actions/install-os-dependencies/action.yaml');
+        assert.doesNotMatch(osDeps, /choco install/);
+        assert.doesNotMatch(osDeps, /apt-key add/);
+        assert.doesNotMatch(osDeps, /openjdk-8-jre/);
+        assert.match(osDeps, /gtk_package=libgtk-3-0t64/);
+        assert.match(osDeps, /VERSION_ID}" = "22\.04"/);
+        assert.match(osDeps, /gtk_package=libgtk-3-0/);
+        assert.match(osDeps, /"\$\{gtk_package\}"/);
+        assert.doesNotMatch(workflow('ci.yaml'), /choco install/);
+        assert.doesNotMatch(workflow('build-for-pr.yml'), /choco install/);
+        assert.doesNotMatch(workflow('nightly-main.yml'), /choco install/);
+        assert.doesNotMatch(workflow('nightly-rainforest.yml'), /choco install/);
+        assert.doesNotMatch(workflow('release.yaml'), /choco install/);
     });
 
     it('ci.yaml and build-for-pr.yml do not share the e2e v9 key', () => {
         assert.doesNotMatch(workflow('ci.yaml'), /build-node-modules-v9-/);
         assert.doesNotMatch(workflow('build-for-pr.yml'), /build-node-modules-v9-/);
+    });
+
+    it('Windows package jobs restore node_modules and do not save the Electron rebuild', () => {
+        for (const [file, buildJob] of [
+            ['ci.yaml', 'build-win-no-installer'],
+            ['build-for-pr.yml', 'build-win-for-pr'],
+        ]) {
+            const source = workflow(file);
+            const install = jobLines(source, 'windows-install-deps').join('\n');
+            const build = jobLines(source, buildJob).join('\n');
+            assert.match(install, /build-node-modules-v2-/);
+            assert.match(install, /uses: actions\/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9/);
+            assert.match(build, /uses: actions\/cache\/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9/);
+            assert.doesNotMatch(build, /uses:\s*actions\/cache(?:\/save)?@/);
+            assert.match(build, /build-node-modules-v2-/);
+        }
     });
 });
 
