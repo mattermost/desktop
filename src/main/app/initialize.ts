@@ -36,6 +36,7 @@ import {
     GET_FULL_SCREEN_STATUS,
     SERVER_PRE_AUTH_SECRET_CHANGED,
     SERVER_URL_CHANGED,
+    GET_AVAILABLE_CHANNELS,
 } from 'common/communication';
 import Config from 'common/config';
 import {MATTERMOST_PROTOCOL} from 'common/constants';
@@ -61,6 +62,7 @@ import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
 import PermissionsManager from 'main/security/permissionsManager';
 import PreAuthManager from 'main/security/preAuthManager';
 import sentryHandler from 'main/sentryHandler';
+import {handleGetAvailableChannels} from 'main/server/serverChannels';
 import SessionAttributesManager from 'main/sessionAttributes/sessionAttributesManager';
 import updateNotifier from 'main/updateNotifier';
 import UserActivityMonitor from 'main/UserActivityMonitor';
@@ -268,6 +270,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.handle(PING_DOMAIN, handlePingDomain);
     ipcMain.handle(GET_CONFIGURATION, handleGetConfiguration);
     ipcMain.handle(GET_LOCAL_CONFIGURATION, handleGetLocalConfiguration);
+    ipcMain.handle(GET_AVAILABLE_CHANNELS, handleGetAvailableChannels);
     ipcMain.on(UPDATE_CONFIGURATION, updateConfiguration);
 
     ipcMain.handle(GET_DARK_MODE, handleGetDarkMode);

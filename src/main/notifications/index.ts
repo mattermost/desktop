@@ -22,7 +22,71 @@ import {DownloadNotification} from './Download';
 import {Mention} from './Mention';
 import {NewVersionNotification, UpgradeNotification} from './Upgrade';
 
+/**
+ * Checks if a notification URL represents a direct-message route (/messages/<username>).
+ * Excludes non-DM routes such as /team/channels/messages.
+ *
+ * @param urlStr - The target notification URL.
+ * @returns True if the URL corresponds to a direct message route.
+ */
+export function isDirectMessageRoute(urlStr: string): boolean {
+    if (!urlStr) {
+        return false;
+    }
+
+    try {
+        const parsed = new URL(urlStr, 'http://localhost');
+        const segments = parsed.pathname.split('/').filter(Boolean);
+        return segments.some((segment, index) =>
+            segment === 'messages' &&
+            segments[index - 1] !== 'channels' &&
+            index < segments.length - 1,
+        );
+    } catch {
+        return false;
+    }
+}
+
 const log = new Logger('Notifications');
+
+/**
+ * Checks if a notification URL matches a configured channel or user key.
+ * Compares against discrete URL path segments to prevent prefix collisions
+ * (e.g., 'town' matching 'town-square', or 'ann' matching 'anna').
+ *
+ * @param urlStr - The target notification URL.
+ * @param key - The channel name, channel ID, or username configured by the user.
+ * @returns True if the key matches a valid channel or message segment in the URL.
+ */
+export function matchesNotificationRoute(urlStr: string, key: string): boolean {
+    if (!key) {
+        return false;
+    }
+
+    try {
+        const parsed = new URL(urlStr, 'http://localhost');
+        const segments = parsed.pathname.split('/').filter(Boolean);
+        const cleanKey = key.replace(/^@/, '').toLowerCase();
+
+        for (let i = 0; i < segments.length; i++) {
+            const seg = segments[i];
+            const cleanSeg = seg.replace(/^@/, '').toLowerCase();
+
+            if (cleanSeg === cleanKey) {
+                if (seg.startsWith('@')) {
+                    return true;
+                }
+                if (i > 0 && (segments[i - 1] === 'channels' || segments[i - 1] === 'messages')) {
+                    return true;
+                }
+            }
+        }
+    } catch {
+        return false;
+    }
+
+    return false;
+}
 
 class NotificationManager {
     private mentionsPerChannel?: Map<string, Mention>;
@@ -44,6 +108,20 @@ class NotificationManager {
         });
     }
 
+    /**
+     * Displays a desktop notification for a mention or message, respecting DND,
+     * view priority, and custom notification sound configuration.
+     *
+     * @param title - Notification title.
+     * @param body - Notification message body text.
+     * @param channelId - ID of the originating channel.
+     * @param teamId - ID of the team.
+     * @param url - Deep link URL to the channel/message.
+     * @param silent - Whether the notification should be silent.
+     * @param webcontents - The WebContents instance sending the notification.
+     * @param soundName - The default sound name from the webapp.
+     * @returns A status object describing whether the notification was shown or the reason it was skipped.
+     */
     public async displayMention(title: string, body: string, channelId: string, teamId: string, url: string, silent: boolean, webcontents: Electron.WebContents, soundName: string) {
         log.debug('displayMention', {silent, soundName});
 
@@ -73,11 +151,46 @@ class NotificationManager {
             return {status: 'not_sent', reason: 'view_should_not_notify'};
         }
 
+        let finalSoundName = soundName;
+        let finalSilent = silent;
+
+        if (url) {
+            const isDM = isDirectMessageRoute(url);
+            let customSound: string | undefined;
+
+            if (Config.channelNotificationSounds) {
+                if (Config.channelNotificationSounds[channelId]) {
+                    customSound = Config.channelNotificationSounds[channelId];
+                } else {
+                    for (const [key, sound] of Object.entries(Config.channelNotificationSounds)) {
+                        if (matchesNotificationRoute(url, key)) {
+                            customSound = sound;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!customSound && isDM && Config.dmNotificationSound) {
+                customSound = Config.dmNotificationSound;
+            }
+
+            if (customSound) {
+                if (customSound === 'None') {
+                    finalSilent = true;
+                    finalSoundName = 'None';
+                } else {
+                    finalSilent = false;
+                    finalSoundName = customSound;
+                }
+            }
+        }
+
         const options = {
             title: `${serverName}: ${title}`,
             body,
-            silent,
-            soundName,
+            silent: finalSilent,
+            soundName: finalSoundName,
         };
 
         if (!await PermissionsManager.doPermissionRequest(webcontents.id, 'notifications', {requestingUrl: server.url.toString(), isMainFrame: false})) {

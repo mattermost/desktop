@@ -31,6 +31,7 @@ jest.mock('electron', () => ({
                 });
             }),
             end: jest.fn(),
+            abort: jest.fn(),
         })),
     },
     session: {
@@ -187,5 +188,52 @@ describe('main/server/serverAPI', () => {
             successFn,
         );
         expect(net.request).toBeCalled();
+    });
+
+    it('should call onAbort and not start request if signal is already aborted', async () => {
+        const onAbort = jest.fn();
+        const controller = new AbortController();
+        controller.abort();
+
+        net.request.mockClear();
+        const req = await getServerAPI(
+            validURL,
+            false,
+            jest.fn(),
+            onAbort,
+            jest.fn(),
+            session.defaultSession,
+            controller.signal,
+        );
+
+        expect(onAbort).toHaveBeenCalled();
+        expect(req).toBeUndefined();
+        expect(net.request).not.toHaveBeenCalled();
+    });
+
+    it('should abort request when signal is triggered in-flight', async () => {
+        const controller = new AbortController();
+        const mockAbort = jest.fn();
+        net.request.mockReturnValueOnce({
+            on: jest.fn(),
+            end: jest.fn(),
+            abort: mockAbort,
+        });
+
+        const req = await getServerAPI(
+            validURL,
+            false,
+            jest.fn(),
+            jest.fn(),
+            jest.fn(),
+            session.defaultSession,
+            controller.signal,
+        );
+
+        expect(req).toBeDefined();
+        expect(mockAbort).not.toHaveBeenCalled();
+
+        controller.abort();
+        expect(mockAbort).toHaveBeenCalled();
     });
 });
