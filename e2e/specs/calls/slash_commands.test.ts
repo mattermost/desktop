@@ -5,11 +5,13 @@ import type {TestInfo} from '@playwright/test';
 
 import {test, expect} from '../../fixtures/index';
 import {assertCallsSpecsOnShard1} from '../../helpers/assertCallsShard';
+import {CALLS_LOG_SEED_MARKER, CALLS_LOG_UPLOAD_MARKER, callsLogsBranch} from '../../helpers/callsLogs';
 import {closeCallsWidget, enterCallsTestChannel, findCallsWidgetWindow, leaveCallIfActive, startCall} from '../../helpers/callsWidget';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost, logoutFromMattermost} from '../../helpers/login';
 import {prepareMattermostServerView} from '../../helpers/prepareServerView';
 import {apiLogin, apiRequest} from '../../helpers/server_api/client';
+import {resolveCallsPluginVersion} from '../../helpers/server_api/plugin';
 import {apiGetAdminTeamId, archiveCallsTestChannels, createCallsTestChannel, createCallsTestUser, deactivateCallsTestUsers, type TestChannel, type TestUser} from '../../helpers/server_api/user';
 import type {ServerView} from '../../helpers/serverView';
 
@@ -162,24 +164,83 @@ test.describe('calls/slash_commands', () => {
             // beforeEach logs out and creates a new user, which wipes in-memory
             // Calls logs. Seed both storages: Calls getPersistentStorage() uses
             // localStorage when window.desktop is set, otherwise sessionStorage.
+            // Append when a previous test in this serial file already persisted logs,
+            // so the seed is still present for Calls < 1.12.0, which echoes storage.
             await serverWin.runInRenderer<void>(`
-                const seed = 'debug [e2e] pre-seeded call log for MM-T5590\\n';
+                const marker = ${JSON.stringify(CALLS_LOG_SEED_MARKER)};
+                const seed = 'debug [e2e] ' + marker + '\\n';
                 for (const storage of [localStorage, sessionStorage]) {
-                    if (!(storage.getItem('calls_client_logs') || '').trim()) {
-                        storage.setItem('calls_client_logs', seed);
+                    const current = storage.getItem('calls_client_logs') || '';
+                    if (!current.includes(marker)) {
+                        storage.setItem('calls_client_logs', current + seed);
                     }
                 }
             `);
 
+            const callsVersion = await resolveCallsPluginVersion();
+            const branch = callsLogsBranch(callsVersion);
+            test.info().annotations.push({
+                type: 'calls-version',
+                description: callsVersion ?? 'unresolved',
+            });
+
             await sendSlashCommand(serverWin, '/call logs');
 
-            // /call logs uploads a log file to the @calls DM and posts an ephemeral
-            // confirmation in the current channel. Use :has-text() to find the post
-            // by content — the log text itself is in a file attachment in the DM.
-            await expect.poll(
-                async () => serverWin.locator(".post__body:has-text('Call logs uploaded')").last().textContent(),
-                {timeout: 15_000, message: '/call logs must post a response confirming log upload'},
-            ).toContain('Call logs uploaded');
+            let matched = 'none';
+            const postText = async (marker: string): Promise<string> => {
+                const text = await serverWin.locator(`.post__body:has-text('${marker}')`).last().textContent();
+                return typeof text === 'string' ? text : '';
+            };
+            try {
+                switch (branch) {
+                case 'modern':
+                    await expect.poll(
+                        async () => postText(CALLS_LOG_UPLOAD_MARKER),
+                        {timeout: 15_000, message: '/call logs must post a response confirming log upload'},
+                    ).toContain(CALLS_LOG_UPLOAD_MARKER);
+                    matched = CALLS_LOG_UPLOAD_MARKER;
+                    break;
+                case 'legacy':
+                    await expect.poll(
+                        async () => postText(CALLS_LOG_SEED_MARKER),
+                        {timeout: 15_000, message: '/call logs must echo the seeded client log'},
+                    ).toContain(CALLS_LOG_SEED_MARKER);
+                    matched = CALLS_LOG_SEED_MARKER;
+                    break;
+                case 'unresolved': {
+                    let found = '';
+                    await expect.poll(
+                        async () => {
+                            const uploaded = await postText(CALLS_LOG_UPLOAD_MARKER);
+                            if (uploaded.includes(CALLS_LOG_UPLOAD_MARKER)) {
+                                found = CALLS_LOG_UPLOAD_MARKER;
+                                return uploaded;
+                            }
+                            const seeded = await postText(CALLS_LOG_SEED_MARKER);
+                            if (seeded.includes(CALLS_LOG_SEED_MARKER)) {
+                                found = CALLS_LOG_SEED_MARKER;
+                                return seeded;
+                            }
+                            return '';
+                        },
+                        {timeout: 15_000, message: '/call logs must post an upload confirmation or the seeded client log'},
+                    ).toMatch(/Call logs uploaded|pre-seeded call log for MM-T5590/);
+                    matched = found;
+                    break;
+                }
+                default: {
+                    const unexpected: never = branch;
+                    throw new Error(`Unexpected /call logs branch: ${unexpected}`);
+                }
+                }
+            } finally {
+                test.info().annotations.push({
+                    type: 'calls-logs-branch',
+                    description: `${branch}:${matched}`,
+                });
+                // eslint-disable-next-line no-console
+                console.log(`[MM-T5590] calls=${callsVersion ?? 'unresolved'} branch=${branch}:${matched}`);
+            }
         },
     );
 });
