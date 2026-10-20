@@ -24,6 +24,8 @@ import {NewVersionNotification, UpgradeNotification} from './Upgrade';
 
 const log = new Logger('Notifications');
 
+const MACOS_DND_TIMEOUT = 1000;
+
 class NotificationManager {
     private mentionsPerChannel?: Map<string, Mention>;
     private allActiveNotifications?: Map<string, Notification>;
@@ -52,7 +54,8 @@ class NotificationManager {
             return {status: 'error', reason: 'notification_api', data: 'notification not supported'};
         }
 
-        if (await getDoNotDisturb()) {
+        const doNotDisturb = await getDoNotDisturb();
+        if (shouldSuppressForDoNotDisturb(doNotDisturb)) {
             log.debug('do not disturb is on, will not send');
             return {status: 'not_sent', reason: 'os_dnd'};
         }
@@ -132,11 +135,15 @@ class NotificationManager {
                             }
                             this.mentionsPerChannel?.set(mentionKey, mention);
                         }
-                        const notificationSound = mention.getNotificationSound();
-                        if (notificationSound) {
-                            MainWindow.sendToRenderer(PLAY_SOUND, notificationSound);
+
+                        // The OS can't silence our own sound or the dock bounce, so skip them under DND
+                        if (!doNotDisturb) {
+                            const notificationSound = mention.getNotificationSound();
+                            if (notificationSound) {
+                                MainWindow.sendToRenderer(PLAY_SOUND, notificationSound);
+                            }
+                            flashFrame(true);
                         }
-                        flashFrame(true);
                         clearTimeout(timeout);
                         resolve({status: 'success'});
                     }
@@ -169,7 +176,8 @@ class NotificationManager {
             return;
         }
 
-        if (await getDoNotDisturb()) {
+        const doNotDisturb = await getDoNotDisturb();
+        if (shouldSuppressForDoNotDisturb(doNotDisturb)) {
             return;
         }
 
@@ -177,7 +185,9 @@ class NotificationManager {
         this.allActiveNotifications?.set(download.uId, download);
 
         download.on('show', () => {
-            flashFrame(true);
+            if (!doNotDisturb) {
+                flashFrame(true);
+            }
         });
 
         download.on('click', () => {
@@ -200,7 +210,7 @@ class NotificationManager {
             log.error('notification not supported');
             return;
         }
-        if (await getDoNotDisturb()) {
+        if (shouldSuppressForDoNotDisturb(await getDoNotDisturb())) {
             return;
         }
 
@@ -220,7 +230,7 @@ class NotificationManager {
             log.error('notification not supported');
             return;
         }
-        if (await getDoNotDisturb()) {
+        if (shouldSuppressForDoNotDisturb(await getDoNotDisturb())) {
             return;
         }
 
@@ -251,12 +261,24 @@ export async function getDoNotDisturb() {
 
     // We have to turn this off for dev mode because the Electron binary doesn't have the focus center API entitlement
     if (process.platform === 'darwin' && !isDev) {
+        // The Focus status check doesn't resolve until the user answers the Focus status permission prompt,
+        // so don't let it hold up notifications indefinitely
+        let timeout: NodeJS.Timeout | undefined;
         try {
-            const dnd = await getDarwinDoNotDisturb();
-            return dnd;
+            return await Promise.race([
+                getDarwinDoNotDisturb(),
+                new Promise<boolean>((resolve) => {
+                    timeout = setTimeout(() => {
+                        log.warn('macOS DND check timed out');
+                        resolve(false);
+                    }, MACOS_DND_TIMEOUT);
+                }),
+            ]);
         } catch (e) {
             log.warn('macOS DND check threw an error', {e});
             return false;
+        } finally {
+            clearTimeout(timeout);
         }
     }
 
@@ -265,6 +287,13 @@ export async function getDoNotDisturb() {
     }
 
     return false;
+}
+
+// macOS applies Focus itself, including any apps the user allowed through it,
+// so the notification is always handed to the OS there. Focus status only tells us
+// whether a Focus is on, not whether it allows this app.
+function shouldSuppressForDoNotDisturb(doNotDisturb: boolean) {
+    return doNotDisturb && process.platform !== 'darwin';
 }
 
 export function flashFrame(flash: boolean) {

@@ -2,7 +2,7 @@
 
 `NotificationManager` manages OS notifications for mentions, downloads, and upgrade prompts.
 
-- Respects Do Not Disturb per platform: macOS (`macos-notification-state`), Windows (`windows-focus-assist`), Linux (no DND detection via `dnd-linux.ts`).
+- Respects Do Not Disturb per platform: macOS (`macos-notification-state`), Windows (`windows-focus-assist`), Linux (no DND detection via `dnd-linux.ts`). On macOS, notifications are always handed to the OS so it can apply Focus (including allowed apps); DND only skips our own sound and the dock bounce.
 - Tracks active notifications per channel to avoid duplicates.
 - Encodes server and channel IDs in notification payload for click routing.
 - Sound files live in `src/assets/sounds/`.
