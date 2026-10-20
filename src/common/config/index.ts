@@ -336,7 +336,12 @@ export class Config extends EventEmitter {
                 throw new Error('Provided configuration file does not validate, using defaults instead.');
             }
         } catch (e) {
-            log.warn('Failed to load configuration file from the filesystem. Using defaults.');
+            // JsonFileManager swallows read and syntax errors and falls back to {}, which then fails validation with
+            // an unrelated complaint, so prefer its error when it has one.
+            const reason = this.json?.loadError ?? e;
+            log.warn('Failed to load configuration file from the filesystem. Using defaults.', {
+                error: reason instanceof Error ? reason.message : String(reason),
+            });
             configData = copy(this.defaultConfigData);
 
             this.json?.setJson(configData as CurrentConfig).catch((error) => {
