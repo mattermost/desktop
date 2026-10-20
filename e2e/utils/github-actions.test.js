@@ -263,7 +263,12 @@ describe('e2e node_modules and Electron zip caches', () => {
         const step = namedStep('e2e/install-os-dependencies');
         assert.match(step, /runner\.os != 'Windows' \|\| inputs\.mode != 'restore'/);
         assert.match(step, /inputs\.mode != 'install' \|\| steps\.cache-node-modules\.outputs\.cache-hit != 'true'/);
-        assert.doesNotMatch(read('.github/actions/install-os-dependencies/action.yaml'), /choco install/);
+        const osDeps = read('.github/actions/install-os-dependencies/action.yaml');
+        assert.doesNotMatch(osDeps, /choco install/);
+        assert.doesNotMatch(osDeps, /apt-key add/);
+        assert.doesNotMatch(osDeps, /openjdk-8-jre/);
+        assert.match(osDeps, /libgtk-3-0t64/);
+        assert.doesNotMatch(osDeps, /libgtk-3-0 \\/);
         assert.doesNotMatch(workflow('ci.yaml'), /choco install/);
         assert.doesNotMatch(workflow('build-for-pr.yml'), /choco install/);
         assert.doesNotMatch(workflow('nightly-main.yml'), /choco install/);

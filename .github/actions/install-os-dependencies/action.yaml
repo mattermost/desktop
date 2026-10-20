@@ -13,10 +13,7 @@ runs:
       if: inputs.os == 'Linux'
       shell: bash
       run: |
-        # Add Wine repository key
-        wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_22.04/Release.key | sudo apt-key add -
-
-        # Install yq binary
+        # Install yq binary. The old Wine repository key is unused.
         wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
 
         # Update package lists
@@ -39,7 +36,6 @@ runs:
           gperf \
           bison \
           python3-dbusmock \
-          openjdk-8-jre \
           ca-certificates \
           libpng++-dev \
           gcc-12-aarch64-linux-gnu \
@@ -51,7 +47,7 @@ runs:
           xsel \
           xvfb \
           x11-utils \
-          libgtk-3-0 \
+          libgtk-3-0t64 \
           libnss3 \
           libasound2t64 \
           dbus \
