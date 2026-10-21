@@ -68,6 +68,7 @@ export type ConfigV4 = {
     skippedVersions?: string[];
     useNativeTitleBar?: boolean;
     trustedEmbeddedMediaOrigins?: TrustedEmbeddedMediaOrigin[];
+    trustedAuthOrigins?: string[];
 }
 
 export type ConfigV3 = Omit<ConfigV4,

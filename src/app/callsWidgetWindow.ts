@@ -504,6 +504,9 @@ export class CallsWidgetWindow {
     private handleGetDesktopSources = async (event: IpcMainInvokeEvent, opts: Electron.SourcesOptions) => {
         log.debug('handleGetDesktopSources');
 
+        // Read before anything async: Electron returns null once the frame has navigated away or been destroyed.
+        const senderOrigin = event.senderFrame?.origin;
+
         // For Calls we make an extra check to ensure the event is coming from the expected window (main view).
         // Otherwise we want to allow for other plugins to ask for screen sharing sources.
         if (this.mainView && event.sender.id !== this.mainView.webContentsId) {
@@ -513,6 +516,18 @@ export class CallsWidgetWindow {
         const view = WebContentsManager.getViewByWebContentsId(event.sender.id);
         if (!view) {
             throw new Error('handleGetDesktopSources: view not found');
+        }
+
+        const serverURL = this.getViewURL() ?? WebContentsManager.getServerURLByViewId(view.id);
+        if (!serverURL) {
+            throw new Error('handleGetDesktopSources: serverURL not found');
+        }
+
+        // The permission below is looked up for the server's origin, not the caller's, and the view keeps its preload
+        // on whatever page it is showing (for example a sign-in provider the user chose to trust). Only the server's
+        // own pages may use the server's screen sharing grant.
+        if (!senderOrigin || senderOrigin !== parseURL(serverURL.toString())?.origin) {
+            throw new Error('handleGetDesktopSources: blocked on unexpected frame origin');
         }
 
         if (process.platform === 'darwin' && systemPreferences.getMediaAccessStatus('screen') === 'denied') {
@@ -532,10 +547,6 @@ export class CallsWidgetWindow {
             }
         }
 
-        const serverURL = this.getViewURL() ?? WebContentsManager.getServerURLByViewId(view.id);
-        if (!serverURL) {
-            throw new Error('handleGetDesktopSources: serverURL not found');
-        }
         if (!await PermissionsManager.doPermissionRequest(view.webContentsId, 'screenShare', {requestingUrl: serverURL.toString(), isMainFrame: false})) {
             throw new Error('permissions denied');
         }
