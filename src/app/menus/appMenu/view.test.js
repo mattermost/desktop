@@ -69,6 +69,7 @@ describe('app/menus/appMenu/view', () => {
         reload: jest.fn(),
         currentURL: 'https://example.com/current-page',
         openDevTools: jest.fn(),
+        openFind: jest.fn(),
     };
 
     const mockServer = {
@@ -263,6 +264,36 @@ describe('app/menus/appMenu/view', () => {
             const callWidgetPopoutDevTools = devToolsSubMenu.submenu.find((item) => item.label === 'Developer Tools for Call Widget Popout');
             callWidgetPopoutDevTools.click();
             expect(CallsWidgetWindow.openPopoutDevTools).toHaveBeenCalled();
+        });
+
+        it('should call openFind on the focused or active tab when Find is clicked', () => {
+            localizeMessage.mockImplementation((id) => {
+                if (id === 'main.menus.app.view.find') {
+                    return 'Find..';
+                }
+                return id;
+            });
+
+            const menu = createViewMenu();
+            const findMenuItem = menu.submenu.find((item) => item.label === 'Find..');
+            expect(findMenuItem).not.toBe(undefined);
+            findMenuItem.click();
+            expect(mockView.openFind).toHaveBeenCalled();
+        });
+
+        it('should fall back to the active tab when Find is clicked and no view is focused', () => {
+            WebContentsManager.getFocusedView.mockReturnValue(null);
+            localizeMessage.mockImplementation((id) => {
+                if (id === 'main.menus.app.view.find') {
+                    return 'Find..';
+                }
+                return id;
+            });
+
+            const menu = createViewMenu();
+            const findMenuItem = menu.submenu.find((item) => item.label === 'Find..');
+            findMenuItem.click();
+            expect(mockView.openFind).toHaveBeenCalled();
         });
 
         it('should reload view with currentURL when reload menu item is clicked', () => {

@@ -107,7 +107,7 @@ export default function createViewMenu() {
         label: localizeMessage('main.menus.app.view.find', 'Find..'),
         accelerator: 'CmdOrCtrl+F',
         click() {
-            WebContentsManager.getFocusedView()?.openFind();
+            getFocusedOrActiveTabView()?.openFind();
         },
     }, {
         label: localizeMessage('main.menus.app.view.reload', 'Reload'),
