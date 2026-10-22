@@ -422,6 +422,41 @@ describe('main/PermissionsManager', () => {
             expect(CallsWidgetWindow.getViewURL).toHaveBeenCalled();
         });
 
+        it('should check display-capture requests against the screenShare permission', async () => {
+            CallsWidgetWindow.isCallsWidget.mockReturnValue(true);
+            CallsWidgetWindow.getViewURL.mockReturnValue(new URL('http://anyurl.com'));
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            permissionsManager.json = {
+                'http://anyurl.com': {screenShare: {allowed: true}},
+            };
+            const cb = jest.fn();
+            await permissionsManager.handlePermissionRequest(
+                {id: 2},
+                'display-capture',
+                cb,
+                {requestingUrl: 'http://anyurl.com/plugins/com.mattermost.calls/standalone/widget.html', securityOrigin: 'http://anyurl.com', mediaTypes: ['video']},
+            );
+            expect(cb).toHaveBeenCalledWith(true);
+            expect(MessageModal.showMessageModal).not.toHaveBeenCalled();
+        });
+
+        it('should not grant display-capture requests from the media permission', async () => {
+            CallsWidgetWindow.isCallsWidget.mockReturnValue(true);
+            CallsWidgetWindow.getViewURL.mockReturnValue(new URL('http://anyurl.com'));
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            permissionsManager.json = {
+                'http://anyurl.com': {media: {allowed: true}, screenShare: {alwaysDeny: true}},
+            };
+            const cb = jest.fn();
+            await permissionsManager.handlePermissionRequest(
+                {id: 2},
+                'display-capture',
+                cb,
+                {requestingUrl: 'http://anyurl.com/plugins/com.mattermost.calls/standalone/widget.html', securityOrigin: 'http://anyurl.com', mediaTypes: ['video']},
+            );
+            expect(cb).toHaveBeenCalledWith(false);
+        });
+
         it('PM-U02: should deny Calls widget request when getViewURL returns null', async () => {
             CallsWidgetWindow.isCallsWidget.mockReturnValue(true);
             CallsWidgetWindow.getViewURL.mockReturnValue(null);
