@@ -45,15 +45,7 @@ export function isInsideRectangle(container: Electron.Rectangle, rect: Electron.
 }
 
 export function shouldBeHiddenOnStartup(parsedArgv: Args) {
-    if (parsedArgv.hidden) {
-        return true;
-    }
-    if (process.platform === 'darwin') {
-        if (app.getLoginItemSettings().wasOpenedAsHidden) {
-            return true;
-        }
-    }
-    return false;
+    return Boolean(parsedArgv.hidden);
 }
 
 export function getWindowBoundaries(win: BrowserWindow) {
