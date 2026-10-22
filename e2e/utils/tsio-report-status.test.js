@@ -352,6 +352,40 @@ describe('flipPerOsCommitStatuses', () => {
         assert.equal(byContext['e2e/windows-policy'].target_url, 'https://test-io.test.mattermost.com/reports/r/rid-win-policy');
     });
 
+    it('names the run on OS statuses, so E2E triage may write on them', async () => {
+        const {statuses, github, core, context} = makeHarness();
+        await flipPerOsCommitStatuses({
+            github,
+            context,
+            compositeIdentity: {commit_sha: 'abc123', gh_run_id: '36856001789', gh_run_attempt: '2'},
+            detail: {reports: [{id: 'rid-linux', gh_job_name: 'e2e-on-ubuntu-latest-11.9.0', status: 'complete'}]},
+            perJobCounts: {'e2e-on-ubuntu-latest-11.9.0': {passed: 1, failed: 0, skipped: 0, flaky: 0}},
+            targetUrl: 'https://test-io.test.mattermost.com/reports/desktop/pr/abc1234/desktop-pr',
+            baseUrl: 'https://test-io.test.mattermost.com',
+            upstreamJobsSucceeded: true,
+            expectedOs: ['linux'],
+            core,
+        });
+        assert.equal(statuses[0].target_url, 'https://test-io.test.mattermost.com/reports/r/rid-linux?gh_run_id=36856001789&gh_run_attempt=2');
+    });
+
+    it('returns the report url unchanged when gh_run_attempt is missing, rather than guessing attempt 1', async () => {
+        const {statuses, github, core, context} = makeHarness();
+        await flipPerOsCommitStatuses({
+            github,
+            context,
+            compositeIdentity: {commit_sha: 'abc123', gh_run_id: '36856001789'},
+            detail: {reports: [{id: 'rid-linux', gh_job_name: 'e2e-on-ubuntu-latest-11.9.0', status: 'complete'}]},
+            perJobCounts: {'e2e-on-ubuntu-latest-11.9.0': {passed: 1, failed: 0, skipped: 0, flaky: 0}},
+            targetUrl: 'https://test-io.test.mattermost.com/reports/desktop/pr/abc1234/desktop-pr',
+            baseUrl: 'https://test-io.test.mattermost.com',
+            upstreamJobsSucceeded: true,
+            expectedOs: ['linux'],
+            core,
+        });
+        assert.equal(statuses[0].target_url, 'https://test-io.test.mattermost.com/reports/r/rid-linux');
+    });
+
     it('falls back to the group URL when a bucket has no uploaded report id', async () => {
         const {statuses, github, core, context, compositeIdentity} = makeHarness();
         const groupUrl = 'https://test-io.test.mattermost.com/reports/desktop/pr/abc1234/desktop-pr';

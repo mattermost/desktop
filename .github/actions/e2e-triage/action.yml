@@ -1,0 +1,76 @@
+# Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+# See LICENSE.txt for license information.
+name: 'E2E triage for one OS lane'
+description: >
+  One lane of the e2e-functional.yml triage job: restore the answers cache, run the
+  toolkit e2e/triage action, and save the answers cache. The caller must check this
+  action out into the workspace before using it.
+
+inputs:
+  platform:
+    description: 'Lane platform, e.g. linux, macos, windows (matrix.platform)'
+    required: true
+  runner:
+    description: 'Runner label the lane ran on; the report is e2e-on-<runner> (matrix.runner)'
+    required: true
+  composite-identity:
+    description: 'Composite identity JSON from prepare-matrix'
+    required: true
+  github-token:
+    description: 'Token with statuses: write and pull-requests: read (secrets.GITHUB_TOKEN)'
+    required: true
+  anthropic-api-key:
+    description: 'Key for the triage judge (secrets.ANTHROPIC_API_KEY)'
+    required: true
+  mode:
+    description: 'report-only or enforce (vars.E2E_TRIAGE_MODE)'
+    required: false
+    default: 'report-only'
+
+runs:
+  using: composite
+  steps:
+    # Answers from earlier runs on the same PR (the same commit on master), so a
+    # re-run does not pay for the same question twice. The file also keeps this
+    # lane's AI spend on the PR, for the per-PR budget (pr-budget-usd, $2 by
+    # default, split between the lanes). Restore and save are separate steps:
+    # the cache action saves only when the job succeeds, and a red run is the
+    # one most likely to be re-run.
+    - name: Restore triage answers
+      if: always()
+      continue-on-error: true
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: e2e-triage-answers.json
+        key: e2e-triage-answers-${{ inputs.platform }}-${{ fromJSON(inputs.composite-identity).gh_pr_number && format('pr{0}', fromJSON(inputs.composite-identity).gh_pr_number) || fromJSON(inputs.composite-identity).commit_sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+        restore-keys: e2e-triage-answers-${{ inputs.platform }}-${{ fromJSON(inputs.composite-identity).gh_pr_number && format('pr{0}', fromJSON(inputs.composite-identity).gh_pr_number) || fromJSON(inputs.composite-identity).commit_sha }}-
+    # Triage must never change the outcome of the E2E run itself.
+    - name: e2e/triage
+      continue-on-error: true
+      uses: mattermost/mattermost-test-automation-toolkit/actions/e2e-triage@bdce26eaf390d5674a736453ba9256c187cf4472 # actions/e2e-triage
+      with:
+        composite-identity: ${{ inputs.composite-identity }}
+        # The reports are named e2e-on-<runner>-<version>; the version moves
+        # every release, so match on the stable prefix.
+        report-name: e2e-on-${{ inputs.runner }}
+        status-context: e2e/${{ inputs.platform }}
+        # One triage check for the whole PR, summarising every OS and the
+        # policy lanes (which triage does not judge, but which still gate).
+        triage-status-context: e2e/triage
+        triage-lanes: e2e/linux,e2e/macos,e2e/windows,e2e/macos-policy,e2e/windows-policy
+        lane: ${{ inputs.platform }}
+        test-root: e2e/specs
+        github-token: ${{ inputs.github-token }}
+        # The PR changes the app, which can't take the separate test server down or put a
+        # proxy page in front of it: a test that failed on that environment is not the PR's.
+        infra-clears: "true"
+        anthropic-api-key: ${{ inputs.anthropic-api-key }}
+        mode: ${{ inputs.mode }}
+        answers-cache: e2e-triage-answers.json
+    - name: Save triage answers
+      if: always() && hashFiles('e2e-triage-answers.json') != ''
+      continue-on-error: true
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: e2e-triage-answers.json
+        key: e2e-triage-answers-${{ inputs.platform }}-${{ fromJSON(inputs.composite-identity).gh_pr_number && format('pr{0}', fromJSON(inputs.composite-identity).gh_pr_number) || fromJSON(inputs.composite-identity).commit_sha }}-${{ github.run_id }}-${{ github.run_attempt }}

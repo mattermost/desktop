@@ -478,6 +478,90 @@ jobs:
             });
             core.info(`TSIO report ${reportUrl}: ${status} (${JSON.stringify(stats)})`);
 
+
+
+  # Is this red E2E run the PR's fault? The job asks Test System IO for the past
+  # executions of exactly the tests that failed, applies history rules (broken on
+  # trunk, flaky on trunk, recurring on other PRs, owned by the PR's own diff) and
+  # escalates only what the rules cannot settle to a second judge that must cite
+  # evidence a reviewer can open.
+  #
+  # Deliberately its own job rather than a step in tsio-summary: that job checks
+  # out the branch under test and loads its helper files into github-script, so it
+  # must never hold pull-requests: write. This job checks out only the triage
+  # composite action, from the dispatch ref, and runs a single SHA-pinned action
+  # through it.
+  #
+  # It needs tsio-summary only for ordering — that job polls until every leg has
+  # joined the group, so by the time this runs the group is settled.
+  #
+  # It runs on master as well as on PRs. On master the question changes from "is
+  # this the PR's fault" to "is master noisy or actually broken", and only
+  # intermittency clears a failure: a test that failed in the previous master run
+  # too is a streak, not a flake, and stays red. A master run has no PR to comment
+  # on, so the story lands in the job summary.
+  #
+  # Report only by default: each leg narrows to its own OS report and writes its
+  # line on the e2e/<os> status, "(4 cleared by triage) 99.7% passed (...)", but
+  # keeps the status's state, so a red check stays red. Setting the
+  # E2E_TRIAGE_MODE variable to enforce lets triage turn it green when every
+  # failure is attributable to master or other PRs.
+  tsio-triage:
+    name: Triage E2E failures (${{ matrix.platform }})
+    runs-on: ubuntu-24.04
+    needs:
+      - prepare-matrix
+      - tsio-summary
+      # The e2e/triage summary also reads the policy lanes, so their final
+      # statuses must be posted before triage computes it.
+      - e2e-policy-status
+    # prepare-matrix is skipped when instance_details is empty and can finish
+    # without an identity when preparation fails, so guard on the identity itself.
+    if: >-
+      always()
+      && needs.prepare-matrix.outputs.tsio-composite-identity != ''
+      && needs.tsio-summary.result != 'success'
+    permissions:
+      contents: read
+      statuses: write
+      pull-requests: read
+    # One triage per operating system, over the same matrix the tests ran on.
+    # A run uploads one report per OS into a shared group, so a single triage
+    # could only ever write one status covering all of them -- which is why this
+    # used to write a decorative e2e/triage rather than the e2e/<os> contexts
+    # that actually gate the pull request. Narrowing by report name gives each OS
+    # its own verdict and lets it write the status it is answerable for.
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.prepare-matrix.outputs.platforms) }}
+    steps:
+      # The triage composite is a local action, so it has to be in the workspace before
+      # the composite step runs. Only that directory is checked out, from the dispatch
+      # ref like this workflow file: the composite that runs is the one shipped with
+      # the workflow, not the branch under test (tsio-summary checks out version_name
+      # for its helper scripts; this job must not).
+      - name: Checkout triage action
+        continue-on-error: true
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/actions/e2e-triage/
+          sparse-checkout-cone-mode: false
+      # Answers cache restore, toolkit e2e/triage and answers cache save for this lane.
+      # See .github/actions/e2e-triage/action.yml.
+      - name: e2e/triage
+        continue-on-error: true
+        uses: ./.github/actions/e2e-triage
+        with:
+          platform: ${{ matrix.platform }}
+          runner: ${{ matrix.runner }}
+          composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Triage must never change the outcome of the E2E run itself.
+          mode: ${{ vars.E2E_TRIAGE_MODE || 'report-only' }}
+
   remove-e2e-label:
     name: Remove E2E label from PR
     runs-on: ubuntu-24.04
