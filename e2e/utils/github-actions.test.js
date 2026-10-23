@@ -181,8 +181,8 @@ describe('e2e-functional.yml status jobs', () => {
 });
 
 describe('e2e job timeout-minutes', () => {
-    it('template e2e is 30 for PR/master shards and 60 for unsharded CMT', () => {
-        assert.equal(jobField(workflow('e2e-functional-template.yml'), 'e2e', 'timeout-minutes'), gha('inputs.cmt && 60 || 30'));
+    it('template e2e is 30 for Linux/Windows shards, 45 for macOS shards and 60 for unsharded CMT', () => {
+        assert.equal(jobField(workflow('e2e-functional-template.yml'), 'e2e', 'timeout-minutes'), gha("inputs.cmt && 60 || startsWith(inputs.runs-on, 'macos') && 45 || 30"));
     });
 
     it('policy 30, install 25, status and summary jobs 10', () => {
