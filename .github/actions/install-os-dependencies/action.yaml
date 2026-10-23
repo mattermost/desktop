@@ -16,8 +16,11 @@ runs:
         # Install yq binary. The old Wine repository key is unused.
         wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
 
+        # Retry and time out stalled mirror requests instead of hanging the shard.
+        APT_OPTS=(-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30)
+
         # Update package lists
-        sudo apt-get update || true
+        sudo apt-get "${APT_OPTS[@]}" update || true
 
         # 22.04 still ships libgtk-3-0. 24.04 and newer only have libgtk-3-0t64.
         . /etc/os-release
@@ -26,8 +29,9 @@ runs:
           gtk_package=libgtk-3-0
         fi
 
-        # Install required packages
-        sudo apt-get install -y \
+        # Install required packages. E2E builds and runs x64 only: the arm64 cross
+        # toolchain (package:linux:arch-arm64) is not installed here.
+        sudo apt-get "${APT_OPTS[@]}" install -y \
           build-essential \
           clang \
           libdbus-1-dev \
@@ -45,8 +49,6 @@ runs:
           python3-dbusmock \
           ca-certificates \
           libpng++-dev \
-          gcc-12-aarch64-linux-gnu \
-          g++-12-aarch64-linux-gnu \
           jq \
           icnsutils \
           graphicsmagick \

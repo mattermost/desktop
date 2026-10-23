@@ -117,8 +117,9 @@ jobs:
     # 11.8.4).
     name: e2e-on-${{ inputs.runs-on }}-${{ inputs.MM_SERVER_VERSION }}${{ inputs.shard != '1-of-1' && format('-{0}', inputs.shard) || '' }}
     runs-on: ${{ inputs.runs-on }}
-    # Unsharded CMT legs take up to ~37m; sharded PR/master legs finish well under 30.
-    timeout-minutes: ${{ inputs.cmt && 60 || 30 }}
+    # Unsharded CMT legs take up to ~37m. Sharded macOS legs run ~18m but have hit
+    # 30m on slow runners with tests still left; Linux/Windows legs finish under 15m.
+    timeout-minutes: ${{ inputs.cmt && 60 || startsWith(inputs.runs-on, 'macos') && 45 || 30 }}
     permissions:
       contents: read
       id-token: write
@@ -184,6 +185,9 @@ jobs:
           ref: ${{ inputs.DESKTOP_VERSION }}
 
       - name: e2e/setup-deps
+        # 1-2m with the node_modules cache, longer when macOS runs npm ci on a miss.
+        # A stalled package mirror fails here, not at the job limit.
+        timeout-minutes: 15
         uses: ./.github/actions/e2e-setup-deps
         with:
           mode: ${{ runner.os == 'macOS' && 'restore-or-install' || 'restore' }}
