@@ -5,6 +5,10 @@ inputs:
   os:
     description: 'Operating system (Linux, macOS, Windows)'
     required: true
+  runtime-only:
+    description: 'Linux: install only what running the tests needs, for shards that restore a built node_modules'
+    required: false
+    default: 'false'
 
 runs:
   using: "composite"
@@ -12,6 +16,8 @@ runs:
     - name: Install Linux Dependencies
       if: inputs.os == 'Linux'
       shell: bash
+      env:
+        RUNTIME_ONLY: ${{ inputs.runtime-only }}
       run: |
         # Install yq binary. The old Wine repository key is unused.
         wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
@@ -25,8 +31,34 @@ runs:
         # 22.04 still ships libgtk-3-0. 24.04 and newer only have libgtk-3-0t64.
         . /etc/os-release
         gtk_package=libgtk-3-0t64
+        cups_package=libcups2t64
         if [ "${VERSION_ID}" = "22.04" ]; then
           gtk_package=libgtk-3-0
+          cups_package=libcups2
+        fi
+
+        # Test shards restore a built node_modules, so they need only the X server, D-Bus,
+        # the clipboard tool and Electron's shared libraries, not the build toolchain.
+        if [ "${RUNTIME_ONLY}" = "true" ]; then
+          sudo apt-get "${APT_OPTS[@]}" install -y --no-install-recommends \
+            xvfb \
+            xauth \
+            x11-utils \
+            xsel \
+            dbus \
+            dbus-x11 \
+            "${gtk_package}" \
+            "${cups_package}" \
+            libnss3 \
+            libasound2t64 \
+            libnotify4 \
+            libxss1 \
+            libxtst6 \
+            libgbm1 \
+            libsecret-1-0 \
+            jq \
+            tzdata
+          exit 0
         fi
 
         # Install required packages. E2E builds and runs x64 only: the arm64 cross

@@ -96,6 +96,7 @@ runs:
       uses: ./.github/actions/install-os-dependencies
       with:
         os: ${{ inputs.os }}
+        runtime-only: ${{ inputs.mode == 'restore' }}
 
     - name: e2e/require-node-modules
       if: ${{ inputs.mode == 'restore' && steps.cache-node-modules.outputs.cache-hit != 'true' }}
