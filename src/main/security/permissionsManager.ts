@@ -83,9 +83,11 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
         callback: (granted: boolean) => void,
         details: PermissionRequestHandlerHandlerDetails,
     ) => {
+        // Screen capture requests (e.g. Calls screen sharing) arrive as `display-capture`
+        const requestedPermission = permission === 'display-capture' ? 'screenShare' : permission;
         callback(await this.doPermissionRequest(
             webContents.id,
-            permission,
+            requestedPermission,
             details,
         ));
     };
