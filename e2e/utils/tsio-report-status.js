@@ -449,6 +449,20 @@ async function flipPerOsCommitStatuses({
         fallbackUrl: targetUrl,
     });
 
+    const withRun = (url) => {
+        if (!url || !compositeIdentity?.gh_run_id || !compositeIdentity?.gh_run_attempt) {
+            return url;
+        }
+        try {
+            const u = new URL(url);
+            u.searchParams.set('gh_run_id', String(compositeIdentity.gh_run_id));
+            u.searchParams.set('gh_run_attempt', String(compositeIdentity.gh_run_attempt));
+            return u.href;
+        } catch {
+            return url;
+        }
+    };
+
     const posts = [
         ...oss.map(async (os) => {
             const row = byKey[os] || emptyRow;
@@ -466,7 +480,7 @@ async function flipPerOsCommitStatuses({
                     state,
                     context: osStatusContext(os),
                     description: description.slice(0, 140),
-                    target_url: urlFor(os),
+                    target_url: withRun(urlFor(os)),
                 });
             } catch (error) {
                 core.warning(`Failed to create ${osStatusContext(os)} status: ${error.message}`);
