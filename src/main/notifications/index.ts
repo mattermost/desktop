@@ -93,6 +93,16 @@ class NotificationManager {
 
             this.allActiveNotifications?.delete(mention.uId);
 
+            if (webcontents.isDestroyed()) {
+                log.warn('notification click: webContents destroyed, skipping IPC', {
+                    serverId: server.id,
+                    viewId: view.id,
+                });
+                MainWindow.show();
+                TabManager.switchToTab(view.id);
+                return;
+            }
+
             // Show the window after navigation has finished to avoid the focus handler
             // being called before the current channel has updated
             const focus = () => {
@@ -101,7 +111,16 @@ class NotificationManager {
                 ipcMain.off(BROWSER_HISTORY_PUSH, focus);
             };
             ipcMain.on(BROWSER_HISTORY_PUSH, focus);
-            webcontents.send(NOTIFICATION_CLICKED, channelId, teamId, url);
+
+            try {
+                webcontents.send(NOTIFICATION_CLICKED, channelId, teamId, url);
+            } catch (e) {
+                // Race: destroyed between isDestroyed() and send()
+                log.warn('notification click: failed to send IPC', {e, serverId: server.id});
+                ipcMain.off(BROWSER_HISTORY_PUSH, focus);
+                MainWindow.show();
+                TabManager.switchToTab(view.id);
+            }
         });
 
         mention.on('close', () => {
@@ -125,9 +144,14 @@ class NotificationManager {
                         // On Windows, manually dismiss notifications from the same channel and only show the latest one
                         if (process.platform === 'win32') {
                             const mentionKey = `${mention.teamId}:${mention.channelId}`;
-                            if (this.mentionsPerChannel?.has(mentionKey)) {
+                            const previous = this.mentionsPerChannel?.get(mentionKey);
+                            if (previous) {
                                 log.debug('close');
-                                this.mentionsPerChannel?.get(mentionKey)?.close();
+                                try {
+                                    previous.close();
+                                } catch (e) {
+                                    log.debug('failed to close previous notification', {e});
+                                }
                                 this.mentionsPerChannel?.delete(mentionKey);
                             }
                             this.mentionsPerChannel?.set(mentionKey, mention);
