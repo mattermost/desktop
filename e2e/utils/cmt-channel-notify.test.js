@@ -13,6 +13,8 @@ const {
     buildLegSummaries,
     formatLegResultText,
     formatCmtChannelMessage,
+    shouldPostToChannel,
+    notifyCmtChannel,
     collapseSpecAttempts,
     resolveChannelTotals,
 } = require('./cmt-channel-notify');
@@ -377,10 +379,10 @@ describe('cmt-channel-notify', () => {
                 upstreamJobsSucceeded: true,
                 hasFailures: true,
             });
-            assert.match(text, /^## ❌ Desktop Master E2E\n/);
-            assert.match(text, /\| ❌ Failed \| \*\*100\*\* \| \*\*0\*\* \| \*\*0\*\* \|/);
+            assert.match(text, /^:red_circle: \*\*Desktop Master E2E — failure on `master`\*\*\n/);
+            assert.match(text, /\*\*0 failed\*\* · 100 passed · 0 skipped/);
             assert.match(text, /TSIO reported failed shard\(s\) not reflected in the test totals/);
-            assert.doesNotMatch(text, /failing test/);
+            assert.doesNotMatch(text, /Detailed results/);
         });
 
         it('keeps overall passed when TSIO is still consolidating with 0 failures', () => {
@@ -440,8 +442,8 @@ describe('cmt-channel-notify', () => {
                 perJobCounts: {},
                 upstreamJobsSucceeded: true,
             });
-            assert.match(text, /^## ❌ Desktop Master E2E\n/);
-            assert.match(text, /TSIO report status: `incomplete`/);
+            assert.match(text, /^:red_circle: \*\*Desktop Master E2E — failure on `master`\*\*\n/);
+            assert.match(text, /TSIO status: `incomplete`/);
         });
 
         it('folds test_stats.flaky into the headline passed count', () => {
@@ -461,7 +463,96 @@ describe('cmt-channel-notify', () => {
                 perJobCounts: {},
                 upstreamJobsSucceeded: true,
             });
-            assert.match(text, /\| ✅ Passed \| \*\*203\*\* \| \*\*0\*\* \| \*\*5\*\* \|/);
+            assert.match(text, /^:white_check_mark: \*\*Desktop Master E2E\*\* — passed on `master` @ `a1b2c3d` \(203 passed, 5 skipped\)/);
+            assert.doesNotMatch(text, /Detailed results/);
+        });
+    });
+
+    describe('desktop-master short failure alerts', () => {
+        const masterFailure = (extra = {}) => formatCmtChannelMessage({
+            compositeIdentity: {
+                repository: 'mattermost/desktop',
+                branch: 'master',
+                commit_sha: 'a1b2c3d4e5f678901234567890abcdef12345678',
+                name: 'desktop-master',
+                gh_run_id: '123456',
+            },
+            detail: {
+                status: 'completed',
+                test_stats: {passed: 752, failed: 1, skipped: 42, total: 795},
+                reports: [
+                    {id: 'rid-linux-1', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1-1-of-3', status: 'complete'},
+                    {id: 'rid-linux-2', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1-2-of-3', status: 'complete'},
+                ],
+            },
+            reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
+            baseUrl: 'https://test-io.test.mattermost.com',
+            perJobCounts: {
+                'e2e-on-ubuntu-latest-12.1.0-rc1-1-of-3': {passed: 70, failed: 1, skipped: 2, flaky: 0},
+                'e2e-on-ubuntu-latest-12.1.0-rc1-2-of-3': {passed: 71, failed: 0, skipped: 2, flaky: 0},
+            },
+            upstreamJobsSucceeded: true,
+            mergedPr: {number: 3916, title: 'Fix the thing', url: 'https://github.com/mattermost/desktop/pull/3916', author: 'dev'},
+            ...extra,
+        });
+
+        it('is short, names master, the merged PR, and the failing suite', () => {
+            const text = masterFailure();
+            assert.match(text, /^:red_circle: \*\*Desktop Master E2E — failure on `master`\*\*$/m);
+            assert.match(text, /After merge of \[#3916 Fix the thing\]\(https:\/\/github\.com\/mattermost\/desktop\/pull\/3916\) by @dev · commit `a1b2c3d`/);
+            assert.match(text, /Failing: 🐧 Linux Server `12\.1\.0-rc1` — 1 failed \(\[report\]\(https:\/\/test-io\.test\.mattermost\.com\/reports\/r\/rid-linux-1\)\)/);
+            assert.match(text, /\[Workflow run\]\(https:\/\/github\.com\/mattermost\/desktop\/actions\/runs\/123456\)/);
+            assert.doesNotMatch(text, /Detailed results|\| Overall \|/);
+            assert.ok(text.trimEnd().split('\n').length <= 10, text);
+        });
+
+        it('falls back to the head commit, then to the SHA alone, without a merged PR', () => {
+            const withCommit = masterFailure({mergedPr: null, headCommit: {subject: 'Fix the thing (#3916)', author: 'dev'}});
+            assert.match(withCommit, /After commit `a1b2c3d` by @dev — Fix the thing \(#3916\)/);
+            const bare = masterFailure({mergedPr: null, headCommit: null});
+            assert.match(bare, /On `master` · commit `a1b2c3d`/);
+        });
+
+        it('posts only on failure (or missing legs) for master, always for other reports', () => {
+            assert.equal(shouldPostToChannel({name: 'desktop-master'}, {overallFailed: false, missingLegs: []}), false);
+            assert.equal(shouldPostToChannel({name: 'desktop-master'}, {overallFailed: true, missingLegs: []}), true);
+            assert.equal(shouldPostToChannel({name: 'desktop-master'}, {overallFailed: false, missingLegs: [{}]}), true);
+            assert.equal(shouldPostToChannel({name: 'desktop-pr'}, {overallFailed: false, missingLegs: []}), true);
+            assert.equal(shouldPostToChannel({name: 'cmt-desktop'}, {overallFailed: false, missingLegs: []}), true);
+        });
+
+        it('notifyCmtChannel suppresses a passed master run and posts a failed one', async () => {
+            const originalFetch = global.fetch;
+            const calls = [];
+            global.fetch = async (url) => {
+                calls.push(String(url));
+                return {ok: true, text: async () => '', json: async () => ({specs: []})};
+            };
+            const core = {info: () => {}, warning: () => {}};
+            const base = {
+                core,
+                baseUrl: 'https://test-io.test.mattermost.com',
+                reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
+                webhookUrl: 'https://mm.example/hooks/master-health',
+            };
+            try {
+                await notifyCmtChannel({
+                    ...base,
+                    compositeIdentity: {branch: 'master', commit_sha: 'a1b2c3d4', name: 'desktop-master'},
+                    detail: {status: 'completed', test_stats: {passed: 10, failed: 0, skipped: 1}, reports: []},
+                });
+                assert.ok(!calls.some((url) => url.includes('mm.example')), `passed master must not post, got ${calls}`);
+
+                await notifyCmtChannel({
+                    ...base,
+                    compositeIdentity: {branch: 'master', commit_sha: 'a1b2c3d4', name: 'desktop-master'},
+                    detail: {status: 'completed', test_stats: {passed: 10, failed: 1, skipped: 1}, reports: []},
+                    mergedPr: {number: 3916, title: 'Fix the thing', author: 'dev'},
+                });
+                assert.ok(calls.some((url) => url.includes('mm.example')), 'failed master must post');
+            } finally {
+                global.fetch = originalFetch;
+            }
         });
     });
 

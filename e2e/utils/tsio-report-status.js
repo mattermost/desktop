@@ -929,9 +929,10 @@ async function reportTsioStatus({
                 // Prefer TSIO links even when the poll timed out at in_progress
                 // (commit status may still point at the Actions run URL).
                 const channelReportUrl = displayReportUrl || groupReportUrl || targetUrl;
-                const mergeContext = compositeIdentity.name === 'desktop-master' ?
-                    await resolveMasterMergeContext({github, context, compositeIdentity, core}) :
-                    {mergedPr: null, headCommit: null};
+                let mergeContext = {mergedPr: null, headCommit: null};
+                if (compositeIdentity.name === 'desktop-master') {
+                    mergeContext = await resolveMasterMergeContext({github, context, compositeIdentity, core});
+                }
                 await notifyCmtChannel({
                     core,
                     baseUrl,

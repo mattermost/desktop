@@ -275,7 +275,12 @@ function sanitizeInlineText(text, maxLength = 80) {
 function formatMasterAttribution({compositeIdentity, mergedPr, headCommit, shortSha}) {
     const branch = (compositeIdentity?.branch || 'master').replace(/^refs\/(heads|tags)\//, '');
     const commitPart = shortSha ? `commit \`${shortSha}\`` : `branch \`${branch}\``;
-    const pr = mergedPr?.number ? mergedPr : (compositeIdentity?.gh_pr_number ? {number: compositeIdentity.gh_pr_number} : null);
+    let pr = null;
+    if (mergedPr?.number) {
+        pr = mergedPr;
+    } else if (compositeIdentity?.gh_pr_number) {
+        pr = {number: compositeIdentity.gh_pr_number};
+    }
     if (pr) {
         const repo = compositeIdentity?.repository || 'mattermost/desktop';
         const url = pr.url || `https://github.com/${repo}/pull/${pr.number}`;
@@ -291,7 +296,7 @@ function formatMasterAttribution({compositeIdentity, mergedPr, headCommit, short
     return `On \`${branch}\` · ${commitPart}`;
 }
 
-function summarizeOutcome({compositeIdentity, detail, perJobCounts, upstreamJobsSucceeded = true, hasFailures = false, baseUrl}) {
+function summarizeOutcome({detail, perJobCounts, upstreamJobsSucceeded = true, hasFailures = false, baseUrl}) {
     const reports = detail?.reports || [];
     const legs = buildLegSummaries(perJobCounts, reports, baseUrl);
     const expectedJobNames = [...new Set(
