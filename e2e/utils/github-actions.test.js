@@ -11,6 +11,7 @@ const path = require('node:path');
 const {
     expandPlatformShards,
     prepareE2eMatrix,
+    isE2EOverrideActive,
     E2E_PLAYWRIGHT_SHARDS,
 } = require('./github-actions');
 
@@ -44,6 +45,40 @@ const threeOs = [
     {platform: 'macos', runner: 'macos-26', url: 'https://macos.example'},
     {platform: 'windows', runner: 'windows-2022', url: 'https://windows.example'},
 ];
+
+describe('isE2EOverrideActive', () => {
+    const context = {repo: {owner: 'mattermost', repo: 'desktop'}};
+    const githubWithLabels = (labels) => ({
+        rest: {issues: {listLabelsOnIssue: async () => ({data: labels})}},
+    });
+
+    it('is true only when E2E/Override is currently on the PR', async () => {
+        assert.equal(await isE2EOverrideActive({github: githubWithLabels([{name: 'E2E/Run'}, {name: 'E2E/Override'}]), context, prNumber: 4040}), true);
+        assert.equal(await isE2EOverrideActive({github: githubWithLabels([{name: 'E2E/Run'}]), context, prNumber: 4040}), false);
+        assert.equal(await isE2EOverrideActive({github: githubWithLabels([]), context, prNumber: 4040}), false);
+    });
+
+    it('falls back to false (event intent) when the label lookup fails', async () => {
+        const github = {rest: {issues: {listLabelsOnIssue: async () => {
+            throw new Error('403');
+        }}}};
+        assert.equal(await isE2EOverrideActive({github, context, prNumber: 4040}), false);
+    });
+
+    // Regression (#4040): removing E2E/Run and adding E2E/Override together fired
+    // both label handlers concurrently and the cancel handler posted `error`
+    // last, overwriting the waiver. All three status writers must consult
+    // current labels before posting.
+    it('is consulted by every racing label handler before it posts statuses', () => {
+        const trigger = workflow('e2e-pr-trigger.yml');
+        assert.match(trigger, /no longer has E2E\/Override — skipping waiver/);
+        assert.match(trigger, /has E2E\/Override again — skipping re-arm/);
+
+        const cancelAction = read('.github/actions/cancel-e2e-runs/action.yml');
+        assert.match(cancelAction, /isE2EOverrideActive/);
+        assert.match(cancelAction, /skipping cancelled status update/);
+    });
+});
 
 describe('expandPlatformShards / prepareE2eMatrix', () => {
     it('shards linux×3, macos×2, windows×3', () => {
