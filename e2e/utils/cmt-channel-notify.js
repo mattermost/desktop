@@ -269,7 +269,13 @@ function buildWorkflowRunUrl(compositeIdentity) {
 
 function sanitizeInlineText(text, maxLength = 80) {
     const clean = String(text || '').replace(/\s+/g, ' ').trim();
-    return clean.length > maxLength ? `${clean.slice(0, maxLength - 1)}…` : clean;
+    const truncated = clean.length > maxLength ? `${clean.slice(0, maxLength - 1)}…` : clean;
+
+    // Contributor-controlled (PR title / commit subject): escape Markdown so it
+    // cannot break the attribution link, and defuse @mentions (@channel/@here).
+    return truncated.
+        replace(/[\\`*_~[\]()<>|]/g, '\\$&').
+        replace(/@(?=\w)/g, '@\u200b');
 }
 
 function formatMasterAttribution({compositeIdentity, mergedPr, headCommit, shortSha}) {
@@ -296,7 +302,7 @@ function formatMasterAttribution({compositeIdentity, mergedPr, headCommit, short
     return `On \`${branch}\` · ${commitPart}`;
 }
 
-function summarizeOutcome({detail, perJobCounts, upstreamJobsSucceeded = true, hasFailures = false, baseUrl}) {
+function summarizeOutcome({detail, perJobCounts, upstreamJobsSucceeded = true, hasFailures = false, baseUrl, perJobCountsAvailable = true}) {
     const reports = detail?.reports || [];
     const legs = buildLegSummaries(perJobCounts, reports, baseUrl);
     const expectedJobNames = [...new Set(
@@ -304,8 +310,13 @@ function summarizeOutcome({detail, perJobCounts, upstreamJobsSucceeded = true, h
     )];
     const {passed, failed, skipped} = resolveChannelTotals(perJobCounts, detail?.test_stats, expectedJobNames);
     const overallFailed = failed > 0 || !upstreamJobsSucceeded || hasFailures;
-    const missingLegs = legs.filter((leg) => leg.status === 'missing' || leg.status === 'no-results');
-    return {legs, passed, failed, skipped, overallFailed, missingLegs};
+
+    // When the consolidated fetch failed, every leg looks empty — that is
+    // unavailable data, not a missing leg, so it must not trigger an alert.
+    const missingLegs = perJobCountsAvailable ?
+        legs.filter((leg) => leg.status === 'missing' || leg.status === 'no-results') :
+        [];
+    return {legs, passed, failed, skipped, overallFailed, missingLegs, perJobCountsAvailable};
 }
 
 // Master health is failure-only, like a CI health-check bot: green runs stay
@@ -327,9 +338,10 @@ function formatMasterChannelMessage({
     hasFailures = false,
     mergedPr,
     headCommit,
+    perJobCountsAvailable = true,
 }) {
     const {legs, passed, failed, skipped, overallFailed, missingLegs} = summarizeOutcome({
-        compositeIdentity, detail, perJobCounts, upstreamJobsSucceeded, hasFailures, baseUrl,
+        detail, perJobCounts, upstreamJobsSucceeded, hasFailures, baseUrl, perJobCountsAvailable,
     });
     const branch = (compositeIdentity?.branch || 'master').replace(/^refs\/(heads|tags)\//, '');
     const shortSha = (compositeIdentity?.commit_sha || '').slice(0, 7);
@@ -370,6 +382,9 @@ function formatMasterChannelMessage({
             return `${platform} / ${suite}`;
         }).join(', ');
         lines.push(`Missing/empty: ${labels}`);
+    }
+    if (!perJobCountsAvailable) {
+        lines.push('Per-leg counts unavailable (TSIO consolidated fetch failed).');
     }
     if (!upstreamJobsSucceeded) {
         lines.push('CI job failed outside tracked tests (install/build/teardown).');
@@ -486,17 +501,18 @@ function formatCmtChannelMessage({
     hasFailures = false,
     mergedPr,
     headCommit,
+    perJobCountsAvailable = true,
 }) {
     if (compositeIdentity?.name === 'desktop-master') {
         return formatMasterChannelMessage({
-            compositeIdentity, detail, reportUrl, baseUrl, perJobCounts, upstreamJobsSucceeded, hasFailures, mergedPr, headCommit,
+            compositeIdentity, detail, reportUrl, baseUrl, perJobCounts, upstreamJobsSucceeded, hasFailures, mergedPr, headCommit, perJobCountsAvailable,
         });
     }
 
     // Overall pass/fail follows tests + upstream CI — not TSIO consolidation state.
     // Stuck `in_progress` / `incomplete` with 0 failures must not render as ❌ Failed.
     const {legs, passed, failed, skipped, overallFailed, missingLegs} = summarizeOutcome({
-        compositeIdentity, detail, perJobCounts, upstreamJobsSucceeded, hasFailures, baseUrl,
+        detail, perJobCounts, upstreamJobsSucceeded, hasFailures, baseUrl, perJobCountsAvailable,
     });
     const tsioPending = Boolean(detail?.status && detail.status !== 'completed');
     const title = reportTitleForIdentity(compositeIdentity);
@@ -764,14 +780,16 @@ async function notifyCmtChannel({
     try {
         const resolvedWebhook = webhookUrl || resolveWebhookUrl(compositeIdentity?.name);
         let perJobCounts = {};
+        let perJobCountsAvailable = true;
         try {
             perJobCounts = await fetchPerJobCountsFromConsolidated(baseUrl, compositeIdentity, detail);
         } catch (error) {
+            perJobCountsAvailable = false;
             core.warning(`Could not load per-leg TSIO counts: ${error.message}`);
         }
 
         const outcome = summarizeOutcome({
-            compositeIdentity, detail, perJobCounts, upstreamJobsSucceeded, hasFailures, baseUrl,
+            detail, perJobCounts, upstreamJobsSucceeded, hasFailures, baseUrl, perJobCountsAvailable,
         });
         if (!shouldPostToChannel(compositeIdentity, outcome)) {
             core.info('Desktop Master E2E passed — skipping channel notify (master alerts are failure-only)');
@@ -788,6 +806,7 @@ async function notifyCmtChannel({
             hasFailures,
             mergedPr,
             headCommit,
+            perJobCountsAvailable,
         });
 
         await postMattermostWebhook({core, webhookUrl: resolvedWebhook, text});
@@ -807,6 +826,7 @@ module.exports = {
     collapseSpecAttempts,
     formatCmtChannelMessage,
     formatMasterChannelMessage,
+    sanitizeInlineText,
     shouldPostToChannel,
     buildWorkflowRunUrl,
     fetchPerJobCountsFromConsolidated,
