@@ -278,6 +278,13 @@ function sanitizeInlineText(text, maxLength = 80) {
         replace(/@(?=\w)/g, '@\u200b');
 }
 
+// Author is untrusted (GitHub login, or a raw git author name for the commit
+// fallback) — render it as text, never as a live @mention (@channel/@here).
+function formatByline(author) {
+    const name = sanitizeInlineText(author, 40).replace(/^@/, '');
+    return name ? ` by @\u200b${name}` : '';
+}
+
 function formatMasterAttribution({compositeIdentity, mergedPr, headCommit, shortSha}) {
     const branch = (compositeIdentity?.branch || 'master').replace(/^refs\/(heads|tags)\//, '');
     const commitPart = shortSha ? `commit \`${shortSha}\`` : `branch \`${branch}\``;
@@ -292,11 +299,10 @@ function formatMasterAttribution({compositeIdentity, mergedPr, headCommit, short
         const url = pr.url || `https://github.com/${repo}/pull/${pr.number}`;
         const title = sanitizeInlineText(pr.title);
         const label = title ? `#${pr.number} ${title}` : `#${pr.number}`;
-        const author = pr.author ? ` by @${pr.author}` : '';
-        return `After merge of [${label}](${url})${author} · ${commitPart}`;
+        return `After merge of [${label}](${url})${formatByline(pr.author)} · ${commitPart}`;
     }
     if (headCommit?.subject) {
-        const author = headCommit.author ? ` by @${headCommit.author}` : '';
+        const author = formatByline(headCommit.author);
         return `After ${commitPart}${author} — ${sanitizeInlineText(headCommit.subject)}`;
     }
     return `On \`${branch}\` · ${commitPart}`;
