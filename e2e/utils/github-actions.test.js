@@ -55,7 +55,22 @@ describe('E2E/Override label handlers', () => {
         assert.match(trigger, /no longer has E2E\/Override — skipping waiver/);
         assert.match(trigger, /has E2E\/Override again — skipping re-arm/);
         assert.match(trigger, /has E2E\/Override — skipping cancelled status update/);
-        assert.equal(trigger.split('listLabelsOnIssue').length - 1 >= 3, true);
+    });
+
+    it('serializes label handlers per PR and re-reads labels before final writes', () => {
+        const trigger = workflow('e2e-pr-trigger.yml');
+        assert.match(trigger, /group: e2e-pr-trigger-\$\{\{ github\.event\.pull_request\.number \}\}/);
+        assert.match(trigger, /cancel-in-progress: false/);
+        assert.match(trigger, /lost E2E\/Override before the waiver posted — skipping/);
+        assert.match(trigger, /regained E2E\/Override before re-arm — skipping/);
+    });
+
+    it('paginates every label read', () => {
+        const trigger = workflow('e2e-pr-trigger.yml');
+        const paginated = trigger.split('github.paginate(github.rest.issues.listLabelsOnIssue').length - 1;
+        const raw = trigger.split('await github.rest.issues.listLabelsOnIssue').length - 1;
+        assert.ok(paginated >= 4, `expected >=4 paginated label reads, got ${paginated}`);
+        assert.equal(raw, 0);
     });
 
     // The label job checks out the base ref, so a step that require()s a helper
