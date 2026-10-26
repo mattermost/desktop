@@ -7,8 +7,12 @@ name: E2E PR Trigger
 # as mattermost-mobile's e2e-label-manager): removing E2E/Run and adding
 # E2E/Override together fires both handlers, so the last one to post must see
 # the waiver and stand down instead of overwriting its success with `error`.
-# One job keeps the PR checks list to a single row. Concurrency is keyed by
-# event type so unrelated label bots cannot cancel an in-progress trigger (PR #3891).
+# One job keeps the PR checks list to a single row. All events for a PR share
+# one concurrency group and queue (never cancel): status writers cannot
+# interleave, and an unrelated label bot cannot cancel an in-progress trigger
+# (PR #3891) — it waits, then its job is skipped by the step conditions.
+# Handlers decide from current labels, so a queued run superseded by a newer
+# event is still safe when it finally runs.
 on:
   pull_request:
     types:
@@ -22,11 +26,8 @@ on:
       - master
 
 concurrency:
-  group: >-
-    e2e-pr-trigger-${{ github.event.pull_request.number }}-${{
-    contains(fromJSON('["opened", "reopened", "ready_for_review", "synchronize"]'), github.event.action)
-    && 'trigger' || format('other-{0}-{1}', github.event.action, github.event.label.name) }}
-  cancel-in-progress: true
+  group: e2e-pr-trigger-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
 
 jobs:
   e2e-label-orchestration:
@@ -95,10 +96,11 @@ jobs:
             // Current labels decide (see Honor step): if the waiver was
             // applied in the same edit that removed E2E/Run, it owns the
             // statuses — do not overwrite its success with `error`.
-            const { data: currentLabels } = await github.rest.issues.listLabelsOnIssue({
+            const currentLabels = await github.paginate(github.rest.issues.listLabelsOnIssue, {
               owner,
               repo,
               issue_number,
+              per_page: 100,
             });
             if (currentLabels.some((label) => label.name === 'E2E/Override')) {
               core.info(`PR #${issue_number} has E2E/Override — skipping cancelled status update.`);
@@ -130,10 +132,11 @@ jobs:
             // waiver may already have been taken back. Inlined on purpose —
             // this job checks out the base ref, so it can only require()
             // helpers that already exist on master.
-            const { data: currentLabels } = await github.rest.issues.listLabelsOnIssue({
+            const currentLabels = await github.paginate(github.rest.issues.listLabelsOnIssue, {
               owner,
               repo,
               issue_number,
+              per_page: 100,
             });
             if (!currentLabels.some((label) => label.name === 'E2E/Override')) {
               core.info(`PR #${issue_number} no longer has E2E/Override — skipping waiver.`);
@@ -159,6 +162,20 @@ jobs:
               prNumber: issue_number,
               headBranch: pr.head.ref,
             });
+
+            // Re-read immediately before the final status update: the
+            // waiver may have been removed while runs were being cancelled.
+            const latestLabels = await github.paginate(github.rest.issues.listLabelsOnIssue, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+            if (!latestLabels.some((label) => label.name === 'E2E/Override')) {
+              core.info(`PR #${issue_number} lost E2E/Override before the waiver posted — skipping.`);
+              return;
+            }
+
             await markE2EStatusesCancelled({
               github,
               context,
@@ -180,10 +197,11 @@ jobs:
             const issue_number = context.issue.number;
 
             // Current labels, inlined (base-ref checkout; see Honor step).
-            const { data: currentLabels } = await github.rest.issues.listLabelsOnIssue({
+            const currentLabels = await github.paginate(github.rest.issues.listLabelsOnIssue, {
               owner,
               repo,
               issue_number,
+              per_page: 100,
             });
             if (currentLabels.some((label) => label.name === 'E2E/Override')) {
               core.info(`PR #${issue_number} has E2E/Override again — skipping re-arm.`);
@@ -201,6 +219,19 @@ jobs:
               if (error.status !== 404) {
                 throw error;
               }
+            }
+
+            // Re-read immediately before re-arming: the waiver may have
+            // been re-applied while the stale run label was being removed.
+            const latestLabels = await github.paginate(github.rest.issues.listLabelsOnIssue, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+            if (latestLabels.some((label) => label.name === 'E2E/Override')) {
+              core.info(`PR #${issue_number} regained E2E/Override before re-arm — skipping.`);
+              return;
             }
 
             await github.rest.issues.addLabels({
@@ -223,10 +254,11 @@ jobs:
             const issue_number = context.issue.number;
             const pr = context.payload.pull_request;
 
-            const { data: labels } = await github.rest.issues.listLabelsOnIssue({
+            const labels = await github.paginate(github.rest.issues.listLabelsOnIssue, {
               owner,
               repo,
               issue_number,
+              per_page: 100,
             });
             const labelNames = labels.map((label) => label.name);
 
