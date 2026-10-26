@@ -86,15 +86,22 @@ jobs:
         with:
           github-token: ${{ github.token }}
           script: |
-            const {cancelActiveE2ERuns, markE2EStatusesCancelled, isE2EOverrideActive} = require('./e2e/utils/github-actions.js');
+            const {cancelActiveE2ERuns, markE2EStatusesCancelled} = require('./e2e/utils/github-actions.js');
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
             const pr = context.payload.pull_request;
 
             // Decide from current labels, not this event: a paired
             // E2E/Run removal may be handled before or after us, and the
-            // waiver may already have been taken back.
-            if (!(await isE2EOverrideActive({github, context, prNumber: issue_number}))) {
+            // waiver may already have been taken back. Inlined on purpose —
+            // this job checks out the base ref, so it can only require()
+            // helpers that already exist on master.
+            const { data: currentLabels } = await github.rest.issues.listLabelsOnIssue({
+              owner,
+              repo,
+              issue_number,
+            });
+            if (!currentLabels.some((label) => label.name === 'E2E/Override')) {
               core.info(`PR #${issue_number} no longer has E2E/Override — skipping waiver.`);
               return;
             }
@@ -135,11 +142,16 @@ jobs:
         with:
           github-token: ${{ github.token }}
           script: |
-            const {isE2EOverrideActive} = require('./e2e/utils/github-actions.js');
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
 
-            if (await isE2EOverrideActive({github, context, prNumber: issue_number})) {
+            // Current labels, inlined (base-ref checkout; see Honor step).
+            const { data: currentLabels } = await github.rest.issues.listLabelsOnIssue({
+              owner,
+              repo,
+              issue_number,
+            });
+            if (currentLabels.some((label) => label.name === 'E2E/Override')) {
               core.info(`PR #${issue_number} has E2E/Override again — skipping re-arm.`);
               return;
             }

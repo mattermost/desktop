@@ -11,7 +11,6 @@ const path = require('node:path');
 const {
     expandPlatformShards,
     prepareE2eMatrix,
-    isE2EOverrideActive,
     E2E_PLAYWRIGHT_SHARDS,
 } = require('./github-actions');
 
@@ -46,37 +45,30 @@ const threeOs = [
     {platform: 'windows', runner: 'windows-2022', url: 'https://windows.example'},
 ];
 
-describe('isE2EOverrideActive', () => {
-    const context = {repo: {owner: 'mattermost', repo: 'desktop'}};
-    const githubWithLabels = (labels) => ({
-        rest: {issues: {listLabelsOnIssue: async () => ({data: labels})}},
-    });
-
-    it('is true only when E2E/Override is currently on the PR', async () => {
-        assert.equal(await isE2EOverrideActive({github: githubWithLabels([{name: 'E2E/Run'}, {name: 'E2E/Override'}]), context, prNumber: 4040}), true);
-        assert.equal(await isE2EOverrideActive({github: githubWithLabels([{name: 'E2E/Run'}]), context, prNumber: 4040}), false);
-        assert.equal(await isE2EOverrideActive({github: githubWithLabels([]), context, prNumber: 4040}), false);
-    });
-
-    it('falls back to false (event intent) when the label lookup fails', async () => {
-        const github = {rest: {issues: {listLabelsOnIssue: async () => {
-            throw new Error('403');
-        }}}};
-        assert.equal(await isE2EOverrideActive({github, context, prNumber: 4040}), false);
-    });
-
+describe('E2E/Override label handlers', () => {
     // Regression (#4040): removing E2E/Run and adding E2E/Override together fired
     // both label handlers concurrently and the cancel handler posted `error`
     // last, overwriting the waiver. All three status writers must consult
     // current labels before posting.
-    it('is consulted by every racing label handler before it posts statuses', () => {
+    it('consult current labels before posting statuses', () => {
         const trigger = workflow('e2e-pr-trigger.yml');
         assert.match(trigger, /no longer has E2E\/Override — skipping waiver/);
         assert.match(trigger, /has E2E\/Override again — skipping re-arm/);
+        assert.equal(trigger.split('listLabelsOnIssue').length - 1 >= 3, true);
 
         const cancelAction = read('.github/actions/cancel-e2e-runs/action.yml');
-        assert.match(cancelAction, /isE2EOverrideActive/);
+        assert.match(cancelAction, /pr\.labels/);
         assert.match(cancelAction, /skipping cancelled status update/);
+    });
+
+    // The label job checks out the base ref, so a step that require()s a helper
+    // added by the same PR crashes until that PR merges
+    // ("isE2EOverrideActive is not a function", run 40287658710). Current-label
+    // checks must be inlined, never require()d from the base checkout.
+    it('never require()s a branch-only helper from the base-ref checkout', () => {
+        assert.doesNotMatch(workflow('e2e-pr-trigger.yml'), /isE2EOverrideActive/);
+        assert.doesNotMatch(read('.github/actions/cancel-e2e-runs/action.yml'), /isE2EOverrideActive/);
+        assert.equal('isE2EOverrideActive' in require('./github-actions'), false);
     });
 });
 

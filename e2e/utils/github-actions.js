@@ -29,28 +29,6 @@ const E2E_PLAYWRIGHT_SHARDS = {
 const E2E_WORKFLOW_NAME = 'Electron Playwright Tests';
 const ACTIVE_RUN_STATUSES = ['in_progress', 'queued', 'waiting'];
 const CANCELLED_STATUS_DESCRIPTION = 'E2E cancelled — tests skipped';
-const E2E_OVERRIDE_LABEL = 'E2E/Override';
-
-/**
- * Whether E2E/Override is on the PR *now*. Label handlers must decide from
- * current state, not the event that woke them: removing E2E/Run and adding
- * E2E/Override together fires both handlers, and whichever runs last wins —
- * an event-trusting cancel handler would overwrite the waiver with `error`.
- * Lookup failure returns false (callers fall back to the event's intent).
- */
-async function isE2EOverrideActive({github, context, prNumber}) {
-    try {
-        const {data: labels} = await github.rest.issues.listLabelsOnIssue({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: prNumber,
-        });
-        return (labels || []).some((label) => label.name === E2E_OVERRIDE_LABEL);
-    } catch (error) {
-        console.log(`Could not list labels for PR #${prNumber}: ${error.message}`);
-        return false;
-    }
-}
 
 /**
  * Expand canonical platform rows into one matrix entry per Playwright shard.
@@ -374,8 +352,6 @@ module.exports = {
     removeE2ELabel,
     markE2EStatusesCancelled,
     cancelActiveE2ERuns,
-    isE2EOverrideActive,
-    E2E_OVERRIDE_LABEL,
     updateInitialOsStatuses,
     osStatusContext,
     policyStatusContext,
