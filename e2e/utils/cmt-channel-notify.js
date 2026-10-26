@@ -317,16 +317,21 @@ function summarizeOutcome({detail, perJobCounts, upstreamJobsSucceeded = true, h
     if (perJobCountsAvailable) {
         missingLegs = legs.filter((leg) => leg.status === 'missing' || leg.status === 'no-results');
     }
-    return {legs, passed, failed, skipped, overallFailed, missingLegs, perJobCountsAvailable};
+
+    // No legs at all (counts loaded) means the run produced no results — that
+    // is a missing-results condition, not a pass. Unavailable counts stay unknown.
+    const noLegsReported = perJobCountsAvailable && legs.length === 0;
+    return {legs, passed, failed, skipped, overallFailed, missingLegs, perJobCountsAvailable, noLegsReported};
 }
 
 // Master health is failure-only, like a CI health-check bot: green runs stay
 // silent instead of posting a per-leg table after every merge.
-function shouldPostToChannel(compositeIdentity, {overallFailed = false, missingLegs = []} = {}) {
+function shouldPostToChannel(compositeIdentity, {overallFailed = false, missingLegs = [], legs = [], perJobCountsAvailable = true, noLegsReported} = {}) {
     if (compositeIdentity?.name !== 'desktop-master') {
         return true;
     }
-    return Boolean(overallFailed || missingLegs.length > 0);
+    const noLegs = noLegsReported ?? (perJobCountsAvailable && legs.length === 0);
+    return Boolean(overallFailed || missingLegs.length > 0 || noLegs);
 }
 
 function formatMasterChannelMessage({
@@ -341,7 +346,7 @@ function formatMasterChannelMessage({
     headCommit,
     perJobCountsAvailable = true,
 }) {
-    const {legs, passed, failed, skipped, overallFailed, missingLegs} = summarizeOutcome({
+    const {legs, passed, failed, skipped, overallFailed, missingLegs, noLegsReported} = summarizeOutcome({
         detail, perJobCounts, upstreamJobsSucceeded, hasFailures, baseUrl, perJobCountsAvailable,
     });
     const branch = (compositeIdentity?.branch || 'master').replace(/^refs\/(heads|tags)\//, '');
@@ -352,7 +357,7 @@ function formatMasterChannelMessage({
         runUrl ? `[Workflow run](${runUrl})` : '',
     ].filter(Boolean).join(' · ');
 
-    if (!overallFailed && missingLegs.length === 0) {
+    if (!overallFailed && missingLegs.length === 0 && !noLegsReported) {
         const shaPart = shortSha ? ` @ \`${shortSha}\`` : '';
         return `:white_check_mark: **Desktop Master E2E** — passed on \`${branch}\`${shaPart} (${passed} passed, ${skipped} skipped)${links ? ` — ${links}` : ''}\n`;
     }
@@ -383,6 +388,9 @@ function formatMasterChannelMessage({
             return `${platform} / ${suite}`;
         }).join(', ');
         lines.push(`Missing/empty: ${labels}`);
+    }
+    if (noLegsReported) {
+        lines.push('No per-leg results reported.');
     }
     if (!perJobCountsAvailable) {
         lines.push('Per-leg counts unavailable (TSIO consolidated fetch failed).');
