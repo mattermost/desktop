@@ -281,7 +281,7 @@ function sanitizeInlineText(text, maxLength = 80) {
 // Author is untrusted (GitHub login, or a raw git author name for the commit
 // fallback) — render it as text, never as a live @mention (@channel/@here).
 function formatByline(author) {
-    const name = sanitizeInlineText(author, 40).replace(/^@/, '');
+    const name = sanitizeInlineText(author, 40).replace(/^@/, '').replace(/^\u200b+/, '');
     return name ? ` by @\u200b${name}` : '';
 }
 

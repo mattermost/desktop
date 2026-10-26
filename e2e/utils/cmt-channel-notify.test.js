@@ -504,7 +504,7 @@ describe('cmt-channel-notify', () => {
         it('is short, names master, the merged PR, and the failing suite', () => {
             const text = masterFailure();
             assert.match(text, /^:red_circle: \*\*Desktop Master E2E — failure on `master`\*\*$/m);
-            assert.match(text, /After merge of \[#3916 Fix the thing\]\(https:\/\/github\.com\/mattermost\/desktop\/pull\/3916\) by @dev · commit `a1b2c3d`/);
+            assert.match(text, /After merge of \[#3916 Fix the thing\]\(https:\/\/github\.com\/mattermost\/desktop\/pull\/3916\) by @\u200bdev · commit `a1b2c3d`/);
             assert.match(text, /Failing: 🐧 Linux Server `12\.1\.0-rc1` — 1 failed \(\[report\]\(https:\/\/test-io\.test\.mattermost\.com\/reports\/r\/rid-linux-1\)\)/);
             assert.match(text, /\[Workflow run\]\(https:\/\/github\.com\/mattermost\/desktop\/actions\/runs\/123456\)/);
             assert.doesNotMatch(text, /Detailed results|\| Overall \|/);
@@ -513,7 +513,7 @@ describe('cmt-channel-notify', () => {
 
         it('falls back to the head commit, then to the SHA alone, without a merged PR', () => {
             const withCommit = masterFailure({mergedPr: null, headCommit: {subject: 'Fix the thing (#3916)', author: 'dev'}});
-            assert.match(withCommit, /After commit `a1b2c3d` by @dev — Fix the thing \\\(#3916\\\)/);
+            assert.match(withCommit, /After commit `a1b2c3d` by @\u200bdev — Fix the thing \\\(#3916\\\)/);
             const bare = masterFailure({mergedPr: null, headCommit: null});
             assert.match(bare, /On `master` · commit `a1b2c3d`/);
         });
@@ -527,6 +527,16 @@ describe('cmt-channel-notify', () => {
             assert.doesNotMatch(text, /@here/);
             assert.doesNotMatch(text, /\]\(https:\/\/evil\.example\)/);
             assert.match(text, /After merge of \[#3916 Ping @\u200bhere \\\]\\\(https:\/\/evil\.example\\\)\]\(https:\/\/github\.com\/mattermost\/desktop\/pull\/3916\)/);
+        });
+
+        it('defuses mentions in PR-author and commit-author bylines', () => {
+            const prText = masterFailure({mergedPr: {number: 3916, title: 'Fix the thing', author: 'channel'}});
+            assert.doesNotMatch(prText, /by @channel/);
+            assert.match(prText, /by @\u200bchannel · commit `a1b2c3d`/);
+
+            const commitText = masterFailure({mergedPr: null, headCommit: {subject: 'Direct push', author: '@here'}});
+            assert.doesNotMatch(commitText, /by @here/);
+            assert.match(commitText, /by @\u200bhere — Direct push/);
         });
 
         it('posts only on failure (or missing legs) for master, always for other reports', () => {
