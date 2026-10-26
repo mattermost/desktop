@@ -313,9 +313,10 @@ function summarizeOutcome({detail, perJobCounts, upstreamJobsSucceeded = true, h
 
     // When the consolidated fetch failed, every leg looks empty — that is
     // unavailable data, not a missing leg, so it must not trigger an alert.
-    const missingLegs = perJobCountsAvailable ?
-        legs.filter((leg) => leg.status === 'missing' || leg.status === 'no-results') :
-        [];
+    let missingLegs = [];
+    if (perJobCountsAvailable) {
+        missingLegs = legs.filter((leg) => leg.status === 'missing' || leg.status === 'no-results');
+    }
     return {legs, passed, failed, skipped, overallFailed, missingLegs, perJobCountsAvailable};
 }
 

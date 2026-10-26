@@ -13,6 +13,7 @@ const {
     buildLegSummaries,
     formatLegResultText,
     formatCmtChannelMessage,
+    sanitizeInlineText,
     shouldPostToChannel,
     notifyCmtChannel,
     collapseSpecAttempts,
@@ -508,9 +509,20 @@ describe('cmt-channel-notify', () => {
 
         it('falls back to the head commit, then to the SHA alone, without a merged PR', () => {
             const withCommit = masterFailure({mergedPr: null, headCommit: {subject: 'Fix the thing (#3916)', author: 'dev'}});
-            assert.match(withCommit, /After commit `a1b2c3d` by @dev — Fix the thing \(#3916\)/);
+            assert.match(withCommit, /After commit `a1b2c3d` by @dev — Fix the thing \\\(#3916\\\)/);
             const bare = masterFailure({mergedPr: null, headCommit: null});
             assert.match(bare, /On `master` · commit `a1b2c3d`/);
+        });
+
+        it('escapes Markdown and defuses mentions in PR titles and commit subjects', () => {
+            assert.equal(
+                sanitizeInlineText('Hi @channel [x](https://evil.example)'),
+                'Hi @\u200bchannel \\[x\\]\\(https://evil.example\\)',
+            );
+            const text = masterFailure({mergedPr: {number: 3916, title: 'Ping @here ](https://evil.example)', author: 'dev'}});
+            assert.doesNotMatch(text, /@here/);
+            assert.doesNotMatch(text, /\]\(https:\/\/evil\.example\)/);
+            assert.match(text, /After merge of \[#3916 Ping @\u200bhere \\\]\\\(https:\/\/evil\.example\\\)\]\(https:\/\/github\.com\/mattermost\/desktop\/pull\/3916\)/);
         });
 
         it('posts only on failure (or missing legs) for master, always for other reports', () => {
@@ -550,6 +562,48 @@ describe('cmt-channel-notify', () => {
                     mergedPr: {number: 3916, title: 'Fix the thing', author: 'dev'},
                 });
                 assert.ok(calls.some((url) => url.includes('mm.example')), 'failed master must post');
+            } finally {
+                global.fetch = originalFetch;
+            }
+        });
+
+        it('notifyCmtChannel does not invent missing legs when the per-leg count fetch fails', async () => {
+            const originalFetch = global.fetch;
+            const webhookBodies = [];
+            global.fetch = async (url, options) => {
+                if (String(url).includes('/api/v1/reports/consolidated')) {
+                    throw new Error('consolidated unavailable');
+                }
+                webhookBodies.push(JSON.parse(options.body).text);
+                return {ok: true, text: async () => '', json: async () => ({})};
+            };
+            const core = {info: () => {}, warning: () => {}};
+            const base = {
+                core,
+                baseUrl: 'https://test-io.test.mattermost.com',
+                reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
+                webhookUrl: 'https://mm.example/hooks/master-health',
+                compositeIdentity: {
+                    repository: 'mattermost/desktop',
+                    branch: 'master',
+                    commit_sha: 'a1b2c3d4e5f678901234567890abcdef12345678',
+                    name: 'desktop-master',
+                    gh_run_id: '123456',
+                },
+            };
+            const detail = (failed) => ({
+                status: 'completed',
+                test_stats: {passed: 10, failed, skipped: 1},
+                reports: [{id: 'rid-linux', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1', status: 'complete'}],
+            });
+            try {
+                await notifyCmtChannel({...base, detail: detail(0)});
+                assert.equal(webhookBodies.length, 0, 'green master with unavailable counts must not post');
+
+                await notifyCmtChannel({...base, detail: detail(1)});
+                assert.equal(webhookBodies.length, 1, 'failed master must still post');
+                assert.match(webhookBodies[0], /Per-leg counts unavailable/);
+                assert.doesNotMatch(webhookBodies[0], /Missing\/empty/);
             } finally {
                 global.fetch = originalFetch;
             }
