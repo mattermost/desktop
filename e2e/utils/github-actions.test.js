@@ -54,21 +54,21 @@ describe('E2E/Override label handlers', () => {
         const trigger = workflow('e2e-pr-trigger.yml');
         assert.match(trigger, /no longer has E2E\/Override — skipping waiver/);
         assert.match(trigger, /has E2E\/Override again — skipping re-arm/);
+        assert.match(trigger, /has E2E\/Override — skipping cancelled status update/);
         assert.equal(trigger.split('listLabelsOnIssue').length - 1 >= 3, true);
-
-        const cancelAction = read('.github/actions/cancel-e2e-runs/action.yml');
-        assert.match(cancelAction, /pr\.labels/);
-        assert.match(cancelAction, /skipping cancelled status update/);
     });
 
     // The label job checks out the base ref, so a step that require()s a helper
     // added by the same PR crashes until that PR merges
-    // ("isE2EOverrideActive is not a function", run 40287658710). Current-label
-    // checks must be inlined, never require()d from the base checkout.
+    // ("isE2EOverrideActive is not a function", run 40287658710), and a local
+    // composite action is likewise loaded from the base checkout. Current-label
+    // checks must be inlined in the workflow, never require()d or delegated.
     it('never require()s a branch-only helper from the base-ref checkout', () => {
-        assert.doesNotMatch(workflow('e2e-pr-trigger.yml'), /isE2EOverrideActive/);
-        assert.doesNotMatch(read('.github/actions/cancel-e2e-runs/action.yml'), /isE2EOverrideActive/);
+        const trigger = workflow('e2e-pr-trigger.yml');
+        assert.doesNotMatch(trigger, /isE2EOverrideActive/);
+        assert.doesNotMatch(trigger, /uses: \.\/\.github\/actions\/cancel-e2e-runs/);
         assert.equal('isE2EOverrideActive' in require('./github-actions'), false);
+        assert.equal(fs.existsSync(path.join(repoRoot, '.github/actions/cancel-e2e-runs/action.yml')), false);
     });
 });
 

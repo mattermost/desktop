@@ -68,15 +68,49 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.base.ref }}
 
+      # Inlined, not the old ./.github/actions/cancel-e2e-runs composite: a
+      # local action is loaded from this job's base-ref checkout, so a guard
+      # added to it by a PR cannot run until that PR merges.
       - name: Cancel E2E on manual label removal
         if: >-
           github.event.action == 'unlabeled'
           && github.event.label.name == 'E2E/Run'
           && github.event.sender.login != 'github-actions[bot]'
-        uses: ./.github/actions/cancel-e2e-runs
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
-          pr_number: ${{ github.event.pull_request.number }}
-          reason: E2E cancelled (E2E/Run label removed)
+          github-token: ${{ github.token }}
+          script: |
+            const {markE2EStatusesCancelled, cancelActiveE2ERuns} = require('./e2e/utils/github-actions.js');
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const pr = context.payload.pull_request;
+
+            await cancelActiveE2ERuns({
+              github,
+              context,
+              prNumber: issue_number,
+              headBranch: pr.head.ref,
+            });
+
+            // Current labels decide (see Honor step): if the waiver was
+            // applied in the same edit that removed E2E/Run, it owns the
+            // statuses — do not overwrite its success with `error`.
+            const { data: currentLabels } = await github.rest.issues.listLabelsOnIssue({
+              owner,
+              repo,
+              issue_number,
+            });
+            if (currentLabels.some((label) => label.name === 'E2E/Override')) {
+              core.info(`PR #${issue_number} has E2E/Override — skipping cancelled status update.`);
+              return;
+            }
+
+            await markE2EStatusesCancelled({
+              github,
+              context,
+              sha: pr.head.sha,
+              reason: 'E2E cancelled (E2E/Run label removed)',
+            });
 
       - name: Honor E2E/Override
         if: >-
