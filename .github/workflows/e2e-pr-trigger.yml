@@ -3,6 +3,10 @@ name: E2E PR Trigger
 # Adds E2E/Run on non-draft PRs to master (Matterwick dispatches e2e-functional.yml).
 # E2E/Override waives E2E and passes the required e2e/* statuses; removing it re-arms.
 # Manual E2E/Run removal cancels in-flight runs and leaves e2e/* red.
+# Handlers decide from the PR's current labels, not the waking event (same rule
+# as mattermost-mobile's e2e-label-manager): removing E2E/Run and adding
+# E2E/Override together fires both handlers, so the last one to post must see
+# the waiver and stand down instead of overwriting its success with `error`.
 # One job keeps the PR checks list to a single row. Concurrency is keyed by
 # event type so unrelated label bots cannot cancel an in-progress trigger (PR #3891).
 on:
@@ -82,10 +86,18 @@ jobs:
         with:
           github-token: ${{ github.token }}
           script: |
-            const {cancelActiveE2ERuns, markE2EStatusesCancelled} = require('./e2e/utils/github-actions.js');
+            const {cancelActiveE2ERuns, markE2EStatusesCancelled, isE2EOverrideActive} = require('./e2e/utils/github-actions.js');
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
             const pr = context.payload.pull_request;
+
+            // Decide from current labels, not this event: a paired
+            // E2E/Run removal may be handled before or after us, and the
+            // waiver may already have been taken back.
+            if (!(await isE2EOverrideActive({github, context, prNumber: issue_number}))) {
+              core.info(`PR #${issue_number} no longer has E2E/Override — skipping waiver.`);
+              return;
+            }
 
             try {
               await github.rest.issues.removeLabel({
@@ -123,8 +135,14 @@ jobs:
         with:
           github-token: ${{ github.token }}
           script: |
+            const {isE2EOverrideActive} = require('./e2e/utils/github-actions.js');
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
+
+            if (await isE2EOverrideActive({github, context, prNumber: issue_number})) {
+              core.info(`PR #${issue_number} has E2E/Override again — skipping re-arm.`);
+              return;
+            }
 
             try {
               await github.rest.issues.removeLabel({
