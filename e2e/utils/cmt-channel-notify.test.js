@@ -457,11 +457,15 @@ describe('cmt-channel-notify', () => {
                 detail: {
                     status: 'completed',
                     test_stats: {passed: 200, failed: 0, skipped: 5, flaky: 3, total: 208},
-                    reports: [],
+                    reports: [
+                        {id: 'rid-linux', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1', status: 'complete'},
+                    ],
                 },
                 reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
                 baseUrl: 'https://test-io.test.mattermost.com',
-                perJobCounts: {},
+                perJobCounts: {
+                    'e2e-on-ubuntu-latest-12.1.0-rc1': {passed: 200, failed: 0, skipped: 5, flaky: 3},
+                },
                 upstreamJobsSucceeded: true,
             });
             assert.match(text, /^:white_check_mark: \*\*Desktop Master E2E\*\* — passed on `master` @ `a1b2c3d` \(203 passed, 5 skipped\)/);
@@ -526,41 +530,62 @@ describe('cmt-channel-notify', () => {
         });
 
         it('posts only on failure (or missing legs) for master, always for other reports', () => {
-            assert.equal(shouldPostToChannel({name: 'desktop-master'}, {overallFailed: false, missingLegs: []}), false);
-            assert.equal(shouldPostToChannel({name: 'desktop-master'}, {overallFailed: true, missingLegs: []}), true);
-            assert.equal(shouldPostToChannel({name: 'desktop-master'}, {overallFailed: false, missingLegs: [{}]}), true);
+            const oneLeg = {legs: [{}]};
+            assert.equal(shouldPostToChannel({name: 'desktop-master'}, {overallFailed: false, missingLegs: [], ...oneLeg}), false);
+            assert.equal(shouldPostToChannel({name: 'desktop-master'}, {overallFailed: true, missingLegs: [], ...oneLeg}), true);
+            assert.equal(shouldPostToChannel({name: 'desktop-master'}, {overallFailed: false, missingLegs: [{}], ...oneLeg}), true);
             assert.equal(shouldPostToChannel({name: 'desktop-pr'}, {overallFailed: false, missingLegs: []}), true);
             assert.equal(shouldPostToChannel({name: 'cmt-desktop'}, {overallFailed: false, missingLegs: []}), true);
+        });
+
+        it('alerts when a master run reports no legs, unless counts are unavailable', () => {
+            assert.equal(shouldPostToChannel({name: 'desktop-master'}, {overallFailed: false, missingLegs: [], legs: []}), true);
+            assert.equal(shouldPostToChannel({name: 'desktop-master'}, {overallFailed: false, missingLegs: [], legs: [], perJobCountsAvailable: false}), false);
+
+            const text = formatCmtChannelMessage({
+                compositeIdentity: {branch: 'master', commit_sha: 'a1b2c3d4', name: 'desktop-master'},
+                detail: {status: 'completed', test_stats: {passed: 10, failed: 0, skipped: 1}, reports: []},
+                reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
+                perJobCounts: {},
+                upstreamJobsSucceeded: true,
+            });
+            assert.match(text, /^:red_circle: \*\*Desktop Master E2E — failure on `master`\*\*/);
+            assert.match(text, /No per-leg results reported\./);
         });
 
         it('notifyCmtChannel suppresses a passed master run and posts a failed one', async () => {
             const originalFetch = global.fetch;
             const calls = [];
+            let specStatus = 'passed';
             global.fetch = async (url) => {
                 calls.push(String(url));
-                return {ok: true, text: async () => '', json: async () => ({specs: []})};
+                const specs = [{
+                    history: [{commit_sha: 'a1b2c3d4', run_attempt: '1', report_id: 'rid-linux', status: specStatus}],
+                }];
+                return {ok: true, text: async () => '', json: async () => ({specs})};
             };
             const core = {info: () => {}, warning: () => {}};
+            const identity = {
+                branch: 'master', commit_sha: 'a1b2c3d4', name: 'desktop-master', gh_run_id: '1', gh_run_attempt: '1',
+            };
+            const detail = (failed) => ({
+                status: 'completed',
+                test_stats: {passed: 10, failed, skipped: 1},
+                reports: [{id: 'rid-linux', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1', status: 'complete'}],
+            });
             const base = {
                 core,
                 baseUrl: 'https://test-io.test.mattermost.com',
                 reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
                 webhookUrl: 'https://mm.example/hooks/master-health',
+                compositeIdentity: identity,
             };
             try {
-                await notifyCmtChannel({
-                    ...base,
-                    compositeIdentity: {branch: 'master', commit_sha: 'a1b2c3d4', name: 'desktop-master'},
-                    detail: {status: 'completed', test_stats: {passed: 10, failed: 0, skipped: 1}, reports: []},
-                });
+                await notifyCmtChannel({...base, detail: detail(0)});
                 assert.ok(!calls.some((url) => url.includes('mm.example')), `passed master must not post, got ${calls}`);
 
-                await notifyCmtChannel({
-                    ...base,
-                    compositeIdentity: {branch: 'master', commit_sha: 'a1b2c3d4', name: 'desktop-master'},
-                    detail: {status: 'completed', test_stats: {passed: 10, failed: 1, skipped: 1}, reports: []},
-                    mergedPr: {number: 3916, title: 'Fix the thing', author: 'dev'},
-                });
+                specStatus = 'failed';
+                await notifyCmtChannel({...base, detail: detail(1), mergedPr: {number: 3916, title: 'Fix the thing', author: 'dev'}});
                 assert.ok(calls.some((url) => url.includes('mm.example')), 'failed master must post');
             } finally {
                 global.fetch = originalFetch;
