@@ -12,6 +12,7 @@ import {isHttpLink} from 'common/utils/url';
 import Diagnostics from 'main/diagnostics';
 import {localizeMessage} from 'main/i18nManager';
 import UpdateManager from 'main/updateNotifier';
+import {openExternalSafely} from 'main/utils';
 
 const log = new Logger('Help');
 
@@ -35,7 +36,7 @@ export default function createHelpMenu(): MenuItemConstructorOptions {
         submenu.push({
             label: localizeMessage('main.menus.app.help.userGuide', 'User guide'),
             click() {
-                shell.openExternal(helpLink);
+                openExternalSafely(helpLink);
             },
         });
     } else if (helpLink) {
@@ -46,7 +47,7 @@ export default function createHelpMenu(): MenuItemConstructorOptions {
         submenu.push({
             label: localizeMessage('main.menus.app.help.academy', 'Mattermost Academy'),
             click() {
-                shell.openExternal(academyLink);
+                openExternalSafely(academyLink);
             },
         });
     } else if (academyLink) {
@@ -86,7 +87,7 @@ export default function createHelpMenu(): MenuItemConstructorOptions {
         submenu.push({
             label: localizeMessage('main.menus.app.help.reportProblem', 'Report a problem'),
             click() {
-                shell.openExternal(reportProblemLink!);
+                openExternalSafely(reportProblemLink!);
             },
         });
     } else if (reportProblemLink) {

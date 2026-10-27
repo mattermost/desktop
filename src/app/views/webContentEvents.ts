@@ -7,11 +7,10 @@ import type {
     WebContentsWillNavigateEventParams,
     WebContentsWillRedirectEventParams,
 } from 'electron';
-import {BrowserWindow, shell} from 'electron';
+import {BrowserWindow} from 'electron';
 
 import CallsWidgetWindow from 'app/callsWidgetWindow';
 import MainWindow from 'app/mainWindow/mainWindow';
-import MessageModal from 'app/mainWindow/modals/messageModal';
 import NavigationManager from 'app/navigationManager';
 import PluginsPopUpsManager from 'app/views/pluginsPopUps';
 import WebContentsManager from 'app/views/webContentsManager';
@@ -34,12 +33,11 @@ import {
 } from 'common/utils/url';
 import ViewManager from 'common/views/viewManager';
 import ContextMenu from 'main/contextMenu';
-import {localizeMessage} from 'main/i18nManager';
 import allowProtocolDialog from 'main/security/allowProtocolDialog';
 import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
-import {composeUserAgent} from 'main/utils';
+import {composeUserAgent, openExternalSafely} from 'main/utils';
 
-import {generateHandleConsoleMessage, generateWillFrameNavigate, isCustomProtocol, isMattermostProtocol} from './webContentEventsCommon';
+import {generateHandleConsoleMessage, generateWillFrameNavigate, isCustomProtocol, isMattermostProtocol, showInvalidLinkModal} from './webContentEventsCommon';
 
 const log = new Logger('WebContentsEventManager');
 
@@ -147,13 +145,7 @@ export class WebContentsEventManager {
             const parsedURL = parseURL(details.url);
             if (!parsedURL) {
                 this.log(webContentsId).warn(`Ignoring invalid URL: ${details.url}`);
-                MessageModal.showErrorModal(
-                    localizeMessage('main.webContentEvents.invalidLinkTitle', 'Invalid Link'),
-                    localizeMessage(
-                        'main.webContentEvents.invalidLinkDescription',
-                        'The link you clicked appears to be malformed and cannot be opened. Please check the URL for errors before trying again.',
-                    ),
-                );
+                showInvalidLinkModal();
                 return {action: 'deny'};
             }
 
@@ -185,27 +177,27 @@ export class WebContentsEventManager {
 
             const serverURL = this.getServerURLFromWebContentsId(webContentsId);
             if (!serverURL) {
-                shell.openExternal(serializedURL);
+                openExternalSafely(serializedURL, showInvalidLinkModal);
                 return {action: 'deny'};
             }
 
             // Public download links case
             // we are going to mimic the browser and just pop a new browser window for public links
             if (isPublicFilesUrl(serverURL, parsedURL)) {
-                shell.openExternal(serializedURL);
+                openExternalSafely(serializedURL, showInvalidLinkModal);
                 return {action: 'deny'};
             }
 
             // Image proxy case
             if (isImageProxyUrl(serverURL, parsedURL)) {
-                shell.openExternal(serializedURL);
+                openExternalSafely(serializedURL, showInvalidLinkModal);
                 return {action: 'deny'};
             }
 
             if (isHelpUrl(serverURL, parsedURL)) {
                 // Help links case
                 // continue to open special case internal urls in default browser
-                shell.openExternal(serializedURL);
+                openExternalSafely(serializedURL, showInvalidLinkModal);
                 return {action: 'deny'};
             }
 
@@ -295,7 +287,7 @@ export class WebContentsEventManager {
             }
 
             // If all else fails, just open externally
-            shell.openExternal(serializedURL);
+            openExternalSafely(serializedURL, showInvalidLinkModal);
             return {action: 'deny'};
         };
     };

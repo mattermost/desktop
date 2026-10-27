@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
-import {ipcMain, nativeTheme, session, shell} from 'electron';
+import {ipcMain, nativeTheme, session} from 'electron';
 import isDev from 'electron-is-dev';
 import Joi from 'joi';
 
@@ -38,6 +38,7 @@ import ViewManager from 'common/views/viewManager';
 import {flushCookiesStore} from 'main/app/utils';
 import PermissionsManager from 'main/security/permissionsManager';
 import ThemeManager from 'main/themeManager';
+import {openExternalSafely} from 'main/utils';
 
 import {MattermostWebContentsView} from './MattermostWebContentsView';
 
@@ -230,17 +231,17 @@ export class WebContentsManager {
         if (!serverURL) {
             return;
         }
-        shell.openExternal(serverURL);
+        openExternalSafely(serverURL);
     };
 
     private handleOpenServerUpgradeLink = () => {
         if (Config.upgradeLink) {
-            shell.openExternal(Config.upgradeLink);
+            openExternalSafely(Config.upgradeLink);
         }
     };
 
     private handleOpenChangelogLink = () => {
-        shell.openExternal(DEFAULT_CHANGELOG_LINK);
+        openExternalSafely(DEFAULT_CHANGELOG_LINK);
     };
 
     private handleUnreadsAndMentionsChanged = (e: IpcMainEvent, isUnread: boolean, mentionCount: number) => {
