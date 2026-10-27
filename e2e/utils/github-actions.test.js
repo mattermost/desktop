@@ -249,11 +249,14 @@ describe('CMT posts only e2e/compatibility-matrix-testing', () => {
         assert.doesNotMatch(cmt, /perOsCommitStatuses: true/);
     });
 
-    it('uses the CMT aggregate context and keeps channel notify on', () => {
+    it('uses the CMT aggregate context and defers channel notify to the verdict job', () => {
         assert.match(cmt, /context: e2e\/compatibility-matrix-testing/);
         assert.match(cmt, /COMMIT_STATUS_CONTEXT: e2e\/compatibility-matrix-testing/);
         assert.match(cmt, /MATTERMOST_CMT_WEBHOOK_URL:/);
-        assert.doesNotMatch(cmt, /notifyChannel: false/);
+
+        // The summary no longer posts the verbose rollup itself; cmt-verdict
+        // posts one short triage-driven message once cmt-triage has folded.
+        assert.match(cmt, /notifyChannel: false/);
     });
 
     it('runs unsharded per-OS legs; linux/windows wait on their install job, macos does not', () => {

@@ -982,7 +982,13 @@ async function reportTsioStatus({
         } else {
             reason = `status=${detail.status}, failed=${stats.failed || 0}`;
         }
-        throw new Error(`TSIO report ${reportId} did not pass: ${reason}`);
+        const failure = new Error(`TSIO report ${reportId} did not pass: ${reason}`);
+
+        // Callers that catch (e.g. CMT, which defers its channel post to a
+        // post-triage verdict job) still need the report link and totals.
+        failure.reportUrl = displayReportUrl || groupReportUrl;
+        failure.stats = stats;
+        throw failure;
     }
 
     if (!isComplete && overallState === 'success') {
