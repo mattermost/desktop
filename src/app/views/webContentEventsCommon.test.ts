@@ -24,6 +24,17 @@ jest.mock('common/utils/url', () => ({
     parseURL: jest.fn(),
 }));
 
+jest.mock('app/mainWindow/modals/messageModal', () => ({
+    __esModule: true,
+    default: {
+        showErrorModal: jest.fn(),
+    },
+}));
+
+jest.mock('main/i18nManager', () => ({
+    localizeMessage: jest.fn(),
+}));
+
 const mockGetLevel = getLevel as jest.MockedFunction<typeof getLevel>;
 const mockParseURL = parseURL as jest.MockedFunction<typeof parseURL>;
 

@@ -11,7 +11,6 @@ import type {
 import {
     app,
     ipcMain,
-    shell,
     systemPreferences,
 } from 'electron';
 
@@ -33,6 +32,7 @@ import {isTrustedURL, parseURL} from 'common/utils/url';
 import {t} from 'common/utils/util';
 import {permissionsJson} from 'main/constants';
 import {localizeMessage} from 'main/i18nManager';
+import {openExternalSafely} from 'main/utils';
 
 import type {Permissions} from 'types/permissions';
 
@@ -256,8 +256,8 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
         }) ?? false;
     };
 
-    private openWindowsCameraPreferences = () => shell.openExternal('ms-settings:privacy-webcam');
-    private openWindowsMicrophonePreferences = () => shell.openExternal('ms-settings:privacy-microphone');
+    private openWindowsCameraPreferences = () => openExternalSafely('ms-settings:privacy-webcam');
+    private openWindowsMicrophonePreferences = () => openExternalSafely('ms-settings:privacy-microphone');
     private handleGetMediaAccessStatus = (event: IpcMainInvokeEvent, mediaType: 'microphone' | 'camera' | 'screen') => systemPreferences.getMediaAccessStatus(mediaType);
 }
 
