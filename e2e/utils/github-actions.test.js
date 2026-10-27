@@ -45,6 +45,48 @@ const threeOs = [
     {platform: 'windows', runner: 'windows-2022', url: 'https://windows.example'},
 ];
 
+describe('E2E/Override label handlers', () => {
+    // Regression (#4040): removing E2E/Run and adding E2E/Override together fired
+    // both label handlers concurrently and the cancel handler posted `error`
+    // last, overwriting the waiver. All three status writers must consult
+    // current labels before posting.
+    it('consult current labels before posting statuses', () => {
+        const trigger = workflow('e2e-pr-trigger.yml');
+        assert.match(trigger, /no longer has E2E\/Override — skipping waiver/);
+        assert.match(trigger, /has E2E\/Override again — skipping re-arm/);
+        assert.match(trigger, /has E2E\/Override — skipping cancelled status update/);
+    });
+
+    it('serializes label handlers per PR and re-reads labels before final writes', () => {
+        const trigger = workflow('e2e-pr-trigger.yml');
+        assert.match(trigger, /group: e2e-pr-trigger-\$\{\{ github\.event\.pull_request\.number \}\}/);
+        assert.match(trigger, /cancel-in-progress: false/);
+        assert.match(trigger, /lost E2E\/Override before the waiver posted — skipping/);
+        assert.match(trigger, /regained E2E\/Override before re-arm — skipping/);
+    });
+
+    it('paginates every label read', () => {
+        const trigger = workflow('e2e-pr-trigger.yml');
+        const paginated = trigger.split('github.paginate(github.rest.issues.listLabelsOnIssue').length - 1;
+        const raw = trigger.split('await github.rest.issues.listLabelsOnIssue').length - 1;
+        assert.ok(paginated >= 4, `expected >=4 paginated label reads, got ${paginated}`);
+        assert.equal(raw, 0);
+    });
+
+    // The label job checks out the base ref, so a step that require()s a helper
+    // added by the same PR crashes until that PR merges
+    // ("isE2EOverrideActive is not a function", run 40287658710), and a local
+    // composite action is likewise loaded from the base checkout. Current-label
+    // checks must be inlined in the workflow, never require()d or delegated.
+    it('never require()s a branch-only helper from the base-ref checkout', () => {
+        const trigger = workflow('e2e-pr-trigger.yml');
+        assert.doesNotMatch(trigger, /isE2EOverrideActive/);
+        assert.doesNotMatch(trigger, /uses: \.\/\.github\/actions\/cancel-e2e-runs/);
+        assert.equal('isE2EOverrideActive' in require('./github-actions'), false);
+        assert.equal(fs.existsSync(path.join(repoRoot, '.github/actions/cancel-e2e-runs/action.yml')), false);
+    });
+});
+
 describe('expandPlatformShards / prepareE2eMatrix', () => {
     it('shards linux×3, macos×2, windows×3', () => {
         assert.deepEqual(E2E_PLAYWRIGHT_SHARDS, {linux: 3, macos: 2, windows: 3});

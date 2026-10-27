@@ -429,6 +429,8 @@ jobs:
       actions: read
       id-token: write
       statuses: write
+      # Master alerts name the merged PR for the head commit (best-effort lookup).
+      pull-requests: read
     steps:
       # tsio-report-status.js is repo code, not fetched by github-script itself.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

@@ -15,6 +15,7 @@ const {
     shouldFailFromScope,
     scopedHasShardFailure,
     shouldPostPerOsCommitStatuses,
+    resolveMasterMergeContext,
 } = require('./tsio-report-status');
 
 const WINDOWS_SHARD = 'e2e-on-windows-2022-master-1-of-3';
@@ -603,6 +604,60 @@ describe('scopedHasShardFailure', () => {
             'macos-policy': {shardFailed: true},
             linux: {shardFailed: true},
         }, null, ['macos']), true);
+    });
+});
+
+describe('resolveMasterMergeContext', () => {
+    const context = {repo: {owner: 'mattermost', repo: 'desktop'}};
+    const identity = {branch: 'master', commit_sha: 'a1b2c3d4', name: 'desktop-master'};
+    const core = {warning: () => {}};
+
+    const githubWithPrs = (prs, commit) => ({
+        rest: {repos: {
+            listPullRequestsAssociatedWithCommit: async () => ({data: prs}),
+            getCommit: async () => ({data: commit}),
+        }},
+    });
+
+    it('returns the merged PR for the head commit, preferring base=master', async () => {
+        const result = await resolveMasterMergeContext({
+            github: githubWithPrs([
+                {number: 1, title: 'release PR', merged_at: '2026-01-01', base: {ref: 'release-1'}, user: {login: 'a'}, html_url: 'https://example/pr/1'},
+                {number: 3916, title: 'Fix the thing', merged_at: '2026-01-02', base: {ref: 'master'}, user: {login: 'dev'}, html_url: 'https://example/pr/3916'},
+                {number: 2, title: 'unmerged', merged_at: null, base: {ref: 'master'}, user: {login: 'b'}, html_url: 'https://example/pr/2'},
+            ]),
+            context,
+            compositeIdentity: identity,
+            core,
+        });
+        assert.deepEqual(result.mergedPr, {number: 3916, title: 'Fix the thing', url: 'https://example/pr/3916', author: 'dev'});
+        assert.equal(result.headCommit, null);
+    });
+
+    it('falls back to the head-commit subject when no PR merged this commit', async () => {
+        const result = await resolveMasterMergeContext({
+            github: githubWithPrs([], {commit: {message: 'Direct push fix\n\nbody'}, author: {login: 'dev'}}),
+            context,
+            compositeIdentity: identity,
+            core,
+        });
+        assert.equal(result.mergedPr, null);
+        assert.deepEqual(result.headCommit, {subject: 'Direct push fix', author: 'dev'});
+    });
+
+    it('never throws on API failure', async () => {
+        const github = {rest: {repos: {
+            listPullRequestsAssociatedWithCommit: async () => {
+                throw new Error('403');
+            },
+            getCommit: async () => {
+                throw new Error('403');
+            },
+        }}};
+        assert.deepEqual(
+            await resolveMasterMergeContext({github, context, compositeIdentity: identity, core}),
+            {mergedPr: null, headCommit: null},
+        );
     });
 });
 

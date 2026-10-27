@@ -36,6 +36,59 @@ const {
 } = require('./github-actions');
 
 /**
+ * Master runs are dispatched with no PR number, so the merge that produced the
+ * head commit is resolved from the commit itself. Best-effort: any API failure
+ * returns nulls and the channel alert falls back to the short SHA.
+ *
+ * @returns {Promise<{mergedPr: Object|null, headCommit: Object|null}>}
+ */
+async function resolveMasterMergeContext({github, context, compositeIdentity, core}) {
+    const fallback = {mergedPr: null, headCommit: null};
+    if (!compositeIdentity?.commit_sha || !context?.repo?.owner || !context?.repo?.repo) {
+        return fallback;
+    }
+    const owner = context.repo.owner;
+    const repo = context.repo.repo;
+    try {
+        const {data} = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+            owner,
+            repo,
+            commit_sha: compositeIdentity.commit_sha,
+        });
+        const merged = (Array.isArray(data) ? data : []).filter((pr) => pr.merged_at);
+        if (merged.length > 0) {
+            const branch = (compositeIdentity.branch || '').replace(/^refs\/(heads|tags)\//, '');
+            const pr = merged.find((candidate) => candidate.base?.ref === branch) || merged[0];
+            return {
+                mergedPr: {
+                    number: pr.number,
+                    title: pr.title || '',
+                    url: pr.html_url || '',
+                    author: pr.user?.login || '',
+                },
+                headCommit: null,
+            };
+        }
+    } catch (error) {
+        core?.warning?.(`Could not resolve merged PR for ${compositeIdentity.commit_sha}: ${error.message}`);
+        return fallback;
+    }
+    try {
+        const {data} = await github.rest.repos.getCommit({owner, repo, ref: compositeIdentity.commit_sha});
+        const subject = (data?.commit?.message || '').split('\n')[0].trim();
+        if (subject) {
+            return {
+                mergedPr: null,
+                headCommit: {subject, author: data.author?.login || data.commit?.author?.name || ''},
+            };
+        }
+    } catch (error) {
+        core?.warning?.(`Could not resolve head commit ${compositeIdentity.commit_sha}: ${error.message}`);
+    }
+    return fallback;
+}
+
+/**
  * Bucket key for commit-status aggregation.
  * Policy legs use `<os>-policy` so they do not fold into e2e/<os>.
  *
@@ -876,6 +929,10 @@ async function reportTsioStatus({
                 // Prefer TSIO links even when the poll timed out at in_progress
                 // (commit status may still point at the Actions run URL).
                 const channelReportUrl = displayReportUrl || groupReportUrl || targetUrl;
+                let mergeContext = {mergedPr: null, headCommit: null};
+                if (compositeIdentity.name === 'desktop-master') {
+                    mergeContext = await resolveMasterMergeContext({github, context, compositeIdentity, core});
+                }
                 await notifyCmtChannel({
                     core,
                     baseUrl,
@@ -885,6 +942,8 @@ async function reportTsioStatus({
                     upstreamJobsSucceeded,
                     hasFailures,
                     webhookUrl,
+                    mergedPr: mergeContext.mergedPr,
+                    headCommit: mergeContext.headCommit,
                 });
             }
         }
@@ -947,3 +1006,4 @@ module.exports.statusFromTotals = statusFromTotals;
 module.exports.scopedHasShardFailure = scopedHasShardFailure;
 module.exports.hasCountsForEveryUploadedReport = hasCountsForEveryUploadedReport;
 module.exports.shouldPostPerOsCommitStatuses = shouldPostPerOsCommitStatuses;
+module.exports.resolveMasterMergeContext = resolveMasterMergeContext;
