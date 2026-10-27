@@ -24,6 +24,10 @@ jest.mock('common/utils/url', () => ({
     parseURL: jest.fn(),
 }));
 
+jest.mock('main/i18nManager', () => ({
+    localizeMessage: jest.fn(),
+}));
+
 const mockGetLevel = getLevel as jest.MockedFunction<typeof getLevel>;
 const mockParseURL = parseURL as jest.MockedFunction<typeof parseURL>;
 

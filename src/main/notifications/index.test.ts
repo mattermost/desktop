@@ -139,6 +139,10 @@ jest.mock('main/security/permissionsManager', () => ({
 
 jest.mock('common/config', () => ({}));
 
+jest.mock('main/utils', () => ({
+    openExternalSafely: jest.fn(),
+}));
+
 describe('main/notifications', () => {
     describe('displayMention', () => {
         const mainWindow = {

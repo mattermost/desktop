@@ -4,7 +4,7 @@
 import os from 'os';
 import path from 'path';
 
-import {dialog, ipcMain, app, nativeImage, net, shell} from 'electron';
+import {dialog, ipcMain, app, nativeImage, net} from 'electron';
 import electronIsDev from 'electron-is-dev';
 import semver from 'semver';
 
@@ -27,6 +27,7 @@ import {Logger} from 'common/log';
 import downloadsManager from 'main/downloadsManager';
 import {localizeMessage} from 'main/i18nManager';
 import NotificationManager from 'main/notifications';
+import {openExternalSafely} from 'main/utils';
 
 const NEXT_NOTIFY = 86400000; // 24 hours
 const NEXT_CHECK = 3600000; // 1 hour
@@ -178,13 +179,13 @@ export class UpdateNotifier {
 
     private openWindowsStore = (): void => {
         if (process.platform === 'win32' && buildConfig.windowsStoreUpdateURL) {
-            shell.openExternal(buildConfig.windowsStoreUpdateURL);
+            openExternalSafely(buildConfig.windowsStoreUpdateURL);
         }
     };
 
     private openMacAppStore = (): void => {
         if (process.platform === 'darwin' && buildConfig.macAppStoreUpdateURL) {
-            shell.openExternal(buildConfig.macAppStoreUpdateURL);
+            openExternalSafely(buildConfig.macAppStoreUpdateURL);
         }
     };
 
@@ -201,10 +202,10 @@ export class UpdateNotifier {
 
         switch (platform) {
         case 'win32':
-            shell.openExternal(`${baseURL}/${version}/${this.getDownloadURL(version, 'win', 'msi', arch)}`);
+            openExternalSafely(`${baseURL}/${version}/${this.getDownloadURL(version, 'win', 'msi', arch)}`);
             break;
         case 'darwin':
-            shell.openExternal(`${baseURL}/${version}/${this.getDownloadURL(version, 'mac', 'dmg', arch)}`);
+            openExternalSafely(`${baseURL}/${version}/${this.getDownloadURL(version, 'mac', 'dmg', arch)}`);
             break;
         default:
             log.error('Unsupported platform for manual download', {platform});
@@ -213,7 +214,7 @@ export class UpdateNotifier {
 
     private openUpdateGuide = (): void => {
         if (process.platform === 'linux') {
-            shell.openExternal(buildConfig.linuxUpdateURL);
+            openExternalSafely(buildConfig.linuxUpdateURL);
         }
     };
 
@@ -225,7 +226,7 @@ export class UpdateNotifier {
         if (process.platform === 'linux') {
             const version = this.versionAvailable;
             const releaseURL = `${buildConfig.linuxGitHubReleaseURL}/v${version}`;
-            shell.openExternal(releaseURL);
+            openExternalSafely(releaseURL);
         }
     };
 

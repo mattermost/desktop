@@ -2,6 +2,8 @@
 // See LICENSE.txt for license information.
 
 'use strict';
+import {shell} from 'electron';
+
 import {TAB_BAR_HEIGHT} from 'common/utils/constants';
 
 import * as Utils from './utils';
@@ -12,6 +14,9 @@ jest.mock('electron', () => ({
             wasOpenedAsHidden: true,
         }),
         getAppPath: () => '/path/to/app',
+    },
+    shell: {
+        openExternal: jest.fn(),
     },
 }));
 
@@ -158,6 +163,43 @@ describe('main/utils', () => {
             [{x: 0, y: -1080, width: 1920, height: 1080}, {x: 100, y: -980, width: 1280, height: 720}, true],
         ])('should match case', (a, b, expected) => {
             expect(Utils.isInsideRectangle(a, b)).toBe(expected);
+        });
+    });
+
+    describe('openExternalSafely', () => {
+        afterEach(() => {
+            shell.openExternal.mockReset();
+        });
+
+        it('should open the URL and not call onError on success', async () => {
+            shell.openExternal.mockResolvedValue(undefined);
+            const onError = jest.fn();
+            await Utils.openExternalSafely('https://example.com}/', onError);
+            expect(shell.openExternal).toHaveBeenCalledWith('https://example.com}/');
+            expect(onError).not.toHaveBeenCalled();
+        });
+
+        it('should pass a rejection to onError instead of rejecting', async () => {
+            const error = new Error('Invalid URL');
+            shell.openExternal.mockRejectedValue(error);
+            const onError = jest.fn();
+            await expect(Utils.openExternalSafely('https://example.com}/', onError)).resolves.toBeUndefined();
+            expect(onError).toHaveBeenCalledWith(error);
+        });
+
+        it('should pass a synchronous throw to onError instead of rejecting', async () => {
+            const error = new Error('Invalid URL');
+            shell.openExternal.mockImplementation(() => {
+                throw error;
+            });
+            const onError = jest.fn();
+            await expect(Utils.openExternalSafely('https://example.com}/', onError)).resolves.toBeUndefined();
+            expect(onError).toHaveBeenCalledWith(error);
+        });
+
+        it('should not reject when no onError is given', async () => {
+            shell.openExternal.mockRejectedValue(new Error('Invalid URL'));
+            await expect(Utils.openExternalSafely('https://example.com}/')).resolves.toBeUndefined();
         });
     });
 });
