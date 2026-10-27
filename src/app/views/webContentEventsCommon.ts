@@ -4,10 +4,22 @@ import path from 'path';
 
 import type {Event, WebContentsConsoleMessageEventParams, WebContentsWillFrameNavigateEventParams} from 'electron';
 
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import {MATTERMOST_PROTOCOL} from 'common/constants';
 import type {Logger} from 'common/log';
 import {getLevel} from 'common/log';
 import {parseURL} from 'common/utils/url';
+import {localizeMessage} from 'main/i18nManager';
+
+export function showInvalidLinkModal() {
+    MessageModal.showErrorModal(
+        localizeMessage('main.webContentEvents.invalidLinkTitle', 'Invalid Link'),
+        localizeMessage(
+            'main.webContentEvents.invalidLinkDescription',
+            'The link you clicked appears to be malformed and cannot be opened. Please check the URL for errors before trying again.',
+        ),
+    );
+}
 
 export const generateHandleConsoleMessage = (log: Logger) => (event: Event<WebContentsConsoleMessageEventParams>) => {
     const wcLog = log.withPrefix('renderer');
