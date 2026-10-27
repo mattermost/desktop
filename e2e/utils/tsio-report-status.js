@@ -619,7 +619,7 @@ function shouldPostPerOsCommitStatuses(perOsCommitStatuses, compositeIdentity) {
  *   12, or TSIO_POLL_ATTEMPTS env). CMT runs with many legs should pass a higher value.
  * @param {number} [params.pollDelayMs] - Delay between polls in ms (default 5000, or
  *   TSIO_POLL_DELAY_MS env).
- * @returns {Promise<{reportUrl: string, status: string, stats: Object}>}
+ * @returns {Promise<{reportUrl: string, status: string, stats: Object, detail: Object}>}
  */
 async function reportTsioStatus({
     core,
@@ -982,7 +982,14 @@ async function reportTsioStatus({
         } else {
             reason = `status=${detail.status}, failed=${stats.failed || 0}`;
         }
-        throw new Error(`TSIO report ${reportId} did not pass: ${reason}`);
+        const failure = new Error(`TSIO report ${reportId} did not pass: ${reason}`);
+
+        // Callers that catch (e.g. CMT, which defers its channel post to a
+        // post-triage verdict job) still need the report link and totals.
+        failure.reportUrl = displayReportUrl || groupReportUrl;
+        failure.stats = stats;
+        failure.detail = detail;
+        throw failure;
     }
 
     if (!isComplete && overallState === 'success') {
@@ -992,7 +999,7 @@ async function reportTsioStatus({
         );
     }
 
-    return {reportUrl: displayReportUrl || groupReportUrl, status: detail.status, stats};
+    return {reportUrl: displayReportUrl || groupReportUrl, status: detail.status, stats, detail};
 }
 
 module.exports = reportTsioStatus;

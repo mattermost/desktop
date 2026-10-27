@@ -17,6 +17,8 @@
  * Playwright: failed+passed → flaky; all failed → failed once (not once per attempt).
  */
 
+const {foldMasterTriage} = require('./cmt-triage-verdict');
+
 const OS_ORDER = {linux: 0, macos: 1, windows: 2};
 const FETCH_TIMEOUT_MS = 15_000;
 
@@ -331,10 +333,16 @@ function summarizeOutcome({detail, perJobCounts, upstreamJobsSucceeded = true, h
 }
 
 // Master health is failure-only, like a CI health-check bot: green runs stay
-// silent instead of posting a per-leg table after every merge.
-function shouldPostToChannel(compositeIdentity, {overallFailed = false, missingLegs = [], legs = [], perJobCountsAvailable = true, noLegsReported} = {}) {
+// silent instead of posting a per-leg table after every merge. When AI triage
+// cleared every failure (flaky / failed in master / Infra failure), the run
+// stays silent too — red is posted only when triage leaves blocking failures,
+// and an unsettled verdict posts as needs-investigation, never as silent.
+function shouldPostToChannel(compositeIdentity, {overallFailed = false, missingLegs = [], legs = [], perJobCountsAvailable = true, noLegsReported} = {}, triageVerdict) {
     if (compositeIdentity?.name !== 'desktop-master') {
         return true;
+    }
+    if (triageVerdict === 'cleared') {
+        return false;
     }
     const noLegs = noLegsReported ?? (perJobCountsAvailable && legs.length === 0);
     return Boolean(overallFailed || missingLegs.length > 0 || noLegs);
@@ -351,10 +359,14 @@ function formatMasterChannelMessage({
     mergedPr,
     headCommit,
     perJobCountsAvailable = true,
+    triageLanes,
 }) {
     const {legs, passed, failed, skipped, overallFailed, missingLegs, noLegsReported} = summarizeOutcome({
         detail, perJobCounts, upstreamJobsSucceeded, hasFailures, baseUrl, perJobCountsAvailable,
     });
+    const triage = triageLanes ? foldMasterTriage({
+        lanes: triageLanes, legs, missingLegs, upstreamJobsSucceeded, overallFailed, noLegs: noLegsReported,
+    }) : null;
     const branch = (compositeIdentity?.branch || 'master').replace(/^refs\/(heads|tags)\//, '');
     const shortSha = (compositeIdentity?.commit_sha || '').slice(0, 7);
     const runUrl = buildWorkflowRunUrl(compositeIdentity);
@@ -368,14 +380,49 @@ function formatMasterChannelMessage({
         return `:white_check_mark: **Desktop Master E2E** — passed on \`${branch}\`${shaPart} (${passed} passed, ${skipped} skipped)${links ? ` — ${links}` : ''}\n`;
     }
 
+    // Triage cleared every failure: the run reads green. notifyCmtChannel
+    // suppresses this post entirely (failure-only channel); the green line
+    // exists so direct callers still render a truthful message.
+    if (triage && triage.verdict === 'cleared') {
+        const shaPart = shortSha ? ` @ \`${shortSha}\`` : '';
+        return `:green_circle: **Desktop Master E2E — flaky, no bug found** on \`${branch}\`${shaPart} (${passed} passed, ${skipped} skipped)${links ? ` — ${links}` : ''}\n`;
+    }
+
+    if (triage && triage.verdict === 'inconclusive') {
+        const lines = [
+            `:yellow_circle: **Desktop Master E2E — needs investigation on \`${branch}\`**`,
+            formatMasterAttribution({compositeIdentity, mergedPr, headCommit, shortSha}),
+            `**${failed} failed** · ${passed} passed · ${skipped} skipped`,
+        ];
+        if (triage.unknownLegs.length > 0) {
+            const labels = triage.unknownLegs.map((leg) => {
+                const {platform, suite} = formatLegLabels(leg);
+                return `${platform} / ${suite}`;
+            }).join(', ');
+            lines.push(`AI triage could not settle: ${labels} — not counted as flaky or as a bug`);
+        } else if (!upstreamJobsSucceeded) {
+            lines.push('A CI job failed outside tracked tests (install/build/teardown); triage cannot clear that.');
+        }
+        if (links) {
+            lines.push(`➡️ ${links}`);
+        }
+        return lines.join('\n') + '\n';
+    }
+
     const lines = [
         `:red_circle: **Desktop Master E2E — failure on \`${branch}\`**`,
         formatMasterAttribution({compositeIdentity, mergedPr, headCommit, shortSha}),
         `**${failed} failed** · ${passed} passed · ${skipped} skipped`,
     ];
 
+    // When triage judged the run, the Failing line names only the legs that
+    // still block; cleared legs are summarized by the triage line below.
+    let failingLegs = legs.filter((l) => l.status === 'failed' && l.failed > 0);
+    if (triage && triage.verdict === 'blocking') {
+        failingLegs = triage.blockingLegs;
+    }
     const failingBySuite = new Map();
-    for (const leg of legs.filter((l) => l.status === 'failed' && l.failed > 0)) {
+    for (const leg of failingLegs) {
         const {platform, suite} = formatLegLabels(leg);
         const key = `${platform}|${suite}`;
         const existing = failingBySuite.get(key) || {platform, suite, failed: 0, reportUrl: undefined};
@@ -387,6 +434,9 @@ function formatMasterChannelMessage({
         const parts = [...failingBySuite.values()].map((leg) =>
             `${leg.platform} ${leg.suite} — ${leg.failed} failed${leg.reportUrl ? ` ([report](${leg.reportUrl}))` : ''}`);
         lines.push(`Failing: ${parts.join(', ')}`);
+    }
+    if (triage && triage.verdict === 'blocking' && triage.clearedLegs.length > 0) {
+        lines.push(`AI triage cleared ${triage.clearedLegs.length} failing leg${triage.clearedLegs.length === 1 ? '' : 's'} (flaky / failed in master / Infra failure); the rest still block.`);
     }
     if (missingLegs.length > 0) {
         const labels = missingLegs.map((leg) => {
@@ -517,10 +567,11 @@ function formatCmtChannelMessage({
     mergedPr,
     headCommit,
     perJobCountsAvailable = true,
+    triageLanes,
 }) {
     if (compositeIdentity?.name === 'desktop-master') {
         return formatMasterChannelMessage({
-            compositeIdentity, detail, reportUrl, baseUrl, perJobCounts, upstreamJobsSucceeded, hasFailures, mergedPr, headCommit, perJobCountsAvailable,
+            compositeIdentity, detail, reportUrl, baseUrl, perJobCounts, upstreamJobsSucceeded, hasFailures, mergedPr, headCommit, perJobCountsAvailable, triageLanes,
         });
     }
 
@@ -791,6 +842,7 @@ async function notifyCmtChannel({
     webhookUrl,
     mergedPr,
     headCommit,
+    triageLanes,
 }) {
     try {
         const resolvedWebhook = webhookUrl || resolveWebhookUrl(compositeIdentity?.name);
@@ -806,8 +858,23 @@ async function notifyCmtChannel({
         const outcome = summarizeOutcome({
             detail, perJobCounts, upstreamJobsSucceeded, hasFailures, baseUrl, perJobCountsAvailable,
         });
-        if (!shouldPostToChannel(compositeIdentity, outcome)) {
-            core.info('Desktop Master E2E passed — skipping channel notify (master alerts are failure-only)');
+        let triageVerdict;
+        if (compositeIdentity?.name === 'desktop-master' && triageLanes) {
+            triageVerdict = foldMasterTriage({
+                lanes: triageLanes,
+                legs: outcome.legs,
+                missingLegs: outcome.missingLegs,
+                upstreamJobsSucceeded,
+                overallFailed: outcome.overallFailed,
+                noLegs: outcome.noLegsReported,
+            }).verdict;
+        }
+        if (!shouldPostToChannel(compositeIdentity, outcome, triageVerdict)) {
+            if (triageVerdict === 'cleared') {
+                core.info('Desktop Master E2E failures cleared by AI triage — skipping channel notify');
+            } else {
+                core.info('Desktop Master E2E passed — skipping channel notify (master alerts are failure-only)');
+            }
             return;
         }
 
@@ -822,6 +889,7 @@ async function notifyCmtChannel({
             mergedPr,
             headCommit,
             perJobCountsAvailable,
+            triageLanes,
         });
 
         await postMattermostWebhook({core, webhookUrl: resolvedWebhook, text});
