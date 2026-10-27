@@ -8,7 +8,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const {foldCmtVerdicts, formatCmtVerdictMessage} = require('./cmt-triage-verdict');
+const {foldCmtVerdicts, foldMasterTriage, formatCmtVerdictMessage} = require('./cmt-triage-verdict');
 
 const repoRoot = path.join(__dirname, '../..');
 const read = (rel) => fs.readFileSync(path.join(repoRoot, rel), 'utf8');
@@ -81,6 +81,42 @@ describe('foldCmtVerdicts', () => {
     it('is yellow when triage was expected but the matrix produced no lanes', () => {
         const fold = foldCmtVerdicts({lanes: [], expectedLanes: [], expectTriage: true, stats: {passed: 0, failed: 5}});
         assert.equal(fold.state, 'yellow');
+    });
+});
+
+describe('foldMasterTriage', () => {
+    const leg = (os, extra = {}) => ({os, kind: 'e2e', serverVersion: 'master', status: 'failed', failed: 2, ...extra});
+    const lane = (platform, verdict, extra = {}) => ({platform, verdict, blocking: '0', exonerated: '2', ...extra});
+
+    it('clears when every failing OS lane was cleared by triage', () => {
+        const fold = foldMasterTriage({lanes: [lane('linux', 'SUCCESS')], legs: [leg('linux')], overallFailed: true});
+        assert.equal(fold.verdict, 'cleared');
+        assert.equal(fold.clearedLegs.length, 1);
+    });
+
+    it('blocks when a lane still blocks after triage', () => {
+        const fold = foldMasterTriage({lanes: [lane('linux', 'FAILURE', {blocking: '2'})], legs: [leg('linux')], overallFailed: true});
+        assert.equal(fold.verdict, 'blocking');
+        assert.equal(fold.blockingLegs.length, 1);
+    });
+
+    it('is inconclusive for ACTION_REQUIRED, missing lanes, and untriaged OSes', () => {
+        assert.equal(foldMasterTriage({lanes: [lane('linux', 'ACTION_REQUIRED')], legs: [leg('linux')], overallFailed: true}).verdict, 'inconclusive');
+        assert.equal(foldMasterTriage({lanes: [], legs: [leg('linux')], overallFailed: true}).verdict, 'inconclusive');
+        assert.equal(foldMasterTriage({lanes: [lane('linux', '')], legs: [leg('linux')], overallFailed: true}).verdict, 'inconclusive');
+    });
+
+    it('never clears policy legs or missing legs (triage does not judge them)', () => {
+        const policy = foldMasterTriage({lanes: [lane('macos', 'SUCCESS')], legs: [leg('macos', {kind: 'policy', serverVersion: 'policy'})], overallFailed: true});
+        assert.equal(policy.verdict, 'inconclusive');
+        const missing = foldMasterTriage({lanes: [lane('linux', 'SUCCESS')], legs: [leg('linux')], missingLegs: [leg('macos', {status: 'missing', failed: 0})], overallFailed: true});
+        assert.equal(missing.verdict, 'inconclusive');
+    });
+
+    it('cannot clear an upstream CI failure with no failing test, nor a run with no legs', () => {
+        assert.equal(foldMasterTriage({lanes: [lane('linux', 'SUCCESS')], legs: [], upstreamJobsSucceeded: false, overallFailed: true}).verdict, 'inconclusive');
+        assert.equal(foldMasterTriage({lanes: [], legs: [], overallFailed: true, noLegs: true}).verdict, 'inconclusive');
+        assert.equal(foldMasterTriage({lanes: [], legs: [], overallFailed: false}).verdict, 'cleared');
     });
 });
 

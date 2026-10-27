@@ -619,7 +619,7 @@ function shouldPostPerOsCommitStatuses(perOsCommitStatuses, compositeIdentity) {
  *   12, or TSIO_POLL_ATTEMPTS env). CMT runs with many legs should pass a higher value.
  * @param {number} [params.pollDelayMs] - Delay between polls in ms (default 5000, or
  *   TSIO_POLL_DELAY_MS env).
- * @returns {Promise<{reportUrl: string, status: string, stats: Object}>}
+ * @returns {Promise<{reportUrl: string, status: string, stats: Object, detail: Object}>}
  */
 async function reportTsioStatus({
     core,
@@ -988,6 +988,7 @@ async function reportTsioStatus({
         // post-triage verdict job) still need the report link and totals.
         failure.reportUrl = displayReportUrl || groupReportUrl;
         failure.stats = stats;
+        failure.detail = detail;
         throw failure;
     }
 
@@ -998,7 +999,7 @@ async function reportTsioStatus({
         );
     }
 
-    return {reportUrl: displayReportUrl || groupReportUrl, status: detail.status, stats};
+    return {reportUrl: displayReportUrl || groupReportUrl, status: detail.status, stats, detail};
 }
 
 module.exports = reportTsioStatus;

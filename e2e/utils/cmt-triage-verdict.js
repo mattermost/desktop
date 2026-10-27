@@ -183,6 +183,66 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
     };
 }
 
+/**
+ * Fold per-OS triage lanes into the post-merge (desktop-master) verdict.
+ * Master lanes are per OS (one report per OS), so a lane's verdict covers
+ * every leg of that OS. Policy legs are never judged by triage, and missing
+ * legs cannot be vouched for — both stay unknown. An upstream CI failure
+ * with no failing test cannot be cleared either.
+ *
+ * @param {Object} params
+ * @param {Array<{platform: string, verdict?: string, blocking?: number|string, exonerated?: number|string}>} params.lanes - verdict records from the per-OS triage lanes
+ * @param {Array<{os: string, kind?: string, status: string, failed: number}>} params.legs - per-leg summaries (buildLegSummaries rows)
+ * @param {Array} [params.missingLegs] - legs with no/empty results
+ * @param {boolean} [params.upstreamJobsSucceeded]
+ * @param {boolean} [params.overallFailed]
+ * @param {boolean} [params.noLegs] - true when the run reported no legs at all (never "cleared")
+ * @returns {{verdict: 'cleared'|'blocking'|'inconclusive', clearedLegs: Array, blockingLegs: Array, unknownLegs: Array}}
+ */
+function foldMasterTriage({lanes = [], legs = [], missingLegs = [], upstreamJobsSucceeded = true, overallFailed = false, noLegs = false}) {
+    const laneByOs = new Map();
+    for (const lane of lanes || []) {
+        const normalized = normalizeLane(lane);
+        laneByOs.set(normalized.platform, normalized);
+    }
+
+    const clearedLegs = [];
+    const blockingLegs = [];
+    const unknownLegs = [];
+    for (const leg of legs || []) {
+        if (leg.status !== 'failed' || !(leg.failed > 0)) {
+            continue;
+        }
+        let state = 'unknown';
+        if (leg.kind !== 'policy') {
+            const lane = laneByOs.get(leg.os);
+            if (lane && lane.verdict === 'SUCCESS') {
+                state = 'cleared';
+            } else if (lane && lane.verdict === 'FAILURE') {
+                state = 'blocking';
+            }
+        }
+        if (state === 'cleared') {
+            clearedLegs.push(leg);
+        } else if (state === 'blocking') {
+            blockingLegs.push(leg);
+        } else {
+            unknownLegs.push(leg);
+        }
+    }
+    for (const leg of missingLegs || []) {
+        unknownLegs.push(leg);
+    }
+
+    let verdict = 'cleared';
+    if (blockingLegs.length > 0) {
+        verdict = 'blocking';
+    } else if (unknownLegs.length > 0 || noLegs || (overallFailed && !upstreamJobsSucceeded)) {
+        verdict = 'inconclusive';
+    }
+    return {verdict, clearedLegs, blockingLegs, unknownLegs};
+}
+
 function formatLeg(leg) {
     const emoji = PLATFORM_EMOJI[leg.platform] || PLATFORM_EMOJI.unknown;
     const name = PLATFORM_LABEL[leg.platform] || PLATFORM_LABEL.unknown;
@@ -260,6 +320,7 @@ module.exports = {
     laneKey,
     normalizeVerdict,
     foldCmtVerdicts,
+    foldMasterTriage,
     formatCmtVerdictMessage,
     displayTotals,
 };

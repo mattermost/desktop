@@ -220,6 +220,25 @@ describe('e2e-functional.yml status jobs', () => {
             }
         }
     });
+
+    it('defers the master channel alert to the post-triage verdict job', () => {
+        // tsio-summary still notifies PRs immediately, but never master.
+        assert.match(jobLines(yml, 'tsio-summary').join('\n'), /notifyChannel: compositeIdentity\.name !== 'desktop-master'/);
+        assert.match(jobLines(yml, 'tsio-summary').join('\n'), /report-url: /);
+
+        // Every triage lane records its verdict for the fold.
+        const triage = jobLines(yml, 'tsio-triage').join('\n');
+        assert.match(triage, /id: triage/);
+        assert.match(triage, /name: e2e-triage-verdict-/);
+
+        // The verdict job runs only for master runs the summary did not pass.
+        const verdict = jobLines(yml, 'master-e2e-verdict').join('\n');
+        assert.match(verdict, /fromJson\(needs\.prepare-matrix\.outputs\.tsio-composite-identity\)\.name == 'desktop-master'/);
+        assert.match(verdict, /needs\.tsio-summary\.result != 'success'/);
+        assert.match(verdict, /pattern: e2e-triage-verdict-\*/);
+        assert.match(verdict, /notifyCmtChannel/);
+        assert.match(verdict, /triageLanes/);
+    });
 });
 
 describe('e2e job timeout-minutes', () => {
