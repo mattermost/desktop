@@ -181,8 +181,12 @@ describe('formatCmtVerdictMessage', () => {
 });
 
 describe('CMT triage wiring', () => {
+    // Workflow files check out with CRLF on Windows CI; normalize before
+    // matching multi-line regexes.
+    const readLf = (rel) => read(rel).replace(/\r\n/g, '\n');
+
     it('exposes the toolkit verdict from the e2e-triage composite action', () => {
-        const action = read('.github/actions/e2e-triage/action.yml');
+        const action = readLf('.github/actions/e2e-triage/action.yml');
         assert.match(action, / {2}verdict:\n {4}description:.*\n {4}value: \$\{\{ steps\.triage\.outputs\.verdict \}\}/);
         assert.match(action, / {2}blocking:/);
         assert.match(action, / {2}exonerated:/);
@@ -194,7 +198,7 @@ describe('CMT triage wiring', () => {
     });
 
     it('runs per-server triage lanes and a verdict job in the CMT workflow', () => {
-        const workflow = read('.github/workflows/compatibility-matrix-testing.yml');
+        const workflow = readLf('.github/workflows/compatibility-matrix-testing.yml');
         assert.match(workflow, /^ {2}cmt-triage:$/m);
         assert.match(workflow, /^ {2}cmt-verdict:$/m);
         assert.match(workflow, /report-name: e2e-on-/);
@@ -205,7 +209,7 @@ describe('CMT triage wiring', () => {
     });
 
     it('suppresses the old verbose notification; only the verdict job posts', () => {
-        const workflow = read('.github/workflows/compatibility-matrix-testing.yml');
+        const workflow = readLf('.github/workflows/compatibility-matrix-testing.yml');
         assert.match(workflow, /notifyChannel: false/);
     });
 });
