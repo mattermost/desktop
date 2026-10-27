@@ -27,8 +27,6 @@ const {
     parseCmtJobName,
     fetchPerJobCountsFromConsolidated,
     buildIndividualReportUrl,
-    notifyCmtChannel,
-    resolveWebhookUrl,
 } = require('./cmt-channel-notify');
 const {
     osStatusContext,
@@ -36,6 +34,59 @@ const {
     E2E_OS_LIST,
     E2E_POLICY_OS_LIST,
 } = require('./github-actions');
+
+/**
+ * Master runs are dispatched with no PR number, so the merge that produced the
+ * head commit is resolved from the commit itself. Best-effort: any API failure
+ * returns nulls and the channel alert falls back to the short SHA.
+ *
+ * @returns {Promise<{mergedPr: Object|null, headCommit: Object|null}>}
+ */
+async function resolveMasterMergeContext({github, context, compositeIdentity, core}) {
+    const fallback = {mergedPr: null, headCommit: null};
+    if (!compositeIdentity?.commit_sha || !context?.repo?.owner || !context?.repo?.repo) {
+        return fallback;
+    }
+    const owner = context.repo.owner;
+    const repo = context.repo.repo;
+    try {
+        const {data} = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+            owner,
+            repo,
+            commit_sha: compositeIdentity.commit_sha,
+        });
+        const merged = (Array.isArray(data) ? data : []).filter((pr) => pr.merged_at);
+        if (merged.length > 0) {
+            const branch = (compositeIdentity.branch || '').replace(/^refs\/(heads|tags)\//, '');
+            const pr = merged.find((candidate) => candidate.base?.ref === branch) || merged[0];
+            return {
+                mergedPr: {
+                    number: pr.number,
+                    title: pr.title || '',
+                    url: pr.html_url || '',
+                    author: pr.user?.login || '',
+                },
+                headCommit: null,
+            };
+        }
+    } catch (error) {
+        core?.warning?.(`Could not resolve merged PR for ${compositeIdentity.commit_sha}: ${error.message}`);
+        return fallback;
+    }
+    try {
+        const {data} = await github.rest.repos.getCommit({owner, repo, ref: compositeIdentity.commit_sha});
+        const subject = (data?.commit?.message || '').split('\n')[0].trim();
+        if (subject) {
+            return {
+                mergedPr: null,
+                headCommit: {subject, author: data.author?.login || data.commit?.author?.name || ''},
+            };
+        }
+    } catch (error) {
+        core?.warning?.(`Could not resolve head commit ${compositeIdentity.commit_sha}: ${error.message}`);
+    }
+    return fallback;
+}
 
 /**
  * Bucket key for commit-status aggregation.
@@ -52,6 +103,153 @@ function statusBucketKey(parsed) {
         return `${parsed.os}-policy`;
     }
     return parsed.os;
+}
+
+/**
+ * Uploaded TSIO reports in one status bucket (linux|macos|windows|<os>-policy).
+ *
+ * @param {Object} [detail]
+ * @param {string} bucketKey
+ * @returns {number}
+ */
+function countReportsForBucket(detail, bucketKey) {
+    if (!bucketKey) {
+        return 0;
+    }
+    return (detail?.reports || []).filter((report) => {
+        const name = report.gh_job_name || report.display_name;
+        return statusBucketKey(parseCmtJobName(name)) === bucketKey;
+    }).length;
+}
+
+/**
+ * `row.hasResults` is true if *any* shard in the bucket has counts, so a sibling
+ * upload can still be missing from `perJobCounts`.
+ *
+ * @returns {boolean|undefined} undefined when the bucket has no uploaded reports
+ */
+function hasCountsForEveryUploadedReport(detail, perJobCounts, bucketKey) {
+    const names = (detail?.reports || []).map((report) => report.gh_job_name || report.display_name);
+    const jobNames = [...new Set(names.filter(
+        (name) => Boolean(name) && statusBucketKey(parseCmtJobName(name)) === bucketKey,
+    ))];
+    if (jobNames.length === 0) {
+        return undefined;
+    }
+    if (!perJobCounts) {
+        return false;
+    }
+    return jobNames.every((name) => Object.prototype.hasOwnProperty.call(perJobCounts, name));
+}
+
+/**
+ * Whether the poll loop can stop. Per-OS status jobs stop once that OS's
+ * shards are uploaded, not when every report in the group has landed.
+ *
+ * @returns {boolean}
+ */
+function shardsAreReady({detail, totalReportsExpected, readyWhenOs, readyWhenPolicy, minReports}) {
+    const reports = Array.isArray(detail?.reports) ? detail.reports : [];
+    const needed = positiveInt(minReports, 1);
+
+    if (readyWhenPolicy) {
+        const n = reports.filter((report) => {
+            const parsed = parseCmtJobName(report.gh_job_name || report.display_name);
+            return parsed?.kind === 'policy';
+        }).length;
+        return n >= needed;
+    }
+
+    if (readyWhenOs) {
+        return countReportsForBucket(detail, readyWhenOs) >= needed;
+    }
+
+    return totalReportsExpected <= 0 || reports.length >= totalReportsExpected;
+}
+
+const EMPTY_OS_ROW = {passed: 0, failed: 0, skipped: 0, shardFailed: false, hasResults: false};
+
+/**
+ * Playwright can fail while the CI job still exits 0 (TSIO is the failure
+ * signal). Without per-job counts we cannot tell which OS failed, so do not
+ * post success.
+ *
+ * @returns {boolean}
+ */
+function countsUnavailableWithFailures(row, completeness) {
+    const overallFailed = Number(completeness.overallFailed) || 0;
+    if (overallFailed <= 0) {
+        return false;
+    }
+    if (row.failed > 0 || row.shardFailed) {
+        return false;
+    }
+    if (completeness.hasPerJobCounts === false) {
+        return true;
+    }
+    if (completeness.hasCountsForEveryUploadedReport === false) {
+        return true;
+    }
+    return !row.hasResults;
+}
+
+/**
+ * Fail the status job from this OS/policy scope only — never from global
+ * `stats.failed` (other OS reports may already be in the same TSIO group).
+ *
+ * @returns {boolean}
+ */
+function shouldFailFromScope({
+    failOnTestFailures,
+    readyWhenOs,
+    readyWhenPolicy,
+    overallState,
+    byKey,
+    upstreamJobsSucceeded,
+    minReports,
+    detail,
+    perJobCounts,
+    hasPerJobCounts,
+    overallFailed,
+}) {
+    if (!failOnTestFailures) {
+        return false;
+    }
+
+    const counts = {detail, perJobCounts, hasPerJobCounts, overallFailed};
+
+    if (readyWhenOs) {
+        return statusFromTotals(
+            byKey[readyWhenOs] || EMPTY_OS_ROW,
+            upstreamJobsSucceeded,
+            'E2E incomplete — no results for this OS',
+            bucketCompleteness(readyWhenOs, minReports, counts),
+        ).state !== 'success';
+    }
+
+    if (readyWhenPolicy) {
+        return E2E_POLICY_OS_LIST.some((os) => statusFromTotals(
+            byKey[`${os}-policy`] || EMPTY_OS_ROW,
+            upstreamJobsSucceeded,
+            'Policy incomplete — no results for this OS',
+            bucketCompleteness(`${os}-policy`, 1, counts),
+        ).state !== 'success');
+    }
+
+    return overallState === 'failure';
+}
+
+/**
+ * Whether any *in-scope* bucket has a failed shard, so a macos failure cannot
+ * make the linux status job post e2e/linux as error.
+ *
+ * @returns {boolean}
+ */
+function scopedHasShardFailure(byKey, expectedOs, expectedPolicyOs) {
+    const oss = resolveExpectedOs(expectedOs, byKey);
+    const policyOss = resolveExpectedPolicyOs(expectedPolicyOs);
+    const keys = [...oss, ...policyOss.map((os) => `${os}-policy`)];
+    return keys.some((key) => byKey[key]?.shardFailed);
 }
 
 /**
@@ -143,12 +341,17 @@ function reportUrlForStatusBucket({reports, bucketKey, baseUrl, fallbackUrl}) {
 
 /**
  * Resolve which OS contexts this run should report.
+ * `null` means flip none (policy-only status job). Empty/omitted still falls
+ * back to whatever OS buckets have results, or all three.
  *
- * @param {string[]} [expectedOs]
+ * @param {string[]|null} [expectedOs]
  * @param {Record<string, unknown>} byKey
  * @returns {string[]}
  */
 function resolveExpectedOs(expectedOs, byKey) {
+    if (expectedOs === null) {
+        return [];
+    }
     if (Array.isArray(expectedOs) && expectedOs.length > 0) {
         return expectedOs.filter((os) => E2E_OS_LIST.includes(os));
     }
@@ -174,9 +377,10 @@ function resolveExpectedPolicyOs(expectedPolicyOs) {
  * @param {Object} row
  * @param {boolean} upstreamJobsSucceeded
  * @param {string} incompleteLabel
+ * @param {{minReports?: number, uploadedReports?: number, hasPerJobCounts?: boolean, hasCountsForEveryUploadedReport?: boolean, overallFailed?: number}} [completeness]
  * @returns {{state: string, description: string}}
  */
-function statusFromTotals(row, upstreamJobsSucceeded, incompleteLabel) {
+function statusFromTotals(row, upstreamJobsSucceeded, incompleteLabel, completeness = {}) {
     const hasFailures = row.failed > 0 || row.shardFailed;
     if (hasFailures) {
         return {
@@ -184,10 +388,52 @@ function statusFromTotals(row, upstreamJobsSucceeded, incompleteLabel) {
             description: `${row.passed} passed, ${row.failed} failed, ${row.skipped} skipped`,
         };
     }
+
+    const {minReports} = completeness;
+    const requiresShards = Number.isInteger(minReports) && minReports > 0;
+    let uploaded = 0;
+    if (requiresShards) {
+        if (Number.isInteger(completeness.uploadedReports)) {
+            uploaded = completeness.uploadedReports;
+        } else if (row.hasResults) {
+            uploaded = 1;
+        }
+        if (uploaded < minReports) {
+            return {
+                state: upstreamJobsSucceeded ? 'error' : 'failure',
+                description: `E2E incomplete — ${uploaded}/${minReports} shards`,
+            };
+        }
+        if (!upstreamJobsSucceeded) {
+            return {
+                state: 'failure',
+                description: 'CI job failed (untracked by TSIO)',
+            };
+        }
+    }
+
+    if (countsUnavailableWithFailures(row, completeness)) {
+        return {
+            state: 'error',
+            description: 'TSIO per-job counts unavailable with test failures',
+        };
+    }
+    if (completeness.hasCountsForEveryUploadedReport === false) {
+        return {
+            state: 'error',
+            description: 'TSIO per-job counts incomplete for this OS',
+        };
+    }
     if (row.hasResults) {
         return {
             state: 'success',
             description: `${row.passed} passed, ${row.failed} failed, ${row.skipped} skipped`,
+        };
+    }
+    if (requiresShards) {
+        return {
+            state: 'success',
+            description: `${uploaded}/${minReports} shards uploaded`,
         };
     }
     if (upstreamJobsSucceeded) {
@@ -199,6 +445,20 @@ function statusFromTotals(row, upstreamJobsSucceeded, incompleteLabel) {
     return {
         state: 'failure',
         description: 'CI job failed (untracked by TSIO)',
+    };
+}
+
+/**
+ * `statusFromTotals` completeness for one bucket. `minReports` is only set for
+ * the bucket this job waited on; otherwise shard counts are not enforced.
+ */
+function bucketCompleteness(bucketKey, minReports, {detail, perJobCounts, hasPerJobCounts, overallFailed}) {
+    return {
+        minReports,
+        uploadedReports: countReportsForBucket(detail, bucketKey),
+        hasPerJobCounts,
+        overallFailed,
+        hasCountsForEveryUploadedReport: hasCountsForEveryUploadedReport(detail, perJobCounts, bucketKey),
     };
 }
 
@@ -221,6 +481,11 @@ async function flipPerOsCommitStatuses({
     upstreamJobsSucceeded,
     expectedOs,
     expectedPolicyOs,
+    readyWhenOs,
+    readyWhenPolicy = false,
+    minReports,
+    hasPerJobCounts,
+    overallFailed,
     core,
 }) {
     const byKey = buildOsStatusTotals({detail, perJobCounts});
@@ -228,6 +493,7 @@ async function flipPerOsCommitStatuses({
     const policyOss = resolveExpectedPolicyOs(expectedPolicyOs);
     const emptyRow = {passed: 0, failed: 0, skipped: 0, shardFailed: false, hasResults: false};
     const reports = detail?.reports || [];
+    const counts = {detail, perJobCounts, hasPerJobCounts, overallFailed};
 
     const urlFor = (bucketKey) => reportUrlForStatusBucket({
         reports,
@@ -236,6 +502,20 @@ async function flipPerOsCommitStatuses({
         fallbackUrl: targetUrl,
     });
 
+    const withRun = (url) => {
+        if (!url || !compositeIdentity?.gh_run_id || !compositeIdentity?.gh_run_attempt) {
+            return url;
+        }
+        try {
+            const u = new URL(url);
+            u.searchParams.set('gh_run_id', String(compositeIdentity.gh_run_id));
+            u.searchParams.set('gh_run_attempt', String(compositeIdentity.gh_run_attempt));
+            return u.href;
+        } catch {
+            return url;
+        }
+    };
+
     const posts = [
         ...oss.map(async (os) => {
             const row = byKey[os] || emptyRow;
@@ -243,6 +523,7 @@ async function flipPerOsCommitStatuses({
                 row,
                 upstreamJobsSucceeded,
                 'E2E incomplete — no results for this OS',
+                bucketCompleteness(os, readyWhenOs === os ? minReports : undefined, counts),
             );
             try {
                 await github.rest.repos.createCommitStatus({
@@ -252,7 +533,7 @@ async function flipPerOsCommitStatuses({
                     state,
                     context: osStatusContext(os),
                     description: description.slice(0, 140),
-                    target_url: urlFor(os),
+                    target_url: withRun(urlFor(os)),
                 });
             } catch (error) {
                 core.warning(`Failed to create ${osStatusContext(os)} status: ${error.message}`);
@@ -264,6 +545,7 @@ async function flipPerOsCommitStatuses({
                 row,
                 upstreamJobsSucceeded,
                 'Policy incomplete — no results for this OS',
+                bucketCompleteness(`${os}-policy`, readyWhenPolicy ? 1 : undefined, counts),
             );
             try {
                 await github.rest.repos.createCommitStatus({
@@ -300,6 +582,14 @@ function buildDisplayReportUrl(baseUrl, compositeIdentity) {
 }
 
 /**
+ * CMT must never write the e2e/<os> or policy contexts — those are PR/master
+ * required checks. CMT posts only its `commitStatusContext`.
+ */
+function shouldPostPerOsCommitStatuses(perOsCommitStatuses, compositeIdentity) {
+    return Boolean(perOsCommitStatuses) && compositeIdentity?.name !== 'cmt-desktop';
+}
+
+/**
  * Recover a report group's id via the idempotent begin endpoint, poll the
  * public status endpoint until the group leaves in_progress, render a step
  * summary, and flip commit status(es).
@@ -313,7 +603,11 @@ function buildDisplayReportUrl(baseUrl, compositeIdentity) {
  * @param {boolean} [params.perOsCommitStatuses] - When true, also flip e2e/linux|macos|windows
  * @param {string[]} [params.expectedOs] - Canonical OS list for this run (linux|macos|windows)
  * @param {string[]} [params.expectedPolicyOs] - Policy OS list (macos|windows); PR/master only
- * @param {boolean} [params.failOnTestFailures] - When true (default), throw if the group didn't complete cleanly
+ * @param {boolean} [params.failOnTestFailures] - When true (default), throw if tests/shards/upstream CI failed (not merely TSIO still consolidating)
+ * @param {boolean} [params.notifyChannel] - When false, skip Mattermost webhook (per-OS status jobs). Default true.
+ * @param {string} [params.readyWhenOs] - Poll until this OS's e2e shards are uploaded (linux|macos|windows)
+ * @param {boolean} [params.readyWhenPolicy] - Poll until policy reports are uploaded
+ * @param {number} [params.minReports] - Reports required for readyWhenOs / readyWhenPolicy
  * @param {boolean} [params.useStaging] - Target TSIO staging instead of production
  * @param {string} [params.oidcAudience] - OIDC audience claim TSIO expects
  * @param {boolean} [params.upstreamJobsSucceeded] - When false (default true), force the
@@ -325,7 +619,7 @@ function buildDisplayReportUrl(baseUrl, compositeIdentity) {
  *   12, or TSIO_POLL_ATTEMPTS env). CMT runs with many legs should pass a higher value.
  * @param {number} [params.pollDelayMs] - Delay between polls in ms (default 5000, or
  *   TSIO_POLL_DELAY_MS env).
- * @returns {Promise<{reportUrl: string, status: string, stats: Object}>}
+ * @returns {Promise<{reportUrl: string, status: string, stats: Object, detail: Object}>}
  */
 async function reportTsioStatus({
     core,
@@ -338,12 +632,17 @@ async function reportTsioStatus({
     expectedOs,
     expectedPolicyOs,
     failOnTestFailures = true,
+    notifyChannel = true,
+    readyWhenOs,
+    readyWhenPolicy = false,
+    minReports,
     useStaging = false,
     oidcAudience = 'mattermost-test-system-io',
     upstreamJobsSucceeded = true,
     pollAttempts,
     pollDelayMs,
 }) {
+    const postPerOsCommitStatuses = shouldPostPerOsCommitStatuses(perOsCommitStatuses, compositeIdentity);
     const resolvedPollAttempts = positiveInt(
         pollAttempts ?? intEnv('TSIO_POLL_ATTEMPTS', 12),
         12,
@@ -394,13 +693,40 @@ async function reportTsioStatus({
         displayReportUrl = buildDisplayReportUrl(baseUrl, compositeIdentity);
         groupReportUrl = `${baseUrl}/reports/g/${reportId}`;
 
+        let shardsReadySinceAttempt = -1;
         for (let attempt = 0; attempt < resolvedPollAttempts; attempt++) {
             const statusRes = await fetch(`${baseUrl}/api/v1/reports/${reportId}`);
             if (!statusRes.ok) {
                 throw new Error(`reports/${reportId} failed: ${statusRes.status} ${await statusRes.text()}`);
             }
             detail = await statusRes.json();
-            if (TERMINAL_STATUSES.includes(detail.status)) {
+            const shardsReady = shardsAreReady({
+                detail,
+                totalReportsExpected,
+                readyWhenOs,
+                readyWhenPolicy,
+                minReports,
+            });
+
+            if (shardsReady && shardsReadySinceAttempt < 0) {
+                shardsReadySinceAttempt = attempt;
+            }
+
+            // Prefer `completed`. Otherwise stop once every expected shard is present —
+            // TSIO can stay `in_progress` indefinitely after 5/5 uploads (consolidation lag).
+            // Give a short grace window after shardsReady so status can flip to completed.
+            if (detail.status === 'completed') {
+                break;
+            }
+            if (TERMINAL_STATUSES.includes(detail.status) && shardsReady) {
+                break;
+            }
+            const gracePolls = 3;
+            if (
+                shardsReady &&
+                shardsReadySinceAttempt >= 0 &&
+                attempt - shardsReadySinceAttempt >= gracePolls
+            ) {
                 break;
             }
             if (attempt < resolvedPollAttempts - 1) {
@@ -425,7 +751,7 @@ async function reportTsioStatus({
                 core.warning(`Failed to create failure commit status: ${statusError.message}`);
             }
         }
-        if (perOsCommitStatuses) {
+        if (postPerOsCommitStatuses) {
             const oss = resolveExpectedOs(expectedOs, {});
             const policyOss = resolveExpectedPolicyOs(expectedPolicyOs);
             await Promise.all([
@@ -478,14 +804,17 @@ async function reportTsioStatus({
     }
     const hasFailures = (stats.failed || 0) > 0 || failedShards.length > 0;
 
+    // Commit status / job outcome must reflect test + upstream CI health — not TSIO
+    // consolidation lag. A stuck `in_progress` / `incomplete` group with 0 failed tests
+    // previously flipped the commit status red and posted "Failed" with 0 failures.
     let overallState = 'failure';
-    if (isComplete && !hasFailures && upstreamJobsSucceeded) {
+    if (!hasFailures && upstreamJobsSucceeded) {
         overallState = 'success';
     }
 
     let targetUrl = runUrl;
-    if (isComplete || isIncomplete) {
-        targetUrl = displayReportUrl || groupReportUrl;
+    if (isComplete || isIncomplete || displayReportUrl || groupReportUrl) {
+        targetUrl = displayReportUrl || groupReportUrl || runUrl;
     }
 
     const summaryLines = [
@@ -496,7 +825,7 @@ async function reportTsioStatus({
             `${stats.skipped ?? '?'} skipped (of ${stats.total ?? '?'})`,
     ];
 
-    if (uploadedShards > 0) {
+    if (uploadedShards > 0 || totalReportsExpected > 0) {
         summaryLines.push(`**Shards uploaded:** ${uploadedShards}/${totalReportsExpected}`);
     }
 
@@ -517,17 +846,22 @@ async function reportTsioStatus({
             `:warning: Report finalized as \`incomplete\` (${uploadedShards}/${totalReportsExpected} shards) — partial results are in the [TSIO report](${displayReportUrl}); see the [workflow run](${runUrl}) for missing legs.`,
         );
     } else if (!isComplete) {
+        const shardsNote = uploadedShards >= totalReportsExpected && totalReportsExpected > 0 ?
+            `All ${uploadedShards}/${totalReportsExpected} shards are uploaded; TSIO consolidation is still \`${detail.status}\`.` :
+            `TSIO group still \`${detail.status}\` after polling (${uploadedShards}/${totalReportsExpected} shards).`;
         summaryLines.push(
             '',
-            `:warning: Report never reached a terminal state (stuck at \`${detail.status}\`) after ${resolvedPollAttempts} polls — see the [workflow run](${runUrl}).`,
+            `:warning: ${shardsNote} Commit status follows upstream jobs and test failures, not TSIO consolidation — see the [workflow run](${runUrl}).`,
         );
     }
 
     summaryLines.push('');
     await core.summary.addRaw(summaryLines.join('\n')).write();
 
+    const passedForStatus = (stats.passed ?? 0) + (stats.flaky ?? 0);
     const descriptionPrefix = !upstreamJobsSucceeded && !hasFailures ? 'CI job failed (untracked by TSIO), ' : '';
-    const description = `${descriptionPrefix}${stats.passed ?? 0}/${stats.total ?? 0} passed, ${stats.failed ?? 0} failed, ${stats.skipped ?? 0} skipped`.slice(0, 140);
+    const tsioLagSuffix = !isComplete && overallState === 'success' ? ' (TSIO consolidating)' : '';
+    const description = `${descriptionPrefix}${passedForStatus}/${stats.total ?? 0} passed, ${stats.failed ?? 0} failed, ${stats.skipped ?? 0} skipped${tsioLagSuffix}`.slice(0, 140);
 
     if (commitStatusContext) {
         await github.rest.repos.createCommitStatus({
@@ -541,47 +875,64 @@ async function reportTsioStatus({
         });
     }
 
-    if (perOsCommitStatuses) {
-        let perJobCounts;
+    let perJobCounts = null;
+    const overallFailed = stats.failed || 0;
+    if (postPerOsCommitStatuses || readyWhenOs || readyWhenPolicy) {
         try {
             perJobCounts = await fetchPerJobCountsFromConsolidated(baseUrl, compositeIdentity, detail);
         } catch (error) {
-            // Do not treat a failed fetch as zero results — that would flip e2e/<os>
-            // to error/failure and clear pending. Leave statuses pending until counts exist.
+            // Do not treat a failed fetch as zero results when there are no test
+            // failures — that would flip e2e/<os> to error and clear pending.
+            // If the group already has failures, post error instead of success.
             core.warning(
-                `Could not load per-OS TSIO counts — leaving e2e/<os> statuses pending: ${error.message}`,
+                overallFailed > 0 ?
+                    `Could not load per-OS TSIO counts with test failures — marking e2e/<os> error: ${error.message}` :
+                    `Could not load per-OS TSIO counts — leaving e2e/<os> statuses pending: ${error.message}`,
             );
             perJobCounts = null;
         }
-        if (perJobCounts) {
+        const byKeyForFlip = buildOsStatusTotals({detail, perJobCounts: perJobCounts || {}});
+        const hasShardFailure = scopedHasShardFailure(byKeyForFlip, expectedOs, expectedPolicyOs);
+        if (postPerOsCommitStatuses && (perJobCounts || !upstreamJobsSucceeded || hasShardFailure || overallFailed > 0)) {
             await flipPerOsCommitStatuses({
                 github,
                 context,
                 compositeIdentity,
                 detail,
-                perJobCounts,
+                perJobCounts: perJobCounts || {},
                 targetUrl,
                 baseUrl,
                 upstreamJobsSucceeded,
                 expectedOs,
                 expectedPolicyOs,
+                readyWhenOs,
+                readyWhenPolicy,
+                minReports,
+                hasPerJobCounts: perJobCounts != null,
+                overallFailed,
                 core,
             });
         }
     }
 
-    // Channel notify (best-effort). Must run before failOnTestFailures throws,
-    // otherwise CMT/PR/master results never post when tests fail.
-    // Routing (see resolveWebhookUrl):
+    // Channel notify (best-effort). Routing (see resolveWebhookUrl):
     //   cmt-desktop      → MM_E2E_RELEASE_WEBHOOK_URL
     //   desktop-master   → MM_E2E_MASTER_HEALTH_WEBHOOK_URL
     //   desktop-pr       → MM_DESKTOP_E2E_WEBHOOK_URL
+    // Failures here must not undo a successfully written commit status.
     try {
         const notifyNames = new Set(['cmt-desktop', 'desktop-pr', 'desktop-master']);
-        if (notifyNames.has(compositeIdentity.name)) {
+        if (notifyChannel && notifyNames.has(compositeIdentity.name)) {
+            const {notifyCmtChannel, resolveWebhookUrl} = require('./cmt-channel-notify.js');
             const webhookUrl = resolveWebhookUrl(compositeIdentity.name);
             if (webhookUrl) {
+                // Prefer TSIO links even when the poll timed out at in_progress
+                // (commit status may still point at the Actions run URL).
                 const channelReportUrl = displayReportUrl || groupReportUrl || targetUrl;
+                let mergeContext = {mergedPr: null, headCommit: null};
+                if (compositeIdentity.name === 'desktop-master') {
+                    mergeContext = await resolveMasterMergeContext({github, context, compositeIdentity, core});
+                }
                 await notifyCmtChannel({
                     core,
                     baseUrl,
@@ -591,6 +942,8 @@ async function reportTsioStatus({
                     upstreamJobsSucceeded,
                     hasFailures,
                     webhookUrl,
+                    mergedPr: mergeContext.mergedPr,
+                    headCommit: mergeContext.headCommit,
                 });
             }
         }
@@ -598,22 +951,66 @@ async function reportTsioStatus({
         core.warning(`E2E Mattermost notify setup failed: ${error.message}`);
     }
 
-    if (failOnTestFailures && overallState === 'failure') {
+    const byKey = buildOsStatusTotals({detail, perJobCounts: perJobCounts || {}});
+    if (shouldFailFromScope({
+        failOnTestFailures,
+        readyWhenOs,
+        readyWhenPolicy,
+        overallState,
+        byKey,
+        upstreamJobsSucceeded,
+        minReports,
+        detail,
+        hasPerJobCounts: perJobCounts != null,
+        overallFailed,
+        perJobCounts: perJobCounts || {},
+    })) {
         let reason;
-        if (!upstreamJobsSucceeded && !hasFailures) {
+        if (readyWhenOs) {
+            const row = byKey[readyWhenOs] || EMPTY_OS_ROW;
+            if (!upstreamJobsSucceeded && row.failed === 0 && !row.shardFailed) {
+                reason = `an upstream CI job failed with no corresponding test failure (${readyWhenOs})`;
+            } else {
+                reason = `${readyWhenOs}: ${row.passed} passed, ${row.failed} failed, shardFailed=${row.shardFailed}`;
+            }
+        } else if (readyWhenPolicy) {
+            reason = 'one or more policy legs did not pass';
+        } else if (!upstreamJobsSucceeded && !hasFailures) {
             reason = 'an upstream CI job failed with no corresponding test failure';
         } else if (failedShards.length > 0 && (stats.failed || 0) === 0) {
             reason = `shard(s) failed: ${failedShards.join(', ')}`;
         } else {
             reason = `status=${detail.status}, failed=${stats.failed || 0}`;
         }
-        throw new Error(`TSIO report ${reportId} did not pass: ${reason}`);
+        const failure = new Error(`TSIO report ${reportId} did not pass: ${reason}`);
+
+        // Callers that catch (e.g. CMT, which defers its channel post to a
+        // post-triage verdict job) still need the report link and totals.
+        failure.reportUrl = displayReportUrl || groupReportUrl;
+        failure.stats = stats;
+        failure.detail = detail;
+        throw failure;
     }
 
-    return {reportUrl: displayReportUrl || groupReportUrl, status: detail.status, stats};
+    if (!isComplete && overallState === 'success') {
+        core.warning(
+            `TSIO group left at status=${detail.status} with 0 test failures — commit status set to success. ` +
+            `Shards ${uploadedShards}/${totalReportsExpected}.`,
+        );
+    }
+
+    return {reportUrl: displayReportUrl || groupReportUrl, status: detail.status, stats, detail};
 }
 
 module.exports = reportTsioStatus;
 module.exports.buildOsStatusTotals = buildOsStatusTotals;
 module.exports.flipPerOsCommitStatuses = flipPerOsCommitStatuses;
 module.exports.reportUrlForStatusBucket = reportUrlForStatusBucket;
+module.exports.countReportsForBucket = countReportsForBucket;
+module.exports.shardsAreReady = shardsAreReady;
+module.exports.shouldFailFromScope = shouldFailFromScope;
+module.exports.statusFromTotals = statusFromTotals;
+module.exports.scopedHasShardFailure = scopedHasShardFailure;
+module.exports.hasCountsForEveryUploadedReport = hasCountsForEveryUploadedReport;
+module.exports.shouldPostPerOsCommitStatuses = shouldPostPerOsCommitStatuses;
+module.exports.resolveMasterMergeContext = resolveMasterMergeContext;
