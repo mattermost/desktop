@@ -221,6 +221,41 @@ describe('e2e-functional.yml status jobs', () => {
         }
     });
 
+    it('checks out cmt-triage-verdict.js wherever cmt-channel-notify.js is loaded', () => {
+        // cmt-channel-notify.js requires ./cmt-triage-verdict; a sparse
+        // checkout missing it crashes the status job at require time
+        // (PR E2E run 40478469985: every status job failed, tests passed).
+        const sparseBlocks = (source) => {
+            const blocks = [];
+            const lines = source.split(/\r?\n/);
+            for (let i = 0; i < lines.length; i++) {
+                if (!(/sparse-checkout: \|/).test(lines[i])) {
+                    continue;
+                }
+                const block = [];
+                for (let j = i + 1; j < lines.length; j++) {
+                    const match = lines[j].match(/^\s+(\S+)$/);
+                    if (!match) {
+                        break;
+                    }
+                    block.push(match[1]);
+                }
+                blocks.push(block);
+            }
+            return blocks;
+        };
+        for (const file of ['e2e-functional.yml', 'e2e-post-os-status.yml', 'compatibility-matrix-testing.yml']) {
+            for (const block of sparseBlocks(workflow(file))) {
+                if (block.includes('e2e/utils/cmt-channel-notify.js')) {
+                    assert.ok(
+                        block.includes('e2e/utils/cmt-triage-verdict.js'),
+                        `${file} sparse checkout loads cmt-channel-notify.js without cmt-triage-verdict.js: ${block.join(', ')}`,
+                    );
+                }
+            }
+        }
+    });
+
     it('defers the master channel alert to the post-triage verdict job', () => {
         // tsio-summary still notifies PRs immediately, but never master.
         assert.match(jobLines(yml, 'tsio-summary').join('\n'), /notifyChannel: compositeIdentity\.name !== 'desktop-master'/);
