@@ -7,16 +7,33 @@ import {loginToMattermost} from '../../helpers/login';
 import {
     getPostTextboxValue,
     pressPostTextboxKey,
-    POST_TEXTBOX_SELECTOR,
     typeIntoPostTextbox,
     waitForChannelPostListLoaded,
-    waitForMattermostShell,
+    waitForMattermostShellReady,
 } from '../../helpers/mattermostShell';
+import type {ServerView} from '../../helpers/serverView';
 
 // ── MM-T2023: ALT+ENTER ───────────────────────────────────────────────
 // Alt/Option + Enter inserts a newline in the post textbox without
 // submitting the message. This is webapp textbox behaviour (implemented
 // in the textbox component via MM-14177, merged in v5.24.0).
+
+async function postListContainsLines(win: ServerView, lineOne: string, lineTwo: string): Promise<boolean> {
+    return win.evaluate(({one, two}) => {
+        return Array.from(document.querySelectorAll('.post-message__text')).some((el) => {
+            const text = el.textContent ?? '';
+            return text.includes(one) && text.includes(two);
+        });
+    }, {one: lineOne, two: lineTwo});
+}
+
+async function countPostsContaining(win: ServerView, text: string): Promise<number> {
+    return win.evaluate((needle) => {
+        return Array.from(document.querySelectorAll('.post-message__text')).filter((el) => {
+            return (el.textContent ?? '').includes(needle);
+        }).length;
+    }, text);
+}
 
 test.describe('mattermost/alt_enter', () => {
     test.use({appConfig: demoMattermostConfig});
@@ -34,55 +51,41 @@ test.describe('mattermost/alt_enter', () => {
             expect(firstServer, 'Server view must exist').toBeTruthy();
 
             await loginToMattermost(firstServer!);
-            await waitForMattermostShell(firstServer!, {channelItem: '#sidebarItem_off-topic'});
+            await waitForMattermostShellReady(firstServer!, {channelItem: '#sidebarItem_off-topic'});
             await firstServer!.click('#sidebarItem_off-topic');
-            await firstServer!.waitForSelector(POST_TEXTBOX_SELECTOR, {timeout: 15_000});
             await waitForChannelPostListLoaded(firstServer!);
 
-            const postsBefore = await firstServer!.evaluate(() =>
-                document.querySelectorAll('.post-message__text').length,
-            );
+            // Match on unique text, not post counts: history may still be painting.
+            const lineOne = `Line one ${Date.now()}`;
+            const lineTwo = 'Line two';
 
-            await typeIntoPostTextbox(firstServer!, 'Line one');
+            await typeIntoPostTextbox(firstServer!, lineOne);
             await pressPostTextboxKey(firstServer!, 'Alt+Enter');
-            await firstServer!.keyboard.type('Line two');
+            await firstServer!.keyboard.type(lineTwo);
 
             const textboxValue = await getPostTextboxValue(firstServer!);
-            expect(textboxValue, 'Textbox must contain both lines after Alt+Enter').toContain('Line one');
-            expect(textboxValue, 'Textbox must contain second line').toContain('Line two');
-            expect(textboxValue, 'Textbox must have a newline between lines').toMatch(/Line one\nLine two/);
+            expect(textboxValue, 'Textbox must contain both lines after Alt+Enter').toContain(lineOne);
+            expect(textboxValue, 'Textbox must contain second line').toContain(lineTwo);
+            expect(
+                textboxValue.replace(/\r\n/g, '\n'),
+                'Textbox must have a newline between lines',
+            ).toContain(`${lineOne}\n${lineTwo}`);
 
-            const postsAfter = await firstServer!.evaluate(() =>
-                document.querySelectorAll('.post-message__text').length,
-            );
-            expect(postsAfter, 'Alt+Enter must NOT send the message').toBe(postsBefore);
+            expect(
+                await postListContainsLines(firstServer!, lineOne, lineTwo),
+                'Alt+Enter must NOT send the message',
+            ).toBe(false);
 
-            const sendButtonClicked = await firstServer!.evaluate(() => {
-                const sendButton = document.querySelector(
-                    '#channelHeaderSubmitButton, button[aria-label*="Send" i], [data-testid="SendMessageButton"]',
-                ) as HTMLButtonElement | null;
-                if (!sendButton) {
-                    return false;
-                }
-                sendButton.click();
-                return true;
-            });
-            expect(sendButtonClicked, 'Send button must be present before posting').toBe(true);
+            await firstServer!.click('[data-testid="SendMessageButton"]');
 
             await expect.poll(
-                () => firstServer!.evaluate(() =>
-                    document.querySelectorAll('.post-message__text').length,
-                ),
+                () => postListContainsLines(firstServer!, lineOne, lineTwo),
                 {timeout: 10_000, message: 'Send button must post the composed message'},
-            ).toBeGreaterThan(postsBefore);
-
-            const lastPostText = await firstServer!.evaluate(() => {
-                const posts = document.querySelectorAll('.post-message__text');
-                const lastPost = posts[posts.length - 1];
-                return lastPost?.textContent ?? '';
-            });
-            expect(lastPostText, 'Sent message must contain both lines').toContain('Line one');
-            expect(lastPostText, 'Sent message must contain second line').toContain('Line two');
+            ).toBe(true);
+            expect(
+                await countPostsContaining(firstServer!, lineOne),
+                'Exactly one post must contain the unique first line (Alt+Enter must not have sent it)',
+            ).toBe(1);
         },
     );
 });

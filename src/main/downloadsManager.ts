@@ -556,13 +556,23 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
         }
 
         const bookmark = this.bookmarks.get(this.getFileId(item));
+        let finalState = state;
         if (bookmark) {
-            const func = app.startAccessingSecurityScopedResource(bookmark?.bookmark);
-            fs.copyFileSync(path.resolve(app.getPath('temp'), path.basename(bookmark.originalPath)), bookmark.originalPath);
-            func();
+            try {
+                const func = app.startAccessingSecurityScopedResource(bookmark.bookmark);
+                try {
+                    fs.copyFileSync(path.resolve(app.getPath('temp'), path.basename(bookmark.originalPath)), bookmark.originalPath);
+                } finally {
+                    func();
+                }
+            } catch (e) {
+                log.warn('could not move downloaded file to its final location', {e});
+                this.bookmarks.delete(this.getFileId(item));
+                finalState = 'interrupted';
+            }
         }
 
-        await this.upsertFileToDownloads(item, state, bookmark?.originalPath);
+        await this.upsertFileToDownloads(item, finalState, bookmark?.originalPath);
         this.fileSizes.delete(item.getFilename());
         this.progressingItems.delete(this.getFileId(item));
         this.shouldAutoClose();

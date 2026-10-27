@@ -9,12 +9,17 @@ import {test, expect} from '../../fixtures/index';
 import {demoConfig} from '../../helpers/config';
 import {launchDirectTestApp} from '../../helpers/directLaunch';
 import {closeElectronApp, closeElectronAppFast} from '../../helpers/electronApp';
+import {evaluateInMainProcess} from '../../helpers/testRefs';
 
 test.describe('startup/window_reposition', () => {
     test.describe.configure({mode: 'serial'});
     test.setTimeout(120_000);
 
     // ── MM-T2636: Reposition Desktop app ───────────────────────────────
+    // Multi-monitor (add a 2nd display, 50% off-screen, unplug) is not
+    // automatable in CI. Geometry for a missing display is covered by
+    // src/main/app/utils.test.js (resizeScreen) and
+    // src/app/mainWindow/mainWindow.test.js (bounds outside screen).
     test('MM-T2636 MM-T1428 MM-T1660 Reposition Desktop app',
         {tag: ['@P2', '@all']},
         async ({}, testInfo) => {
@@ -68,39 +73,99 @@ test.describe('startup/window_reposition', () => {
                     `Window y should be near ${newY}`,
                 ).toBeLessThanOrEqual(50);
 
-                const savedBounds = {
-                    ...movedBounds,
-                    maximized: false,
-                    fullscreen: false,
+                // Linux CI (Xvfb, often no window manager) does not honor
+                // BrowserWindow.minimize() — MM-T824 is darwin/win32-only for
+                // the same reason. Wait for the transition when it happens;
+                // otherwise skip restore rather than fail the reposition case.
+                await app.evaluate(async () => {
+                    const refs = (global as any).__e2eTestRefs;
+                    const main = refs?.MainWindow?.get?.();
+                    if (!main) {
+                        throw new Error('MainWindow test ref is not available');
+                    }
+
+                    const waitForMinimized = async (expected: boolean) => {
+                        const timeoutMs = process.platform === 'linux' ? 1_000 : 5_000;
+                        const deadline = Date.now() + timeoutMs;
+                        while (Date.now() < deadline) {
+                            if (Boolean(main.isMinimized()) === expected) {
+                                return true;
+                            }
+                            await new Promise((resolve) => setTimeout(resolve, 50));
+                        }
+                        return false;
+                    };
+
+                    main.minimize();
+                    const didMinimize = await waitForMinimized(true);
+                    if (!didMinimize) {
+                        if (process.platform === 'linux') {
+                            return;
+                        }
+                        throw new Error('Window isMinimized() did not become true');
+                    }
+                    main.restore();
+                    if (!await waitForMinimized(false)) {
+                        throw new Error('Window isMinimized() did not become false');
+                    }
+                });
+                const afterMinimizeBounds = await getMainWindowBounds(app);
+                expect(
+                    Math.abs(afterMinimizeBounds!.x - newX),
+                    'Window x should remain near the repositioned x after minimize/restore',
+                ).toBeLessThanOrEqual(50);
+                expect(
+                    Math.abs(afterMinimizeBounds!.y - newY),
+                    'Window y should remain near the repositioned y after minimize/restore',
+                ).toBeLessThanOrEqual(50);
+
+                // The app persists bounds itself in MainWindow.onBlur ->
+                // saveWindowState(boundsInfoPath) (src/app/mainWindow/mainWindow.ts).
+                // This spec used to write bounds-info.json itself and then assert on it,
+                // so the check could not fail; assert what the *app* wrote instead.
+                //
+                // Emit 'blur' on the BrowserWindow rather than calling focus()/blur():
+                // those depend on the OS window server actually moving focus, which does
+                // not happen on a CI runner with no active desktop session, and a
+                // real BrowserWindow.blur() on an unfocused window is a no-op. The handler
+                // is registered with browserWindow.on('blur', this.onBlur) and MainWindow.get()
+                // returns that same emitter, so this runs the production save path for real.
+                const boundsInfoFile = path.join(userDataDir, 'bounds-info.json');
+                const {readFileSync} = await import('fs');
+                const persistedOffset = () => {
+                    try {
+                        const persisted = JSON.parse(readFileSync(boundsInfoFile, 'utf-8'));
+                        return Math.abs(persisted.x - movedBounds!.x) + Math.abs(persisted.y - movedBounds!.y);
+                    } catch {
+                        return Number.MAX_SAFE_INTEGER;
+                    }
                 };
+
+                await evaluateInMainProcess(app, () => {
+                    const main = (global as any).__e2eTestRefs?.MainWindow?.get?.();
+                    if (!main) {
+                        throw new Error('MainWindow test ref is not available');
+                    }
+                    main.emit('blur');
+                });
+
+                await expect.poll(persistedOffset, {
+                    timeout: 15_000,
+                    message: 'App must persist the repositioned bounds to bounds-info.json',
+                }).toBeLessThanOrEqual(10);
+
+                const savedBounds = JSON.parse(readFileSync(boundsInfoFile, 'utf-8'));
                 await closeElectronApp(app, userDataDir);
                 appClosed = true;
 
-                const {writeFileSync} = await import('fs');
-                writeFileSync(
-                    path.join(userDataDir, 'bounds-info.json'),
-                    JSON.stringify(savedBounds),
-                );
-
-                // Linux CI (xvfb) and Windows CI do not reliably restore window
-                // bounds from bounds-info.json on relaunch — see startup/window.test.ts.
-                // Local Linux runs still exercise the relaunch verification path below.
-                if (
-                    (process.platform === 'linux' && process.env.CI) ||
-                    (process.platform === 'win32' && process.env.CI)
-                ) {
-                    const {readFileSync} = await import('fs');
-                    const persisted = JSON.parse(
-                        readFileSync(path.join(userDataDir, 'bounds-info.json'), 'utf-8'),
-                    );
-                    expect(
-                        Math.abs(persisted.x - movedBounds!.x),
-                        'bounds-info.json must persist repositioned x',
-                    ).toBeLessThanOrEqual(5);
-                    expect(
-                        Math.abs(persisted.y - movedBounds!.y),
-                        'bounds-info.json must persist repositioned y',
-                    ).toBeLessThanOrEqual(5);
+                // Restoring those bounds on relaunch needs a window manager that honors
+                // setBounds: Xvfb (Linux CI) and Windows CI do not — see startup/window.test.ts.
+                // Persistence above is asserted on every platform; only the restore half is skipped.
+                if (process.env.CI && (process.platform === 'linux' || process.platform === 'win32')) {
+                    test.info().annotations.push({
+                        type: 'skip-reason',
+                        description: 'Relaunch bounds restore is not reliable under Xvfb / Windows CI window managers',
+                    });
                     return;
                 }
 

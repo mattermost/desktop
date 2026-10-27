@@ -31,11 +31,12 @@ export class MattermostServer {
         this.preAuthSecret = preAuthSecret;
     }
 
-    updateURL = (url: string) => {
-        this.url = parseURL(url)!;
-        if (!this.url) {
+    updateURL = (url: string | URL) => {
+        const parsedURL = parseURL(url);
+        if (!parsedURL) {
             throw new Error('Invalid url for creating a server');
         }
+        this.url = parsedURL;
     };
 
     toUniqueServer = (): UniqueServer => {

@@ -480,7 +480,7 @@ describe('main/preAuthManager', () => {
             );
 
             expect(result).toBe(true);
-            expect(ServerManager.lookupServerByURL).toBeCalledWith('http://trusted.com');
+            expect(ServerManager.lookupServerByURL).toBeCalledWith('http://trusted.com', false, true);
             expect(ModalManager.addModal).toBeCalled();
         });
 

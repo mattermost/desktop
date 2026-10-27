@@ -4,9 +4,9 @@
 import type {ElectronApplication} from 'playwright';
 
 import {test, expect} from '../../fixtures/index';
-import {clickApplicationMenuItem} from '../../helpers/menu';
+import {isTransientEvaluateError} from '../../helpers/testRefs';
 
-async function clickQuitFromMenuBar(electronApp: ElectronApplication) {
+async function clickQuitRole(electronApp: ElectronApplication) {
     const menuId = process.platform === 'darwin' ? 'app' : 'file';
 
     const quitExists = await electronApp.evaluate(({app, Menu}) => {
@@ -18,32 +18,30 @@ async function clickQuitFromMenuBar(electronApp: ElectronApplication) {
     });
     expect(quitExists, 'Application menu must expose a Quit item').toBe(true);
 
-    try {
-        await clickApplicationMenuItem(electronApp, menuId, {role: 'quit'});
-    } catch {
-        await electronApp.evaluate(({app, Menu, BrowserWindow}) => {
-            const rootMenu = app.applicationMenu ?? Menu.getApplicationMenu();
-            const targetWindow = BrowserWindow.getFocusedWindow() ??
-                BrowserWindow.getAllWindows().find((window) => !window.isDestroyed());
+    await electronApp.evaluate(({app, Menu, BrowserWindow}, id) => {
+        const rootMenu = app.applicationMenu ?? Menu.getApplicationMenu();
+        const targetWindow = BrowserWindow.getFocusedWindow() ??
+            BrowserWindow.getAllWindows().find((window) => !window.isDestroyed());
 
-            const clickQuit = (items: Electron.MenuItem[]): boolean => {
-                for (const item of items) {
-                    if (item.role === 'quit' && typeof item.click === 'function') {
-                        item.click(undefined, targetWindow ?? undefined, undefined);
-                        return true;
-                    }
-                    if (item.submenu?.items?.length && clickQuit(item.submenu.items)) {
-                        return true;
-                    }
+        const clickQuit = (items: Electron.MenuItem[]): boolean => {
+            for (const item of items) {
+                if (item.role === 'quit' && typeof item.click === 'function') {
+                    item.click(undefined, targetWindow ?? undefined, undefined);
+                    return true;
                 }
-                return false;
-            };
-
-            if (!clickQuit(rootMenu?.items ?? [])) {
-                throw new Error('Quit menu item not found');
+                if (item.submenu?.items?.length && clickQuit(item.submenu.items)) {
+                    return true;
+                }
             }
-        });
-    }
+            return false;
+        };
+
+        const topLevel = rootMenu?.getMenuItemById(id);
+        const searchItems = topLevel?.submenu?.items ?? rootMenu?.items ?? [];
+        if (!clickQuit(searchItems) && !clickQuit(rootMenu?.items ?? [])) {
+            throw new Error('Quit menu item not found');
+        }
+    }, menuId);
 }
 
 async function waitForAppClose(electronApp: ElectronApplication, timeoutMs: number): Promise<boolean> {
@@ -60,9 +58,19 @@ test.describe('menu_bar/quit_menu', () => {
         'MM-T1668 Quit the app from the menu bar',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
-            await clickQuitFromMenuBar(electronApp);
+            // item.click({role:'quit'}) often never returns because the main
+            // process exits mid-evaluate. Race the click with close so Linux CI
+            // cannot burn the 90s test timeout and then workerTeardownTimeout.
+            const closePromise = waitForAppClose(electronApp, 20_000);
+            try {
+                await Promise.race([clickQuitRole(electronApp), closePromise]);
+            } catch (error) {
+                if (!isTransientEvaluateError(error)) {
+                    throw error;
+                }
+            }
 
-            let closed = await waitForAppClose(electronApp, 5_000);
+            let closed = await closePromise;
             if (!closed && process.platform === 'darwin') {
                 // Role-based menu clicks may not terminate the app under Playwright on macOS.
                 await electronApp.evaluate(({ipcMain}) => {

@@ -4,9 +4,9 @@
 import fs from 'fs';
 import path from 'path';
 
-import {BrowserWindow, screen, app, dialog, ipcMain} from 'electron';
+import {BrowserWindow, screen, app, ipcMain} from 'electron';
 
-import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, UPDATE_SHORTCUT_MENU} from 'common/communication';
+import {SELECT_NEXT_TAB, SELECT_PREVIOUS_TAB, UPDATE_SHORTCUT_MENU, MAIN_WINDOW_CLOSE_CONFIRM} from 'common/communication';
 import Config from 'common/config';
 import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH} from 'common/utils/constants';
 import * as Validator from 'common/Validator';
@@ -28,9 +28,6 @@ jest.mock('electron', () => ({
         hide: jest.fn(),
         quit: jest.fn(),
         relaunch: jest.fn(),
-    },
-    dialog: {
-        showMessageBox: jest.fn(),
     },
     BrowserWindow: jest.fn(),
     ipcMain: {
@@ -247,6 +244,18 @@ describe('main/windows/mainWindow', () => {
             }));
         });
 
+        it('should set default window size when saved bounds were on a disconnected monitor', () => {
+            fs.readFileSync.mockImplementation(() => '{"x":1920,"y":0,"width":1280,"height":700,"maximized":false,"fullscreen":false}');
+            screen.getDisplayMatching.mockImplementation(() => ({id: 1, scaleFactor: 1, bounds: {x: 0, y: 0, width: 1920, height: 1080}}));
+            isInsideRectangle.mockReturnValue(false);
+            const mainWindow = new MainWindow();
+            mainWindow.init();
+            expect(BrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
+                width: DEFAULT_WINDOW_WIDTH,
+                height: DEFAULT_WINDOW_HEIGHT,
+            }));
+        });
+
         it('should reset zoom level and maximize if applicable on ready-to-show', () => {
             const window = {
                 ...baseWindow,
@@ -352,7 +361,7 @@ describe('main/windows/mainWindow', () => {
             expect(app.quit).toHaveBeenCalled();
         });
 
-        it('should close app on Windows if window closed depending on user input', async () => {
+        it('should emit a close confirmation on Windows if app wont quit and no config item is set', () => {
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
                 value: 'win32',
@@ -366,19 +375,14 @@ describe('main/windows/mainWindow', () => {
                 }),
             };
             BrowserWindow.mockImplementation(() => window);
-            dialog.showMessageBox.mockResolvedValue({response: 1});
             const mainWindow = new MainWindow();
+            const listener = jest.fn();
+            mainWindow.on(MAIN_WINDOW_CLOSE_CONFIRM, listener);
             mainWindow.init();
-            expect(app.quit).not.toHaveBeenCalled();
-            const promise = Promise.resolve({response: 0});
-            dialog.showMessageBox.mockImplementation(() => promise);
-            const mainWindow2 = new MainWindow();
-            mainWindow2.init();
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
-            await promise;
-            expect(app.quit).toHaveBeenCalled();
+            expect(listener).toHaveBeenCalled();
         });
 
         it('should hide window on close for Linux if app wont quit and config item is set', () => {
@@ -431,7 +435,7 @@ describe('main/windows/mainWindow', () => {
             expect(app.quit).toHaveBeenCalled();
         });
 
-        it('should close app on linux if window closed depending on user input', async () => {
+        it('should emit a close confirmation on Linux if app wont quit and no config item is set', () => {
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
                 value: 'linux',
@@ -445,19 +449,14 @@ describe('main/windows/mainWindow', () => {
                 }),
             };
             BrowserWindow.mockImplementation(() => window);
-            dialog.showMessageBox.mockResolvedValue({response: 1});
             const mainWindow = new MainWindow();
+            const listener = jest.fn();
+            mainWindow.on(MAIN_WINDOW_CLOSE_CONFIRM, listener);
             mainWindow.init();
-            expect(app.quit).not.toHaveBeenCalled();
-            const promise = Promise.resolve({response: 0});
-            dialog.showMessageBox.mockImplementation(() => promise);
-            const mainWindow2 = new MainWindow();
-            mainWindow2.init();
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
             });
-            await promise;
-            expect(app.quit).toHaveBeenCalled();
+            expect(listener).toHaveBeenCalled();
         });
 
         it('should hide window on close for Mac if app wont quit and window is not full screen', () => {

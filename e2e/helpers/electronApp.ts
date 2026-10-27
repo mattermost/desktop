@@ -419,6 +419,16 @@ export async function closeElectronApp(
         pid = undefined;
     }
 
+    // Quit specs (MM-T1668 / MM-T1301) already exited the process. Calling the
+    // full Linux SIGKILL + 45s settle path here burns workerTeardownTimeout
+    // (#29431). Drain close() briefly so Playwright drops gracefullyClose.
+    if (!pid || !isProcessAlive(pid)) {
+        const {closePromise} = await attemptClose(app, 2_000);
+        await settleElectronClose(closePromise, pid, 5_000);
+        unregisterElectronMainProcess(pid);
+        return;
+    }
+
     // `skipLockWaitUnlessCleanClose` marks a unique per-test userDataDir (the
     // fixture path): teardown abandons fast and lets worker/global cleanup reap
     // orphans, matching master's model. Without it (direct-launch specs), the

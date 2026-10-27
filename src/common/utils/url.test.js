@@ -183,6 +183,18 @@ describe('common/utils/url', () => {
 
             expect(isInternalURL(externalURL, baseURL)).toBe(false);
         });
+
+        it('should allow web socket protocol equivalent', () => {
+            const baseURL = new URL('https://mattermost.com/');
+            const externalURL = new URL('wss://mattermost.com/plugins/x');
+            expect(isInternalURL(externalURL, baseURL, false, true)).toBe(true);
+        });
+
+        it('should not allow web socket protocol equivalent when security is different', () => {
+            const baseURL = new URL('https://mattermost.com/');
+            const externalURL = new URL('ws://mattermost.com/plugins/x');
+            expect(isInternalURL(externalURL, baseURL, false, true)).toBe(false);
+        });
     });
     describe('isTrustedURL', () => {
         it('base urls', () => {

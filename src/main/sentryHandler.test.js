@@ -35,6 +35,17 @@ jest.mock('common/config', () => ({
     enableSentry: true,
 }));
 
+const mockInstallId = jest.fn();
+
+jest.mock('main/AppVersionManager', () => ({
+    __esModule: true,
+    default: {
+        get installId() {
+            return mockInstallId();
+        },
+    },
+}));
+
 describe('main/sentryHandler', () => {
     let sentryHandler;
     const originalEnv = process.env;
@@ -120,6 +131,40 @@ describe('main/sentryHandler', () => {
                     freeMemory: 4294967296,
                 }),
             );
+        });
+    });
+
+    describe('install ID attribution', () => {
+        beforeEach(() => {
+            process.env = {NODE_ENV: 'production'};
+            app.getVersion.mockReturnValue('6.0.0');
+            mockInstallId.mockReturnValue('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee');
+        });
+
+        it('should attach the install ID as the Sentry user via initialScope', () => {
+            sentryHandler.init();
+            expect(Sentry.init).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    initialScope: {user: {id: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee'}},
+                }),
+            );
+        });
+
+        it('should not send email or username alongside the install ID', () => {
+            sentryHandler.init();
+            const {initialScope} = Sentry.init.mock.calls[0][0];
+            expect(Object.keys(initialScope.user)).toEqual(['id']);
+        });
+
+        it('should still initialize Sentry when no install ID is available', () => {
+            mockInstallId.mockReturnValue(undefined);
+
+            sentryHandler.init();
+
+            expect(Sentry.init).toHaveBeenCalledWith(
+                expect.objectContaining({dsn: 'https://test@sentry.io/123'}),
+            );
+            expect(Sentry.init.mock.calls[0][0]).not.toHaveProperty('initialScope');
         });
     });
 

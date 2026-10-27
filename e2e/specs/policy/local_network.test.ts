@@ -26,7 +26,7 @@ const test = base.extend<{localServers: LocalNetworkServers}>({
     },
 });
 
-// executeJavaScript directly (top-level promise is awaited), unlike ServerView.runInRenderer.
+// Top-level fetch Promise: Electron's executeJavaScript awaits it.
 async function fetchFromView(
     app: ElectronApplication,
     webContentsId: number,

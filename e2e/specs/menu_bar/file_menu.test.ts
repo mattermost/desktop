@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {test, expect} from '../../fixtures/index';
+import {waitForWindow} from '../../helpers/electronApp';
 import {clickApplicationMenuItem, openSignInToAnotherServerModal} from '../../helpers/menu';
 
 async function openPreferencesFromAppMenu(electronApp: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>) {
@@ -68,10 +69,10 @@ test.describe('file_menu/dropdown', () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     test('MM-T805 Sign in to Another Server Window opens using menu item', {tag: ['@P2', '@win32']}, async ({electronApp, appReady: _appReady}) => {
         await clickApplicationMenuItem(electronApp, 'file', {labelIncludes: 'Sign in'});
-        const signInToAnotherServerWindow = await electronApp.waitForEvent('window', {
-            predicate: (window) => window.url().includes('newServer'),
-            timeout: 15_000,
-        });
+
+        // Same race as MM-T4407: poll the window list rather than relying on a
+        // one-shot 'window' event that can fire before the listener attaches.
+        const signInToAnotherServerWindow = await waitForWindow(electronApp, 'newServer', 15_000);
         expect(signInToAnotherServerWindow).toBeDefined();
     });
 

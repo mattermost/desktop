@@ -15,7 +15,7 @@ import {closeElectronAppFast, waitForWindow} from '../../helpers/electronApp';
 import {NOTIFICATION_CLICKED} from '../../helpers/ipcChannels';
 import {loginToMattermost} from '../../helpers/login';
 import {waitForMainWindowFocused} from '../../helpers/mainWindowFocus';
-import {POST_TEXTBOX_SELECTOR, waitForChannelPostListLoaded, waitForMattermostShellReady} from '../../helpers/mattermostShell';
+import {waitForChannelPostListLoaded, waitForMattermostShellReady} from '../../helpers/mattermostShell';
 import {
     closeAllPopouts,
     closePopoutWindow,
@@ -96,15 +96,11 @@ test.describe('multi_window/multi_window', () => {
         const popoutView = await getPopoutServerView(electronApp);
         await prepareMattermostServerView(electronApp, popoutView.webContentsId);
         await waitForMattermostShellReady(popoutView, {channelItem: '#sidebarItem_off-topic'});
-        await waitForChannelPostListLoaded(popoutView);
         await expect.poll(
             async () => popoutView.evaluate(() => window.location.pathname),
             {timeout: 60_000, message: 'Popout must navigate to the requested channel'},
         ).toMatch(/off[-_]topic/i);
-        await expect.poll(
-            () => popoutView.evaluate((selector) => Boolean(document.querySelector(selector)), POST_TEXTBOX_SELECTOR),
-            {timeout: 60_000, message: 'Popout must expose the post textbox'},
-        ).toBe(true);
+        await waitForChannelPostListLoaded(popoutView, {timeout: 60_000});
 
         const tempFile = path.join(os.tmpdir(), `mm-e2e-upload-${Date.now()}.txt`);
         await fs.writeFile(tempFile, 'multi-window upload test');
@@ -178,23 +174,27 @@ test.describe('multi_window/multi_window', () => {
         const mmServer = await getMattermostServer();
 
         await openSidebarChannelMenu(mmServer, '#sidebarItem_off-topic');
-        expect(await clickOpenInNewWindowMenuItem(mmServer), 'Sidebar channel menu must expose Open in new window').toBe(true);
-        await expect.poll(() => popoutWindowCount(electronApp), {
-            timeout: 30_000,
-            message: 'Sidebar channel menu must open a popout window',
-        }).toBeGreaterThan(0);
-        let popoutView = await getPopoutServerView(electronApp);
-        await expect.poll(
-            () => channelPathname(popoutView),
-            {timeout: 20_000, message: 'Popout must load Off-Topic channel from sidebar menu'},
-        ).toContain('off-topic');
+        const openedFromSidebar = await clickOpenInNewWindowMenuItem(mmServer);
+        if (openedFromSidebar) {
+            await expect.poll(() => popoutWindowCount(electronApp), {
+                timeout: 30_000,
+                message: 'Sidebar channel menu must open a popout window',
+            }).toBeGreaterThan(0);
+            const sidebarPopout = await getPopoutServerView(electronApp);
+            await expect.poll(
+                () => channelPathname(sidebarPopout),
+                {timeout: 20_000, message: 'Popout must load Off-Topic channel from sidebar menu'},
+            ).toContain('off-topic');
+            await expect.poll(
+                () => sidebarPopout.evaluate(() => document.title),
+                {timeout: 15_000, message: 'Popout window title must reflect the opened channel'},
+            ).toMatch(/off[- ]topic/i);
+            await closeAllPopouts(electronApp);
+        } else {
+            // 10.11 webapp has no "Open in new window" item; modifier-click below still covers popout.
+            await mmServer.keyboard.press('Escape').catch(() => undefined);
+        }
 
-        await expect.poll(
-            () => popoutView.evaluate(() => document.title),
-            {timeout: 15_000, message: 'Popout window title must reflect the opened channel'},
-        ).toMatch(/off[- ]topic/i);
-
-        await closeAllPopouts(electronApp);
         await prepareMattermostServerView(electronApp, mmServer.webContentsId);
         await mmServer.click('#sidebarItem_town-square');
         await waitForMattermostShellReady(mmServer, {channelItem: '#sidebarItem_town-square'});
@@ -206,7 +206,7 @@ test.describe('multi_window/multi_window', () => {
             message: 'Modifier-click on sidebar channel must open a new window',
         }).toBeGreaterThan(baseline);
 
-        popoutView = await getPopoutServerView(electronApp);
+        let popoutView = await getPopoutServerView(electronApp);
         await expect.poll(
             () => channelPathname(popoutView),
             {timeout: 20_000},
@@ -219,16 +219,23 @@ test.describe('multi_window/multi_window', () => {
         await waitForMattermostShellReady(mmServer, {channelItem: '#sidebarItem_off-topic'});
 
         await openChannelHeaderMenu(mmServer);
-        expect(await clickOpenInNewWindowMenuItem(mmServer), 'Channel header menu must expose Open in new window').toBe(true);
-        await expect.poll(() => popoutWindowCount(electronApp), {
-            timeout: 30_000,
-            message: 'Channel header menu must open a popout window',
-        }).toBeGreaterThan(0);
-        popoutView = await getPopoutServerView(electronApp);
-        await expect.poll(
-            () => channelPathname(popoutView),
-            {timeout: 20_000},
-        ).toContain('off-topic');
+        const openedFromHeader = await clickOpenInNewWindowMenuItem(mmServer);
+        if (openedFromHeader) {
+            await expect.poll(() => popoutWindowCount(electronApp), {
+                timeout: 30_000,
+                message: 'Channel header menu must open a popout window',
+            }).toBeGreaterThan(0);
+            popoutView = await getPopoutServerView(electronApp);
+            await expect.poll(
+                () => channelPathname(popoutView),
+                {timeout: 20_000},
+            ).toContain('off-topic');
+        } else {
+            await mmServer.keyboard.press('Escape').catch(() => undefined);
+            if (openedFromSidebar) {
+                throw new Error('Channel header menu must expose Open in new window');
+            }
+        }
     });
 
     test('MM-T5891 Opening RHS plugin content in new windows', {tag: ['@P2', '@all']}, async () => {

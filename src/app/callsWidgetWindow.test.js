@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserWindow, desktopCapturer, systemPreferences, ipcMain} from 'electron';
+import {BrowserWindow, desktopCapturer, screen, systemPreferences, ipcMain} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import NavigationManager from 'app/navigationManager';
@@ -25,6 +25,7 @@ import {
 import urlUtils from 'common/utils/url';
 import ViewManager from 'common/views/viewManager';
 import PermissionsManager from 'main/security/permissionsManager';
+import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
 import {
     resetScreensharePermissionsMacOS,
     openScreensharePermissionsSettingsMacOS,
@@ -45,6 +46,9 @@ jest.mock('electron', () => ({
     },
     desktopCapturer: {
         getSources: jest.fn(),
+    },
+    screen: {
+        getDisplayMatching: jest.fn(),
     },
     systemPreferences: {
         getUserDefault: jest.fn(),
@@ -81,6 +85,13 @@ jest.mock('main/performanceMonitor', () => ({
     registerView: jest.fn(),
     unregisterView: jest.fn(),
 }));
+jest.mock('main/security/localNetworkAccess', () => ({
+    __esModule: true,
+    default: {
+        registerWebContents: jest.fn(),
+        unregisterWebContents: jest.fn(),
+    },
+}));
 jest.mock('common/views/viewManager', () => ({
     getView: jest.fn(),
     getViewByWebContentsId: jest.fn(),
@@ -108,6 +119,13 @@ jest.mock('app/navigationManager', () => ({
 
 jest.mock('app/mainWindow/modals/modalManager', () => ({
     on: jest.fn(),
+}));
+
+jest.mock('app/mainWindow/modals/messageModal', () => ({
+    __esModule: true,
+    default: {
+        showErrorModal: jest.fn(),
+    },
 }));
 
 jest.mock('app/tabs/tabManager', () => ({
@@ -293,6 +311,39 @@ describe('main/windows/callsWidgetWindow', () => {
                 width: 150,
                 height: 50,
             });
+        });
+    });
+
+    describe('setBounds', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+        let actualBounds;
+        callsWidgetWindow.win = {
+            getBounds: jest.fn(() => actualBounds),
+            setBounds: jest.fn((b) => {
+                actualBounds = {...b};
+            }),
+        };
+
+        beforeEach(() => {
+            actualBounds = {x: 12, y: 618, width: MINIMUM_CALLS_WIDGET_WIDTH, height: MINIMUM_CALLS_WIDGET_HEIGHT};
+            callsWidgetWindow.boundsErr = {x: 0, y: 0, width: 0, height: 0};
+            screen.getDisplayMatching.mockReturnValue({workArea: {x: 0, y: 0, width: 1920, height: 1080}});
+        });
+
+        it('should pass through sizes within the work area', () => {
+            callsWidgetWindow.setBounds({x: 12, y: 600, width: 300, height: 100});
+            expect(callsWidgetWindow.win.setBounds).toHaveBeenCalledWith({x: 12, y: 600, width: 300, height: 100});
+        });
+
+        it('should clamp oversized requests to the work area without accumulating bounds error', () => {
+            callsWidgetWindow.setBounds({x: 12, y: -999000, width: 1000000, height: 1000000});
+            expect(callsWidgetWindow.win.setBounds).toHaveBeenCalledWith({x: 12, y: -999000, width: 1920, height: 1080});
+            expect(callsWidgetWindow.boundsErr).toEqual({x: 0, y: 0, width: 0, height: 0});
+        });
+
+        it('should clamp sizes below 1', () => {
+            callsWidgetWindow.setBounds({x: 12, y: 600, width: 0, height: -5});
+            expect(callsWidgetWindow.win.setBounds).toHaveBeenCalledWith({x: 12, y: 600, width: 1, height: 1});
         });
     });
 
@@ -514,7 +565,9 @@ describe('main/windows/callsWidgetWindow', () => {
         let frameFinishedLoadListener;
         const popOut = {
             on: (event, listener) => {
-                closedListener = listener;
+                if (event === 'closed') {
+                    closedListener = listener;
+                }
             },
             webContents: {
                 on: (event, listener) => {
@@ -554,6 +607,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
         expect(callsWidgetWindow.popOut).toBe(popOut);
         expect(WebContentsEventManager.addWebContentsEventListeners).toHaveBeenCalledWith(popOut.webContents);
+        expect(jest.mocked(LocalNetworkAccessManager.registerWebContents)).toHaveBeenCalledWith(popOut.webContents);
         expect(redirectListener).toBeDefined();
         expect(frameFinishedLoadListener).toBeDefined();
         expect(mockContextMenuReload).toHaveBeenCalledTimes(1);
@@ -567,6 +621,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
         closedListener();
         expect(callsWidgetWindow.popOut).not.toBeDefined();
+        expect(jest.mocked(LocalNetworkAccessManager.unregisterWebContents)).toHaveBeenCalledWith('webContentsId');
         expect(mockContextMenuDispose).toHaveBeenCalled();
 
         // Verify widget visibility has been toggled

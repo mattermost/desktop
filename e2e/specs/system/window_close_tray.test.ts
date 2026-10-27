@@ -3,9 +3,9 @@
 
 import {test, expect} from '../../fixtures/index';
 import {demoConfig, type AppConfig} from '../../helpers/config';
-import {restoreMessageBox, stubMessageBoxResponses} from '../../helpers/dialog';
-import {isMainWindowVisible} from '../../helpers/tray';
+import {waitForWindow} from '../../helpers/electronApp';
 import {evaluateInMainProcess} from '../../helpers/testRefs';
+import {isMainWindowVisible} from '../../helpers/tray';
 
 const closeDialogConfig: AppConfig = {
     ...demoConfig,
@@ -25,23 +25,21 @@ test.describe('system/window_close_tray', () => {
                 {timeout: 10_000},
             ).toBe(true);
 
-            await stubMessageBoxResponses(electronApp, [{response: 1}]);
-            try {
-                await evaluateInMainProcess(electronApp, () => {
-                    const refs = (global as any).__e2eTestRefs;
-                    if (!refs) {
-                        throw new Error('__e2eTestRefs missing (NODE_ENV must be test)');
-                    }
-                    refs.MainWindow.get()?.close();
-                });
+            await evaluateInMainProcess(electronApp, () => {
+                const refs = (global as any).__e2eTestRefs;
+                if (!refs) {
+                    throw new Error('__e2eTestRefs missing (NODE_ENV must be test)');
+                }
+                refs.MainWindow.get()?.close();
+            });
 
-                await expect.poll(
-                    () => electronApp.windows().some((window) => window.url().includes('index')),
-                    {timeout: 10_000, message: 'App should remain running after declining quit'},
-                ).toBe(true);
-            } finally {
-                await restoreMessageBox(electronApp);
-            }
+            const messageModal = await waitForWindow(electronApp, 'message.html');
+            await messageModal.click('button:has-text("No")');
+
+            await expect.poll(
+                () => electronApp.windows().some((window) => window.url().includes('index')),
+                {timeout: 10_000, message: 'App should remain running after declining quit'},
+            ).toBe(true);
         },
     );
 });

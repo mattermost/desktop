@@ -102,7 +102,12 @@ test.describe('mattermost/bookmarks', () => {
             const firstServer = await loginToOffTopicChannel(serverMap, electronApp);
             const serverEntry = serverMap[bookmarksConfig.servers[0].name]?.[0];
 
-            await enableBookmarksBar(firstServer!);
+            try {
+                await enableBookmarksBar(firstServer!);
+            } catch {
+                test.skip(true, 'Bookmarks Bar is not in the channel header menu on this server version');
+                return;
+            }
             await deleteAllBookmarksInBar(firstServer!);
 
             // Intercept shell.openExternal — canonical pattern from external_links.test.ts

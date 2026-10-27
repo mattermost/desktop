@@ -20,6 +20,9 @@ test.describe('windows_and_linux_only/startup_after_reboot', () => {
         'MM-T1574 Startup after reboot loads properly — Windows & Linux ONLY',
         {tag: ['@P2', '@win32', '@linux']},
         async ({}, testInfo) => {
+            // Real OS reboot / post-boot white screen (MM-19649) cannot be
+            // reproduced in Playwright. This spec relaunches the same userDataDir
+            // as a proxy for "startup after a previous session".
             const userDataDir = path.join(testInfo.outputDir, 'reboot-userdata');
             fs.mkdirSync(userDataDir, {recursive: true});
             writeConfigFile(userDataDir, {

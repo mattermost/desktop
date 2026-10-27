@@ -23,16 +23,10 @@ jest.mock('electron', () => ({
         getVersion: jest.fn(() => '5.0.0'),
         name: 'Mattermost',
     },
-    nativeImage: {
-        createFromPath: jest.fn(),
-    },
     ipcMain: {
         on: jest.fn(),
         emit: jest.fn(),
         handle: jest.fn(),
-    },
-    dialog: {
-        showMessageBox: jest.fn(),
     },
     shell: {
         openExternal: jest.fn(),
@@ -75,6 +69,13 @@ jest.mock('electron-is-dev', () => ({
 
 jest.mock('main/downloadsManager', () => ({
     removeUpdateBeforeRestart: jest.fn(),
+}));
+
+jest.mock('app/mainWindow/modals/messageModal', () => ({
+    __esModule: true,
+    default: {
+        showMessageModal: jest.fn(),
+    },
 }));
 
 const net = jest.mocked(notMockedNet);

@@ -267,7 +267,7 @@ export async function getDoNotDisturb() {
     return false;
 }
 
-function flashFrame(flash: boolean) {
+export function flashFrame(flash: boolean) {
     if (process.platform === 'linux' || process.platform === 'win32') {
         if (Config.notifications.flashWindow) {
             MainWindow.get()?.flashFrame(flash);

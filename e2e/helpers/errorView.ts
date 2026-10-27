@@ -5,7 +5,7 @@ import {expect} from '@playwright/test';
 import type {ElectronApplication, Page} from 'playwright';
 
 import {waitForRendererReady} from './badServer';
-import {clearCertificateErrorCallbacks} from './dialog';
+import {answerMessageModal, clearCertificateErrorCallbacks, isMessageModalOpen} from './dialog';
 import {evaluateInMainProcessWithArg, findMainIndexWindow, resolveMainIndexWindow} from './testRefs';
 
 type WaitForErrorViewOptions = {
@@ -91,10 +91,12 @@ async function reloadTargetServerViews(
     await clearCertificateErrorCallbacks(app).catch(() => {});
     await evaluateServerReloadState(app, 'reload', serverName);
 
+    // Best-effort. An obsolete-cipher handshake can stay in isLoading() until
+    // the platform connect timeout. The caller still polls ErrorView.
     await expect.poll(
         () => evaluateServerReloadState(app, 'checkLoading', serverName),
         {timeout: 15_000, message: 'Server views should finish reloading after renderer is ready'},
-    ).toBe(true);
+    ).toBe(true).catch(() => undefined);
 }
 
 function resolveErrorViewHost(app: ElectronApplication, fallback: Page): Page {
@@ -138,19 +140,37 @@ export async function waitForErrorView(
         }).toContain(serverName);
     }
 
-    const host = resolveErrorViewHost(app, mainWindow);
-    if (!(await host.isVisible('.ErrorView').catch(() => false))) {
-        await reloadTargetServerViews(app, serverName);
-    }
-
-    await expect.poll(async () => {
+    const isErrorViewVisible = async (): Promise<boolean> => {
         const window = resolveErrorViewHost(app, mainWindow);
         try {
             return await window.isVisible('.ErrorView');
         } catch {
             return false;
         }
-    }, {
+    };
+
+    // Do not reload on the first miss: an immediate reload races LOAD_FAILED from
+    // Cancel Connection and retriggers the certificate modal.
+    const appearedBeforeReload = await expect.poll(
+        isErrorViewVisible,
+        {timeout: Math.min(timeout, 8_000), message: 'ErrorView after initial load failure'},
+    ).toBe(true).then(() => true).catch(() => false);
+
+    if (!appearedBeforeReload && !isMessageModalOpen(app)) {
+        // Reload only after the current navigation has settled. RC4 and other
+        // obsolete TLS hosts can still be handshaking here (loading screen up,
+        // isLoading() true). Reloading restarts that handshake, and the settle
+        // poll then fails the spec before ErrorView can render.
+        const navigationSettled = await evaluateServerReloadState(app, 'checkLoading', serverName);
+        if (navigationSettled && !(await isErrorViewVisible()) && !isMessageModalOpen(app)) {
+            await reloadTargetServerViews(app, serverName);
+            if (isMessageModalOpen(app)) {
+                await answerMessageModal(app, 1).catch(() => {});
+            }
+        }
+    }
+
+    await expect.poll(isErrorViewVisible, {
         timeout,
         message: 'ErrorView did not appear before timeout',
     }).toBe(true);

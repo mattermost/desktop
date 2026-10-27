@@ -67,6 +67,7 @@ function customAttributeEditScopeJs(elExpr: string): string {
  */
 function customAttributeRowJs(elExpr: string): string {
     return `(
+        ${elExpr}?.closest('.section-min') ||
         ${elExpr}?.closest('.setting-list') ||
         ${elExpr}?.closest('.SettingsBlock') ||
         ${elExpr}?.closest('section') ||
@@ -122,17 +123,35 @@ export async function createCustomProfileAttributeField(
 ): Promise<UserPropertyField> {
     const {baseUrl, username, password} = getTestServerCredentials();
     const token = await apiLogin(baseUrl, username, password);
-    return apiRequest<UserPropertyField>(baseUrl, token, CPA_FIELDS_PATH, {
-        method: 'POST',
-        body: JSON.stringify({
-            name: field.name,
-            type: field.type ?? 'text',
-            attrs: {
-                sort_order: sortOrder,
-                ...field.attrs,
-            },
-        }),
-    });
+    const existingFields = await apiRequest<UserPropertyField[]>(baseUrl, token, CPA_FIELDS_PATH);
+    const already = existingFields.find((candidate) => candidate.name === field.name);
+    if (already) {
+        return already;
+    }
+    try {
+        return await apiRequest<UserPropertyField>(baseUrl, token, CPA_FIELDS_PATH, {
+            method: 'POST',
+            body: JSON.stringify({
+                name: field.name,
+                type: field.type ?? 'text',
+                attrs: {
+                    sort_order: sortOrder,
+                    ...field.attrs,
+                },
+            }),
+        });
+    } catch (error) {
+        // Older servers can 400/500 on a leftover unique index; reuse the field by name.
+        if (!(error instanceof ApiRequestError) || ![400, 500].includes(error.status)) {
+            throw error;
+        }
+        const fields = await apiRequest<UserPropertyField[]>(baseUrl, token, CPA_FIELDS_PATH);
+        const existing = fields.find((candidate) => candidate.name === field.name);
+        if (!existing) {
+            throw error;
+        }
+        return existing;
+    }
 }
 
 export async function patchCustomProfileAttributeField(
@@ -165,6 +184,18 @@ export async function updateCustomProfileAttributeValues(
     });
 }
 
+export async function getCustomProfileAttributeValues(
+    userId = 'me',
+): Promise<Record<string, string | string[]>> {
+    const {baseUrl, username, password} = getTestServerCredentials();
+    const token = await apiLogin(baseUrl, username, password);
+    return apiRequest<Record<string, string | string[]>>(
+        baseUrl,
+        token,
+        `/api/v4/users/${userId}/custom_profile_attributes`,
+    );
+}
+
 export {dismissBlockingOverlays} from './blockingOverlays';
 
 export async function navigateToTownSquare(win: ServerView): Promise<void> {
@@ -189,6 +220,28 @@ const PROFILE_SETTINGS_BODY_SELECTOR = [
     '[data-testid="userSettingsModalBody"]',
     '[data-testid="accountSettingsModalBody"]',
 ].join(', ');
+
+/**
+ * Visible Profile Settings root. `querySelector('A, B')` is tree order, not
+ * selector order, so a leftover hidden `.user-settings` would beat the open
+ * `#userAccountModal`.
+ */
+function visibleProfileSettingsRootJs(): string {
+    return `(() => {
+        const isVisible = (el) => {
+            if (!(el instanceof HTMLElement)) {
+                return false;
+            }
+            const rect = el.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0;
+        };
+        const modal = Array.from(document.querySelectorAll(${JSON.stringify(PROFILE_SETTINGS_MODAL_SELECTOR)})).find(isVisible);
+        if (modal) {
+            return modal;
+        }
+        return Array.from(document.querySelectorAll(${JSON.stringify(PROFILE_SETTINGS_BODY_SELECTOR)})).find(isVisible) || null;
+    })()`;
+}
 
 export async function openProfileSettings(win: ServerView): Promise<void> {
     const opened = await win.runInRenderer<boolean>(`
@@ -279,6 +332,17 @@ async function isCustomAttributeEditVisible(win: ServerView, fieldId: string): P
     `);
 }
 
+async function isCustomAttributeInputVisible(win: ServerView, fieldId: string): Promise<boolean> {
+    return win.runInRenderer<boolean>(`
+        const input = document.querySelector('#customAttribute_${fieldId}');
+        if (!(input instanceof HTMLElement)) {
+            return false;
+        }
+        const rect = input.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+    `);
+}
+
 /** Webapp caches CPA field defs; reload once if API-created fields are missing from Profile Settings. */
 export async function waitForCustomAttributeEditInProfileSettings(win: ServerView, fieldId: string): Promise<void> {
     await ensureCustomAttributeEditReady(win, fieldId);
@@ -305,10 +369,19 @@ async function ensureCustomAttributeEditReady(win: ServerView, fieldId: string):
     }
 }
 
+/** Reload so GET /users/me leaves CPA null and settings mount fetches the values endpoint. */
+export async function reloadAndOpenProfileSettings(win: ServerView, fieldId: string): Promise<void> {
+    await closeProfileSettings(win);
+    await reloadServerView(win.app, win.webContentsId);
+    await waitForMattermostShellReady(win);
+    await dismissBlockingOverlays(win);
+    await openProfileSettings(win);
+    await ensureCustomAttributeEditReady(win, fieldId);
+}
+
 export async function getCustomAttributeLabelsInSettings(win: ServerView): Promise<string[]> {
     return win.runInRenderer<string[]>(`
-        const modal = document.querySelector(${JSON.stringify(PROFILE_SETTINGS_MODAL_SELECTOR)})
-            || document.querySelector('.user-settings');
+        const modal = ${visibleProfileSettingsRootJs()};
         if (!modal) {
             return [];
         }
@@ -338,38 +411,55 @@ export async function getCustomAttributeLabelsInSettings(win: ServerView): Promi
     `);
 }
 
+export async function profileSettingsContainsText(win: ServerView, text: string): Promise<boolean> {
+    return win.runInRenderer<boolean>(`
+        const modal = ${visibleProfileSettingsRootJs()};
+        if (!modal) {
+            return false;
+        }
+        return (modal.textContent || '').includes(${JSON.stringify(text)});
+    `);
+}
+
+/** Webapp caches CPA field defs after API create; wait for Edit then poll labels. */
+export async function waitForCustomAttributeNamesInSettings(
+    win: ServerView,
+    names: string[],
+    fieldId: string,
+): Promise<string[]> {
+    await waitForCustomAttributeEditInProfileSettings(win, fieldId);
+    await expect.poll(async () => {
+        const labels = await getCustomAttributeLabelsInSettings(win);
+        return names.every((name) => labels.some((label) => label.includes(name)));
+    }, {
+        timeout: 10_000,
+        message: `Profile settings must include ${names.join(', ')}`,
+    }).toBe(true);
+    return getCustomAttributeLabelsInSettings(win);
+}
+
 export async function editTextCustomAttribute(
     win: ServerView,
     fieldId: string,
     newValue: string,
     save = true,
 ): Promise<void> {
-    await ensureCustomAttributeEditReady(win, fieldId);
-    await win.runInRenderer<void>(`
-        const fieldId = ${JSON.stringify(fieldId)};
-        const editBtn = document.querySelector('#customAttribute_' + fieldId + 'Edit');
-        if (!(editBtn instanceof HTMLElement)) {
-            throw new Error('Custom attribute Edit button not found for ' + fieldId);
-        }
-        editBtn.scrollIntoView({block: 'center'});
-        editBtn.click();
-    `);
-    await win.waitForSelector(`#customAttribute_${fieldId}`, {timeout: 10_000});
-    await win.runInRenderer<void>(`
-        const fieldId = ${JSON.stringify(fieldId)};
-        const input = document.querySelector('#customAttribute_' + fieldId);
-        if (!input) {
-            throw new Error('Custom attribute input not found');
-        }
-        input.focus?.();
-        if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) {
-            input.value = '';
-            input.dispatchEvent(new Event('input', {bubbles: true}));
-        }
-    `);
-    if (newValue) {
-        await win.fill(`#customAttribute_${fieldId}`, newValue);
+    // 12.0 hides Edit while the section is already open; clicking it again would
+    // wait on a hidden button and drop the in-progress editor.
+    if (!(await isCustomAttributeInputVisible(win, fieldId))) {
+        await ensureCustomAttributeEditReady(win, fieldId);
+        await win.runInRenderer<void>(`
+            const fieldId = ${JSON.stringify(fieldId)};
+            const editBtn = document.querySelector('#customAttribute_' + fieldId + 'Edit');
+            if (!(editBtn instanceof HTMLElement)) {
+                throw new Error('Custom attribute Edit button not found for ' + fieldId);
+            }
+            editBtn.scrollIntoView({block: 'center'});
+            editBtn.click();
+        `);
+        await win.waitForSelector(`#customAttribute_${fieldId}`, {timeout: 10_000});
     }
+    await win.fill(`#customAttribute_${fieldId}`, newValue);
     if (save) {
         await win.waitForSelector('#saveSetting', {timeout: 10_000});
         await expect.poll(async () => win.runInRenderer<boolean>(`
@@ -391,12 +481,22 @@ export async function editTextCustomAttribute(
 }
 
 export async function cancelCustomAttributeEdit(win: ServerView, fieldId?: string): Promise<void> {
+    // Button text is not always exactly "Cancel"; use the #cancelSetting id.
+    await win.waitForSelector('#cancelSetting', {timeout: 10_000});
     await win.runInRenderer<void>(`
-        const modal = document.querySelector('#accountSettingsModal, .user-settings, #userAccountModal, .AccountModal');
-        const scope = modal || document;
-        const cancelBtn = Array.from(scope.querySelectorAll('button'))
-            .find((button) => (button.textContent || '').trim() === 'Cancel');
-        cancelBtn?.click();
+        const fieldId = ${JSON.stringify(fieldId ?? '')};
+        const input = fieldId ? document.querySelector('#customAttribute_' + fieldId) : null;
+        const saveBtn = document.querySelector('#saveSetting');
+        const scope = ${customAttributeEditScopeJs('input || saveBtn')}
+            || document.querySelector(${JSON.stringify(PROFILE_SETTINGS_MODAL_SELECTOR)})
+            || document;
+        const cancelBtn = scope.querySelector('#cancelSetting')
+            || scope.querySelector('[data-testid="cancelButton"]')
+            || document.querySelector('#cancelSetting');
+        if (!(cancelBtn instanceof HTMLElement)) {
+            throw new Error('Cancel button not found for custom attribute edit section');
+        }
+        cancelBtn.click();
     `);
     if (fieldId) {
         await win.waitForSelector(`#customAttribute_${fieldId}Edit`, {timeout: 10_000});
@@ -408,6 +508,11 @@ export async function getCustomAttributeInputValue(win: ServerView, fieldId: str
         const fieldId = ${JSON.stringify(fieldId)};
         const editBtn = document.querySelector('#customAttribute_' + fieldId + 'Edit');
         const input = document.querySelector('#customAttribute_' + fieldId);
+        if (editBtn instanceof HTMLElement) {
+            editBtn.scrollIntoView({block: 'center'});
+        } else if (input instanceof HTMLElement) {
+            input.scrollIntoView({block: 'center'});
+        }
         const editVisible = Boolean(editBtn && editBtn.getBoundingClientRect().width > 0);
         if (!editVisible && input instanceof HTMLInputElement) {
             return input.value;
@@ -419,14 +524,15 @@ export async function getCustomAttributeInputValue(win: ServerView, fieldId: str
         if (!row) {
             return '';
         }
-        let text = row.textContent || '';
+        const clone = row.cloneNode(true);
+        clone.querySelectorAll('button, a').forEach((el) => el.remove());
+        let text = clone.textContent || '';
         const labelEl = row.querySelector('label, .form__label, .setting-list-item__label, h4, h5, strong');
         const label = labelEl?.textContent?.trim() || '';
         if (label) {
             text = text.replace(label, '');
         }
         return text
-            .replace(/Edit.*$/s, '')
             .replace(/Click 'Edit' to add your custom attribute/gi, '')
             .trim();
     `);

@@ -5,7 +5,10 @@ import {setTestField} from 'common/utils/util';
 
 import type {SimulateNotificationClickPayload} from './notificationClick';
 
-type MessageBoxResponse = {response: number};
+type OpenDialogResult = {
+    canceled?: boolean;
+    filePaths: string[];
+};
 
 /**
  * Shape of `global.__e2eTestRefs`, set by registerE2eHooks() below. Kept in sync
@@ -24,6 +27,7 @@ export type E2eGlobalRefs = {
     TrayIcon: typeof import('app/system/tray/tray').default;
     Diagnostics: typeof import('main/diagnostics').default;
     PopoutManager: typeof import('app/windows/popoutManager').default;
+    AllowProtocolDialog: typeof import('main/security/allowProtocolDialog').default;
     updateNotifier: typeof import('main/updateNotifier').default;
     setUnreadBadgeSetting: (showUnreadBadge: boolean) => void;
 };
@@ -34,8 +38,7 @@ type RegisterE2eHooksOptions = {
     clickTrayMenuItem: (label: string) => void;
     triggerNotificationFrameEffects: (flash: boolean) => void;
     simulateNotificationClick: (payload: SimulateNotificationClickPayload) => void;
-    installMessageBoxStub: (responses: MessageBoxResponse[]) => void;
-    restoreMessageBoxStub: () => void;
+    installOpenDialogStub: (results: OpenDialogResult[]) => void;
     clearCertificateErrorCallbacks: () => void;
 };
 
@@ -49,7 +52,6 @@ export function registerE2eHooks(options: RegisterE2eHooksOptions): void {
     setTestField('__e2eClickTrayMenuItem', options.clickTrayMenuItem);
     setTestField('__e2eNotificationEffects', options.triggerNotificationFrameEffects);
     setTestField('__e2eSimulateNotificationClick', options.simulateNotificationClick);
-    setTestField('__e2eStubMessageBoxResponses', options.installMessageBoxStub);
-    setTestField('__e2eRestoreMessageBox', options.restoreMessageBoxStub);
+    setTestField('__e2eStubOpenDialogResults', options.installOpenDialogStub);
     setTestField('__e2eClearCertificateErrorCallbacks', options.clearCertificateErrorCallbacks);
 }

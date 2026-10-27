@@ -34,6 +34,9 @@ test.describe('windows_and_linux_only/autostart', () => {
         'MM-T1290 Do not start app on login saves autostart preference',
         {tag: ['@P2', '@win32', '@linux']},
         async ({electronApp}, testInfo) => {
+            // AutoLauncher no-ops in unpackaged/dev, and Playwright cannot reboot
+            // the OS to prove the app does not start at login. This spec persists
+            // autostart: false to config.json.
             const configFilePath = path.join(testInfo.outputDir, 'userdata', 'config.json');
             const settingsWindow = await openSettingsWindow(electronApp);
             await settingsWindow.click('#settingCategoryButton-general');

@@ -2,12 +2,12 @@
 // See LICENSE.txt for license information.
 
 import os from 'os';
-import path from 'path';
 
-import {dialog, ipcMain, app, nativeImage, net, shell} from 'electron';
+import {app, ipcMain, net, shell} from 'electron';
 import electronIsDev from 'electron-is-dev';
 import semver from 'semver';
 
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import {
     UPDATE_AVAILABLE,
     CHECK_FOR_UPDATES,
@@ -32,10 +32,6 @@ const NEXT_NOTIFY = 86400000; // 24 hours
 const NEXT_CHECK = 3600000; // 1 hour
 
 const log = new Logger('UpdateNotifier');
-
-const assetsDir = path.resolve(app.getAppPath(), 'assets');
-const appIconURL = path.resolve(assetsDir, 'appicon_with_spacing_32.png');
-const appIcon = nativeImage.createFromPath(appIconURL);
 
 interface UpdateInfo {
     version: string;
@@ -86,9 +82,8 @@ export class UpdateNotifier {
     displayNoUpgrade = (): void => {
         const version = app.getVersion();
         ipcMain.emit(NO_UPDATE_AVAILABLE);
-        dialog.showMessageBox({
+        MessageModal.showMessageModal({
             title: app.name,
-            icon: appIcon,
             message: localizeMessage('main.autoUpdater.noUpdate.message', 'You\'re up to date'),
             type: 'info',
             buttons: [localizeMessage('label.ok', 'OK')],

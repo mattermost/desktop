@@ -57,14 +57,14 @@ const findPreviewFixturePost = () => {
     }
     return null;
 };
-const findVisibleLoadedPreviewButton = (root) => {
+const findVisibleLoadedPreviewTarget = (root) => {
     for (const button of root.querySelectorAll('.file-preview__button')) {
         if (!isPreviewControlVisible(button)) {
             continue;
         }
         const loadedImg = button.querySelector('img:not(.image-loading__placeholder)');
-        if (loadedImg instanceof HTMLImageElement && loadedImg.complete && loadedImg.naturalWidth > 0) {
-            return button;
+        if (isLoadedPreviewImage(loadedImg)) {
+            return loadedImg;
         }
     }
     return null;
@@ -84,9 +84,9 @@ async function waitForLoadedImagePreviewControl(serverWin: ServerView): Promise<
             return false;
         }
 
-        const previewButton = findVisibleLoadedPreviewButton(post);
-        if (previewButton) {
-            previewButton.scrollIntoView({block: 'center'});
+        const previewTarget = findVisibleLoadedPreviewTarget(post);
+        if (previewTarget) {
+            previewTarget.scrollIntoView({block: 'center'});
             return true;
         }
 
@@ -202,18 +202,22 @@ async function openImagePreview(serverWin: ServerView): Promise<boolean> {
             return false;
         }
 
-        // Prefer the visible SizeAwareImage control (11.10+/MM-69174); clicks on the
-        // placeholder button are intentionally ignored until the real image loads.
-        const previewButton = findVisibleLoadedPreviewButton(root);
-        if (previewButton) {
-            previewButton.scrollIntoView({block: 'center', inline: 'center'});
-            previewButton.click();
+        // Mattermost 11.11 dropped onClick from the .file-preview__button wrapper.
+        // SizeAwareImage handles clicks on the loaded <img> only (and ignores
+        // them until load — MM-69174), so findVisibleLoadedPreviewTarget returns
+        // the loaded <img> rather than its wrapper. Clicking the wrapper is a no-op.
+        const previewTarget = findVisibleLoadedPreviewTarget(root);
+        if (previewTarget) {
+            previewTarget.scrollIntoView({block: 'center', inline: 'center'});
+            previewTarget.focus?.();
+            previewTarget.click();
             return true;
         }
 
         const clickTargets = [
             ...Array.from(root.querySelectorAll('[aria-label*="' + PREVIEW_FILE_NAME + '" i]')),
             ...Array.from(root.querySelectorAll(LOADED_IMAGE_SELECTOR)),
+            root.querySelector('.post-image__thumbnail'),
             root.querySelector('.post-image .image-loaded-container'),
             root.querySelector('.post-image .small-image__container'),
             root.querySelector('.post-image__image'),
@@ -226,7 +230,8 @@ async function openImagePreview(serverWin: ServerView): Promise<boolean> {
                 return isLoadedPreviewImage(target);
             }
             return isPreviewControlVisible(target) &&
-                Boolean(target.querySelector?.('img:not(.image-loading__placeholder)'));
+                Array.from(target.querySelectorAll('img:not(.image-loading__placeholder)')).
+                    some((img) => isLoadedPreviewImage(img));
         });
 
         const target = clickTargets[0];
@@ -235,6 +240,7 @@ async function openImagePreview(serverWin: ServerView): Promise<boolean> {
         }
 
         target.scrollIntoView({block: 'center', inline: 'center'});
+        target.focus?.();
         target.click();
         return true;
     `, true);

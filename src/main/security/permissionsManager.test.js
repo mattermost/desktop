@@ -1,10 +1,11 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {dialog, shell, systemPreferences} from 'electron';
+import {shell, systemPreferences} from 'electron';
 
 import CallsWidgetWindow from 'app/callsWidgetWindow';
 import MainWindow from 'app/mainWindow/mainWindow';
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import WebContentsManager from 'app/views/webContentsManager';
 import Config from 'common/config';
 import {parseURL, isTrustedURL} from 'common/utils/url';
@@ -24,9 +25,6 @@ jest.mock('electron', () => ({
     ipcMain: {
         on: jest.fn(),
         handle: jest.fn(),
-    },
-    dialog: {
-        showMessageBox: jest.fn(),
     },
     shell: {
         openExternal: jest.fn(),
@@ -67,6 +65,12 @@ jest.mock('app/callsWidgetWindow', () => ({
 jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
     on: jest.fn(),
+}));
+jest.mock('app/mainWindow/modals/messageModal', () => ({
+    __esModule: true,
+    default: {
+        showMessageModal: jest.fn(),
+    },
 }));
 
 jest.mock('app/views/webContentsManager', () => ({
@@ -255,7 +259,7 @@ describe('main/PermissionsManager', () => {
             const cb = jest.fn();
             await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://meet.anyurl.com'});
             expect(cb).toHaveBeenCalledWith(true);
-            expect(dialog.showMessageBox).not.toHaveBeenCalled();
+            expect(MessageModal.showMessageModal).not.toHaveBeenCalled();
         });
 
         it('should store media decisions for trusted embedded origins on the server origin', async () => {
@@ -268,7 +272,7 @@ describe('main/PermissionsManager', () => {
             const permissionsManager = new PermissionsManager('anyfile.json');
             permissionsManager.writeToFile = jest.fn();
             const cb = jest.fn();
-            dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 2}));
+            MessageModal.showMessageModal.mockReturnValue(Promise.resolve({response: 2}));
             await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://meet.anyurl.com'});
             expect(permissionsManager.json['http://anyurl.com'].media.allowed).toBe(true);
             expect(permissionsManager.json['http://meet.anyurl.com']).toBeUndefined();
@@ -325,7 +329,7 @@ describe('main/PermissionsManager', () => {
             const permissionsManager = new PermissionsManager('anyfile.json');
             permissionsManager.writeToFile = jest.fn();
             const cb = jest.fn();
-            dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 2}));
+            MessageModal.showMessageModal.mockReturnValue(Promise.resolve({response: 2}));
             await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
             expect(permissionsManager.json['http://anyurl.com'].media.allowed).toBe(true);
             expect(permissionsManager.writeToFile).toHaveBeenCalled();
@@ -336,7 +340,7 @@ describe('main/PermissionsManager', () => {
             const permissionsManager = new PermissionsManager('anyfile.json');
             permissionsManager.writeToFile = jest.fn();
             const cb = jest.fn();
-            dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 0}));
+            MessageModal.showMessageModal.mockReturnValue(Promise.resolve({response: 0}));
             await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
             expect(permissionsManager.json['http://anyurl.com'].media.allowed).toBe(false);
             expect(permissionsManager.writeToFile).toHaveBeenCalled();
@@ -347,7 +351,7 @@ describe('main/PermissionsManager', () => {
             const permissionsManager = new PermissionsManager('anyfile.json');
             permissionsManager.writeToFile = jest.fn();
             const cb = jest.fn();
-            dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 1}));
+            MessageModal.showMessageModal.mockReturnValue(Promise.resolve({response: 1}));
             await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
             expect(permissionsManager.json['http://anyurl.com'].media.allowed).toBe(false);
             expect(permissionsManager.json['http://anyurl.com'].media.alwaysDeny).toBe(true);
@@ -359,13 +363,13 @@ describe('main/PermissionsManager', () => {
             const permissionsManager = new PermissionsManager('anyfile.json');
             permissionsManager.writeToFile = jest.fn();
             const cb = jest.fn();
-            dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 2}));
+            MessageModal.showMessageModal.mockReturnValue(Promise.resolve({response: 2}));
             await Promise.all([
                 permissionsManager.handlePermissionRequest({id: 2}, 'notifications', cb, {requestingUrl: 'http://anyurl.com'}),
                 permissionsManager.handlePermissionRequest({id: 2}, 'notifications', cb, {requestingUrl: 'http://anyurl.com'}),
                 permissionsManager.handlePermissionRequest({id: 2}, 'notifications', cb, {requestingUrl: 'http://anyurl.com'}),
             ]);
-            expect(dialog.showMessageBox).toHaveBeenCalledTimes(1);
+            expect(MessageModal.showMessageModal).toHaveBeenCalledTimes(1);
         });
 
         it('should still pop dialog for media requests from the servers origin', async () => {
@@ -384,18 +388,18 @@ describe('main/PermissionsManager', () => {
             const permissionsManager = new PermissionsManager('anyfile.json');
             permissionsManager.writeToFile = jest.fn();
             const cb = jest.fn();
-            dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 2}));
+            MessageModal.showMessageModal.mockReturnValue(Promise.resolve({response: 2}));
             await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
-            expect(dialog.showMessageBox).toHaveBeenCalled();
+            expect(MessageModal.showMessageModal).toHaveBeenCalled();
         });
 
         it('should pop dialog for external applications', async () => {
             const permissionsManager = new PermissionsManager('anyfile.json');
             permissionsManager.writeToFile = jest.fn();
             const cb = jest.fn();
-            dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 2}));
+            MessageModal.showMessageModal.mockReturnValue(Promise.resolve({response: 2}));
             await permissionsManager.handlePermissionRequest({id: 2}, 'openExternal', cb, {requestingUrl: 'http://anyurl.com', externalURL: 'ms-excel://differenturl.com'});
-            expect(dialog.showMessageBox).toHaveBeenCalled();
+            expect(MessageModal.showMessageModal).toHaveBeenCalled();
         });
 
         it('PM-U01: should allow Calls widget request when pre-granted and not consult WebContentsManager', async () => {
@@ -434,7 +438,7 @@ describe('main/PermissionsManager', () => {
         });
 
         it('PM-U03: should show dialog for fullscreen from an external origin', async () => {
-            dialog.showMessageBox.mockReturnValue(Promise.resolve({response: 2}));
+            MessageModal.showMessageModal.mockReturnValue(Promise.resolve({response: 2}));
             const permissionsManager = new PermissionsManager('anyfile.json');
             const cb = jest.fn();
             await permissionsManager.handlePermissionRequest(
@@ -443,7 +447,7 @@ describe('main/PermissionsManager', () => {
                 cb,
                 {requestingUrl: 'http://youtube.com'},
             );
-            expect(dialog.showMessageBox).toHaveBeenCalled();
+            expect(MessageModal.showMessageModal).toHaveBeenCalled();
             expect(cb).toHaveBeenCalledWith(true);
         });
 
@@ -458,7 +462,7 @@ describe('main/PermissionsManager', () => {
                 {requestingUrl: 'http://anyurl.com'},
             );
             expect(cb).toHaveBeenCalledWith(false);
-            expect(dialog.showMessageBox).not.toHaveBeenCalled();
+            expect(MessageModal.showMessageModal).not.toHaveBeenCalled();
         });
     });
 });

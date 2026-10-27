@@ -325,7 +325,7 @@ Playwright artifacts are the source of truth.
 - HTML report: `e2e/playwright-report`
 - JUnit: `e2e/test-results/e2e-junit.xml`
 - Video: retained only on final failure
-- Trace: retained only on final failure
+- Trace: not kept in CI (traces record `fill()` passwords); local runs retain on failure
 
 If a test fails once and passes on retry, final artifacts should not be treated as a real failure.
 
