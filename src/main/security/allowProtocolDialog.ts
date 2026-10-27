@@ -4,13 +4,14 @@
 
 import fs from 'fs';
 
-import {dialog, shell} from 'electron';
+import {dialog} from 'electron';
 
 import buildConfig from 'common/config/buildConfig';
 import {Logger} from 'common/log';
 import {parseURL} from 'common/utils/url';
 import * as Validator from 'common/Validator';
 import {localizeMessage} from 'main/i18nManager';
+import {openExternalSafely} from 'main/utils';
 
 import MainWindow from '../../app/mainWindow/mainWindow';
 import {allowedProtocolFile} from '../constants';
@@ -75,7 +76,7 @@ export class AllowProtocolDialog {
 
         try {
             if (this.allowedProtocols.indexOf(protocol) !== -1) {
-                await shell.openExternal(url);
+                await openExternalSafely(url);
                 return;
             }
             const mainWindow = MainWindow.get();
@@ -106,11 +107,11 @@ export class AllowProtocolDialog {
                     }
                 }
                 fs.writeFile(allowedProtocolFile, JSON.stringify(this.allowedProtocols), handleError);
-                await shell.openExternal(url);
+                await openExternalSafely(url);
                 break;
             }
             case 0:
-                await shell.openExternal(url);
+                await openExternalSafely(url);
                 break;
             }
         } catch (error) {
