@@ -644,7 +644,6 @@ jobs:
       always() && !cancelled()
       && needs.prepare-matrix.outputs.tsio-composite-identity != ''
       && fromJson(needs.prepare-matrix.outputs.tsio-composite-identity).name == 'desktop-master'
-      && needs.tsio-summary.result != 'success'
     permissions:
       contents: read
       # Master alerts name the merged PR for the head commit (best-effort lookup).

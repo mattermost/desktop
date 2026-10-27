@@ -78,6 +78,19 @@ describe('foldCmtVerdicts', () => {
         assert.equal(fold.state, 'yellow');
     });
 
+    it('never goes green when an upstream CI job failed, even if triage cleared every lane', () => {
+        const fold = foldCmtVerdicts({lanes: clearedLinux, expectedLanes: linuxLanes, expectTriage: true, upstreamJobsSucceeded: false, stats: {passed: 807, failed: 5, skipped: 12}});
+        assert.equal(fold.state, 'yellow');
+        assert.equal(fold.commitStatusState, 'error');
+    });
+
+    it('still goes red when a lane blocks, even if an upstream CI job also failed', () => {
+        const lanes = [...clearedLinux.slice(1), {platform: 'linux', serverVersion: '10.11.25', verdict: 'FAILURE', blocking: '2', exonerated: '1'}];
+        const fold = foldCmtVerdicts({lanes, expectedLanes: linuxLanes, expectTriage: true, upstreamJobsSucceeded: false, stats: {passed: 807, failed: 5, skipped: 12}});
+        assert.equal(fold.state, 'red');
+        assert.equal(fold.commitStatusState, 'failure');
+    });
+
     it('is yellow when triage was expected but the matrix produced no lanes', () => {
         const fold = foldCmtVerdicts({lanes: [], expectedLanes: [], expectTriage: true, stats: {passed: 0, failed: 5}});
         assert.equal(fold.state, 'yellow');
@@ -117,6 +130,11 @@ describe('foldMasterTriage', () => {
         assert.equal(foldMasterTriage({lanes: [lane('linux', 'SUCCESS')], legs: [], upstreamJobsSucceeded: false, overallFailed: true}).verdict, 'inconclusive');
         assert.equal(foldMasterTriage({lanes: [], legs: [], overallFailed: true, noLegs: true}).verdict, 'inconclusive');
         assert.equal(foldMasterTriage({lanes: [], legs: [], overallFailed: false}).verdict, 'cleared');
+    });
+
+    it('is inconclusive when a failed run has no leg triage positively cleared', () => {
+        assert.equal(foldMasterTriage({lanes: [lane('linux', 'SUCCESS')], legs: [], overallFailed: true}).verdict, 'inconclusive');
+        assert.equal(foldMasterTriage({lanes: [lane('linux', 'SUCCESS')], legs: [leg('linux', {status: 'missing', failed: 0})], overallFailed: true}).verdict, 'inconclusive');
     });
 });
 

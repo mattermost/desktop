@@ -231,10 +231,12 @@ describe('e2e-functional.yml status jobs', () => {
         assert.match(triage, /id: triage/);
         assert.match(triage, /name: e2e-triage-verdict-/);
 
-        // The verdict job runs only for master runs the summary did not pass.
+        // The verdict job judges every master run: notifyCmtChannel stays
+        // silent on green, and missing/empty legs still alert even when the
+        // summary itself succeeded.
         const verdict = jobLines(yml, 'master-e2e-verdict').join('\n');
         assert.match(verdict, /fromJson\(needs\.prepare-matrix\.outputs\.tsio-composite-identity\)\.name == 'desktop-master'/);
-        assert.match(verdict, /needs\.tsio-summary\.result != 'success'/);
+        assert.doesNotMatch(verdict, /needs\.tsio-summary\.result/);
         assert.match(verdict, /pattern: e2e-triage-verdict-\*/);
         assert.match(verdict, /notifyCmtChannel/);
         assert.match(verdict, /triageLanes/);

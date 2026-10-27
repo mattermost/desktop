@@ -173,6 +173,17 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
         };
     }
 
+    if (!upstreamJobsSucceeded) {
+        return {
+            ...result,
+            state: 'yellow',
+            kind: 'untriaged-upstream-failure',
+            commitStatusState: 'error',
+            statusDescription: 'CI job failed outside tracked tests; triage cannot clear it',
+            note: 'A CI job failed outside tracked tests (install/build/teardown); triage cannot clear that.',
+        };
+    }
+
     const flaky = failed > 0 || result.clearedCount > 0;
     return {
         ...result,
@@ -237,7 +248,9 @@ function foldMasterTriage({lanes = [], legs = [], missingLegs = [], upstreamJobs
     let verdict = 'cleared';
     if (blockingLegs.length > 0) {
         verdict = 'blocking';
-    } else if (unknownLegs.length > 0 || noLegs || (overallFailed && !upstreamJobsSucceeded)) {
+    } else if (unknownLegs.length > 0 || noLegs || (overallFailed && !upstreamJobsSucceeded) || (overallFailed && clearedLegs.length === 0)) {
+        // A failed run is cleared only on positive evidence: triage must
+        // have cleared at least one failing leg.
         verdict = 'inconclusive';
     }
     return {verdict, clearedLegs, blockingLegs, unknownLegs};
