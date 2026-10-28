@@ -187,7 +187,8 @@ export class PreAuthManager {
         if (!mainWindow) {
             return;
         }
-        const serverId = WebContentsManager.getViewByWebContentsId(webContents.id)?.serverId ?? ServerManager.lookupServerByURL(request.url)?.id;
+        const viewServerId = webContents ? WebContentsManager.getViewByWebContentsId(webContents.id)?.serverId : undefined;
+        const serverId = viewServerId ?? ServerManager.lookupServerByURL(request.url)?.id;
         const serverUrl = serverId ? ServerManager.getServer(serverId)?.url.toString() : request.url;
         const modalKey = authInfo.isProxy ? `${ModalConstants.PROXY_LOGIN_MODAL}-${authInfo.host}` : `${ModalConstants.LOGIN_MODAL}-${serverUrl}`;
         const modalPromise = ModalManager.addModal<LoginModalData, {username: string; password: string}>(
