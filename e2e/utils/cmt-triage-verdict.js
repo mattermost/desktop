@@ -349,14 +349,21 @@ function formatLeg(leg) {
     return `${emoji} ${name} ${leg.serverVersion}`;
 }
 
-// A test by its id when its title starts with one (MM-T4054), else its title, cut short.
-// Two tests of one file with the same leaf title are named by their full titles.
-function testName(t, shared) {
-    if (shared.has(`${t.file}\n${t.title}`)) {
-        return `\`${t.fullTitle.slice(0, 60)}\``;
-    }
-    const id = (/^(MM-T\d+(?:_\d+)?)\b/).exec(t.title)?.[1];
-    return `\`${id || (t.title.length > 40 ? `${t.title.slice(0, 39)}…` : t.title)}\``;
+// Each test by its id when its title starts with one (MM-T4054), else its title, cut short; two tests of one
+// file with the same leaf title by their full titles. A name that would read like another test's is spelled
+// out: the full title, then the file too.
+function testNames(tests) {
+    const shared = sharedTitles(tests);
+    const cut = (text, max) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
+    const short = (t) => {
+        if (shared.has(`${t.file}\n${t.title}`)) {
+            return cut(t.fullTitle, 60);
+        }
+        return (/^(MM-T\d+(?:_\d+)?)\b/).exec(t.title)?.[1] || cut(t.title, 40);
+    };
+    const apart = (names, longer) => names.map((n, i) => (names.filter((m) => m === n).length > 1 ? longer(tests[i]) : n));
+    const names = apart(apart(tests.map(short), (t) => t.fullTitle), (t) => `${t.file} > ${t.fullTitle}`);
+    return new Map(tests.map((t, i) => [t, `\`${names[i]}\``]));
 }
 
 function sharedTitles(tests) {
@@ -398,7 +405,7 @@ function formatCmtVerdictMessage({fold, compositeIdentity, stats = {}, reportUrl
     const name = `**Desktop CMT**${branch ? ` \`${branch}\`` : ''}`;
 
     const tests = fold.tests || [];
-    const shared = sharedTitles(tests);
+    const names = testNames(tests);
     const lanes = (t) => `${t.lanes}/${fold.laneCount || t.lanes} lane${(fold.laneCount || t.lanes) === 1 ? '' : 's'}`;
     const appBugs = tests.filter((t) => t.blocking && t.label === 'app bug');
     const toCheck = tests.filter((t) => t.blocking && t.label !== 'app bug');
@@ -425,13 +432,13 @@ function formatCmtVerdictMessage({fold, compositeIdentity, stats = {}, reportUrl
 
     const lines = [headline];
     if (appBugs.length) {
-        lines.push(`🐞 **App bug:** ${listOf(appBugs, (t) => `${testName(t, shared)} ${lanes(t)}`)}`);
+        lines.push(`🐞 **App bug:** ${listOf(appBugs, (t) => `${names.get(t)} ${lanes(t)}`)}`);
     }
     if (toCheck.length) {
-        lines.push(`🔎 **Check:** ${listOf(toCheck, (t) => `${testName(t, shared)} ${t.label}, ${lanes(t)}`)}`);
+        lines.push(`🔎 **Check:** ${listOf(toCheck, (t) => `${names.get(t)} ${t.label}, ${lanes(t)}`)}`);
     }
     if (notBugs.length) {
-        lines.push(`✅ **Not bugs:** ${listOf(notBugs, (t) => `${testName(t, shared)} ${t.label}`)}`);
+        lines.push(`✅ **Not bugs:** ${listOf(notBugs, (t) => `${names.get(t)} ${t.label}`)}`);
     } else if (fold.kind === 'flaky' && fold.clearedCount > 0) {
         lines.push(`✅ **Not bugs:** ${count(fold.clearedCount, 'failure', 'failures')} cleared by triage`);
     }

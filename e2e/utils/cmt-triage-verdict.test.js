@@ -348,6 +348,22 @@ describe('per-test CMT message', () => {
         assert.match(text, /`SSO MM-T2633 back button/);
     });
 
+    it('spells out names that would read alike when shortened', () => {
+        const checkLine = (findings) => {
+            const one = [{platform: 'linux', serverVersion: '12.0.1', verdict: 'FAILURE', blocking: String(findings.length), findingsRecorded: true, findings}];
+            const fold = foldCmtVerdicts({lanes: one, expectedLanes: [{platform: 'linux', server: '12.0.1'}], expectTriage: true, stats});
+            return formatCmtVerdictMessage({fold, compositeIdentity: identity, stats, ...links}).split('\n').find((l) => l.startsWith('🔎'));
+        };
+        const long = (file, end) => ({title: `Opening a channel from the sidebar keeps the ${end}`, file, label: 'needs investigation', blocking: true});
+        const longs = checkLine([long('e2e/specs/a.test.ts', 'draft'), long('e2e/specs/b.test.ts', 'scroll position')]);
+        assert.match(longs, /`Opening a channel from the sidebar keeps the draft`/);
+        assert.match(longs, /`Opening a channel from the sidebar keeps the scroll position`/);
+        const sameId = (file) => ({...T2633, file, full_title: `${file.split('/').pop()} > ${T2633.title}`});
+        const ids = checkLine([sameId('e2e/specs/login/a.test.ts'), sameId('e2e/specs/login/b.test.ts')]);
+        assert.match(ids, /`a\.test\.ts > MM-T2633 back button returns to login after mock SSO navigation`/);
+        assert.match(ids, /`b\.test\.ts > MM-T2633 back button returns to login after mock SSO navigation`/);
+    });
+
     it('never names a test bug for a run whose jobs died before any test ran (run 40648275037)', () => {
         const fold = foldCmtVerdicts({lanes: [], expectedLanes: matrix, expectTriage: true, stats: {}, upstreamJobsSucceeded: false});
         const text = formatCmtVerdictMessage({fold, compositeIdentity: identity, stats: {}, ...links});
