@@ -21,6 +21,7 @@ const TopBar = ({children, title, openMenu, openPopoutMenu}: Props) => {
     const {config} = useConfig();
     const [fullScreen, setFullScreen] = useState(false);
     const [threeDotsIsFocused, setThreeDotsIsFocused] = useState(false);
+    const [titlebarAreaRect, setTitlebarAreaRect] = useState(window.navigator.windowControlsOverlay?.getTitlebarAreaRect());
     const topBar = useRef<HTMLDivElement>(null);
     const threeDotMenu = useRef<HTMLButtonElement>(null);
 
@@ -52,13 +53,18 @@ const TopBar = ({children, title, openMenu, openPopoutMenu}: Props) => {
         }
     }, []);
 
+    useEffect(() => {
+        const handleGeometryChange = () => setTitlebarAreaRect(window.navigator.windowControlsOverlay?.getTitlebarAreaRect());
+        window.navigator.windowControlsOverlay?.addEventListener('geometrychange', handleGeometryChange);
+        return () => window.navigator.windowControlsOverlay?.removeEventListener('geometrychange', handleGeometryChange);
+    }, []);
+
     const topBarClassName = classNames('topBar', {
         macOS: window.process.platform === 'darwin',
         fullScreen,
     });
 
     const showWindowControlsSpacers = window.process.platform !== 'darwin' && !fullScreen && (window.process.platform !== 'linux' || !config?.useNativeTitleBar);
-    const titlebarAreaRect = window.navigator.windowControlsOverlay?.getTitlebarAreaRect();
 
     return (
         <div

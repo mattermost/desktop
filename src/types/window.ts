@@ -193,6 +193,8 @@ declare global {
     interface Navigator {
         windowControlsOverlay?: {
             getTitlebarAreaRect: () => DOMRect;
+            addEventListener: (type: 'geometrychange', listener: () => void) => void;
+            removeEventListener: (type: 'geometrychange', listener: () => void) => void;
         };
     }
 }
