@@ -301,6 +301,23 @@ describe('per-test CMT message', () => {
         assert.deepEqual([fold.tests[0].label, fold.tests[0].explanation], ['needs investigation', null], 'not the test-bug explanation under a needs-investigation label');
     });
 
+    it('keeps the tests of a lane triage could not settle out of the blocking list, and names the lane', () => {
+        const unsettled = lanes.map((l) => (l.platform === 'macos' && l.serverVersion === '11.7.14' ? {...l, verdict: 'ACTION_REQUIRED', findings: [{...T5611, label: 'needs investigation', blocking: true}]} : l));
+        const fold = foldCmtVerdicts({lanes: unsettled, expectedLanes: matrix, expectTriage: true, stats});
+        const text = formatCmtVerdictMessage({fold, compositeIdentity: identity, stats, ...links});
+        assert.ok(!fold.tests.some((t) => t.title === T5611.title && t.blocking), 'the unsettled lane adds no blocking test');
+        assert.match(text, /^Could not settle: 🍎 macOS Server `11\.7\.14` \(triage needs investigation\)$/m);
+    });
+
+    it('names two tests of one file with the same leaf title by their full titles', () => {
+        const suite = (name) => ({...T2633, full_title: `${name} ${T2633.title}`});
+        const twin = [{platform: 'linux', serverVersion: '12.0.1', verdict: 'FAILURE', blocking: '2', findingsRecorded: true, findings: [suite('Login'), suite('SSO')]}];
+        const fold = foldCmtVerdicts({lanes: twin, expectedLanes: [{platform: 'linux', server: '12.0.1'}], expectTriage: true, stats});
+        const text = formatCmtVerdictMessage({fold, compositeIdentity: identity, stats, ...links});
+        assert.match(text, /^• `Login MM-T2633 back button/m);
+        assert.match(text, /^• `SSO MM-T2633 back button/m);
+    });
+
     it('never names a test bug for a run whose jobs died before any test ran (run 40648275037)', () => {
         const fold = foldCmtVerdicts({lanes: [], expectedLanes: matrix, expectTriage: true, stats: {}, upstreamJobsSucceeded: false});
         const text = formatCmtVerdictMessage({fold, compositeIdentity: identity, stats: {}, ...links});
