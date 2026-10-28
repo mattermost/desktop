@@ -141,12 +141,16 @@ export class ServerHub {
             return;
         }
 
+        ServerManager.updateCurrentServer(id);
         const modalPromise = ModalManager.addModal<UniqueServerWithPermissions, {server: Server; permissions: Permissions}>(
-            ModalConstants.EDIT_SERVER_MODAL,
+            `${ModalConstants.EDIT_SERVER_MODAL}-${id}`,
             'mattermost-desktop://renderer/editServer.html',
             getLocalPreload('internalAPI.js'),
             {server: server.toUniqueServer(), permissions: PermissionsManager.getForServer(server) ?? {}},
-            mainWindow);
+            mainWindow,
+            false,
+            id,
+        );
 
         modalPromise.then(async (data) => {
             if (!server.isPredefined) {
@@ -173,12 +177,15 @@ export class ServerHub {
             return;
         }
 
+        ServerManager.updateCurrentServer(id);
         const modalPromise = ModalManager.addModal<null, boolean>(
-            ModalConstants.REMOVE_SERVER_MODAL,
+            `${ModalConstants.REMOVE_SERVER_MODAL}-${id}`,
             'mattermost-desktop://renderer/removeServer.html',
             getLocalPreload('internalAPI.js'),
             null,
             mainWindow,
+            false,
+            id,
         );
 
         modalPromise.then(async (remove) => {

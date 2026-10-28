@@ -143,5 +143,12 @@ describe('main/views/modalView', () => {
             modalView.hide();
             expect(mockContextMenu.dispose).toHaveBeenCalled();
         });
+
+        it('should destroy web contents on hide when suspended', () => {
+            delete modalView.windowAttached;
+            modalView.hide();
+            expect(modalView.view.webContents.close).toBeCalled();
+            expect(window.contentView.removeChildView).not.toBeCalled();
+        });
     });
 });

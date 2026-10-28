@@ -131,6 +131,7 @@ jest.mock('app/views/webContentsManager', () => ({
 
 jest.mock('common/servers/serverManager', () => ({
     getServer: jest.fn(),
+    updateCurrentServer: jest.fn(),
 }));
 
 jest.mock('main/security/permissionsManager', () => ({
@@ -753,6 +754,48 @@ describe('main/notifications', () => {
             const firstNotification = mentions[0];
             await NotificationManager.displayUpgrade('1.1.0', jest.fn());
             expect(firstNotification.value.close).toHaveBeenCalled();
+        });
+    });
+
+    describe('displayServerModal', () => {
+        beforeEach(() => {
+            Notification.isSupported.mockImplementation(() => true);
+            getFocusAssist.mockReturnValue({value: 0, name: ''});
+            getDarwinDoNotDisturb.mockReturnValue(Promise.resolve(false));
+            ServerManager.getServer.mockReturnValue({id: 'server-1', name: 'Server 1'} as any);
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+            mentions.length = 0;
+        });
+
+        it('should not show notification when Notification is not supported', async () => {
+            Notification.isSupported.mockImplementation(() => false);
+            await NotificationManager.displayServerModal('server-1');
+            expect(mockNotificationConstruct).not.toHaveBeenCalled();
+        });
+
+        it('should not show notification when DND is active', async () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {value: 'darwin'});
+            getDarwinDoNotDisturb.mockReturnValue(Promise.resolve(true));
+            await NotificationManager.displayServerModal('server-1');
+            expect(mockNotificationConstruct).not.toHaveBeenCalled();
+            Object.defineProperty(process, 'platform', {value: originalPlatform});
+        });
+
+        it('should not show notification when the server does not exist', async () => {
+            ServerManager.getServer.mockReturnValue(undefined);
+            await NotificationManager.displayServerModal('server-1');
+            expect(mockNotificationConstruct).not.toHaveBeenCalled();
+        });
+
+        it('should show the window and switch to the server when clicked', async () => {
+            await NotificationManager.displayServerModal('server-1');
+            mentions[0].value.callbackMap.get('click')?.();
+            expect(MainWindow.show).toHaveBeenCalled();
+            expect(ServerManager.updateCurrentServer).toHaveBeenCalledWith('server-1');
         });
     });
 

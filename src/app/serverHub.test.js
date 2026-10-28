@@ -33,6 +33,7 @@ jest.mock('electron', () => ({
 }));
 
 jest.mock('common/servers/serverManager', () => ({
+    updateCurrentServer: jest.fn(),
     setViewIsOpen: jest.fn(),
     getAllServers: jest.fn(),
     hasServers: jest.fn(),
@@ -178,6 +179,15 @@ describe('app/serverViewState', () => {
             expect(ModalManager.addModal).not.toBeCalled();
         });
 
+        it('should switch to the server and scope the modal to it', () => {
+            ModalManager.addModal.mockReturnValue(new Promise(() => {}));
+
+            serverViewState.showEditServerModal(null, 'server-1');
+
+            expect(ServerManager.updateCurrentServer).toBeCalledWith('server-1');
+            expect(ModalManager.addModal).toBeCalledWith('editServer-server-1', expect.any(String), expect.any(String), expect.any(Object), expect.any(Object), false, 'server-1');
+        });
+
         it('should edit the existing server', async () => {
             const promise = Promise.resolve({server: {
                 name: 'updated-server',
@@ -246,6 +256,15 @@ describe('app/serverViewState', () => {
                 serversCopy = serversCopy.filter((s) => s.id !== id);
             });
             ServerManager.getOrderedServers.mockReturnValue(serversCopy);
+        });
+
+        it('should switch to the server and scope the modal to it', () => {
+            ModalManager.addModal.mockReturnValue(new Promise(() => {}));
+
+            serverViewState.showRemoveServerModal(null, 'server-1');
+
+            expect(ServerManager.updateCurrentServer).toBeCalledWith('server-1');
+            expect(ModalManager.addModal).toBeCalledWith('removeServer-server-1', expect.any(String), expect.any(String), null, expect.any(Object), false, 'server-1');
         });
 
         it('should remove the existing server', async () => {

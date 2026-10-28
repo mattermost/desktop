@@ -20,6 +20,7 @@ const log = new Logger('AppState');
 
 export class AppState extends EventEmitter {
     private expired: Map<string, boolean>;
+    private pendingModals: Map<string, boolean>;
     private mentions: Map<string, number>;
     private unreads: Map<string, boolean>;
 
@@ -30,6 +31,7 @@ export class AppState extends EventEmitter {
         super();
 
         this.expired = new Map();
+        this.pendingModals = new Map();
         this.mentions = new Map();
         this.unreads = new Map();
 
@@ -48,6 +50,7 @@ export class AppState extends EventEmitter {
 
     private handleServerRemoved = (server: MattermostServer) => {
         this.expired.delete(server.id);
+        this.pendingModals.delete(server.id);
         this.mentionsPerServer.delete(server.id);
         this.unreadsPerServer.delete(server.id);
         this.emitStatusForServer(server.id);
@@ -55,6 +58,10 @@ export class AppState extends EventEmitter {
 
     getExpired = () => {
         return this.expired;
+    };
+
+    getPendingModals = () => {
+        return this.pendingModals;
     };
 
     getMentionsPerServer = () => {
@@ -69,6 +76,13 @@ export class AppState extends EventEmitter {
         ServerManager.getServerLog(serverId, 'AppState').silly('updateExpired', expired);
 
         this.expired.set(serverId, expired);
+        this.emitStatusForServer(serverId);
+    };
+
+    updatePendingModal = (serverId: string, hasPendingModal: boolean) => {
+        ServerManager.getServerLog(serverId, 'AppState').silly('updatePendingModal', hasPendingModal);
+
+        this.pendingModals.set(serverId, hasPendingModal);
         this.emitStatusForServer(serverId);
     };
 
@@ -150,6 +164,7 @@ export class AppState extends EventEmitter {
             this.expired.get(serverId) || false,
             this.mentionsPerServer.get(serverId) || 0,
             this.unreadsPerServer.get(serverId) || false,
+            this.pendingModals.get(serverId) || false,
         );
 
         this.emitStatus();

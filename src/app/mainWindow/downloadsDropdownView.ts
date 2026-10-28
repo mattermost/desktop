@@ -5,9 +5,11 @@ import type {IpcMainEvent} from 'electron';
 import {WebContentsView, ipcMain} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
+import ModalManager from 'app/mainWindow/modals/modalManager';
 import {
     CLOSE_DOWNLOADS_DROPDOWN,
     EMIT_CONFIGURATION,
+    MODAL_OPEN,
     OPEN_DOWNLOADS_DROPDOWN,
     RECEIVE_DOWNLOADS_DROPDOWN_SIZE,
     REQUEST_CLEAR_DOWNLOADS_DROPDOWN,
@@ -47,6 +49,7 @@ export class DownloadsDropdownView {
         ipcMain.on(DOWNLOADS_DROPDOWN_OPEN_FILE, this.openFile);
         ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN, this.updateDownloadsDropdown);
         ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN_MENU_ITEM, this.updateDownloadsDropdownMenuItem);
+        ModalManager.on(MODAL_OPEN, this.handleModalOpen);
     }
 
     init = () => {
@@ -112,6 +115,12 @@ export class DownloadsDropdownView {
         this.view?.setBounds(this.getBounds(this.windowBounds?.width ?? 0, 0, 0));
         downloadsManager.onClose();
         MainWindow.sendToRenderer(CLOSE_DOWNLOADS_DROPDOWN);
+    };
+
+    private handleModalOpen = (isServerModal: boolean) => {
+        if (isServerModal && downloadsManager.getIsOpen() && this.view) {
+            MainWindow.get()?.contentView.addChildView(this.view);
+        }
     };
 
     private clearDownloads = () => {

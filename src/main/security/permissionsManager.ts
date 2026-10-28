@@ -31,6 +31,7 @@ import {Logger} from 'common/log';
 import type {MattermostServer} from 'common/servers/MattermostServer';
 import {isTrustedURL, parseURL} from 'common/utils/url';
 import {t} from 'common/utils/util';
+import ViewManager from 'common/views/viewManager';
 import {permissionsJson} from 'main/constants';
 import {localizeMessage} from 'main/i18nManager';
 
@@ -143,14 +144,19 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
         }
 
         let serverURL: URL | undefined;
+        let serverId: string | undefined;
         if (CallsWidgetWindow.isCallsWidget(webContentsId)) {
             serverURL = CallsWidgetWindow.getViewURL();
+            if (CallsWidgetWindow.mainViewId) {
+                serverId = ViewManager.getView(CallsWidgetWindow.mainViewId)?.serverId;
+            }
         } else {
             const view = WebContentsManager.getViewByWebContentsId(webContentsId);
             if (!view) {
                 return false;
             }
             serverURL = WebContentsManager.getServerURLByViewId(view.id);
+            serverId = view.serverId;
         }
 
         if (!serverURL) {
@@ -218,7 +224,7 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
                     ],
                     defaultId: 2,
                     cancelId: 0,
-                }).then(({response}) => {
+                }, serverId).then(({response}) => {
                     // Save their response
                     const newPermission = {
                         allowed: response === 2,

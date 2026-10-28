@@ -22,7 +22,7 @@ export class MessageModal {
         MainWindow.on(MAIN_WINDOW_CLOSE_CONFIRM, this.handleCloseConfirm);
     }
 
-    showMessageModal = (options: MessageModalInfo): Promise<MessageModalResult> => {
+    showMessageModal = (options: MessageModalInfo, serverId?: string): Promise<MessageModalResult> => {
         const mainWindow = MainWindow.get();
         const fallback = {response: options.cancelId ?? 0, checkboxChecked: Boolean(options.checkboxChecked)};
         if (!mainWindow) {
@@ -36,8 +36,10 @@ export class MessageModal {
             getLocalPreload('internalAPI.js'),
             options,
             mainWindow,
+            false,
+            serverId,
         );
-        return modalPromise ?? Promise.resolve(fallback);
+        return modalPromise.catch(() => fallback);
     };
 
     showErrorModal = (title: string, message: string): void => {
