@@ -51,14 +51,18 @@ function labelRank(label) {
     return i === -1 ? LABEL_ORDER.indexOf('needs investigation') : i;
 }
 
+// Windows reports name a spec with backslashes; one test is one test on every OS.
+const unixPath = (file) => file.replace(/\\/g, '/');
+
 function normalizeFinding(row) {
     if (!row || typeof row.title !== 'string' || typeof row.file !== 'string' || typeof row.label !== 'string') {
         return null;
     }
+    const [spec, ...rest] = (typeof row.full_title === 'string' && row.full_title ? row.full_title : row.title).split(' > ');
     return {
         title: row.title,
-        fullTitle: typeof row.full_title === 'string' && row.full_title ? row.full_title : row.title,
-        file: row.file,
+        fullTitle: [unixPath(spec), ...rest].join(' > '),
+        file: unixPath(row.file),
         label: row.label,
         blocking: row.blocking === true,
         explanation: typeof row.explanation === 'string' && row.explanation ? row.explanation : null,
@@ -208,7 +212,12 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
             result.clearedLegs.push({...leg, exonerated: record.exonerated});
             result.clearedCount += record.exonerated;
         } else if (record.verdict === 'FAILURE') {
-            result.blockingLegs.push({...leg, blocking: record.blocking, testsNamed: record.findingsRecorded && record.findings.some((f) => f.blocking)});
+            result.blockingLegs.push({
+                ...leg,
+                blocking: record.blocking,
+                testsNamed: record.findingsRecorded && record.findings.some((f) => f.blocking),
+                incomplete: (/results incomplete|report\(s\) missing|did not run/).test(record.description),
+            });
             result.blockingCount += record.blocking;
         } else {
             result.unknownLegs.push({...leg, reason: 'triage needs investigation'});
@@ -217,13 +226,21 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
     result.tests = groupTests(recorded);
 
     if (result.blockingLegs.length > 0) {
-        const blocking = result.blockingCount > 0 ? `${result.blockingCount} blocking failure${result.blockingCount === 1 ? '' : 's'}` : 'Blocking failures';
+        // Held tests are counted once across lanes; a lane that names none is counted by its own number.
+        const held = result.tests.filter((t) => t.blocking);
+        const appBugs = held.filter((t) => t.label === 'app bug').length;
+        let summary = result.blockingCount > 0 ? `${result.blockingCount} blocking failure${result.blockingCount === 1 ? '' : 's'} after triage — needs investigation` : 'Blocking failures after triage — needs investigation';
+        if (appBugs) {
+            summary = `${appBugs} likely app bug${appBugs === 1 ? '' : 's'}`;
+        } else if (held.length) {
+            summary = `${held.length} test${held.length === 1 ? ' needs' : 's need'} a look`;
+        }
         return {
             ...result,
             state: 'red',
             kind: 'blocking',
             commitStatusState: 'failure',
-            statusDescription: `${blocking} after triage — needs investigation · ${countsLine}`,
+            statusDescription: `${summary} · ${countsLine}`,
         };
     }
 
@@ -323,17 +340,17 @@ function foldMasterTriage({lanes = [], legs = [], missingLegs = [], upstreamJobs
 function formatLeg(leg) {
     const emoji = PLATFORM_EMOJI[leg.platform] || PLATFORM_EMOJI.unknown;
     const name = PLATFORM_LABEL[leg.platform] || PLATFORM_LABEL.unknown;
-    return `${emoji} ${name} Server \`${leg.serverVersion}\``;
+    return `${emoji} ${name} ${leg.serverVersion}`;
 }
 
 // A test by its id when its title starts with one (MM-T4054), else its title, cut short.
 // Two tests of one file with the same leaf title are named by their full titles.
 function testName(t, shared) {
     if (shared.has(`${t.file}\n${t.title}`)) {
-        return `\`${t.fullTitle.slice(0, 80)}\``;
+        return `\`${t.fullTitle.slice(0, 60)}\``;
     }
     const id = (/^(MM-T\d+(?:_\d+)?)\b/).exec(t.title)?.[1];
-    return `\`${id || t.title.slice(0, 50)}\``;
+    return `\`${id || (t.title.length > 40 ? `${t.title.slice(0, 39)}…` : t.title)}\``;
 }
 
 function sharedTitles(tests) {
@@ -349,23 +366,17 @@ function sharedTitles(tests) {
     return shared;
 }
 
-function formatTestLines(tests, laneCount, shared) {
-    const spec = (file) => file.split('/').pop().replace(/\.(test|spec)\.[jt]s$/, '');
-    const lines = tests.slice(0, 5).map((t) =>
-        `• ${testName(t, shared)} ${spec(t.file)}: ${t.label}, failed in ${t.lanes}${laneCount ? `/${laneCount}` : ''} lane${(laneCount || t.lanes) === 1 ? '' : 's'}${t.explanation ? ` · ${t.explanation}` : ''}`);
-    if (tests.length > 5) {
-        lines.push(`…and ${tests.length - 5} more`);
-    }
-    return lines;
+// The first three, then how many more.
+function listOf(items, render) {
+    const shown = items.slice(0, 3).map(render).join(' · ');
+    return items.length > 3 ? `${shown} · +${items.length - 3} more` : shown;
 }
 
-function formatLegList(legs, render) {
-    const shown = legs.slice(0, 5).map(render).join('; ');
-    return legs.length > 5 ? `${shown}; …and ${legs.length - 5} more` : shown;
-}
+const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
 /**
- * Short channel message for the folded CMT verdict — no per-leg table.
+ * The channel message: is it a bug or not, in a few lines. Each test once, with its label;
+ * the reasons are in the run.
  *
  * @param {Object} params
  * @param {Object} params.fold - result of foldCmtVerdicts
@@ -378,72 +389,61 @@ function formatLegList(legs, render) {
 function formatCmtVerdictMessage({fold, compositeIdentity, stats = {}, reportUrl, runUrl}) {
     const {passed, failed, skipped} = displayTotals(stats);
     const branch = (compositeIdentity?.branch || '').replace(/^refs\/(heads|tags)\//, '');
-    const shortSha = (compositeIdentity?.commit_sha || '').slice(0, 7);
+    const name = `**Desktop CMT**${branch ? ` \`${branch}\`` : ''}`;
 
     const tests = fold.tests || [];
     const shared = sharedTitles(tests);
-    const blockingTests = tests.filter((t) => t.blocking);
-    const clearedTests = tests.filter((t) => !t.blocking);
-    const titles = {
-        passed: ':green_circle: **Desktop CMT — passed**',
-        flaky: clearedTests.some((t) => t.label !== 'flaky') ? ':green_circle: **Desktop CMT — no app bug found**' : ':green_circle: **Desktop CMT — flaky, no bug found**',
-        blocking: blockingTests.some((t) => t.label === 'app bug') ? ':red_circle: **Desktop CMT — app bug likely**' : ':red_circle: **Desktop CMT — needs investigation**',
-    };
-    const title = titles[fold.kind] || ':yellow_circle: **Desktop CMT — needs investigation**';
+    const lanes = (t) => `${t.lanes}/${fold.laneCount || t.lanes} lane${(fold.laneCount || t.lanes) === 1 ? '' : 's'}`;
+    const appBugs = tests.filter((t) => t.blocking && t.label === 'app bug');
+    const toCheck = tests.filter((t) => t.blocking && t.label !== 'app bug');
+    const notBugs = tests.filter((t) => !t.blocking);
+    const unnamed = fold.kind === 'blocking' ? fold.blockingLegs.filter((leg) => !leg.testsNamed) : [];
+    const incomplete = unnamed.filter((leg) => leg.incomplete);
+    const redUnnamed = unnamed.filter((leg) => !leg.incomplete);
 
-    const lines = [title];
-    const meta = [
-        branch ? `Branch: \`${branch}\`` : '',
-        shortSha ? `Commit: \`${shortSha}\`` : '',
-    ].filter(Boolean).join(' · ');
-    if (meta) {
-        lines.push(meta);
-    }
-
-    if (fold.kind === 'blocking' && blockingTests.length) {
-        lines.push(...formatTestLines(blockingTests, fold.laneCount, shared));
-
-        // A red lane whose findings were unread, or that is red only for a shard that never reported, names no test.
-        const unnamed = fold.blockingLegs.filter((leg) => !leg.testsNamed);
-        if (unnamed.length) {
-            lines.push(`Also blocking, no test named: ${formatLegList(unnamed, (leg) => `${formatLeg(leg)}${leg.blocking > 0 ? ` — ${leg.blocking} blocking` : ''}`)}`);
-        }
-        if (clearedTests.length) {
-            lines.push(`Not app bugs: ${formatLegList(clearedTests, (t) => `${testName(t, shared)} (${t.label})`)}`);
-        }
-    } else if (fold.kind === 'blocking') {
-        const legs = formatLegList(fold.blockingLegs, (leg) =>
-            `${formatLeg(leg)}${leg.blocking > 0 ? ` — ${leg.blocking} blocking` : ''}`);
-        lines.push(`Blocking after triage: ${legs}`);
-    } else if (fold.kind === 'flaky' && clearedTests.length) {
-        lines.push(...formatTestLines(clearedTests, fold.laneCount, shared));
+    let headline = `:yellow_circle: ${name} — couldn't tell`;
+    if (fold.kind === 'blocking') {
+        const held = [
+            appBugs.length ? count(appBugs.length, 'likely app bug', 'likely app bugs') : '',
+            toCheck.length ? count(toCheck.length, 'test to check', 'tests to check') : '',
+        ].filter(Boolean).join(', ');
+        const red = incomplete.length && !redUnnamed.length ? 'results incomplete, re-run' : count(fold.blockingLegs.length, 'lane still red', 'lanes still red');
+        headline = `:red_circle: ${name} — ${held || red}`;
     } else if (fold.kind === 'flaky') {
-        const cleared = fold.clearedLegs.length;
-        const clearedCount = fold.clearedCount > 0 ? `, ${fold.clearedCount} cleared by triage` : '';
-        lines.push(`AI triage cleared every failing leg (${cleared} leg${cleared === 1 ? '' : 's'}${clearedCount}: flaky / failed in master / Infra failure)`);
-    } else if (fold.state === 'yellow') {
-        if (fold.unknownLegs.length > 0) {
-            const legs = formatLegList(fold.unknownLegs, (leg) => `${formatLeg(leg)} (${leg.reason})`);
-            lines.push(`AI triage could not settle: ${legs} — not counted as flaky or as a bug`);
-        } else if (fold.note) {
-            lines.push(fold.note);
-        }
+        headline = `:green_circle: ${name} — no bugs`;
+    } else if (fold.kind === 'passed') {
+        headline = `:green_circle: ${name} — passed`;
     }
 
-    // A red run can also have lanes triage could not settle: their tests are in none of the lines above.
-    if (fold.kind === 'blocking' && fold.unknownLegs.length) {
-        lines.push(`Could not settle: ${formatLegList(fold.unknownLegs, (leg) => `${formatLeg(leg)} (${leg.reason})`)}`);
+    const lines = [headline];
+    if (appBugs.length) {
+        lines.push(`🐞 **App bug:** ${listOf(appBugs, (t) => `${testName(t, shared)} ${lanes(t)}`)}`);
     }
-
-    lines.push(`**${passed} passed** · ${failed} failed · ${skipped} skipped`);
+    if (toCheck.length) {
+        lines.push(`🔎 **Check:** ${listOf(toCheck, (t) => `${testName(t, shared)} ${t.label}, ${lanes(t)}`)}`);
+    }
+    if (notBugs.length) {
+        lines.push(`✅ **Not bugs:** ${listOf(notBugs, (t) => `${testName(t, shared)} ${t.label}`)}`);
+    } else if (fold.kind === 'flaky' && fold.clearedCount > 0) {
+        lines.push(`✅ **Not bugs:** ${count(fold.clearedCount, 'failure', 'failures')} cleared by triage`);
+    }
+    if (incomplete.length) {
+        lines.push(`⚠️ Results incomplete on ${count(incomplete.length, 'lane', 'lanes')} — re-run`);
+    }
+    if (redUnnamed.length) {
+        lines.push(`⚠️ Red, no test named: ${listOf(redUnnamed, formatLeg)}`);
+    }
+    if (fold.unknownLegs.length) {
+        lines.push(`⚠️ Couldn't settle: ${listOf(fold.unknownLegs, formatLeg)}`);
+    } else if (fold.state === 'yellow' && fold.note) {
+        lines.push(`⚠️ ${fold.note}`);
+    }
 
     const links = [
-        reportUrl ? `[Full report](${reportUrl})` : '',
-        runUrl ? `[Workflow run](${runUrl})` : '',
-    ].filter(Boolean).join(' · ');
-    if (links) {
-        lines.push(`➡️ ${links}`);
-    }
+        reportUrl ? `[Report](${reportUrl})` : '',
+        runUrl ? `[Run](${runUrl})` : '',
+    ].filter(Boolean);
+    lines.push([`${passed} passed`, `${failed} failed`, `${skipped} skipped`, ...links].join(' · '));
 
     return lines.join('\n') + '\n';
 }

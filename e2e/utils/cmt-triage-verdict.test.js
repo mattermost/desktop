@@ -141,43 +141,41 @@ describe('foldMasterTriage', () => {
 describe('formatCmtVerdictMessage', () => {
     const links = {reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/v6.2.5-rc.1/a51f2e2/cmt-desktop', runUrl: 'https://github.com/mattermost/desktop/actions/runs/40460811152'};
 
-    it('renders the flaky-green message short, with no per-leg table', () => {
+    it('renders the flaky-green message in three lines', () => {
         const fold = foldCmtVerdicts({lanes: clearedLinux, expectedLanes: linuxLanes, expectTriage: true, stats: {passed: 807, failed: 5, skipped: 12}});
         const text = formatCmtVerdictMessage({fold, compositeIdentity: identity, stats: {passed: 807, failed: 5, skipped: 12}, ...links});
-        assert.match(text, /:green_circle: \*\*Desktop CMT — flaky, no bug found\*\*/);
-        assert.match(text, /Branch: `v6\.2\.5-rc\.1` · Commit: `a51f2e2`/);
-        assert.match(text, /AI triage cleared every failing leg \(5 legs, 15 cleared by triage: flaky \/ failed in master \/ Infra failure\)/);
-        assert.ok(!(/exonerated|broken on trunk/).test(text), 'uses the existing triage wording, no new jargon');
-        assert.match(text, /\*\*807 passed\*\* · 5 failed · 12 skipped/);
-        assert.match(text, /➡️ \[Full report\]\(https:\/\/test-io/);
-        assert.ok(!text.includes('| Platform'), 'no per-leg table');
-        assert.ok(text.trimEnd().split('\n').length <= 7, 'stays short');
+        assert.equal(text, [
+            ':green_circle: **Desktop CMT** `v6.2.5-rc.1` — no bugs',
+            '✅ **Not bugs:** 15 failures cleared by triage',
+            '807 passed · 5 failed · 12 skipped · [Report](https://test-io.test.mattermost.com/reports/desktop/v6.2.5-rc.1/a51f2e2/cmt-desktop) · [Run](https://github.com/mattermost/desktop/actions/runs/40460811152)',
+            '',
+        ].join('\n'));
     });
 
-    it('renders the red message naming only the blocking legs', () => {
+    it('renders a red lane that names no test by the lane alone', () => {
         const lanes = [...clearedLinux.slice(1), {platform: 'linux', serverVersion: '10.11.25', verdict: 'FAILURE', blocking: '2', exonerated: '1'}];
         const fold = foldCmtVerdicts({lanes, expectedLanes: linuxLanes, expectTriage: true, stats: {passed: 807, failed: 5, skipped: 12}});
         const text = formatCmtVerdictMessage({fold, compositeIdentity: identity, stats: {passed: 807, failed: 5, skipped: 12}, ...links});
-        assert.match(text, /:red_circle: \*\*Desktop CMT — needs investigation\*\*/);
-        assert.match(text, /Blocking after triage: 🐧 Linux Server `10\.11\.25` — 2 blocking/);
+        assert.match(text, /^:red_circle: \*\*Desktop CMT\*\* `v6\.2\.5-rc\.1` — 1 lane still red$/m);
+        assert.match(text, /^⚠️ Red, no test named: 🐧 Linux 10\.11\.25$/m);
         assert.ok(!text.includes('likely bug'), 'a held failure is not called a bug: triage cannot tell one on a release build');
         assert.ok(!text.includes('11.7.14'), 'cleared legs are not listed');
     });
 
-    it('renders ACTION_REQUIRED as needs-investigation, not as a bug', () => {
+    it('renders ACTION_REQUIRED as "couldn\'t tell", not as a bug', () => {
         const lanes = [...clearedLinux.slice(1), {platform: 'linux', serverVersion: '10.11.25', verdict: 'ACTION_REQUIRED', blocking: '1', exonerated: '0'}];
         const fold = foldCmtVerdicts({lanes, expectedLanes: linuxLanes, expectTriage: true, stats: {passed: 807, failed: 5, skipped: 12}});
         const text = formatCmtVerdictMessage({fold, compositeIdentity: identity, stats: {passed: 807, failed: 5, skipped: 12}, ...links});
-        assert.match(text, /:yellow_circle: \*\*Desktop CMT — needs investigation\*\*/);
-        assert.match(text, /could not settle/);
+        assert.match(text, /^:yellow_circle: \*\*Desktop CMT\*\* `v6\.2\.5-rc\.1` — couldn't tell$/m);
+        assert.match(text, /^⚠️ Couldn't settle: 🐧 Linux 10\.11\.25$/m);
         assert.ok(!text.includes('likely bug'));
     });
 
-    it('renders a clean run as a short green pass', () => {
+    it('renders a clean run as a two-line green pass', () => {
         const fold = foldCmtVerdicts({lanes: [], expectedLanes: linuxLanes, expectTriage: false, stats: {passed: 812, failed: 0, skipped: 12}});
         const text = formatCmtVerdictMessage({fold, compositeIdentity: identity, stats: {passed: 812, failed: 0, skipped: 12}, ...links});
-        assert.match(text, /:green_circle: \*\*Desktop CMT — passed\*\*/);
-        assert.ok(text.trimEnd().split('\n').length <= 5, 'stays short');
+        assert.match(text, /^:green_circle: \*\*Desktop CMT\*\* `v6\.2\.5-rc\.1` — passed$/m);
+        assert.equal(text.trimEnd().split('\n').length, 2);
     });
 });
 
@@ -250,26 +248,38 @@ describe('per-test CMT message', () => {
         ]);
     });
 
-    it('posts one line per held test and names what the rest are, never "likely bug"', () => {
+    it('says in four lines which tests to check and which are not bugs, never "likely bug"', () => {
         const fold = foldCmtVerdicts({lanes, expectedLanes: matrix, expectTriage: true, stats});
         const text = formatCmtVerdictMessage({fold, compositeIdentity: {...identity, branch: 'v6.3.2-rc.2'}, stats, ...links});
-        assert.match(text, /^:red_circle: \*\*Desktop CMT — needs investigation\*\*$/m);
-        assert.match(text, /^• `MM-T2633` sso_back_button: needs investigation, failed in 6\/15 lanes$/m);
-        assert.match(text, /^Not app bugs: `MM-T5890` \(server compat\); `MM-T5611` \(server compat\); `MM-T4054` \(test bug\)$/m);
-        assert.ok(!text.includes('likely bug'));
-        assert.ok(text.trimEnd().split('\n').length <= 8, 'stays short');
+        assert.equal(text, [
+            ':red_circle: **Desktop CMT** `v6.3.2-rc.2` — 1 test to check',
+            '🔎 **Check:** `MM-T2633` needs investigation, 6/15 lanes',
+            '✅ **Not bugs:** `MM-T5890` server compat · `MM-T5611` server compat · `MM-T4054` test bug',
+            '3323 passed · 26 failed · 306 skipped · [Report](https://test-io.test.mattermost.com/reports/desktop/v6.3.2-rc.2/725fbc7/cmt-desktop) · [Run](https://github.com/mattermost/desktop/actions/runs/40651298431)',
+            '',
+        ].join('\n'));
+        assert.match(fold.statusDescription, /^1 test needs a look · 3323 passed, 26 failed, 306 skipped$/, 'the status counts tests, not lanes');
     });
 
-    it('calls a run with an app bug "app bug likely", and one with nothing held "no app bug found"', () => {
+    it('counts a test that failed on Windows and elsewhere once, whatever the path separator', () => {
+        const windows = (f) => ({...f, file: f.file.replace(/\//g, '\\'), full_title: `${f.file.replace(/^e2e\/specs\//, '').replace(/\//g, '\\')} > ${f.title}`});
+        const mixed = lanes.map((l) => (l.platform === 'windows' ? {...l, findings: l.findings.map(windows)} : {...l, findings: l.findings.map((f) => ({...f, full_title: `${f.file.replace(/^e2e\/specs\//, '')} > ${f.title}`}))}));
+        const fold = foldCmtVerdicts({lanes: mixed, expectedLanes: matrix, expectTriage: true, stats});
+        assert.deepEqual(fold.tests.map((t) => [t.title.slice(0, 8), t.lanes]), [['MM-T2633', 6], ['MM-T5890', 3], ['MM-T5611', 2], ['MM-T4054', 15]]);
+    });
+
+    it('calls a run with an app bug "likely app bug", and one with nothing held "no bugs"', () => {
         const appBugLane = (l) => ({...l, verdict: 'FAILURE', blocking: '1', findings: [{...T4054, label: 'app bug', blocking: true, explanation: 'The preview modal never opens.'}]});
         const appBug = lanes.map((l) => (l.platform === 'linux' && l.serverVersion === '11.11.3' ? appBugLane(l) : l));
-        const red = formatCmtVerdictMessage({fold: foldCmtVerdicts({lanes: appBug, expectedLanes: matrix, expectTriage: true, stats}), compositeIdentity: identity, stats, ...links});
-        assert.match(red, /^:red_circle: \*\*Desktop CMT — app bug likely\*\*$/m);
-        assert.match(red, /^• `MM-T4054` media_preview: app bug, failed in 15\/15 lanes · The preview modal never opens\.$/m, 'the most severe label any lane gave it');
+        const redFold = foldCmtVerdicts({lanes: appBug, expectedLanes: matrix, expectTriage: true, stats});
+        const red = formatCmtVerdictMessage({fold: redFold, compositeIdentity: identity, stats, ...links});
+        assert.match(red, /^:red_circle: \*\*Desktop CMT\*\* `v6\.2\.5-rc\.1` — 1 likely app bug, 1 test to check$/m);
+        assert.match(red, /^🐞 \*\*App bug:\*\* `MM-T4054` 15\/15 lanes$/m, 'the most severe label any lane gave it');
+        assert.match(redFold.statusDescription, /^1 likely app bug · /);
         const cleared = lanes.map((l) => ({...l, verdict: 'SUCCESS', blocking: '0', findings: l.findings.filter((f) => !f.blocking)}));
         const green = formatCmtVerdictMessage({fold: foldCmtVerdicts({lanes: cleared, expectedLanes: matrix, expectTriage: true, stats}), compositeIdentity: identity, stats, ...links});
-        assert.match(green, /^:green_circle: \*\*Desktop CMT — no app bug found\*\*$/m);
-        assert.match(green, /^• `MM-T4054` media_preview: test bug, failed in 15\/15 lanes · The old test's PNG fixture is invalid; master replaced it\.$/m);
+        assert.match(green, /^:green_circle: \*\*Desktop CMT\*\* `v6\.2\.5-rc\.1` — no bugs$/m);
+        assert.match(green, /^✅ \*\*Not bugs:\*\* `MM-T5890` server compat · `MM-T5611` server compat · `MM-T4054` test bug$/m);
     });
 
     it('tells apart two tests of one file that share a leaf title, by their full titles', () => {
@@ -282,14 +292,25 @@ describe('per-test CMT message', () => {
     it('names a blocking lane whose tests could not be read, beside the tests of the others', () => {
         const partial = lanes.map((l) => (l.platform === 'windows' && l.serverVersion === '12.0.1' ? {...l, findings: [], findingsRecorded: false} : l));
         const text = formatCmtVerdictMessage({fold: foldCmtVerdicts({lanes: partial, expectedLanes: matrix, expectTriage: true, stats}), compositeIdentity: identity, stats, ...links});
-        assert.match(text, /^• `MM-T2633` sso_back_button: needs investigation, failed in 5\/15 lanes$/m);
-        assert.match(text, /^Also blocking, no test named: 🪟 Windows Server `12\.0\.1` — 1 blocking$/m);
+        assert.match(text, /^🔎 \*\*Check:\*\* `MM-T2633` needs investigation, 5\/15 lanes$/m);
+        assert.match(text, /^⚠️ Red, no test named: 🪟 Windows 12\.0\.1$/m);
     });
 
     it('names a lane red only for a shard that never reported, which has no blocking test', () => {
         const shard = lanes.map((l) => (l.platform === 'linux' && l.serverVersion === '10.11.25' ? {...l, verdict: 'FAILURE', blocking: '0'} : l));
         const text = formatCmtVerdictMessage({fold: foldCmtVerdicts({lanes: shard, expectedLanes: matrix, expectTriage: true, stats}), compositeIdentity: identity, stats, ...links});
-        assert.match(text, /^Also blocking, no test named: 🐧 Linux Server `10\.11\.25`$/m);
+        assert.match(text, /^⚠️ Red, no test named: 🐧 Linux 10\.11\.25$/m);
+    });
+
+    it('says a lane red only for incomplete results needs a re-run, not that it is blocking', () => {
+        const incomplete = (l) => ({...l, verdict: 'FAILURE', blocking: '0', findings: l.findings.filter((f) => !f.blocking), description: '(1 test bug; results incomplete: 15 of 15 reports) 99.6% passed'});
+        const onlyIncomplete = lanes.map((l) => (l.serverVersion.startsWith('12.') ? l : incomplete(l)));
+        const text = formatCmtVerdictMessage({fold: foldCmtVerdicts({lanes: onlyIncomplete, expectedLanes: matrix, expectTriage: true, stats}), compositeIdentity: identity, stats, ...links});
+        assert.match(text, /^⚠️ Results incomplete on 9 lanes — re-run$/m);
+        assert.ok(!text.includes('no test named'));
+        const noneHeld = lanes.map(incomplete);
+        const red = formatCmtVerdictMessage({fold: foldCmtVerdicts({lanes: noneHeld, expectedLanes: matrix, expectTriage: true, stats}), compositeIdentity: identity, stats, ...links});
+        assert.match(red, /^:red_circle: \*\*Desktop CMT\*\* `v6\.2\.5-rc\.1` — results incomplete, re-run$/m);
     });
 
     it('keeps each explanation with the label it was given for', () => {
@@ -306,7 +327,7 @@ describe('per-test CMT message', () => {
         const fold = foldCmtVerdicts({lanes: unsettled, expectedLanes: matrix, expectTriage: true, stats});
         const text = formatCmtVerdictMessage({fold, compositeIdentity: identity, stats, ...links});
         assert.ok(!fold.tests.some((t) => t.title === T5611.title && t.blocking), 'the unsettled lane adds no blocking test');
-        assert.match(text, /^Could not settle: 🍎 macOS Server `11\.7\.14` \(triage needs investigation\)$/m);
+        assert.match(text, /^⚠️ Couldn't settle: 🍎 macOS 11\.7\.14$/m);
     });
 
     it('names two tests of one file with the same leaf title by their full titles', () => {
@@ -314,8 +335,8 @@ describe('per-test CMT message', () => {
         const twin = [{platform: 'linux', serverVersion: '12.0.1', verdict: 'FAILURE', blocking: '2', findingsRecorded: true, findings: [suite('Login'), suite('SSO')]}];
         const fold = foldCmtVerdicts({lanes: twin, expectedLanes: [{platform: 'linux', server: '12.0.1'}], expectTriage: true, stats});
         const text = formatCmtVerdictMessage({fold, compositeIdentity: identity, stats, ...links});
-        assert.match(text, /^• `Login MM-T2633 back button/m);
-        assert.match(text, /^• `SSO MM-T2633 back button/m);
+        assert.match(text, /`Login MM-T2633 back button/);
+        assert.match(text, /`SSO MM-T2633 back button/);
     });
 
     it('never names a test bug for a run whose jobs died before any test ran (run 40648275037)', () => {
