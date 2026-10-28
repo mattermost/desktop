@@ -5,6 +5,7 @@ import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 import {app, BrowserWindow, Menu} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import ServerViewState from 'app/serverHub';
 import {APP_MENU_WILL_CLOSE} from 'common/communication';
@@ -183,7 +184,7 @@ export function handleToggleSecureInput(event: IpcMainEvent, secureInput: boolea
 
 export function handleShowSettingsModal() {
     const mainWindow = MainWindow.get();
-    if (!mainWindow) {
+    if (!mainWindow || MessageModal.isCloseConfirmOpen()) {
         return;
     }
 

@@ -15,6 +15,7 @@ import {getLocalPreload} from 'main/utils';
 import type {MessageModalInfo, MessageModalResult} from 'types/modals';
 
 const messageModalHtml = 'mattermost-desktop://renderer/message.html';
+const closeConfirmKey = `${ModalConstants.MESSAGE_MODAL}-closeApp`;
 
 export class MessageModal {
     constructor() {
@@ -22,15 +23,15 @@ export class MessageModal {
         MainWindow.on(MAIN_WINDOW_CLOSE_CONFIRM, this.handleCloseConfirm);
     }
 
-    showMessageModal = (options: MessageModalInfo): Promise<MessageModalResult> => {
+    showMessageModal = (options: MessageModalInfo, priority = false, key = `${ModalConstants.MESSAGE_MODAL}-${uuid()}`): Promise<MessageModalResult> => {
         const mainWindow = MainWindow.get();
         const fallback = {response: options.cancelId ?? 0, checkboxChecked: Boolean(options.checkboxChecked)};
         if (!mainWindow) {
             return Promise.resolve(fallback);
         }
 
-        const key = `${ModalConstants.MESSAGE_MODAL}-${uuid()}`;
-        const modalPromise = ModalManager.addModal<MessageModalInfo, MessageModalResult>(
+        const addModal = priority ? ModalManager.addPriorityModal : ModalManager.addModal;
+        const modalPromise = addModal<MessageModalInfo, MessageModalResult>(
             key,
             messageModalHtml,
             getLocalPreload('internalAPI.js'),
@@ -59,7 +60,15 @@ export class MessageModal {
         });
     };
 
+    isCloseConfirmOpen = () => {
+        return ModalManager.modalQueue.some((modal) => modal.key === closeConfirmKey);
+    };
+
     private handleCloseConfirm = () => {
+        if (this.isCloseConfirmOpen()) {
+            return;
+        }
+
         this.showMessageModal({
             title: localizeMessage('main.windows.mainWindow.closeApp.dialog.title', 'Close Application'),
             message: localizeMessage('main.windows.mainWindow.closeApp.dialog.message', 'Are you sure you want to quit?'),
@@ -73,7 +82,7 @@ export class MessageModal {
             cancelId: 1,
             checkboxChecked: true,
             checkboxLabel: localizeMessage('main.windows.mainWindow.closeApp.dialog.checkboxLabel', 'Don\'t ask again'),
-        }).then((result) => {
+        }, true, closeConfirmKey).then((result) => {
             Config.set('alwaysClose', result.checkboxChecked && result.response === 0);
             if (result.response === 0) {
                 app.quit();
