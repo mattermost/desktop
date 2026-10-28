@@ -159,6 +159,12 @@ jobs:
           brew install yq
           sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
           npm ci
+      - name: ci/force-tcp-for-stapler
+        run: |
+          # Work around stapling issue (actions/runner-images#14924)
+          # Hosted macOS runners drop stapler's HTTP/3 path (actions/runner-images#14924).
+          echo "block return out quick proto udp from any to any port 443" | sudo pfctl -f -
+          sudo pfctl -E
       - name: ci/build
         env:
           APPLE_API_KEY_ID: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_MACOS_API_KEY_ID }}
