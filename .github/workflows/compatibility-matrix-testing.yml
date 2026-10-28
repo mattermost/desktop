@@ -425,19 +425,21 @@ jobs:
             --arg exonerated "${EXONERATED}" \
             --arg description "${DESCRIPTION}" \
             '{platform: $platform, serverVersion: $serverVersion, verdict: $verdict, blocking: $blocking, exonerated: $exonerated, description: $description}' \
-            > cmt-triage-verdict.json
+            > "cmt-triage-verdict-${PLATFORM}-${SERVER_VERSION}.json"
 
       - name: cmt/upload-triage-verdict
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: cmt-triage-verdict-${{ matrix.platform }}-${{ matrix.server }}
-          path: cmt-triage-verdict.json
+          # One file name per lane: the verdict job downloads every lane into one
+          # directory (merge-multiple), where a shared name keeps only the last one.
+          path: cmt-triage-verdict-${{ matrix.platform }}-${{ matrix.server }}.json
           retention-days: 1
 
   # Fold the lane verdicts into the run's one verdict: green when triage
   # cleared everything (flaky / failed in master / Infra failure) or
-  # nothing failed, red only when blocking failures remain (likely bug),
+  # nothing failed, red only when blocking failures remain (needs investigation),
   # yellow/error when
   # triage could not settle it. This job has the final write of the
   # e2e/compatibility-matrix-testing commit status and posts the one short

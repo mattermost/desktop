@@ -159,7 +159,7 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
             state: 'red',
             kind: 'blocking',
             commitStatusState: 'failure',
-            statusDescription: `${blocking} after AI triage — likely bug · ${countsLine}`,
+            statusDescription: `${blocking} after triage — needs investigation · ${countsLine}`,
         };
     }
 
@@ -286,7 +286,7 @@ function formatCmtVerdictMessage({fold, compositeIdentity, stats = {}, reportUrl
     const titles = {
         passed: ':green_circle: **Desktop CMT — passed**',
         flaky: ':green_circle: **Desktop CMT — flaky, no bug found**',
-        blocking: ':red_circle: **Desktop CMT — likely bug**',
+        blocking: ':red_circle: **Desktop CMT — needs investigation**',
     };
     const title = titles[fold.kind] || ':yellow_circle: **Desktop CMT — needs investigation**';
 
@@ -302,7 +302,7 @@ function formatCmtVerdictMessage({fold, compositeIdentity, stats = {}, reportUrl
     if (fold.kind === 'blocking') {
         const legs = formatLegList(fold.blockingLegs, (leg) =>
             `${formatLeg(leg)}${leg.blocking > 0 ? ` — ${leg.blocking} blocking` : ''}`);
-        lines.push(`Blocking after AI triage: ${legs}`);
+        lines.push(`Blocking after triage: ${legs}`);
     } else if (fold.kind === 'flaky') {
         const cleared = fold.clearedLegs.length;
         const clearedCount = fold.clearedCount > 0 ? `, ${fold.clearedCount} cleared by triage` : '';

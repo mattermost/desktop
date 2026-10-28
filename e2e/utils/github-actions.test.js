@@ -324,6 +324,16 @@ describe('CMT posts only e2e/compatibility-matrix-testing', () => {
         assert.doesNotMatch(jobLines(cmt, 'e2e-macos').join('\n'), /e2e-.*-install/);
         assert.match(jobLines(cmt, 'e2e-windows').join('\n'), /- e2e-windows-install/);
     });
+
+    it('gives each triage lane its own verdict file, so the merged download keeps every lane', () => {
+        // cmt-verdict downloads all lanes into one directory (merge-multiple); one shared
+        // file name kept only the last lane, and the run was judged on 1 of 15 lanes.
+        const triage = jobLines(cmt, 'cmt-triage').join('\n');
+        assert.match(triage, /> "cmt-triage-verdict-\$\{PLATFORM\}-\$\{SERVER_VERSION\}\.json"/);
+        assert.match(triage, /path: cmt-triage-verdict-\$\{\{ matrix\.platform \}\}-\$\{\{ matrix\.server \}\}\.json/);
+        assert.doesNotMatch(triage, /cmt-triage-verdict\.json/);
+        assert.match(jobLines(cmt, 'cmt-verdict').join('\n'), /merge-multiple: true/);
+    });
 });
 
 describe('e2e node_modules and Electron zip caches', () => {

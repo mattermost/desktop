@@ -43,7 +43,7 @@ describe('foldCmtVerdicts', () => {
         assert.equal(fold.blockingLegs.length, 1);
         assert.equal(fold.blockingLegs[0].serverVersion, '10.11.25');
         assert.equal(fold.blockingCount, 2);
-        assert.match(fold.statusDescription, /likely bug/);
+        assert.match(fold.statusDescription, /^2 blocking failures after triage — needs investigation · /);
     });
 
     it('treats ACTION_REQUIRED as yellow, never green and never red', () => {
@@ -158,8 +158,9 @@ describe('formatCmtVerdictMessage', () => {
         const lanes = [...clearedLinux.slice(1), {platform: 'linux', serverVersion: '10.11.25', verdict: 'FAILURE', blocking: '2', exonerated: '1'}];
         const fold = foldCmtVerdicts({lanes, expectedLanes: linuxLanes, expectTriage: true, stats: {passed: 807, failed: 5, skipped: 12}});
         const text = formatCmtVerdictMessage({fold, compositeIdentity: identity, stats: {passed: 807, failed: 5, skipped: 12}, ...links});
-        assert.match(text, /:red_circle: \*\*Desktop CMT — likely bug\*\*/);
-        assert.match(text, /Blocking after AI triage: 🐧 Linux Server `10\.11\.25` — 2 blocking/);
+        assert.match(text, /:red_circle: \*\*Desktop CMT — needs investigation\*\*/);
+        assert.match(text, /Blocking after triage: 🐧 Linux Server `10\.11\.25` — 2 blocking/);
+        assert.ok(!text.includes('likely bug'), 'a held failure is not called a bug: triage cannot tell one on a release build');
         assert.ok(!text.includes('11.7.14'), 'cleared legs are not listed');
     });
 
