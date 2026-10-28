@@ -22,7 +22,7 @@ export class MessageModal {
         MainWindow.on(MAIN_WINDOW_CLOSE_CONFIRM, this.handleCloseConfirm);
     }
 
-    showMessageModal = (options: MessageModalInfo): Promise<MessageModalResult> => {
+    showMessageModal = (options: MessageModalInfo, priority = false): Promise<MessageModalResult> => {
         const mainWindow = MainWindow.get();
         const fallback = {response: options.cancelId ?? 0, checkboxChecked: Boolean(options.checkboxChecked)};
         if (!mainWindow) {
@@ -30,7 +30,8 @@ export class MessageModal {
         }
 
         const key = `${ModalConstants.MESSAGE_MODAL}-${uuid()}`;
-        const modalPromise = ModalManager.addModal<MessageModalInfo, MessageModalResult>(
+        const addModal = priority ? ModalManager.addPriorityModal : ModalManager.addModal;
+        const modalPromise = addModal<MessageModalInfo, MessageModalResult>(
             key,
             messageModalHtml,
             getLocalPreload('internalAPI.js'),
@@ -73,7 +74,7 @@ export class MessageModal {
             cancelId: 1,
             checkboxChecked: true,
             checkboxLabel: localizeMessage('main.windows.mainWindow.closeApp.dialog.checkboxLabel', 'Don\'t ask again'),
-        }).then((result) => {
+        }, true).then((result) => {
             Config.set('alwaysClose', result.checkboxChecked && result.response === 0);
             if (result.response === 0) {
                 app.quit();

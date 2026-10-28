@@ -32,6 +32,7 @@ jest.mock('app/mainWindow/modals/modalManager', () => ({
     __esModule: true,
     default: {
         addModal: jest.fn(),
+        addPriorityModal: jest.fn(),
     },
 }));
 
@@ -81,6 +82,17 @@ describe('app/mainWindow/modals/messageModal', () => {
 
             expect(ModalManager.addModal).toHaveBeenCalled();
             expect(result).toEqual({response: 0, checkboxChecked: false});
+        });
+
+        it('should open a priority modal when requested', async () => {
+            MainWindow.get.mockReturnValue({});
+            ModalManager.addPriorityModal.mockReturnValue(Promise.resolve({response: 0, checkboxChecked: false}));
+            const messageModal = new MessageModal();
+
+            await messageModal.showMessageModal({type: 'info', title: 't', message: 'm'}, true);
+
+            expect(ModalManager.addPriorityModal).toHaveBeenCalled();
+            expect(ModalManager.addModal).not.toHaveBeenCalled();
         });
     });
 
