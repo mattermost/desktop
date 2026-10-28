@@ -7,11 +7,10 @@ import type {
     WebContentsWillRedirectEventParams,
     WebContentsDidStartNavigationEventParams,
 } from 'electron';
-import {shell} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import NavigationManager from 'app/navigationManager';
-import {generateHandleConsoleMessage, generateWillFrameNavigate, isCustomProtocol} from 'app/views/webContentEventsCommon';
+import {generateHandleConsoleMessage, generateWillFrameNavigate, isCustomProtocol, showInvalidLinkModal} from 'app/views/webContentEventsCommon';
 import WebContentsManager from 'app/views/webContentsManager';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -22,6 +21,7 @@ import {
 import ContextMenu from 'main/contextMenu';
 import allowProtocolDialog from 'main/security/allowProtocolDialog';
 import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
+import {openExternalSafely} from 'main/utils';
 
 const log = new Logger('PluginsPopUpsManager');
 
@@ -95,7 +95,7 @@ export class PluginsPopUpsManager {
                 NavigationManager.openLinkInNewTab(parsedURL);
             } else {
                 // We allow to open external links through browser.
-                shell.openExternal(parsedURL.toString());
+                openExternalSafely(parsedURL.toString(), showInvalidLinkModal);
             }
 
             log.warn('prevented popup window from opening window');

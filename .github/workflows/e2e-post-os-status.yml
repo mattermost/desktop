@@ -46,6 +46,7 @@ jobs:
           sparse-checkout: |
             e2e/utils/tsio-report-status.js
             e2e/utils/cmt-channel-notify.js
+            e2e/utils/cmt-triage-verdict.js
             e2e/utils/github-actions.js
           sparse-checkout-cone-mode: false
       - name: Flip e2e/${{ inputs.os }} from this OS's shards

@@ -16,6 +16,7 @@ import viewManager from 'common/views/viewManager';
 import DeveloperMode from 'main/developerMode';
 import {localizeMessage} from 'main/i18nManager';
 import PermissionsManager from 'main/security/permissionsManager';
+import {openExternalSafely} from 'main/utils';
 
 import getLinuxDoNotDisturb from './dnd-linux';
 import getWindowsDoNotDisturb from './dnd-windows';
@@ -278,10 +279,10 @@ class NotificationManager {
     private openNotificationPreferences() {
         switch (process.platform) {
         case 'darwin':
-            shell.openExternal('x-apple.systempreferences:com.apple.preference.notifications?Notifications');
+            openExternalSafely('x-apple.systempreferences:com.apple.preference.notifications?Notifications');
             break;
         case 'win32':
-            shell.openExternal('ms-settings:notifications');
+            openExternalSafely('ms-settings:notifications');
             break;
         }
     }

