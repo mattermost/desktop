@@ -420,13 +420,20 @@ jobs:
           DESCRIPTION: ${{ steps.triage.outputs.description }}
         run: |
           # Only letters, digits, dot, dash and underscore: a server string with a slash or a space
-          # would otherwise point the file at another directory, or split it.
-          VERDICT_FILE="cmt-triage-verdict-$(printf '%s-%s' "${PLATFORM}" "${SERVER_VERSION}" | tr -c 'A-Za-z0-9._-' '_').json"
-          # Each failed test, as triage labelled it (findings file schema 2), so the
-          # message can name it; none when triage wrote no file or an older schema.
+          # would otherwise point the file at another directory, or split it. The hash of the raw pair
+          # keeps two lanes apart that the same characters would otherwise merge ("6/3" and "6 3").
+          VERDICT_FILE="cmt-triage-verdict-$(printf '%s-%s' "${PLATFORM}" "${SERVER_VERSION}" | tr -c 'A-Za-z0-9._-' '_')-$(printf '%s\n%s' "${PLATFORM}" "${SERVER_VERSION}" | sha256sum | cut -c1-8).json"
+          # Each failed test, as triage labelled it, so the message can name it. Schema 2
+          # carries the label and the model's explanation; schema 1 (a toolkit before
+          # them) is given its label as the toolkit would; none for any other file.
           FINDINGS='[]'
           if [ -f e2e-triage-findings.json ]; then
-            FINDINGS=$(jq -c 'if .schema == 2 then [.findings[] | {title, file, label, blocking, explanation: .ai.explanation}] else [] end' e2e-triage-findings.json 2>/dev/null || echo '[]')
+            FINDINGS=$(jq -c '
+              if .schema == 2 then [.findings[] | {title, file, label, blocking, explanation: .ai.explanation}]
+              elif .schema == 1 then [.findings[] | {title, file, blocking, explanation: null,
+                label: (if .blocking then (if .out_of_date then "out of date" elif .class == "OWNED_BY_PR" then "caused by PR" else "needs investigation" end)
+                        elif .class == "BROKEN_ON_TRUNK" then "broken on main" else "flaky" end)}]
+              else [] end' e2e-triage-findings.json 2>/dev/null || echo '[]')
           fi
           jq -n \
             --arg platform "${PLATFORM}" \

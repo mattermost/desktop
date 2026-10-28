@@ -329,7 +329,7 @@ describe('CMT posts only e2e/compatibility-matrix-testing', () => {
         // cmt-verdict downloads all lanes into one directory (merge-multiple); one shared
         // file name kept only the last lane, and the run was judged on 1 of 15 lanes.
         const triage = jobLines(cmt, 'cmt-triage').join('\n');
-        assert.match(triage, /VERDICT_FILE="cmt-triage-verdict-\$\(printf '%s-%s' "\$\{PLATFORM\}" "\$\{SERVER_VERSION\}" \| tr -c 'A-Za-z0-9\._-' '_'\)\.json"/);
+        assert.match(triage, /VERDICT_FILE="cmt-triage-verdict-\$\(printf '%s-%s' "\$\{PLATFORM\}" "\$\{SERVER_VERSION\}" \| tr -c 'A-Za-z0-9\._-' '_'\)-\$\(printf '%s\\n%s' "\$\{PLATFORM\}" "\$\{SERVER_VERSION\}" \| sha256sum \| cut -c1-8\)\.json"/);
         assert.match(triage, /> "\$\{VERDICT_FILE\}"/);
         assert.match(triage, /path: \$\{\{ steps\.record-verdict\.outputs\.file \}\}/);
         assert.doesNotMatch(triage, /cmt-triage-verdict\.json/);
@@ -339,7 +339,8 @@ describe('CMT posts only e2e/compatibility-matrix-testing', () => {
     it('records each failed test with its lane verdict, from the triage findings file (schema 2 only)', () => {
         const triage = jobLines(cmt, 'cmt-triage').join('\n');
         assert.match(triage, /findings-file: e2e-triage-findings\.json/);
-        assert.match(triage, /if \.schema == 2 then \[\.findings\[\] \| \{title, file, label, blocking, explanation: \.ai\.explanation\}\] else \[\] end/);
+        assert.match(triage, /if \.schema == 2 then \[\.findings\[\] \| \{title, file, label, blocking, explanation: \.ai\.explanation\}\]/);
+        assert.match(triage, /elif \.schema == 1 then \[\.findings\[\] \| \{title, file, blocking, explanation: null,/);
         assert.match(triage, /--argjson findings "\$\{FINDINGS\}"/);
         const action = read('.github/actions/e2e-triage/action.yml');
         assert.match(action, /findings-file: \$\{\{ inputs\.findings-file \}\}/);

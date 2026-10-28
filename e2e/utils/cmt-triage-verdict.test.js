@@ -281,6 +281,15 @@ describe('per-test CMT message (toolkit findings file schema 2)', () => {
         assert.ok(!text.includes('•'));
     });
 
+    it('keeps each explanation with the label it was given for', () => {
+        const mixed = [
+            {platform: 'linux', serverVersion: '10.11.25', verdict: 'SUCCESS', findings: [{...T4054, explanation: 'A test bug.'}]},
+            {platform: 'macos', serverVersion: '10.11.25', verdict: 'FAILURE', blocking: '1', findings: [{...T4054, label: 'needs investigation', blocking: true, explanation: null}]},
+        ];
+        const fold = foldCmtVerdicts({lanes: mixed, expectedLanes: [{platform: 'linux', server: '10.11.25'}, {platform: 'macos', server: '10.11.25'}], expectTriage: true, stats});
+        assert.deepEqual([fold.tests[0].label, fold.tests[0].explanation], ['needs investigation', null], 'not the test-bug explanation under a needs-investigation label');
+    });
+
     it('never names a test bug for a run whose jobs died before any test ran (run 40648275037)', () => {
         const fold = foldCmtVerdicts({lanes: [], expectedLanes: matrix, expectTriage: true, stats: {}, upstreamJobsSucceeded: false});
         const text = formatCmtVerdictMessage({fold, compositeIdentity: identity, stats: {}, ...links});

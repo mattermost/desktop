@@ -99,10 +99,11 @@ function groupTests(lanes) {
             }
             seen.lanes += 1;
             seen.blocking = seen.blocking || f.blocking;
+            // The explanation stays with the label it was given for.
             if (labelRank(f.label) < labelRank(seen.label)) {
                 seen.label = f.label;
-                seen.explanation = f.explanation || seen.explanation;
-            } else if (!seen.explanation) {
+                seen.explanation = f.explanation;
+            } else if (!seen.explanation && f.label === seen.label) {
                 seen.explanation = f.explanation;
             }
         }
