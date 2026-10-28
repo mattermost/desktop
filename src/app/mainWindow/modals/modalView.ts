@@ -82,12 +82,12 @@ export class ModalView<T, T2> {
         this.status = Status.SHOWING;
         if (this.view.webContents.isLoading()) {
             this.view.webContents.once('did-finish-load', () => {
-                if (this.view.webContents.isDestroyed()) {
+                if (this.view.webContents.isDestroyed() || !this.windowAttached?.isFocused()) {
                     return;
                 }
                 this.view.webContents.focus();
             });
-        } else if (!this.view.webContents.isDestroyed()) {
+        } else if (!this.view.webContents.isDestroyed() && this.windowAttached.isFocused()) {
             this.view.webContents.focus();
         }
 
