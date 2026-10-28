@@ -101,9 +101,18 @@ describe('main/views/modalManager', () => {
 
         it('should show a modal scoped to the current server', () => {
             ServerManager.getCurrentServerId.mockReturnValue('server-1');
+            MainWindow.get.mockReturnValue({isFocused: () => true});
             modalManager.addModal('new_key', 'some_html', 'preload', {}, {}, false, 'server-1');
             expect(modalManager.showModal).toBeCalled();
             expect(NotificationManager.displayServerModal).not.toBeCalled();
+        });
+
+        it('should notify for the current server when the app is in the background', () => {
+            ServerManager.getCurrentServerId.mockReturnValue('server-1');
+            MainWindow.get.mockReturnValue({isFocused: () => false});
+            modalManager.addModal('new_key', 'some_html', 'preload', {}, {}, false, 'server-1');
+            expect(modalManager.showModal).toBeCalled();
+            expect(NotificationManager.displayServerModal).toBeCalledWith('server-1');
         });
 
         it('should mark the server as having a pending modal', () => {

@@ -68,7 +68,8 @@ export class ModalManager extends EventEmitter {
             return this.modalPromises.get(key) as Promise<T2>;
         }
 
-        if (serverId && serverId !== ServerManager.getCurrentServerId() && !this.modalQueue.some((modal) => modal.serverId === serverId)) {
+        const isServerInView = serverId === ServerManager.getCurrentServerId() && MainWindow.get()?.isFocused();
+        if (serverId && !isServerInView && !this.modalQueue.some((modal) => modal.serverId === serverId)) {
             NotificationManager.displayServerModal(serverId);
         }
 
