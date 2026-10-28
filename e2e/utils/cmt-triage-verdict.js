@@ -235,12 +235,18 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
         } else if (held.length) {
             summary = `${held.length} test${held.length === 1 ? ' needs' : 's need'} a look`;
         }
+        const unnamed = result.blockingLegs.filter((leg) => !leg.testsNamed && !leg.incomplete).length;
+        const parts = [
+            summary,
+            held.length && unnamed ? `${unnamed} lane${unnamed === 1 ? '' : 's'} red, no test named` : '',
+            result.blockingLegs.some((leg) => leg.incomplete) ? 'results incomplete' : '',
+        ];
         return {
             ...result,
             state: 'red',
             kind: 'blocking',
             commitStatusState: 'failure',
-            statusDescription: `${summary} · ${countsLine}`,
+            statusDescription: `${parts.filter(Boolean).join('; ')} · ${countsLine}`,
         };
     }
 
@@ -397,9 +403,11 @@ function formatCmtVerdictMessage({fold, compositeIdentity, stats = {}, reportUrl
     const appBugs = tests.filter((t) => t.blocking && t.label === 'app bug');
     const toCheck = tests.filter((t) => t.blocking && t.label !== 'app bug');
     const notBugs = tests.filter((t) => !t.blocking);
-    const unnamed = fold.kind === 'blocking' ? fold.blockingLegs.filter((leg) => !leg.testsNamed) : [];
-    const incomplete = unnamed.filter((leg) => leg.incomplete);
-    const redUnnamed = unnamed.filter((leg) => !leg.incomplete);
+
+    // A lane with incomplete results needs a re-run whether or not it names a test.
+    const redLegs = fold.kind === 'blocking' ? fold.blockingLegs : [];
+    const incomplete = redLegs.filter((leg) => leg.incomplete);
+    const redUnnamed = redLegs.filter((leg) => !leg.testsNamed && !leg.incomplete);
 
     let headline = `:yellow_circle: ${name} — couldn't tell`;
     if (fold.kind === 'blocking') {
