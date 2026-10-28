@@ -9,8 +9,7 @@
  * Toolkit verdict semantics (mattermost-test-automation-toolkit
  * e2e-test-triage): SUCCESS = every failure cleared (flaky, failed in
  * master, other PRs, Infra failure), FAILURE = blocking failures remain
- * (triage could not clear them: needs investigation), ACTION_REQUIRED =
- * triage could not settle it (an
+ * (needs investigation), ACTION_REQUIRED = triage could not settle it (an
  * Infra-failure-heavy run, missing reports, too little evidence). A lane
  * with no verdict was never triaged and counts as unknown — unknown is
  * never green and never plain red.
@@ -44,8 +43,7 @@ function normalizeVerdict(value) {
     return ['SUCCESS', 'FAILURE', 'ACTION_REQUIRED'].includes(verdict) ? verdict : '';
 }
 
-// The toolkit's labels for a failed test (findings file schema 2), most severe first: a test's label across the
-// lanes it failed in is the most severe one any lane gave it.
+// The toolkit's per-test labels, most severe first: a test failing in several lanes takes the most severe one.
 const LABEL_ORDER = ['app bug', 'caused by PR', 'needs investigation', 'out of date', 'fixed on main', 'server compat', 'test bug', 'broken on main', 'flaky'];
 
 function labelRank(label) {
@@ -53,7 +51,6 @@ function labelRank(label) {
     return i === -1 ? LABEL_ORDER.indexOf('needs investigation') : i;
 }
 
-// One failed test as a lane recorded it: its identity, the toolkit's label, and the model's one-line explanation.
 function normalizeFinding(row) {
     if (!row || typeof row.title !== 'string' || typeof row.file !== 'string' || typeof row.label !== 'string') {
         return null;
@@ -77,16 +74,12 @@ function normalizeLane(lane) {
         exonerated: toCount(lane?.exonerated),
         description: String(lane?.description || ''),
         findings: Array.isArray(lane?.findings) ? lane.findings.map(normalizeFinding).filter(Boolean) : [],
-
-        // Whether triage's findings file was read for this lane: without it, its tests can't be named.
         findingsRecorded: lane?.findingsRecorded === true,
     };
 }
 
 /**
- * The run's failed tests, each once across the lanes it failed in: its most severe label, whether any lane still
- * blocks on it, how many lanes it failed in, and the first explanation the model gave. Most severe first, then the
- * most lanes. Empty when no lane recorded its tests (a toolkit before findings file schema 2).
+ * Each failed test once across the lanes it failed in, most severe label first, then most lanes.
  *
  * @param {Array} lanes - normalized lanes
  * @returns {Array<{title: string, file: string, label: string, blocking: boolean, lanes: number, explanation: string|null}>}
@@ -199,25 +192,27 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
         };
     }
 
-    // Only the matrix's own lanes: a stray record is not this run's.
-    const recorded = expectedLanes.map((expected) => byKey.get(laneKey({platform: expected.platform || 'unknown', serverVersion: expected.server || ''}))).filter(Boolean);
-    result.tests = groupTests(recorded);
+    // Only the matrix's own lanes name tests: a stray record is not this run's.
+    const recorded = [];
     for (const expected of expectedLanes) {
         const leg = {platform: expected.platform || 'unknown', serverVersion: expected.server || ''};
         const record = byKey.get(laneKey(leg));
+        if (record) {
+            recorded.push(record);
+        }
         if (!record || !record.verdict) {
             result.unknownLegs.push({...leg, reason: 'not triaged'});
         } else if (record.verdict === 'SUCCESS') {
             result.clearedLegs.push({...leg, exonerated: record.exonerated});
             result.clearedCount += record.exonerated;
         } else if (record.verdict === 'FAILURE') {
-            // A lane red with no blocking test it named (unread findings, or a shard that never reported) is named as a lane.
             result.blockingLegs.push({...leg, blocking: record.blocking, testsNamed: record.findingsRecorded && record.findings.some((f) => f.blocking)});
             result.blockingCount += record.blocking;
         } else {
             result.unknownLegs.push({...leg, reason: 'triage needs investigation'});
         }
     }
+    result.tests = groupTests(recorded);
 
     if (result.blockingLegs.length > 0) {
         const blocking = result.blockingCount > 0 ? `${result.blockingCount} blocking failure${result.blockingCount === 1 ? '' : 's'}` : 'Blocking failures';
@@ -332,11 +327,9 @@ function formatLeg(leg) {
 // A test by its id when its title starts with one (MM-T4054), else its title, cut short.
 function testName(t) {
     const id = (/^(MM-T\d+(?:_\d+)?)\b/).exec(t.title)?.[1];
-    return id ? `\`${id}\`` : `\`${t.title.slice(0, 50)}\``;
+    return `\`${id || t.title.slice(0, 50)}\``;
 }
 
-// One line per test, at most five, then how many more: its spec, label, how many lanes it failed in, and the model's
-// explanation.
 function formatTestLines(tests, laneCount) {
     const spec = (file) => file.split('/').pop().replace(/\.(test|spec)\.[jt]s$/, '');
     const lines = tests.slice(0, 5).map((t) =>
@@ -390,8 +383,7 @@ function formatCmtVerdictMessage({fold, compositeIdentity, stats = {}, reportUrl
     if (fold.kind === 'blocking' && blockingTests.length) {
         lines.push(...formatTestLines(blockingTests, fold.laneCount));
 
-        // A blocking lane none of the lines above name (its findings were not read, or it is red for a shard that never
-        // reported) is named as a lane.
+        // A red lane whose findings were unread, or that is red only for a shard that never reported, names no test.
         const unnamed = fold.blockingLegs.filter((leg) => !leg.testsNamed);
         if (unnamed.length) {
             lines.push(`Also blocking, no test named: ${formatLegList(unnamed, (leg) => `${formatLeg(leg)}${leg.blocking > 0 ? ` — ${leg.blocking} blocking` : ''}`)}`);

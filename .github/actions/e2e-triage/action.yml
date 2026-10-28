@@ -43,7 +43,7 @@ inputs:
     required: false
     default: 'e2e/linux,e2e/macos,e2e/windows,e2e/macos-policy,e2e/windows-policy'
   findings-file:
-    description: 'Path triage writes its per-test findings to (toolkit findings file); empty writes none. CMT reads it to name each failed test in its message.'
+    description: 'Path to write the per-test findings file to; empty writes none'
     required: false
     default: ''
 

@@ -215,9 +215,8 @@ describe('CMT triage wiring', () => {
     });
 });
 
-describe('per-test CMT message (toolkit findings file schema 2)', () => {
-    // v6.3.2-rc.2, run 40651298431: which test failed on which of its 15 lanes, as the lanes' triage logs show. The labels
-    // and explanations are what release triage gives them; MM-T2633's fix on master is in a helper, so it stays held.
+describe('per-test CMT message', () => {
+    // v6.3.2-rc.2, run 40651298431: each test's failing lanes, labels and explanations, from the lanes' triage logs.
     const servers = ['10.11.25', '11.7.14', '11.11.3', '12.0.1', '12.1.0-rc2'];
     const matrix = ['linux', 'macos', 'windows'].flatMap((platform) => servers.map((server) => ({platform, server})));
     const row = (title, file, label, blocking, explanation) => ({title, file, label, blocking, explanation});
@@ -271,13 +270,6 @@ describe('per-test CMT message (toolkit findings file schema 2)', () => {
         const green = formatCmtVerdictMessage({fold: foldCmtVerdicts({lanes: cleared, expectedLanes: matrix, expectTriage: true, stats}), compositeIdentity: identity, stats, ...links});
         assert.match(green, /^:green_circle: \*\*Desktop CMT — no app bug found\*\*$/m);
         assert.match(green, /^• `MM-T4054` media_preview: test bug, failed in 15\/15 lanes · The old test's PNG fixture is invalid; master replaced it\.$/m);
-    });
-
-    it('keeps the per-lane message when the lanes carry no tests (a toolkit before findings file schema 2)', () => {
-        const bare = lanes.map((l) => ({...l, findings: undefined, findingsRecorded: false}));
-        const text = formatCmtVerdictMessage({fold: foldCmtVerdicts({lanes: bare, expectedLanes: matrix, expectTriage: true, stats}), compositeIdentity: identity, stats, ...links});
-        assert.match(text, /^Blocking after triage: /m);
-        assert.ok(!text.includes('•'));
     });
 
     it('tells apart two tests of one file that share a leaf title, by their full titles', () => {

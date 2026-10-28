@@ -419,13 +419,10 @@ jobs:
           EXONERATED: ${{ steps.triage.outputs.exonerated }}
           DESCRIPTION: ${{ steps.triage.outputs.description }}
         run: |
-          # Only letters, digits, dot, dash and underscore: a server string with a slash or a space
-          # would otherwise point the file at another directory, or split it. The hash of the raw pair
-          # keeps two lanes apart that the same characters would otherwise merge ("6/3" and "6 3").
+          # A file-safe name per lane; the hash keeps apart lanes the sanitizing would merge ("6/3", "6 3").
           VERDICT_FILE="cmt-triage-verdict-$(printf '%s-%s' "${PLATFORM}" "${SERVER_VERSION}" | tr -c 'A-Za-z0-9._-' '_')-$(printf '%s\n%s' "${PLATFORM}" "${SERVER_VERSION}" | sha256sum | cut -c1-8).json"
-          # Each failed test, as triage labelled it, so the message can name it. Schema 2
-          # carries the label and the model's explanation; schema 1 (a toolkit before
-          # them) is given its label as the toolkit would; none for any other file.
+          # Each failed test with triage's label, so the message can name it. Schema 1 has no
+          # label or explanation, so it gets the label the toolkit would give it.
           FINDINGS='[]'
           RECORDED=false
           if [ -f e2e-triage-findings.json ] && FROM_FILE=$(jq -c '
@@ -455,8 +452,7 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: cmt-triage-verdict-${{ matrix.platform }}-${{ matrix.server }}
-          # One file name per lane: the verdict job downloads every lane into one
-          # directory (merge-multiple), where a shared name keeps only the last one.
+          # One name per lane: merge-multiple keeps only the last of files sharing a name.
           path: ${{ steps.record-verdict.outputs.file }}
           retention-days: 1
 
@@ -522,11 +518,16 @@ jobs:
             const compositeIdentity = JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY);
             const expectedLanes = (JSON.parse(process.env.CMT_TRIAGE_MATRIX || '{"include":[]}').include) || [];
 
-            let lanes = [];
+            const lanes = [];
             try {
-              lanes = fs.readdirSync('cmt-triage-verdicts')
-                .filter((file) => file.endsWith('.json'))
-                .map((file) => JSON.parse(fs.readFileSync(path.join('cmt-triage-verdicts', file), 'utf8')));
+              const files = fs.readdirSync('cmt-triage-verdicts').filter((file) => file.endsWith('.json'));
+              for (const file of files) {
+                try {
+                  lanes.push(JSON.parse(fs.readFileSync(path.join('cmt-triage-verdicts', file), 'utf8')));
+                } catch (error) {
+                  core.warning(`Could not parse triage verdict artifact ${file}: ${error.message}`);
+                }
+              }
             } catch (error) {
               core.info(`No triage verdict artifacts: ${error.message}`);
             }
