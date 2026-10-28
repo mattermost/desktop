@@ -32,7 +32,7 @@ declare global {
         };
         desktop: {
             quit: (reason: string, stack: string) => void;
-            openAppMenu: () => void;
+            openAppMenu: (offsetX: number) => void;
             closeServersDropdown: () => void;
             openServersDropdown: () => void;
             switchTab: (viewId: string) => void;

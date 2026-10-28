@@ -259,7 +259,7 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.handle(GET_APP_INFO, handleAppVersion);
 
     if (process.platform !== 'darwin') {
-        ipcMain.on(OPEN_APP_MENU, handleOpenAppMenu);
+        ipcMain.on(OPEN_APP_MENU, ipcValidate(handleOpenAppMenu, [Joi.number().min(0).required()]));
     }
 
     ipcMain.on(QUIT, handleQuit);

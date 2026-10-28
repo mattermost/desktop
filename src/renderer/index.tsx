@@ -15,7 +15,7 @@ import {printVersion} from './utils';
 
 const openMenu = () => {
     if (window.process.platform !== 'darwin') {
-        window.desktop.openAppMenu();
+        window.desktop.openAppMenu(window.navigator.windowControlsOverlay?.getTitlebarAreaRect().x ?? 0);
     }
 };
 
