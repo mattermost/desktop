@@ -57,6 +57,9 @@ const TopBar = ({children, title, openMenu, openPopoutMenu}: Props) => {
         fullScreen,
     });
 
+    const showWindowControlsSpacers = window.process.platform !== 'darwin' && !fullScreen && (window.process.platform !== 'linux' || !config?.useNativeTitleBar);
+    const titlebarAreaRect = window.navigator.windowControlsOverlay?.getTitlebarAreaRect();
+
     return (
         <div
             className={topBarClassName}
@@ -67,6 +70,9 @@ const TopBar = ({children, title, openMenu, openPopoutMenu}: Props) => {
                 ref={topBar}
                 className={'topBar-bg'}
             >
+                {showWindowControlsSpacers && Boolean(titlebarAreaRect?.x) && (
+                    <span style={{flex: `0 0 ${titlebarAreaRect?.x}px`}}/>
+                )}
                 <button
                     ref={threeDotMenu}
                     className='three-dot-menu'
@@ -96,8 +102,8 @@ const TopBar = ({children, title, openMenu, openPopoutMenu}: Props) => {
                         <i className='icon icon-arrow-collapse'/>
                     </div>
                 )}
-                {window.process.platform !== 'darwin' && !fullScreen && (window.process.platform !== 'linux' || !config?.useNativeTitleBar) && (
-                    <span style={{width: `${window.innerWidth - (window.navigator.windowControlsOverlay?.getTitlebarAreaRect().width ?? 0)}px`}}/>
+                {showWindowControlsSpacers && (
+                    <span style={{width: `${window.innerWidth - (titlebarAreaRect?.x ?? 0) - (titlebarAreaRect?.width ?? 0)}px`}}/>
                 )}
             </div>
         </div>
