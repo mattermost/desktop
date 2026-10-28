@@ -408,6 +408,7 @@ jobs:
       # Always record a verdict file — an empty verdict is how the fold knows
       # this lane was never triaged (counts as unknown, never green).
       - name: cmt/record-triage-verdict
+        id: record-verdict
         if: always()
         env:
           PLATFORM: ${{ matrix.platform }}
@@ -417,6 +418,9 @@ jobs:
           EXONERATED: ${{ steps.triage.outputs.exonerated }}
           DESCRIPTION: ${{ steps.triage.outputs.description }}
         run: |
+          # Only letters, digits, dot, dash and underscore: a server string with a slash or a space
+          # would otherwise point the file at another directory, or split it.
+          VERDICT_FILE="cmt-triage-verdict-$(printf '%s-%s' "${PLATFORM}" "${SERVER_VERSION}" | tr -c 'A-Za-z0-9._-' '_').json"
           jq -n \
             --arg platform "${PLATFORM}" \
             --arg serverVersion "${SERVER_VERSION}" \
@@ -425,7 +429,8 @@ jobs:
             --arg exonerated "${EXONERATED}" \
             --arg description "${DESCRIPTION}" \
             '{platform: $platform, serverVersion: $serverVersion, verdict: $verdict, blocking: $blocking, exonerated: $exonerated, description: $description}' \
-            > "cmt-triage-verdict-${PLATFORM}-${SERVER_VERSION}.json"
+            > "${VERDICT_FILE}"
+          echo "file=${VERDICT_FILE}" >> "${GITHUB_OUTPUT}"
 
       - name: cmt/upload-triage-verdict
         if: always()
@@ -434,7 +439,7 @@ jobs:
           name: cmt-triage-verdict-${{ matrix.platform }}-${{ matrix.server }}
           # One file name per lane: the verdict job downloads every lane into one
           # directory (merge-multiple), where a shared name keeps only the last one.
-          path: cmt-triage-verdict-${{ matrix.platform }}-${{ matrix.server }}.json
+          path: ${{ steps.record-verdict.outputs.file }}
           retention-days: 1
 
   # Fold the lane verdicts into the run's one verdict: green when triage

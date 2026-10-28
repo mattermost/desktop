@@ -329,8 +329,9 @@ describe('CMT posts only e2e/compatibility-matrix-testing', () => {
         // cmt-verdict downloads all lanes into one directory (merge-multiple); one shared
         // file name kept only the last lane, and the run was judged on 1 of 15 lanes.
         const triage = jobLines(cmt, 'cmt-triage').join('\n');
-        assert.match(triage, /> "cmt-triage-verdict-\$\{PLATFORM\}-\$\{SERVER_VERSION\}\.json"/);
-        assert.match(triage, /path: cmt-triage-verdict-\$\{\{ matrix\.platform \}\}-\$\{\{ matrix\.server \}\}\.json/);
+        assert.match(triage, /VERDICT_FILE="cmt-triage-verdict-\$\(printf '%s-%s' "\$\{PLATFORM\}" "\$\{SERVER_VERSION\}" \| tr -c 'A-Za-z0-9\._-' '_'\)\.json"/);
+        assert.match(triage, /> "\$\{VERDICT_FILE\}"/);
+        assert.match(triage, /path: \$\{\{ steps\.record-verdict\.outputs\.file \}\}/);
         assert.doesNotMatch(triage, /cmt-triage-verdict\.json/);
         assert.match(jobLines(cmt, 'cmt-verdict').join('\n'), /merge-multiple: true/);
     });

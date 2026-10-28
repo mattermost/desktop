@@ -9,7 +9,8 @@
  * Toolkit verdict semantics (mattermost-test-automation-toolkit
  * e2e-test-triage): SUCCESS = every failure cleared (flaky, failed in
  * master, other PRs, Infra failure), FAILURE = blocking failures remain
- * (likely a real bug), ACTION_REQUIRED = triage could not settle it (an
+ * (triage could not clear them: needs investigation), ACTION_REQUIRED =
+ * triage could not settle it (an
  * Infra-failure-heavy run, missing reports, too little evidence). A lane
  * with no verdict was never triaged and counts as unknown — unknown is
  * never green and never plain red.
