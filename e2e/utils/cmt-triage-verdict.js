@@ -44,6 +44,29 @@ function normalizeVerdict(value) {
     return ['SUCCESS', 'FAILURE', 'ACTION_REQUIRED'].includes(verdict) ? verdict : '';
 }
 
+// The toolkit's labels for a failed test (findings file schema 2), most severe first: a test's label across the
+// lanes it failed in is the most severe one any lane gave it.
+const LABEL_ORDER = ['app bug', 'caused by PR', 'needs investigation', 'out of date', 'fixed on main', 'server compat', 'test bug', 'broken on main', 'flaky'];
+
+function labelRank(label) {
+    const i = LABEL_ORDER.indexOf(label);
+    return i === -1 ? LABEL_ORDER.indexOf('needs investigation') : i;
+}
+
+// One failed test as a lane recorded it: its identity, the toolkit's label, and the model's one-line explanation.
+function normalizeFinding(row) {
+    if (!row || typeof row.title !== 'string' || typeof row.file !== 'string' || typeof row.label !== 'string') {
+        return null;
+    }
+    return {
+        title: row.title,
+        file: row.file,
+        label: row.label,
+        blocking: row.blocking === true,
+        explanation: typeof row.explanation === 'string' && row.explanation ? row.explanation : null,
+    };
+}
+
 function normalizeLane(lane) {
     return {
         platform: lane?.platform || 'unknown',
@@ -52,7 +75,39 @@ function normalizeLane(lane) {
         blocking: toCount(lane?.blocking),
         exonerated: toCount(lane?.exonerated),
         description: String(lane?.description || ''),
+        findings: Array.isArray(lane?.findings) ? lane.findings.map(normalizeFinding).filter(Boolean) : [],
     };
+}
+
+/**
+ * The run's failed tests, each once across the lanes it failed in: its most severe label, whether any lane still
+ * blocks on it, how many lanes it failed in, and the first explanation the model gave. Most severe first, then the
+ * most lanes. Empty when no lane recorded its tests (a toolkit before findings file schema 2).
+ *
+ * @param {Array} lanes - normalized lanes
+ * @returns {Array<{title: string, file: string, label: string, blocking: boolean, lanes: number, explanation: string|null}>}
+ */
+function groupTests(lanes) {
+    const byTest = new Map();
+    for (const lane of lanes) {
+        for (const f of lane.findings) {
+            const key = `${f.file}\n${f.title}`;
+            const seen = byTest.get(key);
+            if (!seen) {
+                byTest.set(key, {title: f.title, file: f.file, label: f.label, blocking: f.blocking, lanes: 1, explanation: f.explanation});
+                continue;
+            }
+            seen.lanes += 1;
+            seen.blocking = seen.blocking || f.blocking;
+            if (labelRank(f.label) < labelRank(seen.label)) {
+                seen.label = f.label;
+                seen.explanation = f.explanation || seen.explanation;
+            } else if (!seen.explanation) {
+                seen.explanation = f.explanation;
+            }
+        }
+    }
+    return [...byTest.values()].sort((a, b) => labelRank(a.label) - labelRank(b.label) || b.lanes - a.lanes || a.title.localeCompare(b.title));
 }
 
 /**
@@ -125,7 +180,7 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
         byKey.set(laneKey(normalized), normalized);
     }
 
-    const result = {...base};
+    const result = {...base, tests: [], laneCount: expectedLanes?.length || 0};
     if (!expectedLanes || expectedLanes.length === 0) {
         return {
             ...result,
@@ -137,6 +192,9 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
         };
     }
 
+    // Only the matrix's own lanes: a stray record is not this run's.
+    const recorded = expectedLanes.map((expected) => byKey.get(laneKey({platform: expected.platform || 'unknown', serverVersion: expected.server || ''}))).filter(Boolean);
+    result.tests = groupTests(recorded);
     for (const expected of expectedLanes) {
         const leg = {platform: expected.platform || 'unknown', serverVersion: expected.server || ''};
         const record = byKey.get(laneKey(leg));
@@ -263,6 +321,24 @@ function formatLeg(leg) {
     return `${emoji} ${name} Server \`${leg.serverVersion}\``;
 }
 
+// A test by its id when its title starts with one (MM-T4054), else its title, cut short.
+function testName(t) {
+    const id = /^(MM-T\d+(?:_\d+)?)\b/.exec(t.title)?.[1];
+    return id ? `\`${id}\`` : `\`${t.title.slice(0, 50)}\``;
+}
+
+// One line per test, at most five, then how many more: its spec, label, how many lanes it failed in, and the model's
+// explanation.
+function formatTestLines(tests, laneCount) {
+    const spec = (file) => file.split('/').pop().replace(/\.(test|spec)\.[jt]s$/, '');
+    const lines = tests.slice(0, 5).map((t) =>
+        `• ${testName(t)} ${spec(t.file)}: ${t.label}, failed in ${t.lanes}${laneCount ? `/${laneCount}` : ''} lane${(laneCount || t.lanes) === 1 ? '' : 's'}${t.explanation ? ` · ${t.explanation}` : ''}`);
+    if (tests.length > 5) {
+        lines.push(`…and ${tests.length - 5} more`);
+    }
+    return lines;
+}
+
 function formatLegList(legs, render) {
     const shown = legs.slice(0, 5).map(render).join('; ');
     return legs.length > 5 ? `${shown}; …and ${legs.length - 5} more` : shown;
@@ -284,10 +360,13 @@ function formatCmtVerdictMessage({fold, compositeIdentity, stats = {}, reportUrl
     const branch = (compositeIdentity?.branch || '').replace(/^refs\/(heads|tags)\//, '');
     const shortSha = (compositeIdentity?.commit_sha || '').slice(0, 7);
 
+    const tests = fold.tests || [];
+    const blockingTests = tests.filter((t) => t.blocking);
+    const clearedTests = tests.filter((t) => !t.blocking);
     const titles = {
         passed: ':green_circle: **Desktop CMT — passed**',
-        flaky: ':green_circle: **Desktop CMT — flaky, no bug found**',
-        blocking: ':red_circle: **Desktop CMT — needs investigation**',
+        flaky: clearedTests.some((t) => t.label !== 'flaky') ? ':green_circle: **Desktop CMT — no app bug found**' : ':green_circle: **Desktop CMT — flaky, no bug found**',
+        blocking: blockingTests.some((t) => t.label === 'app bug') ? ':red_circle: **Desktop CMT — app bug likely**' : ':red_circle: **Desktop CMT — needs investigation**',
     };
     const title = titles[fold.kind] || ':yellow_circle: **Desktop CMT — needs investigation**';
 
@@ -300,10 +379,17 @@ function formatCmtVerdictMessage({fold, compositeIdentity, stats = {}, reportUrl
         lines.push(meta);
     }
 
-    if (fold.kind === 'blocking') {
+    if (fold.kind === 'blocking' && blockingTests.length) {
+        lines.push(...formatTestLines(blockingTests, fold.laneCount));
+        if (clearedTests.length) {
+            lines.push(`Not app bugs: ${formatLegList(clearedTests, (t) => `${testName(t)} (${t.label})`)}`);
+        }
+    } else if (fold.kind === 'blocking') {
         const legs = formatLegList(fold.blockingLegs, (leg) =>
             `${formatLeg(leg)}${leg.blocking > 0 ? ` — ${leg.blocking} blocking` : ''}`);
         lines.push(`Blocking after triage: ${legs}`);
+    } else if (fold.kind === 'flaky' && clearedTests.length) {
+        lines.push(...formatTestLines(clearedTests, fold.laneCount));
     } else if (fold.kind === 'flaky') {
         const cleared = fold.clearedLegs.length;
         const clearedCount = fold.clearedCount > 0 ? `, ${fold.clearedCount} cleared by triage` : '';

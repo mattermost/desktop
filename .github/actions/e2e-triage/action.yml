@@ -42,6 +42,10 @@ inputs:
     description: 'Comma-separated lane contexts sharing the per-PR budget; empty gives this lane no shared budget split (CMT has no PR)'
     required: false
     default: 'e2e/linux,e2e/macos,e2e/windows,e2e/macos-policy,e2e/windows-policy'
+  findings-file:
+    description: 'Path triage writes its per-test findings to (toolkit findings file); empty writes none. CMT reads it to name each failed test in its message.'
+    required: false
+    default: ''
 
 outputs:
   verdict:
@@ -102,6 +106,7 @@ runs:
         anthropic-api-key: ${{ inputs.anthropic-api-key }}
         mode: ${{ inputs.mode }}
         answers-cache: e2e-triage-answers.json
+        findings-file: ${{ inputs.findings-file }}
     - name: Save triage answers
       if: always() && hashFiles('e2e-triage-answers.json') != ''
       continue-on-error: true

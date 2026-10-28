@@ -335,6 +335,16 @@ describe('CMT posts only e2e/compatibility-matrix-testing', () => {
         assert.doesNotMatch(triage, /cmt-triage-verdict\.json/);
         assert.match(jobLines(cmt, 'cmt-verdict').join('\n'), /merge-multiple: true/);
     });
+
+    it('records each failed test with its lane verdict, from the triage findings file (schema 2 only)', () => {
+        const triage = jobLines(cmt, 'cmt-triage').join('\n');
+        assert.match(triage, /findings-file: e2e-triage-findings\.json/);
+        assert.match(triage, /if \.schema == 2 then \[\.findings\[\] \| \{title, file, label, blocking, explanation: \.ai\.explanation\}\] else \[\] end/);
+        assert.match(triage, /--argjson findings "\$\{FINDINGS\}"/);
+        const action = read('.github/actions/e2e-triage/action.yml');
+        assert.match(action, /findings-file: \$\{\{ inputs\.findings-file \}\}/);
+        assert.match(action, /  findings-file:\n(?:.*\n){2}    default: ''/, "off unless a caller asks: PR and master lanes write none");
+    });
 });
 
 describe('e2e node_modules and Electron zip caches', () => {

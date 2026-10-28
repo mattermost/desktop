@@ -404,6 +404,7 @@ jobs:
           # The verdict job folds the lane outputs itself; a lane must not
           # flip the shared CMT status green or red on its own.
           mode: report-only
+          findings-file: e2e-triage-findings.json
 
       # Always record a verdict file — an empty verdict is how the fold knows
       # this lane was never triaged (counts as unknown, never green).
@@ -421,6 +422,12 @@ jobs:
           # Only letters, digits, dot, dash and underscore: a server string with a slash or a space
           # would otherwise point the file at another directory, or split it.
           VERDICT_FILE="cmt-triage-verdict-$(printf '%s-%s' "${PLATFORM}" "${SERVER_VERSION}" | tr -c 'A-Za-z0-9._-' '_').json"
+          # Each failed test, as triage labelled it (findings file schema 2), so the
+          # message can name it; none when triage wrote no file or an older schema.
+          FINDINGS='[]'
+          if [ -f e2e-triage-findings.json ]; then
+            FINDINGS=$(jq -c 'if .schema == 2 then [.findings[] | {title, file, label, blocking, explanation: .ai.explanation}] else [] end' e2e-triage-findings.json 2>/dev/null || echo '[]')
+          fi
           jq -n \
             --arg platform "${PLATFORM}" \
             --arg serverVersion "${SERVER_VERSION}" \
@@ -428,7 +435,8 @@ jobs:
             --arg blocking "${BLOCKING}" \
             --arg exonerated "${EXONERATED}" \
             --arg description "${DESCRIPTION}" \
-            '{platform: $platform, serverVersion: $serverVersion, verdict: $verdict, blocking: $blocking, exonerated: $exonerated, description: $description}' \
+            --argjson findings "${FINDINGS}" \
+            '{platform: $platform, serverVersion: $serverVersion, verdict: $verdict, blocking: $blocking, exonerated: $exonerated, description: $description, findings: $findings}' \
             > "${VERDICT_FILE}"
           echo "file=${VERDICT_FILE}" >> "${GITHUB_OUTPUT}"
 

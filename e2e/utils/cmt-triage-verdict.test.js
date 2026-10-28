@@ -214,3 +214,78 @@ describe('CMT triage wiring', () => {
         assert.match(workflow, /notifyChannel: false/);
     });
 });
+
+describe('per-test CMT message (toolkit findings file schema 2)', () => {
+    // v6.3.2-rc.2, run 40651298431: which test failed on which of its 15 lanes, as the lanes' triage logs show. The labels
+    // and explanations are what release triage gives them; MM-T2633's fix on master is in a helper, so it stays held.
+    const servers = ['10.11.25', '11.7.14', '11.11.3', '12.0.1', '12.1.0-rc2'];
+    const matrix = ['linux', 'macos', 'windows'].flatMap((platform) => servers.map((server) => ({platform, server})));
+    const row = (title, file, label, blocking, explanation) => ({title, file, label, blocking, explanation});
+    const T4054 = row('MM-T4054 Open/Close permanent link media preview', 'e2e/specs/mattermost/media_preview.test.ts', 'test bug', false, "The old test's PNG fixture is invalid; master replaced it.");
+    const T2633 = row('MM-T2633 back button returns to login after mock SSO navigation', 'e2e/specs/login/sso_back_button.test.ts', 'needs investigation', true, null);
+    const T5890 = row('MM-T5890 Opening channels in new windows', 'e2e/specs/multi_window/multi_window.test.ts', 'server compat', false, "10.11 has no 'Open in new window' item.");
+    const T5611 = row('MM-T5611 Open a bookmark URL/link (External and Internal links)', 'e2e/specs/mattermost/bookmarks.test.ts', 'server compat', false, '10.11 has no Bookmarks Bar.');
+    const failedOn = ({platform, server}) => [
+        T4054,
+        ...(server.startsWith('12.') ? [T2633] : []),
+        ...(server === '10.11.25' ? [T5890] : []),
+        ...(server === '10.11.25' && platform !== 'linux' ? [T5611] : []),
+    ];
+    const lanes = matrix.map((leg) => {
+        const findings = failedOn(leg);
+        const blocking = findings.filter((f) => f.blocking).length;
+        return {platform: leg.platform, serverVersion: leg.server, verdict: blocking ? 'FAILURE' : 'SUCCESS', blocking: String(blocking), exonerated: String(findings.length - blocking), findings};
+    });
+    const stats = {passed: 3308, failed: 26, skipped: 306, flaky: 15};
+    const links = {reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/v6.3.2-rc.2/725fbc7/cmt-desktop', runUrl: 'https://github.com/mattermost/desktop/actions/runs/40651298431'};
+
+    it('folds the 26 failures into 4 tests, most severe first, each with the lanes it failed in', () => {
+        const fold = foldCmtVerdicts({lanes, expectedLanes: matrix, expectTriage: true, stats});
+        assert.equal(fold.kind, 'blocking');
+        assert.equal(lanes.reduce((n, l) => n + l.findings.length, 0), 26);
+        assert.deepEqual(fold.tests.map((t) => [t.title.slice(0, 8), t.label, t.lanes, t.blocking]), [
+            ['MM-T2633', 'needs investigation', 6, true],
+            ['MM-T5890', 'server compat', 3, false],
+            ['MM-T5611', 'server compat', 2, false],
+            ['MM-T4054', 'test bug', 15, false],
+        ]);
+    });
+
+    it('posts one line per held test and names what the rest are, never "likely bug"', () => {
+        const fold = foldCmtVerdicts({lanes, expectedLanes: matrix, expectTriage: true, stats});
+        const text = formatCmtVerdictMessage({fold, compositeIdentity: {...identity, branch: 'v6.3.2-rc.2'}, stats, ...links});
+        assert.match(text, /^:red_circle: \*\*Desktop CMT — needs investigation\*\*$/m);
+        assert.match(text, /^• `MM-T2633` sso_back_button: needs investigation, failed in 6\/15 lanes$/m);
+        assert.match(text, /^Not app bugs: `MM-T5890` \(server compat\); `MM-T5611` \(server compat\); `MM-T4054` \(test bug\)$/m);
+        assert.ok(!text.includes('likely bug'));
+        assert.ok(text.trimEnd().split('\n').length <= 8, 'stays short');
+    });
+
+    it('calls a run with an app bug "app bug likely", and one with nothing held "no app bug found"', () => {
+        const appBug = lanes.map((l) => (l.platform === 'linux' && l.serverVersion === '11.11.3'
+            ? {...l, verdict: 'FAILURE', blocking: '1', findings: [{...T4054, label: 'app bug', blocking: true, explanation: 'The preview modal never opens.'}]}
+            : l));
+        const red = formatCmtVerdictMessage({fold: foldCmtVerdicts({lanes: appBug, expectedLanes: matrix, expectTriage: true, stats}), compositeIdentity: identity, stats, ...links});
+        assert.match(red, /^:red_circle: \*\*Desktop CMT — app bug likely\*\*$/m);
+        assert.match(red, /^• `MM-T4054` media_preview: app bug, failed in 15\/15 lanes · The preview modal never opens\.$/m, 'the most severe label any lane gave it');
+        const cleared = lanes.map((l) => ({...l, verdict: 'SUCCESS', blocking: '0', findings: l.findings.filter((f) => !f.blocking)}));
+        const green = formatCmtVerdictMessage({fold: foldCmtVerdicts({lanes: cleared, expectedLanes: matrix, expectTriage: true, stats}), compositeIdentity: identity, stats, ...links});
+        assert.match(green, /^:green_circle: \*\*Desktop CMT — no app bug found\*\*$/m);
+        assert.match(green, /^• `MM-T4054` media_preview: test bug, failed in 15\/15 lanes · The old test's PNG fixture is invalid; master replaced it\.$/m);
+    });
+
+    it('keeps the per-lane message when the lanes carry no tests (a toolkit before findings file schema 2)', () => {
+        const bare = lanes.map(({findings: _, ...l}) => l);
+        const text = formatCmtVerdictMessage({fold: foldCmtVerdicts({lanes: bare, expectedLanes: matrix, expectTriage: true, stats}), compositeIdentity: identity, stats, ...links});
+        assert.match(text, /^Blocking after triage: /m);
+        assert.ok(!text.includes('•'));
+    });
+
+    it('never names a test bug for a run whose jobs died before any test ran (run 40648275037)', () => {
+        const fold = foldCmtVerdicts({lanes: [], expectedLanes: matrix, expectTriage: true, stats: {}, upstreamJobsSucceeded: false});
+        const text = formatCmtVerdictMessage({fold, compositeIdentity: identity, stats: {}, ...links});
+        assert.notEqual(fold.state, 'green');
+        assert.deepEqual(fold.tests, []);
+        assert.ok(!/test bug|app bug|likely bug/.test(text));
+    });
+});
