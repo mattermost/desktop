@@ -33,6 +33,7 @@ jest.mock('app/mainWindow/modals/modalManager', () => ({
     default: {
         addModal: jest.fn(),
         addPriorityModal: jest.fn(),
+        modalQueue: [],
     },
 }));
 
@@ -60,6 +61,7 @@ jest.mock('main/utils', () => ({
 describe('app/mainWindow/modals/messageModal', () => {
     afterEach(() => {
         jest.resetAllMocks();
+        ModalManager.modalQueue.length = 0;
     });
 
     describe('showMessageModal', () => {
@@ -117,6 +119,16 @@ describe('app/mainWindow/modals/messageModal', () => {
 
             expect(Config.set).toHaveBeenCalledWith('alwaysClose', false);
             expect(app.quit).not.toHaveBeenCalled();
+        });
+
+        it('should not open a second modal when one is already open', () => {
+            ModalManager.modalQueue.push({key: 'messageModal-closeApp'});
+            const messageModal = new MessageModal();
+            jest.spyOn(messageModal, 'showMessageModal');
+
+            messageModal.handleCloseConfirm();
+
+            expect(messageModal.showMessageModal).not.toHaveBeenCalled();
         });
     });
 
