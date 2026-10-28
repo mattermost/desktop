@@ -291,7 +291,13 @@ describe('per-test CMT message (toolkit findings file schema 2)', () => {
         const partial = lanes.map((l) => (l.platform === 'windows' && l.serverVersion === '12.0.1' ? {...l, findings: [], findingsRecorded: false} : l));
         const text = formatCmtVerdictMessage({fold: foldCmtVerdicts({lanes: partial, expectedLanes: matrix, expectTriage: true, stats}), compositeIdentity: identity, stats, ...links});
         assert.match(text, /^• `MM-T2633` sso_back_button: needs investigation, failed in 5\/15 lanes$/m);
-        assert.match(text, /^Also blocking, tests not recorded: 🪟 Windows Server `12\.0\.1` — 1 blocking$/m);
+        assert.match(text, /^Also blocking, no test named: 🪟 Windows Server `12\.0\.1` — 1 blocking$/m);
+    });
+
+    it('names a lane red only for a shard that never reported, which has no blocking test', () => {
+        const shard = lanes.map((l) => (l.platform === 'linux' && l.serverVersion === '10.11.25' ? {...l, verdict: 'FAILURE', blocking: '0'} : l));
+        const text = formatCmtVerdictMessage({fold: foldCmtVerdicts({lanes: shard, expectedLanes: matrix, expectTriage: true, stats}), compositeIdentity: identity, stats, ...links});
+        assert.match(text, /^Also blocking, no test named: 🐧 Linux Server `10\.11\.25`$/m);
     });
 
     it('keeps each explanation with the label it was given for', () => {

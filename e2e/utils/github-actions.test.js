@@ -345,7 +345,7 @@ describe('CMT posts only e2e/compatibility-matrix-testing', () => {
         assert.match(triage, /--argjson findings "\$\{FINDINGS\}"/);
         const action = read('.github/actions/e2e-triage/action.yml');
         assert.match(action, /findings-file: \$\{\{ inputs\.findings-file \}\}/);
-        assert.match(action, / {2}findings-file:\n(?:.*\n){2} {4}default: ''/, 'off unless a caller asks: PR and master lanes write none');
+        assert.match(action, / {2}findings-file:\r?\n(?:.*\r?\n){2} {4}default: ''/, 'off unless a caller asks: PR and master lanes write none');
     });
 });
 

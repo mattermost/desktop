@@ -211,7 +211,8 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
             result.clearedLegs.push({...leg, exonerated: record.exonerated});
             result.clearedCount += record.exonerated;
         } else if (record.verdict === 'FAILURE') {
-            result.blockingLegs.push({...leg, blocking: record.blocking, findingsRecorded: record.findingsRecorded});
+            // A lane red with no blocking test it named (unread findings, or a shard that never reported) is named as a lane.
+            result.blockingLegs.push({...leg, blocking: record.blocking, testsNamed: record.findingsRecorded && record.findings.some((f) => f.blocking)});
             result.blockingCount += record.blocking;
         } else {
             result.unknownLegs.push({...leg, reason: 'triage needs investigation'});
@@ -389,10 +390,11 @@ function formatCmtVerdictMessage({fold, compositeIdentity, stats = {}, reportUrl
     if (fold.kind === 'blocking' && blockingTests.length) {
         lines.push(...formatTestLines(blockingTests, fold.laneCount));
 
-        // A blocking lane whose findings file could not be read is named as a lane: its tests are not in the lines above.
-        const unnamed = fold.blockingLegs.filter((leg) => !leg.findingsRecorded);
+        // A blocking lane none of the lines above name (its findings were not read, or it is red for a shard that never
+        // reported) is named as a lane.
+        const unnamed = fold.blockingLegs.filter((leg) => !leg.testsNamed);
         if (unnamed.length) {
-            lines.push(`Also blocking, tests not recorded: ${formatLegList(unnamed, (leg) => `${formatLeg(leg)}${leg.blocking > 0 ? ` — ${leg.blocking} blocking` : ''}`)}`);
+            lines.push(`Also blocking, no test named: ${formatLegList(unnamed, (leg) => `${formatLeg(leg)}${leg.blocking > 0 ? ` — ${leg.blocking} blocking` : ''}`)}`);
         }
         if (clearedTests.length) {
             lines.push(`Not app bugs: ${formatLegList(clearedTests, (t) => `${testName(t)} (${t.label})`)}`);
