@@ -427,13 +427,15 @@ jobs:
           # carries the label and the model's explanation; schema 1 (a toolkit before
           # them) is given its label as the toolkit would; none for any other file.
           FINDINGS='[]'
-          if [ -f e2e-triage-findings.json ]; then
-            FINDINGS=$(jq -c '
-              if .schema == 2 then [.findings[] | {title, file, label, blocking, explanation: .ai.explanation}]
-              elif .schema == 1 then [.findings[] | {title, file, blocking, explanation: null,
+          RECORDED=false
+          if [ -f e2e-triage-findings.json ] && FROM_FILE=$(jq -c '
+              if .schema == 2 then [.findings[] | {title, full_title, file, label, blocking, explanation: .ai.explanation}]
+              elif .schema == 1 then [.findings[] | {title, full_title, file, blocking, explanation: null,
                 label: (if .blocking then (if .out_of_date then "out of date" elif .class == "OWNED_BY_PR" then "caused by PR" else "needs investigation" end)
                         elif .class == "BROKEN_ON_TRUNK" then "broken on main" else "flaky" end)}]
-              else [] end' e2e-triage-findings.json 2>/dev/null || echo '[]')
+              else error("unknown findings schema") end' e2e-triage-findings.json 2>/dev/null); then
+            FINDINGS="${FROM_FILE}"
+            RECORDED=true
           fi
           jq -n \
             --arg platform "${PLATFORM}" \
@@ -443,7 +445,8 @@ jobs:
             --arg exonerated "${EXONERATED}" \
             --arg description "${DESCRIPTION}" \
             --argjson findings "${FINDINGS}" \
-            '{platform: $platform, serverVersion: $serverVersion, verdict: $verdict, blocking: $blocking, exonerated: $exonerated, description: $description, findings: $findings}' \
+            --argjson findingsRecorded "${RECORDED}" \
+            '{platform: $platform, serverVersion: $serverVersion, verdict: $verdict, blocking: $blocking, exonerated: $exonerated, description: $description, findings: $findings, findingsRecorded: $findingsRecorded}' \
             > "${VERDICT_FILE}"
           echo "file=${VERDICT_FILE}" >> "${GITHUB_OUTPUT}"
 

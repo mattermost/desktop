@@ -60,6 +60,7 @@ function normalizeFinding(row) {
     }
     return {
         title: row.title,
+        fullTitle: typeof row.full_title === 'string' && row.full_title ? row.full_title : row.title,
         file: row.file,
         label: row.label,
         blocking: row.blocking === true,
@@ -76,6 +77,9 @@ function normalizeLane(lane) {
         exonerated: toCount(lane?.exonerated),
         description: String(lane?.description || ''),
         findings: Array.isArray(lane?.findings) ? lane.findings.map(normalizeFinding).filter(Boolean) : [],
+
+        // Whether triage's findings file was read for this lane: without it, its tests can't be named.
+        findingsRecorded: lane?.findingsRecorded === true,
     };
 }
 
@@ -91,7 +95,8 @@ function groupTests(lanes) {
     const byTest = new Map();
     for (const lane of lanes) {
         for (const f of lane.findings) {
-            const key = `${f.file}\n${f.title}`;
+            // Two suites of one file can share a leaf title: the full title tells their tests apart.
+            const key = `${f.file}\n${f.fullTitle}`;
             const seen = byTest.get(key);
             if (!seen) {
                 byTest.set(key, {title: f.title, file: f.file, label: f.label, blocking: f.blocking, lanes: 1, explanation: f.explanation});
@@ -99,6 +104,7 @@ function groupTests(lanes) {
             }
             seen.lanes += 1;
             seen.blocking = seen.blocking || f.blocking;
+
             // The explanation stays with the label it was given for.
             if (labelRank(f.label) < labelRank(seen.label)) {
                 seen.label = f.label;
@@ -205,7 +211,7 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
             result.clearedLegs.push({...leg, exonerated: record.exonerated});
             result.clearedCount += record.exonerated;
         } else if (record.verdict === 'FAILURE') {
-            result.blockingLegs.push({...leg, blocking: record.blocking});
+            result.blockingLegs.push({...leg, blocking: record.blocking, findingsRecorded: record.findingsRecorded});
             result.blockingCount += record.blocking;
         } else {
             result.unknownLegs.push({...leg, reason: 'triage needs investigation'});
@@ -324,7 +330,7 @@ function formatLeg(leg) {
 
 // A test by its id when its title starts with one (MM-T4054), else its title, cut short.
 function testName(t) {
-    const id = /^(MM-T\d+(?:_\d+)?)\b/.exec(t.title)?.[1];
+    const id = (/^(MM-T\d+(?:_\d+)?)\b/).exec(t.title)?.[1];
     return id ? `\`${id}\`` : `\`${t.title.slice(0, 50)}\``;
 }
 
@@ -382,6 +388,12 @@ function formatCmtVerdictMessage({fold, compositeIdentity, stats = {}, reportUrl
 
     if (fold.kind === 'blocking' && blockingTests.length) {
         lines.push(...formatTestLines(blockingTests, fold.laneCount));
+
+        // A blocking lane whose findings file could not be read is named as a lane: its tests are not in the lines above.
+        const unnamed = fold.blockingLegs.filter((leg) => !leg.findingsRecorded);
+        if (unnamed.length) {
+            lines.push(`Also blocking, tests not recorded: ${formatLegList(unnamed, (leg) => `${formatLeg(leg)}${leg.blocking > 0 ? ` — ${leg.blocking} blocking` : ''}`)}`);
+        }
         if (clearedTests.length) {
             lines.push(`Not app bugs: ${formatLegList(clearedTests, (t) => `${testName(t)} (${t.label})`)}`);
         }

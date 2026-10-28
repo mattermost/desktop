@@ -339,12 +339,13 @@ describe('CMT posts only e2e/compatibility-matrix-testing', () => {
     it('records each failed test with its lane verdict, from the triage findings file (schema 2 only)', () => {
         const triage = jobLines(cmt, 'cmt-triage').join('\n');
         assert.match(triage, /findings-file: e2e-triage-findings\.json/);
-        assert.match(triage, /if \.schema == 2 then \[\.findings\[\] \| \{title, file, label, blocking, explanation: \.ai\.explanation\}\]/);
-        assert.match(triage, /elif \.schema == 1 then \[\.findings\[\] \| \{title, file, blocking, explanation: null,/);
+        assert.match(triage, /if \.schema == 2 then \[\.findings\[\] \| \{title, full_title, file, label, blocking, explanation: \.ai\.explanation\}\]/);
+        assert.match(triage, /elif \.schema == 1 then \[\.findings\[\] \| \{title, full_title, file, blocking, explanation: null,/);
+        assert.match(triage, /--argjson findingsRecorded "\$\{RECORDED\}"/);
         assert.match(triage, /--argjson findings "\$\{FINDINGS\}"/);
         const action = read('.github/actions/e2e-triage/action.yml');
         assert.match(action, /findings-file: \$\{\{ inputs\.findings-file \}\}/);
-        assert.match(action, /  findings-file:\n(?:.*\n){2}    default: ''/, "off unless a caller asks: PR and master lanes write none");
+        assert.match(action, / {2}findings-file:\n(?:.*\n){2} {4}default: ''/, 'off unless a caller asks: PR and master lanes write none');
     });
 });
 

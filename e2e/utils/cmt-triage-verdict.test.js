@@ -234,7 +234,7 @@ describe('per-test CMT message (toolkit findings file schema 2)', () => {
     const lanes = matrix.map((leg) => {
         const findings = failedOn(leg);
         const blocking = findings.filter((f) => f.blocking).length;
-        return {platform: leg.platform, serverVersion: leg.server, verdict: blocking ? 'FAILURE' : 'SUCCESS', blocking: String(blocking), exonerated: String(findings.length - blocking), findings};
+        return {platform: leg.platform, serverVersion: leg.server, verdict: blocking ? 'FAILURE' : 'SUCCESS', blocking: String(blocking), exonerated: String(findings.length - blocking), findings, findingsRecorded: true};
     });
     const stats = {passed: 3308, failed: 26, skipped: 306, flaky: 15};
     const links = {reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/v6.3.2-rc.2/725fbc7/cmt-desktop', runUrl: 'https://github.com/mattermost/desktop/actions/runs/40651298431'};
@@ -262,9 +262,8 @@ describe('per-test CMT message (toolkit findings file schema 2)', () => {
     });
 
     it('calls a run with an app bug "app bug likely", and one with nothing held "no app bug found"', () => {
-        const appBug = lanes.map((l) => (l.platform === 'linux' && l.serverVersion === '11.11.3'
-            ? {...l, verdict: 'FAILURE', blocking: '1', findings: [{...T4054, label: 'app bug', blocking: true, explanation: 'The preview modal never opens.'}]}
-            : l));
+        const appBugLane = (l) => ({...l, verdict: 'FAILURE', blocking: '1', findings: [{...T4054, label: 'app bug', blocking: true, explanation: 'The preview modal never opens.'}]});
+        const appBug = lanes.map((l) => (l.platform === 'linux' && l.serverVersion === '11.11.3' ? appBugLane(l) : l));
         const red = formatCmtVerdictMessage({fold: foldCmtVerdicts({lanes: appBug, expectedLanes: matrix, expectTriage: true, stats}), compositeIdentity: identity, stats, ...links});
         assert.match(red, /^:red_circle: \*\*Desktop CMT — app bug likely\*\*$/m);
         assert.match(red, /^• `MM-T4054` media_preview: app bug, failed in 15\/15 lanes · The preview modal never opens\.$/m, 'the most severe label any lane gave it');
@@ -275,10 +274,24 @@ describe('per-test CMT message (toolkit findings file schema 2)', () => {
     });
 
     it('keeps the per-lane message when the lanes carry no tests (a toolkit before findings file schema 2)', () => {
-        const bare = lanes.map(({findings: _, ...l}) => l);
+        const bare = lanes.map((l) => ({...l, findings: undefined, findingsRecorded: false}));
         const text = formatCmtVerdictMessage({fold: foldCmtVerdicts({lanes: bare, expectedLanes: matrix, expectTriage: true, stats}), compositeIdentity: identity, stats, ...links});
         assert.match(text, /^Blocking after triage: /m);
         assert.ok(!text.includes('•'));
+    });
+
+    it('tells apart two tests of one file that share a leaf title, by their full titles', () => {
+        const leaf = (suite) => ({...T4054, full_title: `${suite} ${T4054.title}`});
+        const twoSuites = [{platform: 'linux', serverVersion: '10.11.25', verdict: 'SUCCESS', findingsRecorded: true, findings: [leaf('Desktop'), leaf('Web')]}];
+        const fold = foldCmtVerdicts({lanes: twoSuites, expectedLanes: [{platform: 'linux', server: '10.11.25'}], expectTriage: true, stats});
+        assert.deepEqual(fold.tests.map((t) => t.lanes), [1, 1], 'two tests in one lane, not one test in two lanes');
+    });
+
+    it('names a blocking lane whose tests could not be read, beside the tests of the others', () => {
+        const partial = lanes.map((l) => (l.platform === 'windows' && l.serverVersion === '12.0.1' ? {...l, findings: [], findingsRecorded: false} : l));
+        const text = formatCmtVerdictMessage({fold: foldCmtVerdicts({lanes: partial, expectedLanes: matrix, expectTriage: true, stats}), compositeIdentity: identity, stats, ...links});
+        assert.match(text, /^• `MM-T2633` sso_back_button: needs investigation, failed in 5\/15 lanes$/m);
+        assert.match(text, /^Also blocking, tests not recorded: 🪟 Windows Server `12\.0\.1` — 1 blocking$/m);
     });
 
     it('keeps each explanation with the label it was given for', () => {
@@ -295,6 +308,6 @@ describe('per-test CMT message (toolkit findings file schema 2)', () => {
         const text = formatCmtVerdictMessage({fold, compositeIdentity: identity, stats: {}, ...links});
         assert.notEqual(fold.state, 'green');
         assert.deepEqual(fold.tests, []);
-        assert.ok(!/test bug|app bug|likely bug/.test(text));
+        assert.ok(!(/test bug|app bug|likely bug/).test(text));
     });
 });
