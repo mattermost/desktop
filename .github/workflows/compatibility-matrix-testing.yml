@@ -326,10 +326,12 @@ jobs:
           # The verdict job folds the lane outputs itself; a lane must not
           # flip the shared CMT status green or red on its own.
           mode: report-only
+          findings-file: e2e-triage-findings.json
 
       # Always record a verdict file — an empty verdict is how the fold knows
       # this lane was never triaged (counts as unknown, never green).
       - name: cmt/record-triage-verdict
+        id: record-verdict
         if: always()
         env:
           PLATFORM: ${{ matrix.platform }}
@@ -339,6 +341,21 @@ jobs:
           EXONERATED: ${{ steps.triage.outputs.exonerated }}
           DESCRIPTION: ${{ steps.triage.outputs.description }}
         run: |
+          # A file-safe name per lane; the hash keeps apart lanes the sanitizing would merge ("6/3", "6 3").
+          VERDICT_FILE="cmt-triage-verdict-$(printf '%s-%s' "${PLATFORM}" "${SERVER_VERSION}" | tr -c 'A-Za-z0-9._-' '_')-$(printf '%s\n%s' "${PLATFORM}" "${SERVER_VERSION}" | sha256sum | cut -c1-8).json"
+          # Each failed test with triage's label, so the message can name it. Schema 1 has no
+          # label or explanation, so it gets the label the toolkit would give it.
+          FINDINGS='[]'
+          RECORDED=false
+          if [ -f e2e-triage-findings.json ] && FROM_FILE=$(jq -c '
+              if .schema == 2 then [.findings[] | {title, full_title, file, label, blocking, explanation: .ai.explanation}]
+              elif .schema == 1 then [.findings[] | {title, full_title, file, blocking, explanation: null,
+                label: (if .blocking then (if .out_of_date then "out of date" elif .class == "OWNED_BY_PR" then "caused by PR" else "needs investigation" end)
+                        elif .class == "BROKEN_ON_TRUNK" then "broken on main" else "flaky" end)}]
+              else error("unknown findings schema") end' e2e-triage-findings.json 2>/dev/null); then
+            FINDINGS="${FROM_FILE}"
+            RECORDED=true
+          fi
           jq -n \
             --arg platform "${PLATFORM}" \
             --arg serverVersion "${SERVER_VERSION}" \
@@ -346,20 +363,24 @@ jobs:
             --arg blocking "${BLOCKING}" \
             --arg exonerated "${EXONERATED}" \
             --arg description "${DESCRIPTION}" \
-            '{platform: $platform, serverVersion: $serverVersion, verdict: $verdict, blocking: $blocking, exonerated: $exonerated, description: $description}' \
-            > cmt-triage-verdict.json
+            --argjson findings "${FINDINGS}" \
+            --argjson findingsRecorded "${RECORDED}" \
+            '{platform: $platform, serverVersion: $serverVersion, verdict: $verdict, blocking: $blocking, exonerated: $exonerated, description: $description, findings: $findings, findingsRecorded: $findingsRecorded}' \
+            > "${VERDICT_FILE}"
+          echo "file=${VERDICT_FILE}" >> "${GITHUB_OUTPUT}"
 
       - name: cmt/upload-triage-verdict
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: cmt-triage-verdict-${{ matrix.platform }}-${{ matrix.server }}
-          path: cmt-triage-verdict.json
+          # One name per lane: merge-multiple keeps only the last of files sharing a name.
+          path: ${{ steps.record-verdict.outputs.file }}
           retention-days: 1
 
   # Fold the lane verdicts into the run's one verdict: green when triage
   # cleared everything (flaky / failed in master / Infra failure) or
-  # nothing failed, red only when blocking failures remain (likely bug),
+  # nothing failed, red only when blocking failures remain (needs investigation),
   # yellow/error when triage could not settle it. This job has the final
   # write of the e2e/compatibility-matrix-testing commit status and posts
   # the one short channel message (update-final-status no longer notifies).
@@ -416,11 +437,16 @@ jobs:
             const compositeIdentity = JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY);
             const expectedLanes = (JSON.parse(process.env.CMT_TRIAGE_MATRIX || '{"include":[]}').include) || [];
 
-            let lanes = [];
+            const lanes = [];
             try {
-              lanes = fs.readdirSync('cmt-triage-verdicts')
-                .filter((file) => file.endsWith('.json'))
-                .map((file) => JSON.parse(fs.readFileSync(path.join('cmt-triage-verdicts', file), 'utf8')));
+              const files = fs.readdirSync('cmt-triage-verdicts').filter((file) => file.endsWith('.json'));
+              for (const file of files) {
+                try {
+                  lanes.push(JSON.parse(fs.readFileSync(path.join('cmt-triage-verdicts', file), 'utf8')));
+                } catch (error) {
+                  core.warning(`Could not parse triage verdict artifact ${file}: ${error.message}`);
+                }
+              }
             } catch (error) {
               core.info(`No triage verdict artifacts: ${error.message}`);
             }
