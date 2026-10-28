@@ -4,6 +4,7 @@
 import {app} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import ServerManager from 'common/servers/serverManager';
 import {getLocalPreload} from 'main/utils';
@@ -51,6 +52,9 @@ jest.mock('common/views/viewManager', () => ({}));
 jest.mock('app/mainWindow/modals/modalManager', () => ({
     addModal: jest.fn(),
     addPriorityModal: jest.fn(),
+}));
+jest.mock('app/mainWindow/modals/messageModal', () => ({
+    isCloseConfirmOpen: jest.fn(),
 }));
 jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
@@ -105,6 +109,12 @@ describe('main/app/intercom', () => {
 
         it('should not open settings modal if no main window', () => {
             MainWindow.get.mockReturnValue(null);
+            handleShowSettingsModal();
+            expect(ModalManager.addPriorityModal).not.toHaveBeenCalled();
+        });
+
+        it('should not open settings modal while the close app modal is open', () => {
+            MessageModal.isCloseConfirmOpen.mockReturnValue(true);
             handleShowSettingsModal();
             expect(ModalManager.addPriorityModal).not.toHaveBeenCalled();
         });
