@@ -69,6 +69,9 @@ function normalizeFinding(row) {
     };
 }
 
+// A lane whose results did not all arrive: it needs a re-run, whatever triage made of what did.
+const INCOMPLETE = /results incomplete|report\(s\) missing|did not run/;
+
 function normalizeLane(lane) {
     return {
         platform: lane?.platform || 'unknown',
@@ -216,11 +219,11 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
                 ...leg,
                 blocking: record.blocking,
                 testsNamed: record.findingsRecorded && record.findings.some((f) => f.blocking),
-                incomplete: (/results incomplete|report\(s\) missing|did not run/).test(record.description),
+                incomplete: INCOMPLETE.test(record.description),
             });
             result.blockingCount += record.blocking;
         } else {
-            result.unknownLegs.push({...leg, reason: 'triage needs investigation'});
+            result.unknownLegs.push({...leg, reason: 'triage needs investigation', incomplete: INCOMPLETE.test(record.description)});
         }
     }
     result.tests = groupTests(recorded);
@@ -411,10 +414,11 @@ function formatCmtVerdictMessage({fold, compositeIdentity, stats = {}, reportUrl
     const toCheck = tests.filter((t) => t.blocking && t.label !== 'app bug');
     const notBugs = tests.filter((t) => !t.blocking);
 
-    // A lane with incomplete results needs a re-run whether or not it names a test.
+    // A lane with incomplete results needs a re-run, whether it names a test or triage could not settle it.
     const redLegs = fold.kind === 'blocking' ? fold.blockingLegs : [];
-    const incomplete = redLegs.filter((leg) => leg.incomplete);
+    const incomplete = [...redLegs, ...fold.unknownLegs].filter((leg) => leg.incomplete);
     const redUnnamed = redLegs.filter((leg) => !leg.testsNamed && !leg.incomplete);
+    const unsettled = fold.unknownLegs.filter((leg) => !leg.incomplete);
 
     let headline = `:yellow_circle: ${name} — couldn't tell`;
     if (fold.kind === 'blocking') {
@@ -448,9 +452,9 @@ function formatCmtVerdictMessage({fold, compositeIdentity, stats = {}, reportUrl
     if (redUnnamed.length) {
         lines.push(`⚠️ Red, no test named: ${listOf(redUnnamed, formatLeg)}`);
     }
-    if (fold.unknownLegs.length) {
-        lines.push(`⚠️ Couldn't settle: ${listOf(fold.unknownLegs, formatLeg)}`);
-    } else if (fold.state === 'yellow' && fold.note) {
+    if (unsettled.length) {
+        lines.push(`⚠️ Couldn't settle: ${listOf(unsettled, formatLeg)}`);
+    } else if (!fold.unknownLegs.length && fold.state === 'yellow' && fold.note) {
         lines.push(`⚠️ ${fold.note}`);
     }
 

@@ -337,6 +337,10 @@ describe('per-test CMT message', () => {
         const text = formatCmtVerdictMessage({fold, compositeIdentity: identity, stats, ...links});
         assert.ok(!fold.tests.some((t) => t.title === T5611.title && t.blocking), 'the unsettled lane adds no blocking test');
         assert.match(text, /^⚠️ Couldn't settle: 🍎 macOS 11\.7\.14$/m);
+        const short = unsettled.map((l) => (l.platform === 'macos' && l.serverVersion === '11.7.14' ? {...l, description: '(results incomplete: 14 of 15 reports)'} : l));
+        const rerun = formatCmtVerdictMessage({fold: foldCmtVerdicts({lanes: short, expectedLanes: matrix, expectTriage: true, stats}), compositeIdentity: identity, stats, ...links});
+        assert.match(rerun, /^⚠️ Results incomplete on 1 lane — re-run$/m, 'an unsettled lane with incomplete results needs a re-run too');
+        assert.ok(!rerun.includes("Couldn't settle"));
     });
 
     it('names two tests of one file with the same leaf title by their full titles', () => {
