@@ -44,6 +44,24 @@ ensure_node() {
     log "Using node $(node --version) and npm $(npm --version)"
 }
 
+# Stops a server started from $MATTERMOST_DIR before its files are replaced. Otherwise the old process keeps
+# answering on the port from a deleted working directory, and the start script would neither seed it nor
+# start the new version.
+stop_owned_mattermost() {
+    local pid
+    for pid in $(pgrep -x mattermost 2>/dev/null || true); do
+        if [ "$(readlink "/proc/${pid}/cwd" 2>/dev/null)" = "$MATTERMOST_DIR" ]; then
+            log "Stopping Mattermost server ${pid} before replacing $MATTERMOST_DIR."
+            kill "$pid" 2>/dev/null || true
+            for _ in {1..30}; do
+                kill -0 "$pid" 2>/dev/null || break
+                sleep 1
+            done
+            kill -9 "$pid" 2>/dev/null || true
+        fi
+    done
+}
+
 # Unpacks a release tarball into a staging directory, carries over the server config, stored files and
 # plugins from an existing install (as Mattermost's upgrade procedure does), then swaps it into place.
 install_mattermost_release() {
@@ -52,6 +70,7 @@ install_mattermost_release() {
     tar xzf "$tarball" -C "$stage"
 
     if [ -d "$MATTERMOST_DIR" ]; then
+        stop_owned_mattermost
         for keep in config/config.json data plugins client/plugins; do
             if [ -e "$MATTERMOST_DIR/$keep" ]; then
                 mkdir -p "$(dirname "$stage/mattermost/$keep")"
