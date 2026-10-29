@@ -35,6 +35,10 @@ jobs:
     runs-on: ubuntu-22.04
     outputs:
       DESKTOP_SHA: ${{ steps.repo.outputs.DESKTOP_SHA }}
+      CMT_MATRIX: ${{ steps.matrix.outputs.matrix }}
+      CMT_TRIAGE_MATRIX: ${{ steps.tsio-identity.outputs.triage-matrix }}
+      TSIO_COMPOSITE_IDENTITY: ${{ steps.tsio-identity.outputs.composite-identity-json }}
+      TSIO_TOTAL_REPORTS_EXPECTED: ${{ steps.tsio-identity.outputs.total-reports-expected }}
     steps:
       - name: cmt/checkout-desktop
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -44,6 +48,42 @@ jobs:
       - name: cmt/calculate-mattermost-sha
         id: repo
         run: echo "DESKTOP_SHA=$(git rev-parse HEAD)" >> ${GITHUB_OUTPUT}
+
+      # Matterwick (≥ v0.4.16) sends the runners we run on: ubuntu-latest,
+      # macos-26, windows-2022. Pass the matrix through as-is.
+      - name: cmt/set-matrix
+        id: matrix
+        env:
+          CMT_MATRIX: ${{ inputs.CMT_MATRIX }}
+        run: echo "matrix=${CMT_MATRIX}" >> "$GITHUB_OUTPUT"
+
+      # One composite identity + total-reports-expected for the WHOLE CMT run
+      # (every OS x server-version leg), computed once here and threaded into
+      # every `e2e` matrix leg below so they land in a single TSIO report group.
+      - name: cmt/tsio-identity
+        id: tsio-identity
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          MM_SHA: ${{ steps.repo.outputs.DESKTOP_SHA }}
+          MM_BRANCH: ${{ inputs.DESKTOP_VERSION }}
+          CMT_MATRIX: ${{ steps.matrix.outputs.matrix }}
+        run: |
+          TOTAL=$(echo "${CMT_MATRIX}" | jq -c '(.environment | length) * (.server | length)')
+          echo "total-reports-expected=${TOTAL}" >> "$GITHUB_OUTPUT"
+          COMPOSITE_IDENTITY=$(jq -nc \
+            --arg repo "${GITHUB_REPOSITORY}" \
+            --arg sha "${MM_SHA}" \
+            --arg run_id "${GITHUB_RUN_ID}" \
+            --arg attempt "${GITHUB_RUN_ATTEMPT}" \
+            --arg name "cmt-desktop" \
+            --arg branch "${MM_BRANCH}" \
+            '{repository:$repo, commit_sha:$sha, gh_run_id:$run_id, name:$name, gh_run_attempt:$attempt, branch:$branch}')
+          echo "composite-identity-json=${COMPOSITE_IDENTITY}" >> "$GITHUB_OUTPUT"
+          # One triage lane per (OS x server version) report: CMT uploads
+          # e2e-on-<runner>-<serverVersion> per leg, and triage judges one
+          # report per lane, so lanes must be per server version, not per OS.
+          TRIAGE_MATRIX=$(echo "${CMT_MATRIX}" | jq -c '{include: [.environment[] as $env | .server[] | {platform: $env.os, runner: $env.runner, server: .version}]}')
+          echo "triage-matrix=${TRIAGE_MATRIX}" >> "$GITHUB_OUTPUT"
 
   update-initial-status:
     runs-on: ubuntu-22.04
@@ -117,10 +157,15 @@ jobs:
     name: ${{ matrix.environment.os }}-${{ matrix.server.version }}
     uses: ./.github/workflows/e2e-functional-template.yml
     needs:
+      - calculate-commit-hash
       - update-initial-status
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(inputs.CMT_MATRIX) }}
+      matrix: ${{ fromJson(needs.calculate-commit-hash.outputs.CMT_MATRIX) }}
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
     secrets: inherit
     with:
       runs-on: ${{ matrix.environment.runner }}
@@ -129,105 +174,304 @@ jobs:
       DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
       MM_SERVER_VERSION: ${{ matrix.server.version }}
       TYPE: "CMT"
+      # Packed as one JSON input (see e2e-functional-template.yml's tsio-config) —
+      # workflow_call caps reusable workflows at 10 inputs total.
+      tsio-config: ${{ format('{{"composite_identity":{0},"total_reports_expected":"{1}"}}', needs.calculate-commit-hash.outputs.TSIO_COMPOSITE_IDENTITY, needs.calculate-commit-hash.outputs.TSIO_TOTAL_REPORTS_EXPECTED) }}
 
-  # We need to duplicate here in order to set the proper commit status
-  # https://mattermost.atlassian.net/browse/CLD-5815
-  update-failure-final-status:
+  update-final-status:
     runs-on: ubuntu-22.04
-    if: failure() || cancelled()
+    if: always()
+    outputs:
+      report-url: ${{ steps.summary.outputs.report-url }}
+      stats: ${{ steps.summary.outputs.stats }}
+    permissions:
+      contents: read
+      id-token: write
+      statuses: write
     needs:
       - calculate-commit-hash
       - e2e
     steps:
-      - uses: mattermost/actions/delivery/update-commit-status@218fd96a63451259dc100e1292a5e44af92fe15d
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          repository_full_name: mattermost/desktop
-          commit_sha: ${{ needs.calculate-commit-hash.outputs.DESKTOP_SHA }}
-          context: e2e/compatibility-matrix-testing
-          description: "Compatibility Matrix Testing for ${{ inputs.DESKTOP_VERSION }} version"
-          status: failure
-
+      # tsio-report-status.js is repo code, not fetched by github-script itself.
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        continue-on-error: true
         with:
+          ref: ${{ inputs.DESKTOP_VERSION }}
           persist-credentials: false
           sparse-checkout: |
+            e2e/utils/tsio-report-status.js
+            e2e/utils/cmt-channel-notify.js
+            e2e/utils/cmt-triage-verdict.js
             e2e/utils/github-actions.js
           sparse-checkout-cone-mode: false
 
-      - name: Flip e2e/linux|macos|windows from CMT job results
+      - name: Render TSIO summary + flip commit statuses
+        id: summary
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        continue-on-error: true
         env:
-          DESKTOP_SHA: ${{ needs.calculate-commit-hash.outputs.DESKTOP_SHA }}
-          DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
-          CMT_MATRIX: ${{ inputs.CMT_MATRIX }}
+          TSIO_COMPOSITE_IDENTITY: ${{ needs.calculate-commit-hash.outputs.TSIO_COMPOSITE_IDENTITY }}
+          TSIO_TOTAL_REPORTS_EXPECTED: ${{ needs.calculate-commit-hash.outputs.TSIO_TOTAL_REPORTS_EXPECTED }}
+          TSIO_POLL_ATTEMPTS: 24
+          TSIO_POLL_DELAY_MS: 5000
+          COMMIT_STATUS_CONTEXT: e2e/compatibility-matrix-testing
+          # Incoming webhook for the Desktop CMT/RC results channel.
+          # Optional — when unset, TSIO status still flips and channel notify is skipped.
           MATTERMOST_CMT_WEBHOOK_URL: ${{ secrets.MM_E2E_RELEASE_WEBHOOK_URL }}
+          # TSIO only sees test-case-level results — a job-level failure with no
+          # matching failed test (hung worker teardown, crashed runner, npm ci
+          # failure) would otherwise still read as "100% passed".
+          UPSTREAM_JOBS_SUCCEEDED: ${{ needs.e2e.result == 'success' }}
+          CMT_MATRIX: ${{ needs.calculate-commit-hash.outputs.CMT_MATRIX }}
         with:
           script: |
-            const {updateCmtOsStatusesFromWorkflowJobs} = require('./e2e/utils/github-actions.js');
+            const {canonicalizeOs} = require('./e2e/utils/github-actions.js');
             const matrix = JSON.parse(process.env.CMT_MATRIX || '{}');
-            const platforms = (matrix.environment || []).map((env) => ({platform: env.os, runner: env.runner}));
-            await updateCmtOsStatusesFromWorkflowJobs({
-              github,
-              context,
-              core,
-              sha: process.env.DESKTOP_SHA,
-              platforms,
-              webhookUrl: process.env.MATTERMOST_CMT_WEBHOOK_URL,
-              desktopVersion: process.env.DESKTOP_VERSION,
-            });
+            const expectedOs = [...new Set(
+              (matrix.environment || []).
+                map((env) => canonicalizeOs(env.os, env.runner)).
+                filter(Boolean),
+            )];
+            // No channel post from here: cmt-verdict posts one short message
+            // after AI triage has judged the failures (green if flaky, red
+            // only if blocking). Set outputs before rethrowing so the verdict
+            // job still gets the report link and totals on a red run.
+            let result;
+            try {
+              result = await require('./e2e/utils/tsio-report-status.js')({
+                core, context, github,
+                compositeIdentity: JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY),
+                totalReportsExpected: parseInt(process.env.TSIO_TOTAL_REPORTS_EXPECTED, 10),
+                commitStatusContext: process.env.COMMIT_STATUS_CONTEXT,
+                perOsCommitStatuses: true,
+                expectedOs,
+                upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
+                failOnTestFailures: true,
+                notifyChannel: false,
+              });
+            } catch (error) {
+              core.setOutput('report-url', error.reportUrl || '');
+              core.setOutput('stats', JSON.stringify(error.stats || {}));
+              throw error;
+            }
+            core.setOutput('report-url', result.reportUrl || '');
+            core.setOutput('stats', JSON.stringify(result.stats || {}));
+            core.info(`TSIO report ${result.reportUrl}: ${result.status} (${JSON.stringify(result.stats)})`);
 
-  # https://mattermost.atlassian.net/browse/CLD-5815
-  update-success-final-status:
+  # AI triage for the CMT failures, one lane per (OS x server version) report.
+  # Runs only when something actually failed. Each lane judges exactly its own
+  # report (e2e-on-<runner>-<serverVersion>) in report-only mode and uploads
+  # its verdict as an artifact; cmt-verdict folds them. The lanes write their
+  # line on the umbrella CMT status while keeping its state — they must never
+  # write e2e/<os> here and never turn anything green on their own; the
+  # folded verdict job has the final write.
+  cmt-triage:
+    name: Triage CMT (${{ matrix.platform }} · MM ${{ matrix.server }})
     runs-on: ubuntu-22.04
-    if: success()
+    timeout-minutes: 20
+    if: >-
+      always() && !cancelled()
+      && needs.calculate-commit-hash.result == 'success'
+      && needs.calculate-commit-hash.outputs.CMT_TRIAGE_MATRIX != '{"include":[]}'
+      && (needs.e2e.result == 'failure' || needs.update-final-status.result == 'failure')
     needs:
       - calculate-commit-hash
+      - update-final-status
       - e2e
+    permissions:
+      contents: read
+      statuses: write
+      pull-requests: read
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.calculate-commit-hash.outputs.CMT_TRIAGE_MATRIX) }}
     steps:
-      - uses: mattermost/actions/delivery/update-commit-status@218fd96a63451259dc100e1292a5e44af92fe15d
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          repository_full_name: mattermost/desktop
-          commit_sha: ${{ needs.calculate-commit-hash.outputs.DESKTOP_SHA }}
-          context: e2e/compatibility-matrix-testing
-          description: "Compatibility Matrix Testing for ${{ inputs.DESKTOP_VERSION }} version"
-          status: success
-
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      # Same pattern as master's triage job: only the composite action is
+      # checked out, from the dispatch ref.
+      - name: Checkout triage action
         continue-on-error: true
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-          sparse-checkout: |
-            e2e/utils/github-actions.js
+          sparse-checkout: .github/actions/e2e-triage/
           sparse-checkout-cone-mode: false
 
-      - name: Flip e2e/linux|macos|windows from CMT job results
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      - name: e2e/triage
+        id: triage
         continue-on-error: true
+        uses: ./.github/actions/e2e-triage
+        with:
+          platform: ${{ matrix.platform }}
+          runner: ${{ matrix.runner }}
+          report-name: e2e-on-${{ matrix.runner }}-${{ matrix.server }}
+          status-context: e2e/compatibility-matrix-testing
+          triage-status-context: 'off'
+          triage-lanes: ''
+          composite-identity: ${{ needs.calculate-commit-hash.outputs.TSIO_COMPOSITE_IDENTITY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # The verdict job folds the lane outputs itself; a lane must not
+          # flip the shared CMT status green or red on its own.
+          mode: report-only
+          findings-file: e2e-triage-findings.json
+
+      # Always record a verdict file — an empty verdict is how the fold knows
+      # this lane was never triaged (counts as unknown, never green).
+      - name: cmt/record-triage-verdict
+        id: record-verdict
+        if: always()
         env:
-          DESKTOP_SHA: ${{ needs.calculate-commit-hash.outputs.DESKTOP_SHA }}
-          DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
-          CMT_MATRIX: ${{ inputs.CMT_MATRIX }}
+          PLATFORM: ${{ matrix.platform }}
+          SERVER_VERSION: ${{ matrix.server }}
+          VERDICT: ${{ steps.triage.outputs.verdict }}
+          BLOCKING: ${{ steps.triage.outputs.blocking }}
+          EXONERATED: ${{ steps.triage.outputs.exonerated }}
+          DESCRIPTION: ${{ steps.triage.outputs.description }}
+        run: |
+          # A file-safe name per lane; the hash keeps apart lanes the sanitizing would merge ("6/3", "6 3").
+          VERDICT_FILE="cmt-triage-verdict-$(printf '%s-%s' "${PLATFORM}" "${SERVER_VERSION}" | tr -c 'A-Za-z0-9._-' '_')-$(printf '%s\n%s' "${PLATFORM}" "${SERVER_VERSION}" | sha256sum | cut -c1-8).json"
+          # Each failed test with triage's label, so the message can name it. Schema 1 has no
+          # label or explanation, so it gets the label the toolkit would give it.
+          FINDINGS='[]'
+          RECORDED=false
+          if [ -f e2e-triage-findings.json ] && FROM_FILE=$(jq -c '
+              if .schema == 2 then [.findings[] | {title, full_title, file, label, blocking, explanation: .ai.explanation}]
+              elif .schema == 1 then [.findings[] | {title, full_title, file, blocking, explanation: null,
+                label: (if .blocking then (if .out_of_date then "out of date" elif .class == "OWNED_BY_PR" then "caused by PR" else "needs investigation" end)
+                        elif .class == "BROKEN_ON_TRUNK" then "broken on main" else "flaky" end)}]
+              else error("unknown findings schema") end' e2e-triage-findings.json 2>/dev/null); then
+            FINDINGS="${FROM_FILE}"
+            RECORDED=true
+          fi
+          jq -n \
+            --arg platform "${PLATFORM}" \
+            --arg serverVersion "${SERVER_VERSION}" \
+            --arg verdict "${VERDICT}" \
+            --arg blocking "${BLOCKING}" \
+            --arg exonerated "${EXONERATED}" \
+            --arg description "${DESCRIPTION}" \
+            --argjson findings "${FINDINGS}" \
+            --argjson findingsRecorded "${RECORDED}" \
+            '{platform: $platform, serverVersion: $serverVersion, verdict: $verdict, blocking: $blocking, exonerated: $exonerated, description: $description, findings: $findings, findingsRecorded: $findingsRecorded}' \
+            > "${VERDICT_FILE}"
+          echo "file=${VERDICT_FILE}" >> "${GITHUB_OUTPUT}"
+
+      - name: cmt/upload-triage-verdict
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cmt-triage-verdict-${{ matrix.platform }}-${{ matrix.server }}
+          # One name per lane: merge-multiple keeps only the last of files sharing a name.
+          path: ${{ steps.record-verdict.outputs.file }}
+          retention-days: 1
+
+  # Fold the lane verdicts into the run's one verdict: green when triage
+  # cleared everything (flaky / failed in master / Infra failure) or
+  # nothing failed, red only when blocking failures remain (needs investigation),
+  # yellow/error when triage could not settle it. This job has the final
+  # write of the e2e/compatibility-matrix-testing commit status and posts
+  # the one short channel message (update-final-status no longer notifies).
+  cmt-verdict:
+    name: CMT verdict
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    if: always() && !cancelled() && needs.calculate-commit-hash.result == 'success'
+    needs:
+      - calculate-commit-hash
+      - update-final-status
+      - cmt-triage
+      - e2e
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.DESKTOP_VERSION }}
+          persist-credentials: false
+          sparse-checkout: |
+            e2e/utils/cmt-triage-verdict.js
+            e2e/utils/cmt-channel-notify.js
+          sparse-checkout-cone-mode: false
+
+      # No artifacts exist on a clean run (triage never ran) — that is the
+      # green path, not an error.
+      - name: cmt/download-triage-verdicts
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: cmt-triage-verdict-*
+          merge-multiple: true
+          path: cmt-triage-verdicts
+
+      - name: cmt/fold-verdict-and-notify
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          TSIO_COMPOSITE_IDENTITY: ${{ needs.calculate-commit-hash.outputs.TSIO_COMPOSITE_IDENTITY }}
+          CMT_TRIAGE_MATRIX: ${{ needs.calculate-commit-hash.outputs.CMT_TRIAGE_MATRIX }}
+          REPORT_URL: ${{ needs.update-final-status.outputs.report-url }}
+          STATS: ${{ needs.update-final-status.outputs.stats }}
+          EXPECT_TRIAGE: ${{ needs.e2e.result == 'failure' || needs.update-final-status.result == 'failure' }}
+          UPSTREAM_JOBS_SUCCEEDED: ${{ needs.e2e.result == 'success' }}
           MATTERMOST_CMT_WEBHOOK_URL: ${{ secrets.MM_E2E_RELEASE_WEBHOOK_URL }}
         with:
           script: |
-            const {updateCmtOsStatusesFromWorkflowJobs} = require('./e2e/utils/github-actions.js');
-            const matrix = JSON.parse(process.env.CMT_MATRIX || '{}');
-            const platforms = (matrix.environment || []).map((env) => ({platform: env.os, runner: env.runner}));
-            await updateCmtOsStatusesFromWorkflowJobs({
-              github,
-              context,
-              core,
-              sha: process.env.DESKTOP_SHA,
-              platforms,
-              webhookUrl: process.env.MATTERMOST_CMT_WEBHOOK_URL,
-              desktopVersion: process.env.DESKTOP_VERSION,
+            const fs = require('fs');
+            const path = require('path');
+            const {foldCmtVerdicts, formatCmtVerdictMessage} = require('./e2e/utils/cmt-triage-verdict.js');
+            const {postMattermostWebhook, buildWorkflowRunUrl} = require('./e2e/utils/cmt-channel-notify.js');
+
+            const compositeIdentity = JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY);
+            const expectedLanes = (JSON.parse(process.env.CMT_TRIAGE_MATRIX || '{"include":[]}').include) || [];
+
+            const lanes = [];
+            try {
+              const files = fs.readdirSync('cmt-triage-verdicts').filter((file) => file.endsWith('.json'));
+              for (const file of files) {
+                try {
+                  lanes.push(JSON.parse(fs.readFileSync(path.join('cmt-triage-verdicts', file), 'utf8')));
+                } catch (error) {
+                  core.warning(`Could not parse triage verdict artifact ${file}: ${error.message}`);
+                }
+              }
+            } catch (error) {
+              core.info(`No triage verdict artifacts: ${error.message}`);
+            }
+
+            let stats = {};
+            try {
+              stats = JSON.parse(process.env.STATS || '{}');
+            } catch {
+              core.warning('Could not parse TSIO stats output; counts will read as 0');
+            }
+
+            const fold = foldCmtVerdicts({
+              lanes,
+              expectedLanes,
+              expectTriage: process.env.EXPECT_TRIAGE === 'true',
+              stats,
+              upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
             });
+            core.info(`CMT verdict: ${fold.state}/${fold.kind} — ${fold.statusDescription}`);
+
+            const reportUrl = process.env.REPORT_URL || '';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: compositeIdentity.commit_sha,
+              state: fold.commitStatusState,
+              context: 'e2e/compatibility-matrix-testing',
+              description: fold.statusDescription.slice(0, 140),
+              target_url: reportUrl || buildWorkflowRunUrl(compositeIdentity),
+            });
+
+            const text = formatCmtVerdictMessage({
+              fold,
+              compositeIdentity,
+              stats,
+              reportUrl,
+              runUrl: buildWorkflowRunUrl(compositeIdentity),
+            });
+            await core.summary.addRaw(`## Desktop CMT verdict\n\n${text}`).write();
+            await postMattermostWebhook({core, webhookUrl: process.env.MATTERMOST_CMT_WEBHOOK_URL || '', text});
 
   cleanup-cmt-instances:
     runs-on: ubuntu-22.04
