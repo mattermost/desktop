@@ -34,7 +34,7 @@ const ServerDropdownButton: React.FC<Props> = (props: Props) => {
         if (isMenuOpen) {
             window.desktop.closeServersDropdown();
         } else {
-            window.desktop.openServersDropdown();
+            window.desktop.openServersDropdown(Math.round(event.currentTarget.getBoundingClientRect().left));
         }
     };
 

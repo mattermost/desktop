@@ -32,9 +32,9 @@ declare global {
         };
         desktop: {
             quit: (reason: string, stack: string) => void;
-            openAppMenu: () => void;
+            openAppMenu: (buttonX: number) => void;
             closeServersDropdown: () => void;
-            openServersDropdown: () => void;
+            openServersDropdown: (buttonX: number) => void;
             switchTab: (viewId: string) => void;
             closeTab: (viewId: string) => void;
             exitFullScreen: () => void;
@@ -195,6 +195,8 @@ declare global {
     interface Navigator {
         windowControlsOverlay?: {
             getTitlebarAreaRect: () => DOMRect;
+            addEventListener: (type: 'geometrychange', listener: () => void) => void;
+            removeEventListener: (type: 'geometrychange', listener: () => void) => void;
         };
     }
 }

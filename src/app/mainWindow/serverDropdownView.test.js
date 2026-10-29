@@ -117,6 +117,21 @@ describe('main/views/serverDropdownView', () => {
         expect(serverDropdownView.view.webContents.send).toBeCalledWith(UPDATE_SERVERS_DROPDOWN, [], undefined, undefined, true, undefined, undefined, undefined, true, undefined);
     });
 
+    it('should position the dropdown relative to the clicked button', () => {
+        const serverDropdownView = new ServerDropdownView();
+        serverDropdownView.view = {
+            setBounds: jest.fn(),
+            webContents: {
+                focus: jest.fn(),
+                isDestroyed: jest.fn(() => false),
+                send: jest.fn(),
+            },
+        };
+        serverDropdownView.bounds = {x: 0, y: 0, width: 400, height: 300};
+        serverDropdownView.handleOpen({}, 144);
+        expect(serverDropdownView.view.setBounds).toBeCalledWith({x: 144 - MENU_SHADOW_WIDTH, y: TAB_BAR_HEIGHT - MENU_SHADOW_WIDTH, width: 400, height: 300});
+    });
+
     describe('handleModalOpen', () => {
         const mainWindow = {contentView: {addChildView: jest.fn()}};
         let serverDropdownView;

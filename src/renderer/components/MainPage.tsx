@@ -26,7 +26,7 @@ enum Status {
 }
 
 type Props = {
-    openMenu: () => void;
+    openMenu: (buttonX: number) => void;
     appName: string;
 };
 

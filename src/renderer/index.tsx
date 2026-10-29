@@ -13,9 +13,9 @@ import IntlProvider from './intl_provider';
 import setupDarkMode from './modals/darkMode';
 import {printVersion} from './utils';
 
-const openMenu = () => {
+const openMenu = (buttonX: number) => {
     if (window.process.platform !== 'darwin') {
-        window.desktop.openAppMenu();
+        window.desktop.openAppMenu(buttonX);
     }
 };
 

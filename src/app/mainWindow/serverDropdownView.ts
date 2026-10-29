@@ -3,6 +3,7 @@
 
 import type {IpcMainEvent} from 'electron';
 import {WebContentsView, ipcMain} from 'electron';
+import Joi from 'joi';
 
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import AppState from 'common/appState';
@@ -28,6 +29,7 @@ import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {TAB_BAR_HEIGHT, THREE_DOT_MENU_WIDTH, THREE_DOT_MENU_WIDTH_MAC, MENU_SHADOW_WIDTH} from 'common/utils/constants';
+import {ipcValidate} from 'common/Validator';
 import performanceMonitor from 'main/performanceMonitor';
 import ThemeManager from 'main/themeManager';
 import {getLocalPreload} from 'main/utils';
@@ -43,6 +45,7 @@ export class ServerDropdownView {
     private servers: UniqueServer[];
     private isOpen: boolean;
     private bounds: Electron.Rectangle;
+    private buttonX?: number;
 
     private windowBounds?: Electron.Rectangle;
 
@@ -54,7 +57,7 @@ export class ServerDropdownView {
         MainWindow.on(MAIN_WINDOW_CREATED, this.init);
         MainWindow.on(MAIN_WINDOW_RESIZED, this.updateWindowBounds);
 
-        ipcMain.on(OPEN_SERVERS_DROPDOWN, this.handleOpen);
+        ipcMain.on(OPEN_SERVERS_DROPDOWN, ipcValidate(this.handleOpen, [Joi.number().integer().min(0)]));
         ipcMain.on(CLOSE_SERVERS_DROPDOWN, this.handleClose);
         ipcMain.on(RECEIVE_DROPDOWN_MENU_SIZE, this.handleReceivedMenuSize);
         ipcMain.on(SWITCH_SERVER, this.handleSwitchServer);
@@ -124,9 +127,13 @@ export class ServerDropdownView {
      * Menu open/close/size handlers
      */
 
-    private handleOpen = () => {
-        log.debug('handleOpen');
+    private handleOpen = (event?: IpcMainEvent, buttonX?: number) => {
+        log.debug('handleOpen', {buttonX});
 
+        if (buttonX !== undefined) {
+            this.buttonX = buttonX;
+            this.bounds = this.getBounds(this.bounds.width, this.bounds.height);
+        }
         if (!this.bounds) {
             return;
         }
@@ -169,8 +176,12 @@ export class ServerDropdownView {
      */
 
     private getBounds = (width: number, height: number) => {
+        let x = process.platform === 'darwin' ? THREE_DOT_MENU_WIDTH_MAC : THREE_DOT_MENU_WIDTH;
+        if (this.buttonX !== undefined) {
+            x = this.buttonX;
+        }
         return {
-            x: (process.platform === 'darwin' ? THREE_DOT_MENU_WIDTH_MAC : THREE_DOT_MENU_WIDTH) - MENU_SHADOW_WIDTH,
+            x: x - MENU_SHADOW_WIDTH,
             y: TAB_BAR_HEIGHT - MENU_SHADOW_WIDTH,
             width,
             height,

@@ -147,9 +147,9 @@ contextBridge.exposeInMainWorld('timers', {
 
 contextBridge.exposeInMainWorld('desktop', {
     quit: (reason, stack) => ipcRenderer.send(QUIT, reason, stack),
-    openAppMenu: () => ipcRenderer.send(OPEN_APP_MENU),
+    openAppMenu: (buttonX) => ipcRenderer.send(OPEN_APP_MENU, buttonX),
     closeServersDropdown: () => ipcRenderer.send(CLOSE_SERVERS_DROPDOWN),
-    openServersDropdown: () => ipcRenderer.send(OPEN_SERVERS_DROPDOWN),
+    openServersDropdown: (buttonX) => ipcRenderer.send(OPEN_SERVERS_DROPDOWN, buttonX),
     switchTab: (viewId) => ipcRenderer.send(SWITCH_TAB, viewId),
     closeTab: (viewId) => ipcRenderer.send(CLOSE_TAB, viewId),
     exitFullScreen: () => ipcRenderer.send(EXIT_FULLSCREEN),
