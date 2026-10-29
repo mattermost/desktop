@@ -211,6 +211,9 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
         }
         if (!record || !record.verdict) {
             result.unknownLegs.push({...leg, reason: 'not triaged'});
+        } else if (record.verdict === 'SUCCESS' && INCOMPLETE.test(record.description)) {
+            // Cleared on part of its results is not cleared.
+            result.unknownLegs.push({...leg, reason: 'results incomplete', incomplete: true});
         } else if (record.verdict === 'SUCCESS') {
             result.clearedLegs.push({...leg, exonerated: record.exonerated});
             result.clearedCount += record.exonerated;

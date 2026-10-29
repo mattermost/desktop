@@ -61,6 +61,15 @@ describe('foldCmtVerdicts', () => {
         assert.equal(fold.unknownLegs[0].reason, 'not triaged');
     });
 
+    it('never clears a lane on incomplete results, even one triage called SUCCESS', () => {
+        const lanes = [...clearedLinux.slice(1), {platform: 'linux', serverVersion: '10.11.25', verdict: 'SUCCESS', blocking: '0', exonerated: '3', description: '(3 flaky; results incomplete: 4 of 5 reports) 99.6% passed'}];
+        const fold = foldCmtVerdicts({lanes, expectedLanes: linuxLanes, expectTriage: true, stats: {passed: 807, failed: 5, skipped: 12}});
+        assert.equal(fold.state, 'yellow');
+        assert.equal(fold.clearedLegs.length, 4);
+        const text = formatCmtVerdictMessage({fold, compositeIdentity: identity, stats: {passed: 807, failed: 5, skipped: 12}});
+        assert.match(text, /^⚠️ Results incomplete on 1 lane — re-run$/m);
+    });
+
     it('treats an empty verdict as unknown (yellow)', () => {
         const lanes = [...clearedLinux.slice(1), {platform: 'linux', serverVersion: '10.11.25', verdict: '', blocking: '', exonerated: ''}];
         const fold = foldCmtVerdicts({lanes, expectedLanes: linuxLanes, expectTriage: true, stats: {passed: 807, failed: 5}});
@@ -316,7 +325,7 @@ describe('per-test CMT message', () => {
         const all = lanes.map((l) => ({...l, description: '(results incomplete: 15 of 15 reports) 99.1% passed'}));
         const allText = formatCmtVerdictMessage({fold: foldCmtVerdicts({lanes: all, expectedLanes: matrix, expectTriage: true, stats}), compositeIdentity: identity, stats, ...links});
         assert.match(allText, /^🔎 \*\*Check:\*\* `MM-T2633` needs investigation, 6\/15 lanes$/m);
-        assert.match(allText, /^⚠️ Results incomplete on 6 lanes — re-run$/m, 'a lane that names a held test still needs a re-run');
+        assert.match(allText, /^⚠️ Results incomplete on 15 lanes — re-run$/m, 'a lane that names a held test, or that triage cleared, still needs a re-run');
         const noneHeld = lanes.map(incomplete);
         const red = formatCmtVerdictMessage({fold: foldCmtVerdicts({lanes: noneHeld, expectedLanes: matrix, expectTriage: true, stats}), compositeIdentity: identity, stats, ...links});
         assert.match(red, /^:red_circle: \*\*Desktop CMT\*\* `v6\.2\.5-rc\.1` — results incomplete, re-run$/m);
