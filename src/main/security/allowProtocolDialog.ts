@@ -104,7 +104,7 @@ export class AllowProtocolDialog {
                     localizeMessage('label.no', 'No'),
                 ],
                 cancelId: 2,
-            }, serverId);
+            }, {serverId});
             this.inflightPrompts.delete(promptKey);
 
             switch (response) {

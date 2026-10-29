@@ -16,6 +16,8 @@ const {
     scopedHasShardFailure,
     shouldPostPerOsCommitStatuses,
     resolveMasterMergeContext,
+    statusFromTotals,
+    countEmptyUploadedReports,
 } = require('./tsio-report-status');
 
 const WINDOWS_SHARD = 'e2e-on-windows-2022-master-1-of-3';
@@ -658,6 +660,70 @@ describe('resolveMasterMergeContext', () => {
             await resolveMasterMergeContext({github, context, compositeIdentity: identity, core}),
             {mergedPr: null, headCommit: null},
         );
+    });
+});
+
+describe('setup problem (complete report, no tests)', () => {
+    it('keeps a just-completed upload with no consolidated count incomplete, not a setup failure', () => {
+        const {detail, perJobCounts} = linuxShards({uploaded: 3, counted: 2});
+        assert.equal(countEmptyUploadedReports(detail, perJobCounts, 'linux'), 0);
+        assert.equal(countEmptyUploadedReports(detail, perJobCounts, 'windows'), 0);
+        assert.equal(countEmptyUploadedReports(detail, null, 'linux'), 0, 'unavailable counts are not a setup diagnosis');
+    });
+
+    // Master run 40816626126: Linux shard 1 of 3 failed global setup at 04:16 and uploaded no tests; the e2e/linux
+    // check ran at 04:26, when the other two shards' tests were in TSIO.
+    it('counts a report complete for minutes with no test, while the others have tests, as a setup failure', () => {
+        const {detail, perJobCounts} = linuxShards({uploaded: 3, counted: 2});
+        const now = Date.parse('2026-10-29T04:26:53Z');
+        detail.reports[2].updated_at = '2026-10-29T04:26:44Z';
+        assert.equal(countEmptyUploadedReports(detail, perJobCounts, 'linux', now), 0, 'its tests may still be landing');
+        detail.reports[2].updated_at = '2026-10-29T04:16:13Z';
+        assert.equal(countEmptyUploadedReports(detail, perJobCounts, 'linux', now), 1);
+        assert.equal(countEmptyUploadedReports(detail, {}, 'linux', now), 0, 'no results read at all is not a setup diagnosis');
+
+        // CMT: one unsharded leg per server version. Another version's tests say nothing about this one's.
+        const cmt = {reports: [
+            {gh_job_name: 'e2e-on-ubuntu-latest-11.9.0', status: 'complete', updated_at: '2026-10-29T04:16:13Z'},
+            {gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc2', status: 'complete', updated_at: '2026-10-29T04:16:13Z'},
+        ]};
+        assert.equal(countEmptyUploadedReports(cmt, {'e2e-on-ubuntu-latest-12.1.0-rc2': {passed: 90, failed: 0, skipped: 0, flaky: 0}}, 'linux', now), 0);
+    });
+
+    it('counts a setup failure with explicit zero-test evidence', () => {
+        const {detail, perJobCounts} = linuxShards({uploaded: 3, counted: 2});
+        const missingName = 'e2e-on-ubuntu-latest-master-3-of-3';
+
+        perJobCounts[missingName] = {passed: 0, failed: 0, skipped: 0, flaky: 0};
+        assert.equal(countEmptyUploadedReports(detail, perJobCounts, 'linux'), 1, 'explicit zero counts are definitive');
+
+        delete perJobCounts[missingName];
+        detail.reports[2].test_stats = {passed: 0, failed: 0, skipped: 0, flaky: 0, total: 0};
+        assert.equal(countEmptyUploadedReports(detail, perJobCounts, 'linux'), 1, 'a zero report total is definitive');
+
+        detail.reports[2].test_stats = {};
+        assert.equal(countEmptyUploadedReports(detail, perJobCounts, 'linux'), 0, 'stats with no number in them are not zero tests');
+    });
+
+    it('names the setup problem in the OS status instead of incomplete counts', () => {
+        const status = statusFromTotals(
+            {passed: 140, failed: 0, skipped: 4, shardFailed: false, hasResults: true},
+            true,
+            'E2E incomplete — no results for this OS',
+            {emptyUploadedReports: 1, uploadedReports: 3, hasCountsForEveryUploadedReport: false},
+        );
+        assert.equal(status.state, 'error');
+        assert.equal(status.description, 'Setup problem: 1 of 3 test groups ran no tests (setup failed before the first test)');
+    });
+
+    it('still reports counts incomplete when no uploaded shard is empty', () => {
+        const status = statusFromTotals(
+            {passed: 140, failed: 0, skipped: 4, shardFailed: false, hasResults: true},
+            true,
+            'E2E incomplete — no results for this OS',
+            {emptyUploadedReports: 0, uploadedReports: 3, hasCountsForEveryUploadedReport: false},
+        );
+        assert.equal(status.description, 'TSIO per-job counts incomplete for this OS');
     });
 });
 

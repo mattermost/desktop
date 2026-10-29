@@ -150,7 +150,7 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
                     localizeMessage('main.app.app.handleAppCertificateError.certError.button.cancelConnection', 'Cancel Connection'),
                 ],
                 cancelId: 1,
-            }, view?.serverId);
+            }, {serverId: view?.serverId});
 
             if (result.response === 0) {
                 result = await MessageModal.showMessageModal({
@@ -165,7 +165,7 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
                     cancelId: 1,
                     checkboxChecked: false,
                     checkboxLabel: "Don't ask again",
-                }, view?.serverId);
+                }, {serverId: view?.serverId});
             } else {
                 result = {response: result.response, checkboxChecked: false};
             }

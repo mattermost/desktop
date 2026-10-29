@@ -224,7 +224,7 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
                     ],
                     defaultId: 2,
                     cancelId: 0,
-                }, serverId).then(({response}) => {
+                }, {serverId}).then(({response}) => {
                     // Save their response
                     const newPermission = {
                         allowed: response === 2,
