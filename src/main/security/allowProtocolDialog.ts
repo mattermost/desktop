@@ -33,9 +33,11 @@ const BLOCKED_PROTOCOLS = new Set([
 
 export class AllowProtocolDialog {
     allowedProtocols: string[];
+    private inflightPrompts: Set<string>;
 
     constructor() {
         this.allowedProtocols = [];
+        this.inflightPrompts = new Set();
     }
 
     init = () => {
@@ -61,7 +63,7 @@ export class AllowProtocolDialog {
         }
     };
 
-    handleDialogEvent = async (url: string) => {
+    handleDialogEvent = async (url: string, serverId?: string) => {
         const parsedURL = parseURL(url);
         if (!parsedURL) {
             return;
@@ -82,6 +84,14 @@ export class AllowProtocolDialog {
             if (!mainWindow) {
                 return;
             }
+
+            const promptKey = `${serverId}:${protocol}`;
+            if (this.inflightPrompts.has(promptKey)) {
+                log.debug('Ignoring protocol dialog while one is already pending', {protocol});
+                return;
+            }
+            this.inflightPrompts.add(promptKey);
+
             const {response} = await MessageModal.showMessageModal({
                 title: localizeMessage('main.allowProtocolDialog.title', 'Open external app?'),
                 message: localizeMessage('main.allowProtocolDialog.message', '{protocol} link requires an external application.', {protocol}),
@@ -94,7 +104,8 @@ export class AllowProtocolDialog {
                     localizeMessage('label.no', 'No'),
                 ],
                 cancelId: 2,
-            });
+            }, {serverId});
+            this.inflightPrompts.delete(promptKey);
 
             switch (response) {
             case 1: {

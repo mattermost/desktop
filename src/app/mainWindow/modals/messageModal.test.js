@@ -91,7 +91,7 @@ describe('app/mainWindow/modals/messageModal', () => {
             ModalManager.addPriorityModal.mockReturnValue(Promise.resolve({response: 0, checkboxChecked: false}));
             const messageModal = new MessageModal();
 
-            await messageModal.showMessageModal({type: 'info', title: 't', message: 'm'}, true);
+            await messageModal.showMessageModal({type: 'info', title: 't', message: 'm'}, {priority: true});
 
             expect(ModalManager.addPriorityModal).toHaveBeenCalled();
             expect(ModalManager.addModal).not.toHaveBeenCalled();

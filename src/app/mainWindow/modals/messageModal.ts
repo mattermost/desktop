@@ -12,7 +12,7 @@ import {ModalConstants} from 'common/constants';
 import {localizeMessage} from 'main/i18nManager';
 import {getLocalPreload} from 'main/utils';
 
-import type {MessageModalInfo, MessageModalResult} from 'types/modals';
+import type {MessageModalInfo, MessageModalOpts, MessageModalResult} from 'types/modals';
 
 const messageModalHtml = 'mattermost-desktop://renderer/message.html';
 const closeConfirmKey = `${ModalConstants.MESSAGE_MODAL}-closeApp`;
@@ -23,7 +23,8 @@ export class MessageModal {
         MainWindow.on(MAIN_WINDOW_CLOSE_CONFIRM, this.handleCloseConfirm);
     }
 
-    showMessageModal = (options: MessageModalInfo, priority = false, key = `${ModalConstants.MESSAGE_MODAL}-${uuid()}`): Promise<MessageModalResult> => {
+    showMessageModal = (options: MessageModalInfo, opts: MessageModalOpts = {}): Promise<MessageModalResult> => {
+        const {priority = false, key = `${ModalConstants.MESSAGE_MODAL}-${uuid()}`, serverId} = opts;
         const mainWindow = MainWindow.get();
         const fallback = {response: options.cancelId ?? 0, checkboxChecked: Boolean(options.checkboxChecked)};
         if (!mainWindow) {
@@ -37,8 +38,10 @@ export class MessageModal {
             getLocalPreload('internalAPI.js'),
             options,
             mainWindow,
+            false,
+            serverId,
         );
-        return modalPromise ?? Promise.resolve(fallback);
+        return modalPromise.catch(() => fallback);
     };
 
     showErrorModal = (title: string, message: string): void => {
@@ -82,7 +85,7 @@ export class MessageModal {
             cancelId: 1,
             checkboxChecked: true,
             checkboxLabel: localizeMessage('main.windows.mainWindow.closeApp.dialog.checkboxLabel', 'Don\'t ask again'),
-        }, true, closeConfirmKey).then((result) => {
+        }, {priority: true, key: closeConfirmKey}).then((result) => {
             Config.set('alwaysClose', result.checkboxChecked && result.response === 0);
             if (result.response === 0) {
                 app.quit();

@@ -138,6 +138,7 @@ describe('main/app/app', () => {
         const promise = Promise.resolve({});
         const certificate = {};
         const view = {
+            serverId: 'server-1',
             server: {
                 name: 'test-server',
                 url: new URL(testURL),
@@ -181,21 +182,27 @@ describe('main/app/app', () => {
         });
 
         it('should not show additional dialogs if certificate error has already been logged', () => {
-            certificateErrorCallbacks.set('http://server-1.com:error-1', callback);
+            certificateErrorCallbacks.set('server-1:http://server-1.com:error-1', callback);
             handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
             expect(MessageModal.showMessageModal).not.toHaveBeenCalled();
         });
 
+        it('should show a separate dialog for the same certificate error from a different server', () => {
+            certificateErrorCallbacks.set('server-2:http://server-1.com:error-1', callback);
+            handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
+            expect(MessageModal.showMessageModal).toHaveBeenCalled();
+        });
+
         it('should set callback if one is not already set', () => {
             handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
-            expect(certificateErrorCallbacks.has('http://server-1.com:error-1')).toBe(true);
+            expect(certificateErrorCallbacks.has('server-1:http://server-1.com:error-1')).toBe(true);
         });
 
         it('should remove callback and not add certificate if user selects Cancel', async () => {
             MessageModal.showMessageModal.mockResolvedValue({response: 1});
             await handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
             expect(callback).toHaveBeenCalledWith(false);
-            expect(certificateErrorCallbacks.has('http://server-1.com:error-1')).toBe(false);
+            expect(certificateErrorCallbacks.has('server-1:http://server-1.com:error-1')).toBe(false);
             expect(CertificateStore.add).not.toHaveBeenCalled();
         });
 
@@ -203,7 +210,7 @@ describe('main/app/app', () => {
             MessageModal.showMessageModal.mockResolvedValue({response: 0});
             await handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
             expect(callback).toHaveBeenCalledWith(true);
-            expect(certificateErrorCallbacks.has('http://server-1.com:error-1')).toBe(false);
+            expect(certificateErrorCallbacks.has('server-1:http://server-1.com:error-1')).toBe(false);
             expect(CertificateStore.add).toHaveBeenCalledWith(new URL('http://server-1.com'), certificate);
             expect(CertificateStore.save).toHaveBeenCalled();
         });
@@ -219,7 +226,7 @@ describe('main/app/app', () => {
             MessageModal.showMessageModal.mockResolvedValueOnce({response: 0}).mockResolvedValueOnce({response: 1, checkboxChecked: true});
             await handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
             expect(callback).toHaveBeenCalledWith(false);
-            expect(certificateErrorCallbacks.has('http://server-1.com:error-1')).toBe(false);
+            expect(certificateErrorCallbacks.has('server-1:http://server-1.com:error-1')).toBe(false);
             expect(CertificateStore.add).toHaveBeenCalledWith(new URL('http://server-1.com'), certificate, true);
             expect(CertificateStore.save).toHaveBeenCalled();
         });
