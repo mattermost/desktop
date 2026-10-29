@@ -200,7 +200,7 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
             }
 
             // Make sure we don't pop multiple dialogs for the same permission check
-            const permissionKey = `${permissionOrigin}:${permission}`;
+            const permissionKey = `${serverId}:${permissionOrigin}:${permission}`;
             if (this.inflightPermissionChecks.has(permissionKey)) {
                 return this.inflightPermissionChecks.get(permissionKey)!;
             }

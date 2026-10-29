@@ -372,6 +372,20 @@ describe('main/PermissionsManager', () => {
             expect(MessageModal.showMessageModal).toHaveBeenCalledTimes(1);
         });
 
+        it('should pop a separate dialog for the same permission check from a different server', async () => {
+            WebContentsManager.getViewByWebContentsId.mockImplementation((id) => ({id: `view-${id}`, serverId: `server-${id}`}));
+            WebContentsManager.getServerURLByViewId.mockReturnValue(new URL('http://anyurl.com'));
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            permissionsManager.writeToFile = jest.fn();
+            const cb = jest.fn();
+            MessageModal.showMessageModal.mockReturnValue(Promise.resolve({response: 2}));
+            await Promise.all([
+                permissionsManager.handlePermissionRequest({id: 2}, 'notifications', cb, {requestingUrl: 'http://anyurl.com'}),
+                permissionsManager.handlePermissionRequest({id: 3}, 'notifications', cb, {requestingUrl: 'http://anyurl.com'}),
+            ]);
+            expect(MessageModal.showMessageModal).toHaveBeenCalledTimes(2);
+        });
+
         it('should still pop dialog for media requests from the servers origin', async () => {
             WebContentsManager.getViewByWebContentsId.mockImplementation((id) => {
                 if (id === 2) {
