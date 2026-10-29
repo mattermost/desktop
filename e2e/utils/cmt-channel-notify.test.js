@@ -700,9 +700,9 @@ describe('cmt-channel-notify', () => {
                     mergedPr: {number: 3916, title: 'Fix the thing', url: 'https://github.com/mattermost/desktop/pull/3916', author: 'dev'},
                     triageLanes: [],
                 });
-                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — setup problem on `master`\*\*/);
+                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — setup problem\*\*$/m);
                 assert.match(text, /\*\*0 failed\*\* · 672 passed · 36 skipped/);
-                assert.match(text, /⚙️ Setup problem: 🐧 Linux \/ Server `12\.1\.0-rc2` — 1 of 3 test groups ran no tests \(setup failed before the first test\)\. Not a product bug\./);
+                assert.match(text, /⚙️ \*\*Setup:\*\* 🐧 Linux · Server `12\.1\.0-rc2` · 1 of 3 test groups ran no tests\. Not a product bug\./);
                 assert.doesNotMatch(text, /could not settle|needs investigation/);
             });
 

@@ -363,7 +363,7 @@ function formatSetupProblemLines(legs, setupLegs) {
     }
     return [...groups.values()].map(({leg, affected, total}) => {
         const {platform, suite} = formatLegLabels(leg);
-        return `⚙️ Setup problem: ${platform} / ${suite} — ${affected} of ${total} test group${total === 1 ? '' : 's'} ran no tests (setup failed before the first test). Not a product bug.`;
+        return `⚙️ **Setup:** ${platform} · ${suite} · ${affected} of ${total} test group${total === 1 ? '' : 's'} ran no tests. Not a product bug.`;
     });
 }
 
@@ -432,7 +432,7 @@ function formatMasterChannelMessage({
 
     if (triage && triage.verdict === 'setup') {
         const lines = [
-            `:yellow_circle: **Desktop Master E2E — setup problem on \`${branch}\`**`,
+            ':yellow_circle: **Desktop Master E2E — setup problem**',
             `**${failed} failed** · ${passed} passed · ${skipped} skipped`,
             ...formatSetupProblemLines(legs, triage.setupLegs),
             formatMasterAttribution({compositeIdentity, mergedPr, headCommit, shortSha}),
