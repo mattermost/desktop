@@ -42,6 +42,12 @@ on:
       MM_SERVER_VERSION:
         type: string
         required: true
+      # Shape: {"composite_identity": {...}, "total_reports_expected": "N"}
+      tsio-config:
+        description: "TSIO reporting config: {composite_identity, total_reports_expected}. Empty disables TSIO reporting for this leg."
+        type: string
+        required: false
+        default: ""
     outputs:
       NEW_FAILURES_LINUX:
         description: "The output to comment"
@@ -275,6 +281,26 @@ jobs:
           SERVER_VERSION: ${{ inputs.MM_SERVER_VERSION }}
           DESKTOP_VERSION: ${{ inputs.DESKTOP_VERSION }}
           CI_ENVIRONMENT_NAME: ${{ env.CI_ENVIRONMENT_NAME }}
+
+      - name: e2e/write-tsio-failure-stub
+        if: ${{ always() && inputs.tsio-config != '' && hashFiles('e2e/test-results/results.json') == '' && (failure() || cancelled() || (env.PLAYWRIGHT_EXIT_CODE != '0' && env.PLAYWRIGHT_EXIT_CODE != '')) }}
+        run: node e2e/utils/write-tsio-failure-stub.mjs
+        env:
+          TSIO_GH_JOB_NAME: e2e-on-${{ inputs.runs-on }}-${{ inputs.MM_SERVER_VERSION }}
+          PLAYWRIGHT_EXIT_CODE: ${{ env.PLAYWRIGHT_EXIT_CODE }}
+
+      - name: e2e/upload-report-to-tsio
+        if: ${{ always() && inputs.tsio-config != '' && hashFiles('e2e/test-results/results.json') != '' }}
+        uses: mattermost/mattermost-test-system-io/.github/actions/test-system-io-report-upload@a2ea7f005484c28fedf51e16645f6d3bd683fd63 # 0.10.0 / 2026-05-16
+        with:
+          composite-identity: ${{ toJSON(fromJSON(inputs.tsio-config).composite_identity) }}
+          total-reports-expected: ${{ fromJSON(inputs.tsio-config).total_reports_expected }}
+          framework: playwright
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # MUST match this job's `name:` field above.
+          gh-job-name: e2e-on-${{ inputs.runs-on }}-${{ inputs.MM_SERVER_VERSION }}
+          json-path: e2e/test-results/results.json
+          screenshots-dir: e2e/test-results
 
       - name: e2e/analyze-flaky-tests
         id: analyze-flaky-tests

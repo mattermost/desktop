@@ -5,6 +5,9 @@
 /** Canonical OS identifiers for e2e/<os> commit statuses. */
 const E2E_OS_LIST = ['linux', 'macos', 'windows'];
 
+/** Platforms that run dedicated policy-test legs (PR / master only). */
+const E2E_POLICY_OS_LIST = ['macos', 'windows'];
+
 /**
  * @param {string} [value] - platform / os field from matrix
  * @param {string} [runner] - GitHub runner label
@@ -34,6 +37,14 @@ function canonicalizeOs(value, runner) {
  */
 function osStatusContext(os) {
     return `e2e/${os}`;
+}
+
+/**
+ * @param {string} os - macos | windows
+ * @returns {string}
+ */
+function policyStatusContext(os) {
+    return `e2e/${os}-policy`;
 }
 
 /**
@@ -508,4 +519,6 @@ module.exports = {
     playwrightProjectForOs,
     osStatusContext,
     E2E_OS_LIST,
+    E2E_POLICY_OS_LIST,
+    policyStatusContext,
 };

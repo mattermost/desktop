@@ -1,0 +1,918 @@
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+/* eslint-disable no-console -- Logging is intentional in CI utility scripts */
+
+/**
+ * Post a CMT rollup to a Mattermost incoming webhook.
+ *
+ * Expected job names from e2e-functional-template.yml:
+ *   e2e-on-{runner}-{serverVersion}[-{i}-of-{n}]
+ * e.g. e2e-on-ubuntu-latest-11.9.0, e2e-on-windows-2022-10.5.14,
+ *      e2e-on-ubuntu-latest-master, e2e-on-ubuntu-latest-master-1-of-3
+ *
+ * Per-leg pass/fail counts come from TSIO consolidated specs grouped by
+ * contributing report id → gh_job_name (group report only has upload status).
+ *
+ * Retry attempts are collapsed to one outcome per (spec × job), matching
+ * Playwright: failed+passed → flaky; all failed → failed once (not once per attempt).
+ */
+
+const {foldMasterTriage} = require('./cmt-triage-verdict');
+
+const OS_ORDER = {linux: 0, macos: 1, windows: 2};
+const FETCH_TIMEOUT_MS = 15_000;
+
+/**
+ * Fetch with an abort timeout that stays armed until `readBody` finishes
+ * (headers + body), so a stalled `res.json()`/`res.text()` cannot hang CI.
+ *
+ * @template T
+ * @param {string} url
+ * @param {RequestInit | undefined} options
+ * @param {(res: Response) => Promise<T>} readBody
+ * @param {number} [timeoutMs]
+ * @returns {Promise<T>}
+ */
+async function fetchWithTimeout(url, options, readBody, timeoutMs = FETCH_TIMEOUT_MS) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        const res = await fetch(url, {...(options || {}), signal: controller.signal});
+        return await readBody(res);
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+/**
+ * @param {string} token
+ * @returns {string}
+ */
+function osFromRunnerToken(token) {
+    if (token.startsWith('ubuntu') || token.startsWith('linux')) {
+        return 'linux';
+    }
+    if (token.startsWith('windows')) {
+        return 'windows';
+    }
+    if (token.startsWith('macos') || token.startsWith('darwin')) {
+        return 'macos';
+    }
+    return 'unknown';
+}
+
+function parseCmtJobName(jobName) {
+    if (!jobName || typeof jobName !== 'string') {
+        return null;
+    }
+
+    // PR/master policy legs: policy-tests-macos / policy-tests-windows
+    const policyMatch = jobName.match(/^policy-tests-(macos|windows|linux)$/);
+    if (policyMatch) {
+        return {
+            os: policyMatch[1] === 'linux' ? 'linux' : policyMatch[1],
+            serverVersion: 'policy',
+            runner: policyMatch[1],
+            kind: 'policy',
+        };
+    }
+
+    // e2e-on-{runner}-{MM_SERVER_VERSION}. MM_SERVER_VERSION is NOT always semver:
+    // CMT and release runs pass 11.9.0 / 11.9.0-rc.3, while PR and master runs pass a
+    // branch ref such as `master` or `release-11.9`. Anchoring on the version shape
+    // therefore drops PR/master legs entirely, which is how `e2e/<os>` came to report
+    // "E2E incomplete — no results for this OS" while the tests had in fact run.
+    //
+    // Split on the runner instead, which has a fixed two-token grammar
+    // ({os}-{label}: ubuntu-latest, ubuntu-22.04, macos-26, windows-2022). The lazy
+    // quantifier takes the shortest label, so everything after the second token is the
+    // version, whatever shape it has. That keeps the split unambiguous in both
+    // directions — a hyphenated version like `release-11.9.0` can no longer be
+    // mis-attributed to the runner, and a version is never required to look like semver.
+    //
+    // An optional `-{i}-of-{n}` suffix is the Playwright shard; unsharded (CMT) names omit it.
+    //
+    // Consequence: a runner label with a third token (`ubuntu-latest-8-cores`) would
+    // put its tail in serverVersion. No such label is dispatched by any workflow here,
+    // and `os` — the only field the per-OS rollup uses — stays correct regardless.
+    const match = jobName.match(/^e2e-on-((?:ubuntu|linux|macos|darwin|windows)-[\w.]+?)-(.+?)(?:-(\d+)-of-(\d+))?$/);
+    if (!match) {
+        return null;
+    }
+
+    const runner = match[1];
+    return {
+        os: osFromRunnerToken(runner),
+        serverVersion: match[2],
+        runner,
+        kind: 'e2e',
+        ...(match[3] ? {shard: `${match[3]}-of-${match[4]}`} : {}),
+    };
+}
+
+/**
+ * Webhook routing (fail closed for named report groups):
+ *   cmt-desktop      → MATTERMOST_CMT_WEBHOOK_URL only (MM_E2E_RELEASE_WEBHOOK_URL)
+ *   desktop-master   → MATTERMOST_MASTER_HEALTH_WEBHOOK_URL only (MM_E2E_MASTER_HEALTH_WEBHOOK_URL)
+ *   desktop-pr       → MATTERMOST_E2E_WEBHOOK_URL only (MM_DESKTOP_E2E_WEBHOOK_URL)
+ *
+ * Named groups never fall back to MATTERMOST_WEBHOOK_URL (avoids posting
+ * CMT/PR/master to the wrong channel when a dedicated secret is missing).
+ * Unknown names still use MATTERMOST_WEBHOOK_URL as a generic fallback.
+ *
+ * @param {string} reportName - compositeIdentity.name
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {string}
+ */
+function resolveWebhookUrl(reportName, env = process.env) {
+    if (reportName === 'cmt-desktop') {
+        return env.MATTERMOST_CMT_WEBHOOK_URL || '';
+    }
+    if (reportName === 'desktop-master') {
+        return env.MATTERMOST_MASTER_HEALTH_WEBHOOK_URL || '';
+    }
+    if (reportName === 'desktop-pr') {
+        return env.MATTERMOST_E2E_WEBHOOK_URL || '';
+    }
+    return env.MATTERMOST_WEBHOOK_URL || '';
+}
+
+/**
+ * Individual leg UI path in TSIO: /reports/r/{id}
+ * (see mattermost-test-system-io apps/web Route path="/reports/r/:id").
+ *
+ * @param {string} baseUrl
+ * @param {string} reportId
+ * @returns {string}
+ */
+function buildIndividualReportUrl(baseUrl, reportId) {
+    return `${baseUrl.replace(/\/$/, '')}/reports/r/${reportId}`;
+}
+
+/**
+ * @param {Record<string, {passed?: number, failed?: number, skipped?: number, flaky?: number}>} perJobCounts
+ * @param {Array<{id?: string, gh_job_name?: string, display_name?: string, status?: string}>} uploadedReports
+ * @param {string} [baseUrl] - TSIO origin used to build per-leg report links
+ * @returns {Array<{label: string, status: string, passed: number, failed: number, skipped: number, total: number, os: string, serverVersion: string, reportUrl?: string}>}
+ */
+function buildLegSummaries(perJobCounts, uploadedReports, baseUrl) {
+    const jobNames = new Set([
+        ...Object.keys(perJobCounts || {}),
+        ...(uploadedReports || []).map((r) => r.gh_job_name || r.display_name).filter(Boolean),
+    ]);
+
+    const rows = [];
+    for (const jobName of jobNames) {
+        const parsed = parseCmtJobName(jobName);
+        if (!parsed) {
+            continue;
+        }
+
+        const counts = perJobCounts[jobName] || {};
+        const passed = (counts.passed || 0) + (counts.flaky || 0);
+        const failed = counts.failed || 0;
+        const skipped = counts.skipped || 0;
+        const total = passed + failed + skipped;
+        const uploaded = (uploadedReports || []).find(
+            (r) => (r.gh_job_name || r.display_name) === jobName,
+        );
+
+        let status;
+        if (total === 0) {
+            const uploadedOk = uploaded?.status === 'complete' || uploaded?.status === 'completed';
+            status = uploadedOk ? 'no-results' : 'missing';
+        } else {
+            status = failed === 0 ? 'passed' : 'failed';
+        }
+
+        rows.push({
+            label: parsed.shard ? `${parsed.serverVersion}-${parsed.os}-${parsed.shard}` : `${parsed.serverVersion}-${parsed.os}`,
+            status,
+            passed,
+            failed,
+            skipped,
+            total,
+            os: parsed.os,
+            serverVersion: parsed.serverVersion,
+            kind: parsed.kind || 'e2e',
+            reportUrl: uploaded?.id && baseUrl ? buildIndividualReportUrl(baseUrl, uploaded.id) : undefined,
+        });
+    }
+
+    rows.sort((a, b) => {
+        const osCmp = (OS_ORDER[a.os] ?? 9) - (OS_ORDER[b.os] ?? 9);
+        if (osCmp !== 0) {
+            return osCmp;
+        }
+        if (a.kind !== b.kind) {
+            return a.kind === 'policy' ? 1 : -1;
+        }
+        return a.serverVersion.localeCompare(b.serverVersion, undefined, {numeric: true});
+    });
+
+    return rows;
+}
+
+const PLATFORM_EMOJI = {
+    linux: '🐧',
+    macos: '🍎',
+    windows: '🪟',
+    unknown: '❔',
+};
+
+const PLATFORM_LABEL = {
+    linux: 'Linux',
+    macos: 'macOS',
+    windows: 'Windows',
+    unknown: 'Other',
+};
+
+/**
+ * @param {{os: string, kind?: string, serverVersion: string}} leg
+ * @returns {{platform: string, suite: string}}
+ */
+function formatLegLabels(leg) {
+    const emoji = PLATFORM_EMOJI[leg.os] || PLATFORM_EMOJI.unknown;
+    const name = PLATFORM_LABEL[leg.os] || PLATFORM_LABEL.unknown;
+    const suite = leg.kind === 'policy' ? 'Policy' : `Server \`${leg.serverVersion}\``;
+    return {platform: `${emoji} ${name}`, suite};
+}
+
+/**
+ * Denominator is executed tests (passed + failed), matching Playwright summary style.
+ *
+ * @param {{status: string, passed: number, failed: number, skipped?: number}} leg
+ * @returns {string}
+ */
+function formatLegResultText(leg) {
+    if (leg.status === 'missing' || leg.status === 'no-results') {
+        return `⚠️ ${leg.status}`;
+    }
+
+    // All-skipped legs are marked "passed" by buildLegSummaries (failed === 0) but
+    // should not render as ✅ 0/0.
+    if ((leg.passed || 0) === 0 && (leg.failed || 0) === 0 && (leg.skipped || 0) > 0) {
+        return '⚠️ not executed';
+    }
+    const executed = leg.passed + leg.failed;
+    if (leg.status === 'passed') {
+        return `✅ ${leg.passed}/${executed || leg.passed}`;
+    }
+    return `❌ ${leg.passed}/${executed}`;
+}
+
+function buildWorkflowRunUrl(compositeIdentity) {
+    const repo = compositeIdentity?.repository || 'mattermost/desktop';
+    if (!compositeIdentity?.gh_run_id) {
+        return '';
+    }
+    return `https://github.com/${repo}/actions/runs/${compositeIdentity.gh_run_id}`;
+}
+
+function sanitizeInlineText(text, maxLength = 80) {
+    const clean = String(text || '').replace(/\s+/g, ' ').trim();
+    const truncated = clean.length > maxLength ? `${clean.slice(0, maxLength - 1)}…` : clean;
+
+    // Contributor-controlled (PR title / commit subject): escape Markdown so it
+    // cannot break the attribution link, and defuse @mentions (@channel/@here).
+    return truncated.
+        replace(/[\\`*_~[\]()<>|]/g, '\\$&').
+        replace(/@(?=\w)/g, '@\u200b');
+}
+
+// Author is untrusted (GitHub login, or a raw git author name for the commit
+// fallback) — render it as text, never as a live @mention (@channel/@here).
+function formatByline(author) {
+    const name = sanitizeInlineText(author, 40).replace(/^@/, '').replace(/^\u200b+/, '');
+    return name ? ` by @\u200b${name}` : '';
+}
+
+function formatMasterAttribution({compositeIdentity, mergedPr, headCommit, shortSha}) {
+    const branch = (compositeIdentity?.branch || 'master').replace(/^refs\/(heads|tags)\//, '');
+    const commitPart = shortSha ? `commit \`${shortSha}\`` : `branch \`${branch}\``;
+    let pr = null;
+    if (mergedPr?.number) {
+        pr = mergedPr;
+    } else if (compositeIdentity?.gh_pr_number) {
+        pr = {number: compositeIdentity.gh_pr_number};
+    }
+    if (pr) {
+        const repo = compositeIdentity?.repository || 'mattermost/desktop';
+        const url = pr.url || `https://github.com/${repo}/pull/${pr.number}`;
+        const title = sanitizeInlineText(pr.title);
+        const label = title ? `#${pr.number} ${title}` : `#${pr.number}`;
+        return `After merge of [${label}](${url})${formatByline(pr.author)} · ${commitPart}`;
+    }
+    if (headCommit?.subject) {
+        const author = formatByline(headCommit.author);
+        return `After ${commitPart}${author} — ${sanitizeInlineText(headCommit.subject)}`;
+    }
+    return `On \`${branch}\` · ${commitPart}`;
+}
+
+function summarizeOutcome({detail, perJobCounts, upstreamJobsSucceeded = true, hasFailures = false, baseUrl, perJobCountsAvailable = true}) {
+    const reports = detail?.reports || [];
+    const legs = buildLegSummaries(perJobCounts, reports, baseUrl);
+    const expectedJobNames = [...new Set(
+        reports.map((r) => r.gh_job_name || r.display_name).filter(Boolean),
+    )];
+    const {passed, failed, skipped} = resolveChannelTotals(perJobCounts, detail?.test_stats, expectedJobNames);
+    const overallFailed = failed > 0 || !upstreamJobsSucceeded || hasFailures;
+
+    // When the consolidated fetch failed, every leg looks empty — that is
+    // unavailable data, not a missing leg, so it must not trigger an alert.
+    let missingLegs = [];
+    if (perJobCountsAvailable) {
+        missingLegs = legs.filter((leg) => leg.status === 'missing' || leg.status === 'no-results');
+    }
+
+    // No legs at all (counts loaded) means the run produced no results — that
+    // is a missing-results condition, not a pass. Unavailable counts stay unknown.
+    const noLegsReported = perJobCountsAvailable && legs.length === 0;
+    return {legs, passed, failed, skipped, overallFailed, missingLegs, perJobCountsAvailable, noLegsReported};
+}
+
+// Master health is failure-only, like a CI health-check bot: green runs stay
+// silent instead of posting a per-leg table after every merge. When AI triage
+// cleared every failure (flaky / failed in master / Infra failure), the run
+// stays silent too — red is posted only when triage leaves blocking failures,
+// and an unsettled verdict posts as needs-investigation, never as silent.
+function shouldPostToChannel(compositeIdentity, {overallFailed = false, missingLegs = [], legs = [], perJobCountsAvailable = true, noLegsReported} = {}, triageVerdict) {
+    if (compositeIdentity?.name !== 'desktop-master') {
+        return true;
+    }
+    if (triageVerdict === 'cleared') {
+        return false;
+    }
+    const noLegs = noLegsReported ?? (perJobCountsAvailable && legs.length === 0);
+    return Boolean(overallFailed || missingLegs.length > 0 || noLegs);
+}
+
+function formatMasterChannelMessage({
+    compositeIdentity,
+    detail,
+    reportUrl,
+    baseUrl,
+    perJobCounts,
+    upstreamJobsSucceeded = true,
+    hasFailures = false,
+    mergedPr,
+    headCommit,
+    perJobCountsAvailable = true,
+    triageLanes,
+}) {
+    const {legs, passed, failed, skipped, overallFailed, missingLegs, noLegsReported} = summarizeOutcome({
+        detail, perJobCounts, upstreamJobsSucceeded, hasFailures, baseUrl, perJobCountsAvailable,
+    });
+    const triage = triageLanes ? foldMasterTriage({
+        lanes: triageLanes, legs, missingLegs, upstreamJobsSucceeded, overallFailed, noLegs: noLegsReported,
+    }) : null;
+    const branch = (compositeIdentity?.branch || 'master').replace(/^refs\/(heads|tags)\//, '');
+    const shortSha = (compositeIdentity?.commit_sha || '').slice(0, 7);
+    const runUrl = buildWorkflowRunUrl(compositeIdentity);
+    const links = [
+        reportUrl ? `[Full report](${reportUrl})` : '',
+        runUrl ? `[Workflow run](${runUrl})` : '',
+    ].filter(Boolean).join(' · ');
+
+    if (!overallFailed && missingLegs.length === 0 && !noLegsReported) {
+        const shaPart = shortSha ? ` @ \`${shortSha}\`` : '';
+        return `:white_check_mark: **Desktop Master E2E** — passed on \`${branch}\`${shaPart} (${passed} passed, ${skipped} skipped)${links ? ` — ${links}` : ''}\n`;
+    }
+
+    // Triage cleared every failure: the run reads green. notifyCmtChannel
+    // suppresses this post entirely (failure-only channel); the green line
+    // exists so direct callers still render a truthful message.
+    if (triage && triage.verdict === 'cleared') {
+        const shaPart = shortSha ? ` @ \`${shortSha}\`` : '';
+        return `:green_circle: **Desktop Master E2E — flaky, no bug found** on \`${branch}\`${shaPart} (${passed} passed, ${skipped} skipped)${links ? ` — ${links}` : ''}\n`;
+    }
+
+    if (triage && triage.verdict === 'inconclusive') {
+        const lines = [
+            `:yellow_circle: **Desktop Master E2E — needs investigation on \`${branch}\`**`,
+            formatMasterAttribution({compositeIdentity, mergedPr, headCommit, shortSha}),
+            `**${failed} failed** · ${passed} passed · ${skipped} skipped`,
+        ];
+        if (triage.unknownLegs.length > 0) {
+            const labels = triage.unknownLegs.map((leg) => {
+                const {platform, suite} = formatLegLabels(leg);
+                return `${platform} / ${suite}`;
+            }).join(', ');
+            lines.push(`AI triage could not settle: ${labels} — not counted as flaky or as a bug`);
+        } else if (!upstreamJobsSucceeded) {
+            lines.push('A CI job failed outside tracked tests (install/build/teardown); triage cannot clear that.');
+        }
+        if (links) {
+            lines.push(`➡️ ${links}`);
+        }
+        return lines.join('\n') + '\n';
+    }
+
+    const lines = [
+        `:red_circle: **Desktop Master E2E — failure on \`${branch}\`**`,
+        formatMasterAttribution({compositeIdentity, mergedPr, headCommit, shortSha}),
+        `**${failed} failed** · ${passed} passed · ${skipped} skipped`,
+    ];
+
+    // When triage judged the run, the Failing line names only the legs that
+    // still block; cleared legs are summarized by the triage line below.
+    let failingLegs = legs.filter((l) => l.status === 'failed' && l.failed > 0);
+    if (triage && triage.verdict === 'blocking') {
+        failingLegs = triage.blockingLegs;
+    }
+    const failingBySuite = new Map();
+    for (const leg of failingLegs) {
+        const {platform, suite} = formatLegLabels(leg);
+        const key = `${platform}|${suite}`;
+        const existing = failingBySuite.get(key) || {platform, suite, failed: 0, reportUrl: undefined};
+        existing.failed += leg.failed;
+        existing.reportUrl = existing.reportUrl || leg.reportUrl;
+        failingBySuite.set(key, existing);
+    }
+    if (failingBySuite.size > 0) {
+        const parts = [...failingBySuite.values()].map((leg) =>
+            `${leg.platform} ${leg.suite} — ${leg.failed} failed${leg.reportUrl ? ` ([report](${leg.reportUrl}))` : ''}`);
+        lines.push(`Failing: ${parts.join(', ')}`);
+    }
+    if (triage && triage.verdict === 'blocking' && triage.clearedLegs.length > 0) {
+        lines.push(`AI triage cleared ${triage.clearedLegs.length} failing leg${triage.clearedLegs.length === 1 ? '' : 's'} (flaky / failed in master / Infra failure); the rest still block.`);
+    }
+    if (missingLegs.length > 0) {
+        const labels = missingLegs.map((leg) => {
+            const {platform, suite} = formatLegLabels(leg);
+            return `${platform} / ${suite}`;
+        }).join(', ');
+        lines.push(`Missing/empty: ${labels}`);
+    }
+    if (noLegsReported) {
+        lines.push('No per-leg results reported.');
+    }
+    if (!perJobCountsAvailable) {
+        lines.push('Per-leg counts unavailable (TSIO consolidated fetch failed).');
+    }
+    if (!upstreamJobsSucceeded) {
+        lines.push('CI job failed outside tracked tests (install/build/teardown).');
+    } else if (hasFailures && failed === 0) {
+        lines.push('TSIO reported failed shard(s) not reflected in the test totals.');
+    }
+    if (detail?.status && detail.status !== 'completed') {
+        lines.push(`TSIO status: \`${detail.status}\`.`);
+    }
+    if (links) {
+        lines.push(`➡️ ${links}`);
+    }
+    return lines.join('\n') + '\n';
+}
+
+function reportTitleForIdentity(compositeIdentity) {
+    switch (compositeIdentity?.name) {
+    case 'cmt-desktop':
+        return 'Desktop CMT';
+    case 'desktop-pr':
+        return 'Desktop PR E2E';
+    case 'desktop-master':
+        return 'Desktop Master E2E';
+    default:
+        return 'Desktop E2E';
+    }
+}
+
+/**
+ * @param {Object} compositeIdentity
+ * @returns {string}
+ */
+function formatMetaLine(compositeIdentity) {
+    const branch = (compositeIdentity.branch || '').replace(/^refs\/(heads|tags)\//, '');
+    const shortSha = (compositeIdentity.commit_sha || '').slice(0, 7);
+    const parts = [];
+
+    if (compositeIdentity.gh_pr_number) {
+        const repo = compositeIdentity.repository || 'mattermost/desktop';
+        parts.push(`**PR:** [#${compositeIdentity.gh_pr_number}](https://github.com/${repo}/pull/${compositeIdentity.gh_pr_number})`);
+    }
+    if (branch) {
+        parts.push(`**Branch:** \`${branch}\``);
+    }
+    if (shortSha) {
+        parts.push(`**Commit:** \`${shortSha}\``);
+    }
+    return parts.join(' · ');
+}
+
+/**
+ * Prefer unique per-leg counts (retry-collapsed) over TSIO group test_stats, which
+ * counts every failed attempt and double-counts retries in channel alerts.
+ *
+ * When `expectedJobNames` is provided, per-leg totals are used only if every expected
+ * job is present — otherwise fall back to `stats` so partial consolidation cannot hide
+ * aggregate failures.
+ *
+ * @param {Record<string, {passed?: number, failed?: number, skipped?: number, flaky?: number}>} perJobCounts
+ * @param {{passed?: number, failed?: number, skipped?: number, flaky?: number}} stats
+ * @param {string[]} [expectedJobNames] - uploaded report job names; omit to trust any per-leg map
+ * @returns {{passed: number, failed: number, skipped: number}}
+ */
+function resolveChannelTotals(perJobCounts, stats = {}, expectedJobNames) {
+    const counts = perJobCounts || {};
+
+    let jobs;
+    if (expectedJobNames === undefined) {
+        jobs = Object.values(counts);
+    } else if (expectedJobNames.length > 0 &&
+        expectedJobNames.every((job) => Object.prototype.hasOwnProperty.call(counts, job))) {
+        jobs = expectedJobNames.map((job) => counts[job]);
+    } else {
+        jobs = [];
+    }
+
+    if (jobs.length > 0) {
+        let passed = 0;
+        let failed = 0;
+        let skipped = 0;
+        for (const jobCounts of jobs) {
+            passed += (jobCounts.passed || 0) + (jobCounts.flaky || 0);
+            failed += jobCounts.failed || 0;
+            skipped += jobCounts.skipped || 0;
+        }
+        return {passed, failed, skipped};
+    }
+
+    return {
+        passed: (stats.passed ?? 0) + (stats.flaky ?? 0),
+        failed: stats.failed ?? 0,
+        skipped: stats.skipped ?? 0,
+    };
+}
+
+/**
+ * @param {Object} params
+ * @param {Object} params.compositeIdentity
+ * @param {Object} params.detail - TSIO group report detail
+ * @param {string} params.reportUrl - group / consolidated rollup URL
+ * @param {string} [params.baseUrl] - TSIO origin for per-leg /reports/r/{id} links
+ * @param {Record<string, {passed?: number, failed?: number, skipped?: number, flaky?: number}>} params.perJobCounts
+ * @param {boolean} [params.upstreamJobsSucceeded]
+ * @param {boolean} [params.hasFailures] - true when TSIO reports failed shards or failed tests
+ * @returns {string}
+ */
+function formatCmtChannelMessage({
+    compositeIdentity,
+    detail,
+    reportUrl,
+    baseUrl,
+    perJobCounts,
+    upstreamJobsSucceeded = true,
+    hasFailures = false,
+    mergedPr,
+    headCommit,
+    perJobCountsAvailable = true,
+    triageLanes,
+}) {
+    if (compositeIdentity?.name === 'desktop-master') {
+        return formatMasterChannelMessage({
+            compositeIdentity, detail, reportUrl, baseUrl, perJobCounts, upstreamJobsSucceeded, hasFailures, mergedPr, headCommit, perJobCountsAvailable, triageLanes,
+        });
+    }
+
+    // Overall pass/fail follows tests + upstream CI — not TSIO consolidation state.
+    // Stuck `in_progress` / `incomplete` with 0 failures must not render as ❌ Failed.
+    const {legs, passed, failed, skipped, overallFailed, missingLegs} = summarizeOutcome({
+        detail, perJobCounts, upstreamJobsSucceeded, hasFailures, baseUrl, perJobCountsAvailable,
+    });
+    const tsioPending = Boolean(detail?.status && detail.status !== 'completed');
+    const title = reportTitleForIdentity(compositeIdentity);
+
+    const lines = [
+        `## ${overallFailed ? '❌' : '✅'} ${title}`,
+        '',
+    ];
+
+    const meta = formatMetaLine(compositeIdentity);
+    if (meta) {
+        lines.push(meta, '');
+    }
+
+    if (failed > 0) {
+        const failingLegs = legs.filter((leg) => leg.status === 'failed' && leg.failed > 0);
+        lines.push(`🔴 **${failed} failing test${failed === 1 ? '' : 's'}**`, '');
+        if (failingLegs.length > 0) {
+            lines.push('| Platform | Suite | Failed |', '|----------|-------|-------:|');
+            for (const leg of failingLegs) {
+                const {platform, suite} = formatLegLabels(leg);
+                lines.push(`| ${platform} | ${suite} | ${leg.failed} |`);
+            }
+            lines.push('');
+        }
+    }
+
+    lines.push(
+        '| Overall | Passed | Failed | Skipped |',
+        '|---------|------:|------:|-------:|',
+        `| ${overallFailed ? '❌ Failed' : '✅ Passed'} | **${passed}** | **${failed}** | **${skipped}** |`,
+        '',
+    );
+
+    if (legs.length > 0) {
+        // Mattermost incoming webhooks do not render GitHub <details>/<summary>.
+        lines.push('#### Detailed results', '');
+        lines.push('| Platform | Suite | Result | Report |', '|----------|-------|--------|--------|');
+        for (const leg of legs) {
+            const {platform, suite} = formatLegLabels(leg);
+            const report = leg.reportUrl ? `[View](${leg.reportUrl})` : '—';
+            lines.push(`| ${platform} | ${suite} | ${formatLegResultText(leg)} | ${report} |`);
+        }
+        lines.push('');
+    } else {
+        lines.push('_No per-leg results available yet._', '');
+    }
+
+    if (!upstreamJobsSucceeded) {
+        lines.push('_One or more CI jobs failed outside tracked tests (install/build/teardown)._', '');
+    } else if (hasFailures && failed === 0) {
+        lines.push('_TSIO reported failed shard(s) not reflected in the test totals; check the full report._', '');
+    }
+    if (tsioPending && upstreamJobsSucceeded && !overallFailed) {
+        lines.push(
+            `_TSIO report status: \`${detail.status}\` (consolidation still catching up; not treated as a test failure)._`,
+            '',
+        );
+    } else if (tsioPending && overallFailed) {
+        lines.push(`_TSIO report status: \`${detail.status}\`._`, '');
+    }
+    if (missingLegs.length > 0) {
+        const labels = missingLegs.map((leg) => {
+            const {platform, suite} = formatLegLabels(leg);
+            return `${platform} / ${suite}`;
+        }).join(', ');
+        lines.push(`_Missing or empty leg report(s): ${labels}._`, '');
+    }
+
+    if (reportUrl) {
+        lines.push(`➡️ **Full report:** ${reportUrl}`);
+    }
+
+    return lines.join('\n').trimEnd() + '\n';
+}
+
+/**
+ * Collapse TSIO history attempts for one spec on one job into a single Playwright-style status.
+ * failed then passed (or explicit flaky) → flaky; all failed → failed once.
+ *
+ * @param {Array<{status?: string}>} entries
+ * @returns {'passed'|'failed'|'skipped'|'flaky'|null}
+ */
+function collapseSpecAttempts(entries) {
+    if (!entries || entries.length === 0) {
+        return null;
+    }
+
+    let sawPassed = false;
+    let sawFailed = false;
+    let sawSkipped = false;
+    let sawFlaky = false;
+
+    for (const entry of entries) {
+        const status = entry.status || 'failed';
+        if (status === 'passed') {
+            sawPassed = true;
+        } else if (status === 'failed') {
+            sawFailed = true;
+        } else if (status === 'skipped') {
+            sawSkipped = true;
+        } else if (status === 'flaky') {
+            sawFlaky = true;
+        } else {
+            // Unknown statuses treated as failures so they still surface in alerts.
+            sawFailed = true;
+        }
+    }
+
+    if (sawFlaky || (sawFailed && sawPassed)) {
+        return 'flaky';
+    }
+    if (sawFailed) {
+        return 'failed';
+    }
+    if (sawPassed) {
+        return 'passed';
+    }
+    if (sawSkipped) {
+        return 'skipped';
+    }
+    return null;
+}
+
+/**
+ * @param {string} baseUrl
+ * @param {Object} compositeIdentity
+ * @param {Object} groupDetail
+ * @returns {Promise<Record<string, {passed: number, failed: number, skipped: number, flaky: number}>>}
+ */
+async function fetchPerJobCountsFromConsolidated(baseUrl, compositeIdentity, groupDetail) {
+    const idToJob = {};
+    for (const report of groupDetail.reports || []) {
+        const name = report.gh_job_name || report.display_name;
+        if (report.id && name) {
+            idToJob[report.id] = name;
+        }
+    }
+
+    const repoTrailing = (compositeIdentity.repository || '').split('/').pop() || compositeIdentity.repository;
+    const params = new URLSearchParams({
+        repository: repoTrailing,
+        branch: (compositeIdentity.branch || '').replace(/^refs\/(heads|tags)\//, ''),
+        commit: compositeIdentity.commit_sha,
+        name: compositeIdentity.name,
+        gh_run_id: String(compositeIdentity.gh_run_id),
+    });
+    if (compositeIdentity.gh_run_attempt) {
+        params.set('gh_run_attempt', String(compositeIdentity.gh_run_attempt));
+    }
+
+    const consol = await fetchWithTimeout(
+        `${baseUrl}/api/v1/reports/consolidated?${params}`,
+        undefined,
+        async (res) => {
+            if (!res.ok) {
+                throw new Error(`consolidated fetch failed: ${res.status} ${await res.text()}`);
+            }
+            return res.json();
+        },
+    );
+
+    const counts = {};
+    const commitSha = compositeIdentity.commit_sha;
+    const attempt = Number.parseInt(compositeIdentity.gh_run_attempt || '1', 10);
+
+    for (const spec of consol.specs || []) {
+        /** @type {Record<string, Array<{status?: string}>>} */
+        const entriesByJob = {};
+        for (const entry of spec.history || []) {
+            if (entry.commit_sha !== commitSha) {
+                continue;
+            }
+            if (Number.parseInt(entry.run_attempt || '0', 10) !== attempt) {
+                continue;
+            }
+            const job = idToJob[entry.report_id];
+            if (!job) {
+                continue;
+            }
+            if (!entriesByJob[job]) {
+                entriesByJob[job] = [];
+            }
+            entriesByJob[job].push(entry);
+        }
+
+        for (const [job, entries] of Object.entries(entriesByJob)) {
+            const status = collapseSpecAttempts(entries);
+            if (!status) {
+                continue;
+            }
+            if (!counts[job]) {
+                counts[job] = {passed: 0, failed: 0, skipped: 0, flaky: 0};
+            }
+            counts[job][status] += 1;
+        }
+    }
+
+    return counts;
+}
+
+/**
+ * @param {Object} params
+ * @param {Object} params.core
+ * @param {string} params.webhookUrl
+ * @param {string} params.text
+ * @param {string} [params.username]
+ */
+async function postMattermostWebhook({core, webhookUrl, text, username = 'Desktop E2E'}) {
+    if (!webhookUrl) {
+        core.info('Mattermost webhook URL not set — skipping E2E channel notify');
+        return;
+    }
+
+    const body = {
+        username,
+        icon_url: 'https://mattermost.com/wp-content/uploads/2022/02/icon.png',
+        text,
+    };
+
+    await fetchWithTimeout(
+        webhookUrl,
+        {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body),
+        },
+        async (res) => {
+            if (!res.ok) {
+                throw new Error(`Mattermost webhook failed: ${res.status} ${await res.text()}`);
+            }
+
+            // Drain body so the abort timer covers the full response, not just headers.
+            await res.text();
+        },
+    );
+    core.info('Posted E2E summary to Mattermost channel');
+}
+
+/**
+ * Build + post the CMT channel message. Never throws to the caller — notify is best-effort.
+ *
+ * @param {Object} params
+ * @param {Object} params.core
+ * @param {string} params.baseUrl
+ * @param {Object} params.compositeIdentity
+ * @param {Object} params.detail
+ * @param {string} params.reportUrl
+ * @param {boolean} [params.upstreamJobsSucceeded]
+ * @param {boolean} [params.hasFailures]
+ * @param {string} [params.webhookUrl]
+ */
+async function notifyCmtChannel({
+    core,
+    baseUrl,
+    compositeIdentity,
+    detail,
+    reportUrl,
+    upstreamJobsSucceeded = true,
+    hasFailures = false,
+    webhookUrl,
+    mergedPr,
+    headCommit,
+    triageLanes,
+}) {
+    try {
+        const resolvedWebhook = webhookUrl || resolveWebhookUrl(compositeIdentity?.name);
+        let perJobCounts = {};
+        let perJobCountsAvailable = true;
+        try {
+            perJobCounts = await fetchPerJobCountsFromConsolidated(baseUrl, compositeIdentity, detail);
+        } catch (error) {
+            perJobCountsAvailable = false;
+            core.warning(`Could not load per-leg TSIO counts: ${error.message}`);
+        }
+
+        const outcome = summarizeOutcome({
+            detail, perJobCounts, upstreamJobsSucceeded, hasFailures, baseUrl, perJobCountsAvailable,
+        });
+        let triageVerdict;
+        if (compositeIdentity?.name === 'desktop-master' && triageLanes) {
+            triageVerdict = foldMasterTriage({
+                lanes: triageLanes,
+                legs: outcome.legs,
+                missingLegs: outcome.missingLegs,
+                upstreamJobsSucceeded,
+                overallFailed: outcome.overallFailed,
+                noLegs: outcome.noLegsReported,
+            }).verdict;
+        }
+        if (!shouldPostToChannel(compositeIdentity, outcome, triageVerdict)) {
+            if (triageVerdict === 'cleared') {
+                core.info('Desktop Master E2E failures cleared by AI triage — skipping channel notify');
+            } else {
+                core.info('Desktop Master E2E passed — skipping channel notify (master alerts are failure-only)');
+            }
+            return;
+        }
+
+        const text = formatCmtChannelMessage({
+            compositeIdentity,
+            detail,
+            reportUrl,
+            baseUrl,
+            perJobCounts,
+            upstreamJobsSucceeded,
+            hasFailures,
+            mergedPr,
+            headCommit,
+            perJobCountsAvailable,
+            triageLanes,
+        });
+
+        await postMattermostWebhook({core, webhookUrl: resolvedWebhook, text});
+    } catch (error) {
+        core.warning(`E2E Mattermost notify failed: ${error.message}`);
+    }
+}
+
+module.exports = {
+    parseCmtJobName,
+    resolveWebhookUrl,
+    buildIndividualReportUrl,
+    buildLegSummaries,
+    formatLegResultText,
+    reportTitleForIdentity,
+    resolveChannelTotals,
+    collapseSpecAttempts,
+    formatCmtChannelMessage,
+    formatMasterChannelMessage,
+    sanitizeInlineText,
+    shouldPostToChannel,
+    buildWorkflowRunUrl,
+    fetchPerJobCountsFromConsolidated,
+    postMattermostWebhook,
+    notifyCmtChannel,
+};
