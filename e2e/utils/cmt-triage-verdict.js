@@ -240,8 +240,10 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
         // Held tests are counted once across runs; a run that names none is counted as a run.
         const held = result.tests.filter((t) => t.blocking);
         const productBugs = held.filter((t) => PRODUCT.has(t.label)).length;
-        const unnamed = result.blockingLegs.filter((leg) => !leg.testsNamed && !leg.incomplete).length;
-        let summary = `${count(result.blockingLegs.length, 'run', 'runs')} failed, but which tests is not known — look at the run`;
+
+        // A run with failures it names no test for: whether or not its results all uploaded, those failures are real.
+        const unnamed = result.blockingLegs.filter((leg) => !leg.testsNamed && (!leg.incomplete || leg.blocking > 0)).length;
+        let summary = `${count(unnamed, 'run', 'runs')} failed, but which tests is not known — look at the run`;
         if (productBugs) {
             summary = `${count(productBugs, 'product bug', 'product bugs')} found`;
         } else if (held.length) {
@@ -461,7 +463,7 @@ function formatCmtVerdictMessage({fold, compositeIdentity, stats = {}, reportUrl
     // A run with incomplete results needs a re-run, whether it names a test or could not be checked.
     const redLegs = fold.kind === 'blocking' ? fold.blockingLegs : [];
     const incomplete = [...redLegs, ...fold.unknownLegs].filter((leg) => leg.incomplete);
-    const redUnnamed = redLegs.filter((leg) => !leg.testsNamed && !leg.incomplete);
+    const redUnnamed = redLegs.filter((leg) => !leg.testsNamed && (!leg.incomplete || leg.blocking > 0));
     const unsettled = fold.unknownLegs.filter((leg) => !leg.incomplete);
 
     const unchecked = {
@@ -471,7 +473,7 @@ function formatCmtVerdictMessage({fold, compositeIdentity, stats = {}, reportUrl
     };
     let headline = `:yellow_circle: ${name}: ${unchecked[fold.kind] || 'not every run could be checked'}`;
     if (fold.kind === 'blocking') {
-        let red = `${count(fold.blockingLegs.length, 'run', 'runs')} failed, but which tests is not known`;
+        let red = `${count(redUnnamed.length, 'run', 'runs')} failed, but which tests is not known`;
         if (productBugs.length) {
             red = `${count(productBugs.length, 'product bug', 'product bugs')} found`;
         } else if (needsLook.length) {

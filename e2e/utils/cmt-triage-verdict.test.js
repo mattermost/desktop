@@ -325,6 +325,15 @@ describe('per-test CMT message', () => {
         assert.match(text, /^⚙️ \*\*Failed, test not known:\*\* 🐧 Linux, server 10\.11\.25 — look at the run$/m);
     });
 
+    it('reports a run with failures but no test list as failed, and as needing a re-run', () => {
+        const lost = lanes.map((l) => (l.platform === 'linux' && l.serverVersion === '11.7.14' ? {...l, verdict: 'FAILURE', blocking: '2', findings: [], findingsRecorded: false, description: '(2 need a look; results incomplete: 14 of 15 reports)'} : l));
+        const fold = foldCmtVerdicts({lanes: lost, expectedLanes: matrix, expectTriage: true, stats});
+        const text = formatCmtVerdictMessage({fold, compositeIdentity: identity, stats, ...links});
+        assert.match(text, /^⚙️ \*\*Failed, test not known:\*\* 🐧 Linux, server 11\.7\.14 — look at the run$/m, 'its two failures are not lost');
+        assert.match(text, /^⚙️ \*\*Setup problem:\*\* test results did not fully upload for 1 of 15 runs — re-run to confirm$/m);
+        assert.match(fold.statusDescription, /^No product bugs found; 1 failure needs a look; 1 run failed with no test named; some results did not upload · /);
+    });
+
     it('says a lane red only for incomplete results needs a re-run, not that it is blocking', () => {
         const incomplete = (l) => ({...l, verdict: 'FAILURE', blocking: '0', findings: l.findings.filter((f) => !f.blocking), description: '(1 test bug; results incomplete: 15 of 15 reports) 99.6% passed'});
         const onlyIncomplete = lanes.map((l) => (l.serverVersion.startsWith('12.') ? l : incomplete(l)));
