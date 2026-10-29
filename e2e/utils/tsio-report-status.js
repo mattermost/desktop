@@ -168,9 +168,10 @@ function countEmptyUploadedReports(detail, perJobCounts, bucketKey) {
         const hasExplicitZeroCounts = Boolean(counts) &&
             ((counts.passed || 0) + (counts.failed || 0) + (counts.skipped || 0) + (counts.flaky || 0) === 0);
         const stats = report.test_stats;
-        const statsTotal = stats ?
-            (typeof stats.total === 'number' ? stats.total : (stats.passed || 0) + (stats.failed || 0) + (stats.skipped || 0) + (stats.flaky || 0)) :
-            undefined;
+        let statsTotal;
+        if (stats) {
+            statsTotal = typeof stats.total === 'number' ? stats.total : (stats.passed || 0) + (stats.failed || 0) + (stats.skipped || 0) + (stats.flaky || 0);
+        }
         return hasExplicitZeroCounts || statsTotal === 0;
     }).length;
 }
