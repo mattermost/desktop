@@ -681,6 +681,13 @@ describe('setup problem (complete report, no tests)', () => {
         detail.reports[2].updated_at = '2026-10-29T04:16:13Z';
         assert.equal(countEmptyUploadedReports(detail, perJobCounts, 'linux', now), 1);
         assert.equal(countEmptyUploadedReports(detail, {}, 'linux', now), 0, 'no results read at all is not a setup diagnosis');
+
+        // CMT: one unsharded leg per server version. Another version's tests say nothing about this one's.
+        const cmt = {reports: [
+            {gh_job_name: 'e2e-on-ubuntu-latest-11.9.0', status: 'complete', updated_at: '2026-10-29T04:16:13Z'},
+            {gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc2', status: 'complete', updated_at: '2026-10-29T04:16:13Z'},
+        ]};
+        assert.equal(countEmptyUploadedReports(cmt, {'e2e-on-ubuntu-latest-12.1.0-rc2': {passed: 90, failed: 0, skipped: 0, flaky: 0}}, 'linux', now), 0);
     });
 
     it('counts a setup failure with explicit zero-test evidence', () => {
@@ -693,6 +700,9 @@ describe('setup problem (complete report, no tests)', () => {
         delete perJobCounts[missingName];
         detail.reports[2].test_stats = {passed: 0, failed: 0, skipped: 0, flaky: 0, total: 0};
         assert.equal(countEmptyUploadedReports(detail, perJobCounts, 'linux'), 1, 'a zero report total is definitive');
+
+        detail.reports[2].test_stats = {};
+        assert.equal(countEmptyUploadedReports(detail, perJobCounts, 'linux'), 0, 'stats with no number in them are not zero tests');
     });
 
     it('names the setup problem in the OS status instead of incomplete counts', () => {

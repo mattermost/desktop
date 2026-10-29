@@ -793,6 +793,28 @@ describe('cmt-channel-notify', () => {
                 assert.match(text, /Missing\/empty: 🍎 macOS \/ Server `master`/);
             });
 
+            it('keeps the failures triage cleared in a setup-problem message', () => {
+                const text = formatCmtChannelMessage({
+                    compositeIdentity: {repository: 'mattermost/desktop', branch: 'master', commit_sha: 'a1b2c3d4e5f678901234567890abcdef12345678', name: 'desktop-master', gh_run_id: '123456'},
+                    detail: {
+                        status: 'completed',
+                        test_stats: {passed: 155, failed: 2, skipped: 4, total: 161},
+                        reports: [1, 2, 3].map((i) => ({id: `rid-linux-${i}`, gh_job_name: `e2e-on-ubuntu-latest-master-${i}-of-3`, status: 'complete', updated_at: '2026-10-29T04:16:13Z'})),
+                    },
+                    reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
+                    baseUrl: 'https://test-io.test.mattermost.com',
+                    perJobCounts: {
+                        'e2e-on-ubuntu-latest-master-2-of-3': {passed: 78, failed: 2, skipped: 2, flaky: 0},
+                        'e2e-on-ubuntu-latest-master-3-of-3': {passed: 77, failed: 0, skipped: 2, flaky: 0},
+                    },
+                    upstreamJobsSucceeded: true,
+                    triageLanes: [{platform: 'linux', verdict: 'SUCCESS', blocking: 0, exonerated: 2}],
+                });
+                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — setup problem\*\*$/m);
+                assert.match(text, /^🔁 The 2 failed tests \(1 leg\) are not product bugs: AI triage found them flaky, already failing on master, or an infra failure\.$/m);
+                assert.match(text, /⚙️ \*\*Setup:\*\* 🐧 Linux · Server `master` · 1 of 3 test groups ran no tests\./);
+            });
+
             it('does not call legs setup failures when per-leg counts are unavailable', () => {
                 const text = formatCmtChannelMessage({
                     compositeIdentity: {

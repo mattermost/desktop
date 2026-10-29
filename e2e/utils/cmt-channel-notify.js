@@ -180,7 +180,8 @@ function reportRanNoTests(report, perJobCounts, now = Date.now()) {
     }
     const siblingHasTests = Object.entries(perJobCounts).some(([job, counts]) => {
         const other = parseCmtJobName(job);
-        return job !== name && other?.os === parsed.os && (other.kind || 'e2e') === (parsed.kind || 'e2e') && testTotal(counts) > 0;
+        return job !== name && other?.os === parsed.os && other.serverVersion === parsed.serverVersion &&
+            (other.kind || 'e2e') === (parsed.kind || 'e2e') && testTotal(counts) > 0;
     });
     return siblingHasTests && Date.parse(report.updated_at) <= now - EMPTY_REPORT_SETTLE_MS;
 }
@@ -195,10 +196,11 @@ function reportRanNoTests(report, perJobCounts, now = Date.now()) {
  */
 function reportTestTotal(report) {
     const stats = report?.test_stats;
-    if (!stats) {
-        return undefined;
+    const keys = ['passed', 'failed', 'skipped', 'flaky'];
+    if (!stats || (typeof stats.total !== 'number' && !keys.some((key) => typeof stats[key] === 'number'))) {
+        return undefined; // stats with no number in them say nothing
     }
-    return typeof stats.total === 'number' ? stats.total : (stats.passed || 0) + (stats.failed || 0) + (stats.skipped || 0) + (stats.flaky || 0);
+    return typeof stats.total === 'number' ? stats.total : keys.reduce((sum, key) => sum + (stats[key] || 0), 0);
 }
 
 /**
@@ -499,6 +501,9 @@ function formatMasterChannelMessage({
             ...formatSetupProblemLines(legs, triage.setupLegs),
             formatMasterAttribution({compositeIdentity, mergedPr, headCommit, shortSha}),
         ];
+        if (triage.clearedLegs.length > 0) {
+            lines.splice(3, 0, `🔁 The ${failed} failed test${failed === 1 ? '' : 's'} (${triage.clearedLegs.length} leg${triage.clearedLegs.length === 1 ? '' : 's'}) are not product bugs: AI triage found them flaky, already failing on master, or an infra failure.`);
+        }
         if (links) {
             lines.push(`➡️ ${links}`);
         }
