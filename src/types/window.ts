@@ -114,7 +114,7 @@ declare global {
             onEnterFullScreen: (listener: () => void) => void;
             onLeaveFullScreen: (listener: () => void) => void;
             onPlaySound: (listener: (soundName: string) => void) => void;
-            onModalOpen: (listener: () => void) => void;
+            onModalOpen: (listener: (isServerModal: boolean) => void) => void;
             onModalClose: (listener: () => void) => void;
             onUpdateMentions: (listener: (view: string, mentions: number, unreads: boolean, isExpired: boolean) => void) => void;
             onCloseServersDropdown: (listener: () => void) => void;
@@ -126,7 +126,7 @@ declare global {
             onUpdateDownloadsDropdown: (listener: (downloads: DownloadedItems, windowBounds: Rectangle, item: DownloadedItem) => void) => void;
             onAppMenuWillClose: (listener: () => void) => void;
             onFocusThreeDotMenu: (listener: () => void) => void;
-            onUpdateMentionsForServer: (listener: (serverId: string, expired: boolean, mentions: number, unreads: boolean) => void) => void;
+            onUpdateMentionsForServer: (listener: (serverId: string, expired: boolean, mentions: number, unreads: boolean, hasPendingModal: boolean) => void) => void;
             onSetURLForURLView: (listener: (link?: string) => void) => void;
             updateURLViewWidth: (width?: number) => void;
             openNotificationPreferences: () => void;
@@ -183,6 +183,8 @@ declare global {
                     expired?: Map<string, boolean>,
                     mentions?: Map<string, number>,
                     unreads?: Map<string, boolean>,
+                    isModalOpen?: boolean,
+                    pendingModals?: Map<string, boolean>,
                 ) => void) => void;
             };
 

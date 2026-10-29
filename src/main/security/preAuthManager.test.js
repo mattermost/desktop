@@ -5,6 +5,7 @@
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
+import WebContentsManager from 'app/views/webContentsManager';
 import ServerManager from 'common/servers/serverManager';
 import secureStorage from 'main/secureStorage';
 import {PreAuthManager} from 'main/security/preAuthManager';
@@ -39,6 +40,10 @@ jest.mock('common/views/viewManager', () => ({
 
 jest.mock('app/mainWindow/modals/modalManager', () => ({
     addModal: jest.fn(),
+}));
+
+jest.mock('app/views/webContentsManager', () => ({
+    getViewByWebContentsId: jest.fn(),
 }));
 
 jest.mock('common/servers/serverManager', () => ({
@@ -76,14 +81,14 @@ describe('main/preAuthManager', () => {
 
         it('should not pop modal on no certificates', () => {
             const callback = jest.fn();
-            preAuthManager.handleClientCert({preventDefault: jest.fn()}, null, 'http://someurl.com/', [], callback);
+            preAuthManager.handleClientCert({preventDefault: jest.fn()}, {id: 1}, 'http://someurl.com/', [], callback);
             expect(ModalManager.addModal).not.toBeCalled();
             expect(callback).not.toBeCalled();
         });
 
         it('should not pop modal on one certificate', () => {
             const callback = jest.fn();
-            preAuthManager.handleClientCert({preventDefault: jest.fn()}, null, 'http://someurl.com/', [{}], callback);
+            preAuthManager.handleClientCert({preventDefault: jest.fn()}, {id: 1}, 'http://someurl.com/', [{}], callback);
             expect(ModalManager.addModal).not.toBeCalled();
             expect(callback).not.toBeCalled();
         });
@@ -91,14 +96,28 @@ describe('main/preAuthManager', () => {
         it('should pop modal on two certificates', () => {
             ServerManager.lookupServerByURL.mockReturnValue({id: 'test-view', url: new URL('http://someurl.com/')});
             const callback = jest.fn();
-            preAuthManager.handleClientCert({preventDefault: jest.fn()}, null, 'http://someurl.com/', [{}, {}], callback);
+            preAuthManager.handleClientCert({preventDefault: jest.fn()}, {id: 1}, 'http://someurl.com/', [{}, {}], callback);
             expect(ModalManager.addModal).toBeCalled();
+        });
+
+        it('should scope the modal to the server of the requesting view', () => {
+            WebContentsManager.getViewByWebContentsId.mockReturnValueOnce({serverId: 'server-1'});
+            preAuthManager.handleClientCert({preventDefault: jest.fn()}, {id: 1}, 'http://someurl.com/', [{}, {}], jest.fn());
+            expect(ModalManager.addModal).toBeCalledWith(
+                'certificateModal-http://someurl.com/',
+                expect.any(String),
+                expect.any(String),
+                expect.any(Object),
+                expect.any(Object),
+                false,
+                'server-1',
+            );
         });
 
         it('should not pop modal when no main window exists', () => {
             MainWindow.get.mockImplementationOnce(() => null);
             const callback = jest.fn();
-            preAuthManager.handleClientCert({preventDefault: jest.fn()}, null, 'http://anormalurl.com/', [{data: 'test 1'}, {data: 'test 2'}, {data: 'test 3'}], callback);
+            preAuthManager.handleClientCert({preventDefault: jest.fn()}, {id: 1}, 'http://anormalurl.com/', [{data: 'test 1'}, {data: 'test 2'}, {data: 'test 3'}], callback);
             expect(ModalManager.addModal).not.toBeCalled();
             expect(callback).not.toBeCalled();
         });
@@ -108,7 +127,7 @@ describe('main/preAuthManager', () => {
             const callback = jest.fn();
             const promise = Promise.resolve({cert: {data: 'test 2'}});
             ModalManager.addModal.mockImplementationOnce(() => promise);
-            preAuthManager.handleClientCert({preventDefault: jest.fn()}, null, 'http://anormalurl.com/', [{data: 'test 1'}, {data: 'test 2'}, {data: 'test 3'}], callback);
+            preAuthManager.handleClientCert({preventDefault: jest.fn()}, {id: 1}, 'http://anormalurl.com/', [{data: 'test 1'}, {data: 'test 2'}, {data: 'test 3'}], callback);
             await promise;
             expect(callback).toBeCalledWith({data: 'test 2'});
         });
@@ -118,7 +137,7 @@ describe('main/preAuthManager', () => {
             const callback = jest.fn();
             const error = new Error('oops');
             ModalManager.addModal.mockImplementationOnce(() => Promise.reject(error));
-            preAuthManager.handleClientCert({preventDefault: jest.fn()}, null, 'http://anormalurl.com/', [{data: 'test 1'}, {data: 'test 2'}, {data: 'test 3'}], callback);
+            preAuthManager.handleClientCert({preventDefault: jest.fn()}, {id: 1}, 'http://anormalurl.com/', [{data: 'test 1'}, {data: 'test 2'}, {data: 'test 3'}], callback);
 
             // Wait for the promise to resolve/reject
             await new Promise((resolve) => setTimeout(resolve, 0));
@@ -128,21 +147,21 @@ describe('main/preAuthManager', () => {
         it('should handle domain:443 format URLs for certificate selection', () => {
             ServerManager.lookupServerByURL.mockReturnValue({id: 'test-view', url: new URL('https://trustedurl.com')});
             const callback = jest.fn();
-            preAuthManager.handleClientCert({preventDefault: jest.fn()}, null, 'trustedurl.com:443', [{}, {}], callback);
+            preAuthManager.handleClientCert({preventDefault: jest.fn()}, {id: 1}, 'trustedurl.com:443', [{}, {}], callback);
             expect(ModalManager.addModal).toBeCalled();
         });
 
         it('should handle domain:80 format URLs for certificate selection', () => {
             ServerManager.lookupServerByURL.mockReturnValue({id: 'test-view', url: new URL('http://trustedurl.com')});
             const callback = jest.fn();
-            preAuthManager.handleClientCert({preventDefault: jest.fn()}, null, 'trustedurl.com:80', [{}, {}], callback);
+            preAuthManager.handleClientCert({preventDefault: jest.fn()}, {id: 1}, 'trustedurl.com:80', [{}, {}], callback);
             expect(ModalManager.addModal).toBeCalled();
         });
 
         it('should handle other port numbers with https', () => {
             ServerManager.lookupServerByURL.mockReturnValue({id: 'test-view', url: new URL('https://trustedurl.com:8080')});
             const callback = jest.fn();
-            preAuthManager.handleClientCert({preventDefault: jest.fn()}, null, 'trustedurl.com:8080', [{}, {}], callback);
+            preAuthManager.handleClientCert({preventDefault: jest.fn()}, {id: 1}, 'trustedurl.com:8080', [{}, {}], callback);
             expect(ModalManager.addModal).toBeCalled();
         });
     });
@@ -153,7 +172,7 @@ describe('main/preAuthManager', () => {
         it('should not pop modal on untrusted URL', () => {
             ServerManager.lookupServerByURL.mockReturnValue(undefined);
             const callback = jest.fn();
-            preAuthManager.handlePreAuthSecret('http://untrustedurl.com/', callback);
+            preAuthManager.handlePreAuthSecret('http://untrustedurl.com/', 'test-view', callback);
             expect(ModalManager.addModal).not.toBeCalled();
             expect(callback).not.toBeCalled();
         });
@@ -161,15 +180,23 @@ describe('main/preAuthManager', () => {
         it('should pop modal on trusted URL', () => {
             ServerManager.lookupServerByURL.mockReturnValue({id: 'test-view', url: new URL('http://trustedurl.com/')});
             const callback = jest.fn();
-            preAuthManager.handlePreAuthSecret('http://trustedurl.com/', callback);
-            expect(ModalManager.addModal).toBeCalled();
+            preAuthManager.handlePreAuthSecret('http://trustedurl.com/', 'test-view', callback);
+            expect(ModalManager.addModal).toBeCalledWith(
+                'preAuthModal-http://trustedurl.com/',
+                expect.any(String),
+                expect.any(String),
+                expect.any(Object),
+                expect.any(Object),
+                false,
+                'test-view',
+            );
         });
 
         it('should not pop modal when no main window exists', () => {
             ServerManager.lookupServerByURL.mockReturnValue({id: 'test-view', url: new URL('http://trustedurl.com/')});
             MainWindow.get.mockImplementationOnce(() => null);
             const callback = jest.fn();
-            preAuthManager.handlePreAuthSecret('http://trustedurl.com/', callback);
+            preAuthManager.handlePreAuthSecret('http://trustedurl.com/', 'test-view', callback);
             expect(ModalManager.addModal).not.toBeCalled();
             expect(callback).not.toBeCalled();
         });
@@ -179,7 +206,7 @@ describe('main/preAuthManager', () => {
             const callback = jest.fn();
             const promise = Promise.resolve('secret123');
             ModalManager.addModal.mockImplementationOnce(() => promise);
-            preAuthManager.handlePreAuthSecret('http://trustedurl.com/', callback);
+            preAuthManager.handlePreAuthSecret('http://trustedurl.com/', 'test-view', callback);
             await promise;
             expect(callback).toBeCalledWith('secret123');
         });
@@ -189,7 +216,7 @@ describe('main/preAuthManager', () => {
             const callback = jest.fn();
             const error = new Error('oops');
             ModalManager.addModal.mockImplementationOnce(() => Promise.reject(error));
-            preAuthManager.handlePreAuthSecret('http://trustedurl.com/', callback);
+            preAuthManager.handlePreAuthSecret('http://trustedurl.com/', 'test-view', callback);
 
             // Wait for the promise to resolve/reject
             await new Promise((resolve) => setTimeout(resolve, 0));
@@ -246,10 +273,13 @@ describe('main/preAuthManager', () => {
                 expect.any(String),
                 expect.any(Object),
                 expect.any(Object),
+                false,
+                undefined,
             );
 
             // Reset the mock and test non-proxy case
             ModalManager.addModal.mockClear();
+            ServerManager.getServer.mockReturnValue({id: 'test-view', url: new URL('http://trustedurl.com/')});
             preAuthManager.handleBasicAuth({preventDefault: jest.fn()}, {id: 1}, {url: 'http://trustedurl.com/'},
                 {
                     isProxy: false,
@@ -261,6 +291,40 @@ describe('main/preAuthManager', () => {
                 expect.any(String),
                 expect.any(Object),
                 expect.any(Object),
+                false,
+                'test-view',
+            );
+        });
+
+        it('should scope the modal to the server of the requesting view', () => {
+            ServerManager.lookupServerByURL.mockReturnValue({id: 'url-server', url: new URL('http://trustedurl.com/')});
+            ServerManager.getServer.mockReturnValue({id: 'view-server', url: new URL('http://viewserver.com/')});
+            WebContentsManager.getViewByWebContentsId.mockReturnValueOnce({serverId: 'view-server'});
+            preAuthManager.handleBasicAuth({preventDefault: jest.fn()}, {id: 1}, {url: 'http://trustedurl.com/some/path'}, {isProxy: false, host: 'trustedurl'}, jest.fn());
+            expect(ModalManager.addModal).toBeCalledWith(
+                'loginModal-http://viewserver.com/',
+                expect.any(String),
+                expect.any(String),
+                expect.any(Object),
+                expect.any(Object),
+                false,
+                'view-server',
+            );
+        });
+
+        it('should scope the modal to the server of the request URL when there is no view', () => {
+            ServerManager.lookupServerByURL.mockReturnValue({id: 'url-server', url: new URL('http://trustedurl.com/')});
+            ServerManager.getServer.mockReturnValue({id: 'url-server', url: new URL('http://trustedurl.com/')});
+            WebContentsManager.getViewByWebContentsId.mockReturnValueOnce(undefined);
+            preAuthManager.handleBasicAuth({preventDefault: jest.fn()}, {id: 1}, {url: 'http://trustedurl.com/some/path'}, {isProxy: false, host: 'trustedurl'}, jest.fn());
+            expect(ModalManager.addModal).toBeCalledWith(
+                'loginModal-http://trustedurl.com/',
+                expect.any(String),
+                expect.any(String),
+                expect.any(Object),
+                expect.any(Object),
+                false,
+                'url-server',
             );
         });
 

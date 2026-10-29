@@ -30,6 +30,7 @@ jest.mock('electron', () => ({
 }));
 
 jest.mock('common/servers/serverManager', () => ({
+    updateCurrentServer: jest.fn(),
     setViewIsOpen: jest.fn(),
     getAllServers: jest.fn(),
     hasServers: jest.fn(),
@@ -53,6 +54,7 @@ jest.mock('main/server/serverInfo', () => ({
 }));
 jest.mock('app/mainWindow/modals/modalManager', () => ({
     addModal: jest.fn(),
+    addPriorityModal: jest.fn(),
     removeModal: jest.fn(),
 }));
 jest.mock('main/utils', () => ({
@@ -172,7 +174,16 @@ describe('app/serverViewState', () => {
 
         it('should do nothing when the server cannot be found', () => {
             serverViewState.showEditServerModal(null, 'bad-server');
-            expect(ModalManager.addModal).not.toBeCalled();
+            expect(ModalManager.addPriorityModal).not.toBeCalled();
+        });
+
+        it('should switch to the server and scope the modal to it', () => {
+            ModalManager.addPriorityModal.mockReturnValue(new Promise(() => {}));
+
+            serverViewState.showEditServerModal(null, 'server-1');
+
+            expect(ServerManager.updateCurrentServer).toBeCalledWith('server-1');
+            expect(ModalManager.addPriorityModal).toBeCalledWith('editServer-server-1', expect.any(String), expect.any(String), expect.any(Object), expect.any(Object), false, 'server-1');
         });
 
         it('should edit the existing server', async () => {
@@ -180,7 +191,7 @@ describe('app/serverViewState', () => {
                 name: 'updated-server',
                 url: 'http://updated-server.com',
             }});
-            ModalManager.addModal.mockReturnValue(promise);
+            ModalManager.addPriorityModal.mockReturnValue(promise);
 
             serverViewState.showEditServerModal(null, 'server-1');
             await promise;
@@ -207,7 +218,7 @@ describe('app/serverViewState', () => {
                     alwaysDeny: true,
                 },
             }});
-            ModalManager.addModal.mockReturnValue(promise);
+            ModalManager.addPriorityModal.mockReturnValue(promise);
 
             serverViewState.showEditServerModal(null, 'server-1');
             await promise;
@@ -245,9 +256,18 @@ describe('app/serverViewState', () => {
             ServerManager.getOrderedServers.mockReturnValue(serversCopy);
         });
 
+        it('should switch to the server and scope the modal to it', () => {
+            ModalManager.addPriorityModal.mockReturnValue(new Promise(() => {}));
+
+            serverViewState.showRemoveServerModal(null, 'server-1');
+
+            expect(ServerManager.updateCurrentServer).toBeCalledWith('server-1');
+            expect(ModalManager.addPriorityModal).toBeCalledWith('removeServer-server-1', expect.any(String), expect.any(String), null, expect.any(Object), false, 'server-1');
+        });
+
         it('should remove the existing server', async () => {
             const promise = Promise.resolve(true);
-            ModalManager.addModal.mockReturnValue(promise);
+            ModalManager.addPriorityModal.mockReturnValue(promise);
 
             serverViewState.showRemoveServerModal(null, 'server-1');
             await promise;
@@ -261,7 +281,7 @@ describe('app/serverViewState', () => {
 
         it('should not remove the existing server when clicking Cancel', async () => {
             const promise = Promise.resolve(false);
-            ModalManager.addModal.mockReturnValue(promise);
+            ModalManager.addPriorityModal.mockReturnValue(promise);
 
             expect(serversCopy).toContainEqual(expect.objectContaining({
                 id: 'server-1',

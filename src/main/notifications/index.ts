@@ -14,6 +14,7 @@ import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import viewManager from 'common/views/viewManager';
 import DeveloperMode from 'main/developerMode';
+import {localizeMessage} from 'main/i18nManager';
 import PermissionsManager from 'main/security/permissionsManager';
 import {openExternalSafely} from 'main/utils';
 
@@ -194,6 +195,50 @@ class NotificationManager {
             this.allActiveNotifications?.delete(download.uId);
         });
         download.show();
+    }
+
+    public async displayServerModal(serverId: string) {
+        if (!Notification.isSupported()) {
+            log.error('notification not supported');
+            return;
+        }
+        if (await getDoNotDisturb()) {
+            return;
+        }
+
+        const server = ServerManager.getServer(serverId);
+        if (!server) {
+            return;
+        }
+
+        const notificationKey = `serverModal-${serverId}`;
+        const notification = new Notification({
+            title: localizeMessage('main.notifications.serverModal.title', '{serverName} needs your attention', {serverName: server.name}),
+            body: localizeMessage('main.notifications.serverModal.body', 'Switch to this server to respond.'),
+            silent: false,
+        });
+        this.allActiveNotifications?.set(notificationKey, notification);
+
+        notification.on('show', () => {
+            flashFrame(true);
+        });
+
+        notification.on('click', () => {
+            MainWindow.show();
+            if (ServerManager.getServer(serverId)) {
+                ServerManager.updateCurrentServer(serverId);
+            }
+            this.allActiveNotifications?.delete(notificationKey);
+        });
+
+        notification.on('close', () => {
+            this.allActiveNotifications?.delete(notificationKey);
+        });
+
+        notification.on('failed', () => {
+            this.allActiveNotifications?.delete(notificationKey);
+        });
+        notification.show();
     }
 
     public async displayUpgrade(version: string, handleUpgrade: () => void) {
