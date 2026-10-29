@@ -12,6 +12,9 @@ jest.mock('electron', () => {
     mockIpcMain.on = jest.fn();
 
     return {
+        app: {
+            emit: jest.fn(),
+        },
         ipcMain: mockIpcMain,
         WebContentsView: jest.fn().mockImplementation(() => {
             const {EventEmitter} = jest.requireActual('events');
@@ -41,6 +44,14 @@ jest.mock('app/mainWindow/mainWindow', () => ({
 }));
 
 describe('main/views/loadingScreen', () => {
+    beforeEach(() => {
+        jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
+    });
+
     describe('show', () => {
         const mainWindow = {
             contentView: {
@@ -144,6 +155,58 @@ describe('main/views/loadingScreen', () => {
 
             // The second fade is only a no-op if the first one advanced out of VISIBLE.
             expect(webContents.send).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('fade fallback', () => {
+        const mainWindow = {
+            contentView: {
+                addChildView: jest.fn(),
+                removeChildView: jest.fn(),
+                on: jest.fn(),
+            },
+            webContents: {
+                id: 123,
+            },
+            isDestroyed: jest.fn(() => false),
+            focus: jest.fn(),
+        };
+        let loadingScreen;
+
+        beforeEach(() => {
+            jest.clearAllMocks();
+            loadingScreen = new LoadingScreen(mainWindow);
+            loadingScreen.view.webContents.isLoading.mockReturnValue(false);
+            loadingScreen.show();
+        });
+
+        it('should remove the loading screen if the renderer never reports the end of the fade', () => {
+            loadingScreen.fade();
+
+            jest.advanceTimersByTime(4999);
+            expect(mainWindow.contentView.removeChildView).not.toHaveBeenCalled();
+
+            jest.advanceTimersByTime(1);
+            expect(mainWindow.contentView.removeChildView).toHaveBeenCalledWith(loadingScreen.view);
+        });
+
+        it('should not remove the loading screen if it is shown again before the fallback fires', () => {
+            loadingScreen.fade();
+            loadingScreen.show();
+
+            jest.advanceTimersByTime(5000);
+
+            expect(mainWindow.contentView.removeChildView).not.toHaveBeenCalled();
+        });
+
+        it('should not remove the loading screen again once the renderer reports the end of the fade', () => {
+            loadingScreen.fade();
+            loadingScreen.handleAnimationFinished();
+            loadingScreen.show();
+
+            jest.advanceTimersByTime(5000);
+
+            expect(mainWindow.contentView.removeChildView).toHaveBeenCalledTimes(1);
         });
     });
 });
