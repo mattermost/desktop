@@ -53,8 +53,13 @@ ensure_mattermost() {
     fi
 
     if [ -x "$MATTERMOST_DIR/bin/mattermost" ]; then
-        log "Mattermost server already present at $MATTERMOST_DIR."
-        return 0
+        local installed
+        installed="$("$MATTERMOST_DIR/bin/mattermost" version 2>/dev/null | awk '/^Version:/ {print $2}')"
+        if [ "$installed" = "$MATTERMOST_VERSION" ]; then
+            log "Mattermost server ${installed} already present at $MATTERMOST_DIR."
+            return 0
+        fi
+        log "Mattermost server at $MATTERMOST_DIR is ${installed:-an unknown version}; replacing it with ${MATTERMOST_VERSION}."
     fi
 
     local tarball
@@ -62,11 +67,12 @@ ensure_mattermost() {
     log "Downloading Mattermost server ${MATTERMOST_VERSION}."
     if ! curl --retry 3 --retry-delay 5 -fsSL -o "$tarball" \
         "https://releases.mattermost.com/${MATTERMOST_VERSION}/mattermost-${MATTERMOST_VERSION}-linux-amd64.tar.gz"; then
-        log "Could not download Mattermost server ${MATTERMOST_VERSION}; the local test server will be unavailable."
+        log "Could not download Mattermost server ${MATTERMOST_VERSION}; any existing install is left in place."
         rm -f "$tarball"
         return 0
     fi
 
+    rm -rf "$MATTERMOST_DIR"
     tar xzf "$tarball" -C "$HOME"
     rm -f "$tarball"
     log "Mattermost server extracted to $MATTERMOST_DIR."

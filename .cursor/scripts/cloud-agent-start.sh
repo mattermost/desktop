@@ -124,14 +124,46 @@ mattermost_ready() {
     curl -fsS -m 2 "${MATTERMOST_URL}/api/v4/system/ping" >/dev/null 2>&1
 }
 
+# True when a `mattermost` process started from $MATTERMOST_DIR is running, as opposed to some other
+# server that happens to answer on the same port.
+owned_mattermost_running() {
+    local pid
+    for pid in $(pgrep -x mattermost 2>/dev/null || true); do
+        if [ "$(readlink "/proc/${pid}/cwd" 2>/dev/null)" = "$MATTERMOST_DIR" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Runs an mmctl command and tolerates only "already exists" failures, so re-runs are idempotent
+# while real errors (for example local mode being disabled) are reported.
+mmctl_seed() {
+    local output
+    if output="$("$MATTERMOST_DIR/bin/mmctl" --local "$@" 2>&1)"; then
+        return 0
+    fi
+    if grep -qi "already exists" <<<"$output"; then
+        return 0
+    fi
+    log "mmctl --local $1 $2 failed: ${output//$'\n'/ }"
+    return 1
+}
+
 # Local mode lets mmctl seed without authenticating. Onboarding is disabled so the "Welcome to Mattermost"
 # checklist modal doesn't appear after login. Seeded accounts match the credentials in e2e/AGENTS.md.
 seed_mattermost() {
-    local mmctl="$MATTERMOST_DIR/bin/mmctl --local"
-    $mmctl user create --email admin@example.com --username sysadmin --password 'Sys@dmin-sample1' --system-admin >/dev/null 2>&1 || true
-    $mmctl user create --email user1@example.com --username user-1 --password 'User-Test-123!' >/dev/null 2>&1 || true
-    $mmctl team create --name main --display-name "Main Team" >/dev/null 2>&1 || true
-    $mmctl team users add main sysadmin user-1 >/dev/null 2>&1 || true
+    local mmctl="$MATTERMOST_DIR/bin/mmctl"
+    local failed=0
+    mmctl_seed user create --email admin@example.com --username sysadmin --password 'Sys@dmin-sample1' --system-admin || failed=1
+    mmctl_seed user create --email user1@example.com --username user-1 --password 'User-Test-123!' || failed=1
+    mmctl_seed team create --name main --display-name "Main Team" || failed=1
+    mmctl_seed team users add main sysadmin user-1 || failed=1
+
+    "$mmctl" --local user search sysadmin >/dev/null 2>&1 || { log "Seeded user sysadmin not found."; failed=1; }
+    "$mmctl" --local user search user-1 >/dev/null 2>&1 || { log "Seeded user user-1 not found."; failed=1; }
+    "$mmctl" --local team search main >/dev/null 2>&1 || { log "Seeded team main not found."; failed=1; }
+    return "$failed"
 }
 
 ensure_mattermost() {
@@ -145,12 +177,18 @@ ensure_mattermost() {
     fi
     ensure_postgres || return 0
 
+    if mattermost_ready && ! owned_mattermost_running; then
+        log "Something other than ${MATTERMOST_DIR}/bin/mattermost is already answering at ${MATTERMOST_URL}; not seeding it."
+        return 0
+    fi
+
     if ! mattermost_ready; then
         (
             cd "$MATTERMOST_DIR"
             export MM_SQLSETTINGS_DRIVERNAME=postgres
             export MM_SQLSETTINGS_DATASOURCE="postgres://${DB_USER}:${DB_PASSWORD}@127.0.0.1:5432/${DB_NAME}?sslmode=disable&connect_timeout=10"
             export MM_SERVICESETTINGS_SITEURL="$MATTERMOST_URL"
+            export MM_SERVICESETTINGS_LISTENADDRESS="127.0.0.1:8065"
             export MM_SERVICESETTINGS_ENABLELOCALMODE=true
             export MM_SERVICESETTINGS_ENABLEONBOARDINGFLOW=false
             setsid nohup ./bin/mattermost >"$MATTERMOST_LOG" 2>&1 </dev/null &
@@ -167,8 +205,11 @@ ensure_mattermost() {
         return 0
     fi
 
-    seed_mattermost
-    log "Mattermost is ready at ${MATTERMOST_URL} (sysadmin / Sys@dmin-sample1)."
+    if seed_mattermost; then
+        log "Mattermost is ready at ${MATTERMOST_URL} (sysadmin / Sys@dmin-sample1)."
+    else
+        log "Mattermost is running at ${MATTERMOST_URL} but seeding the test accounts failed; see the messages above."
+    fi
 }
 
 ensure_dbus
