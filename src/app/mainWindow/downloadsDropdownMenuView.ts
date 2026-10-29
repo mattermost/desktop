@@ -4,6 +4,7 @@ import type {IpcMainEvent} from 'electron';
 import {WebContentsView, ipcMain} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
+import ModalManager from 'app/mainWindow/modals/modalManager';
 import {
     CLOSE_DOWNLOADS_DROPDOWN_MENU,
     DOWNLOADS_DROPDOWN_MENU_CANCEL_DOWNLOAD,
@@ -13,6 +14,7 @@ import {
     EMIT_CONFIGURATION,
     MAIN_WINDOW_CREATED,
     MAIN_WINDOW_RESIZED,
+    MODAL_OPEN,
     OPEN_DOWNLOADS_DROPDOWN_MENU,
     REQUEST_DOWNLOADS_DROPDOWN_MENU_INFO,
     TOGGLE_DOWNLOADS_DROPDOWN_MENU,
@@ -58,6 +60,7 @@ export class DownloadsDropdownMenuView {
         ipcMain.on(DOWNLOADS_DROPDOWN_MENU_CANCEL_DOWNLOAD, this.cancelDownload);
         ipcMain.on(DOWNLOADS_DROPDOWN_MENU_CLEAR_FILE, this.clearFile);
         ipcMain.on(UPDATE_DOWNLOADS_DROPDOWN_MENU, this.updateItem);
+        ModalManager.on(MODAL_OPEN, this.handleModalOpen);
     }
 
     private init = () => {
@@ -121,6 +124,12 @@ export class DownloadsDropdownMenuView {
         MainWindow.get()?.contentView.addChildView(this.view);
         this.view.webContents.focus();
         this.updateDownloadsDropdownMenu();
+    };
+
+    private handleModalOpen = (isServerModal: boolean) => {
+        if (isServerModal && this.open) {
+            this.handleClose();
+        }
     };
 
     private handleClose = () => {

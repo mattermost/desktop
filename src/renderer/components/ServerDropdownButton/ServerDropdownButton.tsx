@@ -14,11 +14,12 @@ type Props = {
     currentMentions: number;
     currentUnread: boolean;
     hasUnreads: boolean;
+    hasPendingModals: boolean;
     isMenuOpen: boolean;
 }
 
 const ServerDropdownButton: React.FC<Props> = (props: Props) => {
-    const {isDisabled, activeServerName, totalMentionCount, currentMentions, currentUnread, hasUnreads, isMenuOpen} = props;
+    const {isDisabled, activeServerName, totalMentionCount, currentMentions, currentUnread, hasUnreads, hasPendingModals, isMenuOpen} = props;
     const buttonRef: React.RefObject<HTMLButtonElement> = React.createRef();
 
     useEffect(() => {
@@ -38,7 +39,11 @@ const ServerDropdownButton: React.FC<Props> = (props: Props) => {
     };
 
     let badgeDiv: React.ReactNode;
-    if (totalMentionCount > 0) {
+    if (hasPendingModals) {
+        badgeDiv = (
+            <div className='ServerDropdownButton__badge-unreads pendingModal'/>
+        );
+    } else if (totalMentionCount > 0) {
         badgeDiv = (
             <div className='ServerDropdownButton__badge-unreads mentions'/>
         );

@@ -28,10 +28,12 @@ export class ModalView<T, T2> {
     status: Status;
     contextMenu: ContextMenu;
     uncloseable: boolean;
+    serverId?: string;
     private log: Logger;
 
-    constructor(key: string, html: string, preload: string, data: T, onResolve: (value: T2) => void, onReject: (value: T2) => void, currentWindow: BrowserWindow, uncloseable: boolean) {
+    constructor(key: string, html: string, preload: string, data: T, onResolve: (value: T2) => void, onReject: (value: T2) => void, currentWindow: BrowserWindow, uncloseable: boolean, serverId?: string) {
         this.key = key;
+        this.serverId = serverId;
         this.html = html;
         this.data = data;
         this.log = new Logger('ModalView', key);
@@ -80,9 +82,12 @@ export class ModalView<T, T2> {
         this.status = Status.SHOWING;
         if (this.view.webContents.isLoading()) {
             this.view.webContents.once('did-finish-load', () => {
+                if (!this.windowAttached?.isFocused()) {
+                    return;
+                }
                 this.view.webContents.focus();
             });
-        } else {
+        } else if (this.windowAttached.isFocused()) {
             this.view.webContents.focus();
         }
 
@@ -94,17 +99,16 @@ export class ModalView<T, T2> {
 
     hide = () => {
         if (this.windowAttached) {
-            if (this.view.webContents.isDevToolsOpened()) {
-                this.view.webContents.closeDevTools();
-            }
-            performanceMonitor.unregisterView(this.view.webContents.id);
             this.windowAttached.contentView.removeChildView(this.view);
-            this.contextMenu.dispose();
-            this.view.webContents.close();
-
             delete this.windowAttached;
-            this.status = Status.ACTIVE;
         }
+        if (this.view.webContents.isDevToolsOpened()) {
+            this.view.webContents.closeDevTools();
+        }
+        performanceMonitor.unregisterView(this.view.webContents.id);
+        this.contextMenu.dispose();
+        this.view.webContents.close();
+        this.status = Status.ACTIVE;
     };
 
     suspend = () => {
