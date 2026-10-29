@@ -4,6 +4,7 @@
 import type {IpcMainEvent} from 'electron';
 import {WebContentsView, ipcMain} from 'electron';
 
+import ModalManager from 'app/mainWindow/modals/modalManager';
 import AppState from 'common/appState';
 import {
     CLOSE_SERVERS_DROPDOWN,
@@ -14,6 +15,7 @@ import {
     RECEIVE_DROPDOWN_MENU_SIZE,
     MAIN_WINDOW_CREATED,
     MAIN_WINDOW_RESIZED,
+    MODAL_OPEN,
     SERVER_REMOVED,
     SERVER_ADDED,
     SERVER_NAME_CHANGED,
@@ -60,6 +62,7 @@ export class ServerDropdownView {
         ipcMain.on(EMIT_CONFIGURATION, this.updateDropdown);
         ipcMain.on(REQUEST_SERVERS_DROPDOWN_INFO, this.updateDropdown);
         AppState.on(UPDATE_APPSTATE_FOR_SERVER_ID, this.updateDropdown);
+        ModalManager.on(MODAL_OPEN, this.handleModalOpen);
 
         ServerManager.on(SERVER_ADDED, this.updateServers);
         ServerManager.on(SERVER_REMOVED, this.updateServers);
@@ -107,6 +110,8 @@ export class ServerDropdownView {
             AppState.getExpired(),
             AppState.getMentionsPerServer(),
             AppState.getUnreadsPerServer(),
+            ModalManager.isModalDisplayed(),
+            AppState.getPendingModals(),
         );
     };
 
@@ -128,6 +133,7 @@ export class ServerDropdownView {
         if (!this.view) {
             return;
         }
+        this.updateDropdown();
         this.view.setBounds(this.bounds);
         MainWindow.get()?.contentView.addChildView(this.view);
         this.view.webContents.focus();
@@ -141,6 +147,12 @@ export class ServerDropdownView {
         this.view?.setBounds(this.getBounds(0, 0));
         MainWindow.sendToRenderer(CLOSE_SERVERS_DROPDOWN);
         this.isOpen = false;
+    };
+
+    private handleModalOpen = (isServerModal: boolean) => {
+        if (isServerModal && this.isOpen && this.view) {
+            MainWindow.get()?.contentView.addChildView(this.view);
+        }
     };
 
     private handleReceivedMenuSize = (event: IpcMainEvent, width: number, height: number) => {
