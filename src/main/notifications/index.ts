@@ -225,7 +225,9 @@ class NotificationManager {
 
         notification.on('click', () => {
             MainWindow.show();
-            ServerManager.updateCurrentServer(serverId);
+            if (ServerManager.getServer(serverId)) {
+                ServerManager.updateCurrentServer(serverId);
+            }
             this.allActiveNotifications?.delete(notificationKey);
         });
 

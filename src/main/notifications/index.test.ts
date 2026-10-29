@@ -801,6 +801,14 @@ describe('main/notifications', () => {
             expect(MainWindow.show).toHaveBeenCalled();
             expect(ServerManager.updateCurrentServer).toHaveBeenCalledWith('server-1');
         });
+
+        it('should not switch to the server when clicked after it was removed', async () => {
+            await NotificationManager.displayServerModal('server-1');
+            ServerManager.getServer.mockReturnValue(undefined);
+            mentions[0].value.callbackMap.get('click')?.();
+            expect(MainWindow.show).toHaveBeenCalled();
+            expect(ServerManager.updateCurrentServer).not.toHaveBeenCalled();
+        });
     });
 
     describe('displayRestartToUpgrade', () => {
