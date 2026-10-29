@@ -214,7 +214,7 @@ class NotificationManager {
         const notificationKey = `serverModal-${serverId}`;
         const notification = new Notification({
             title: localizeMessage('main.notifications.serverModal.title', '{serverName} needs your attention', {serverName: server.name}),
-            body: localizeMessage('main.notifications.serverModal.body', 'Switch to this server to continue.'),
+            body: localizeMessage('main.notifications.serverModal.body', 'Switch to this server to respond.'),
             silent: false,
         });
         this.allActiveNotifications?.set(notificationKey, notification);

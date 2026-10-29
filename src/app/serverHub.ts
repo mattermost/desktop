@@ -142,7 +142,7 @@ export class ServerHub {
         }
 
         ServerManager.updateCurrentServer(id);
-        const modalPromise = ModalManager.addModal<UniqueServerWithPermissions, {server: Server; permissions: Permissions}>(
+        const modalPromise = ModalManager.addPriorityModal<UniqueServerWithPermissions, {server: Server; permissions: Permissions}>(
             `${ModalConstants.EDIT_SERVER_MODAL}-${id}`,
             'mattermost-desktop://renderer/editServer.html',
             getLocalPreload('internalAPI.js'),
@@ -178,7 +178,7 @@ export class ServerHub {
         }
 
         ServerManager.updateCurrentServer(id);
-        const modalPromise = ModalManager.addModal<null, boolean>(
+        const modalPromise = ModalManager.addPriorityModal<null, boolean>(
             `${ModalConstants.REMOVE_SERVER_MODAL}-${id}`,
             'mattermost-desktop://renderer/removeServer.html',
             getLocalPreload('internalAPI.js'),
