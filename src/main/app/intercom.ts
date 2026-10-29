@@ -129,7 +129,7 @@ export function handleMentionNotification(event: IpcMainInvokeEvent, title: stri
     return NotificationManager.displayMention(title, body, channelId, teamId, url, silent, event.sender, soundName);
 }
 
-export function handleOpenAppMenu(event: IpcMainEvent) {
+export function handleOpenAppMenu(event: IpcMainEvent, buttonX: number) {
     log.debug('handleOpenAppMenu');
 
     const windowMenu = Menu.getApplicationMenu();
@@ -148,7 +148,7 @@ export function handleOpenAppMenu(event: IpcMainEvent) {
     });
     windowMenu.popup({
         window,
-        x: 18,
+        x: buttonX + 14,
         y: 18,
     });
 }
