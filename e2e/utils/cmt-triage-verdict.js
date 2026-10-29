@@ -345,8 +345,17 @@ function foldMasterTriage({lanes = [], legs = [], missingLegs = [], upstreamJobs
             unknownLegs.push(leg);
         }
     }
+
+    // A leg whose report uploaded complete but with zero tests ran no tests:
+    // its setup died before the first test. That is a setup problem, not a
+    // failure for triage to settle and not a missing report.
+    const setupLegs = [];
     for (const leg of missingLegs || []) {
-        unknownLegs.push(leg);
+        if (leg.status === 'no-results') {
+            setupLegs.push(leg);
+        } else {
+            unknownLegs.push(leg);
+        }
     }
 
     let verdict = 'cleared';
@@ -356,8 +365,10 @@ function foldMasterTriage({lanes = [], legs = [], missingLegs = [], upstreamJobs
         // A failed run is cleared only on positive evidence: triage must
         // have cleared at least one failing leg.
         verdict = 'inconclusive';
+    } else if (setupLegs.length > 0) {
+        verdict = 'setup';
     }
-    return {verdict, clearedLegs, blockingLegs, unknownLegs};
+    return {verdict, clearedLegs, blockingLegs, unknownLegs, setupLegs};
 }
 
 function formatLeg(leg) {

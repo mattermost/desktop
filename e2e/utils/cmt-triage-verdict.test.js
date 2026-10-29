@@ -142,6 +142,18 @@ describe('foldMasterTriage', () => {
         assert.equal(missing.verdict, 'inconclusive');
     });
 
+    it('calls a complete-but-empty leg a setup problem, not an unsettled failure', () => {
+        const fold = foldMasterTriage({
+            lanes: [],
+            legs: [leg('linux', {status: 'passed', failed: 0})],
+            missingLegs: [leg('linux', {status: 'no-results', failed: 0})],
+            overallFailed: false,
+        });
+        assert.equal(fold.verdict, 'setup');
+        assert.equal(fold.setupLegs.length, 1);
+        assert.equal(fold.unknownLegs.length, 0);
+    });
+
     it('cannot clear an upstream CI failure with no failing test, nor a run with no legs', () => {
         assert.equal(foldMasterTriage({lanes: [lane('linux', 'SUCCESS')], legs: [], upstreamJobsSucceeded: false, overallFailed: true}).verdict, 'inconclusive');
         assert.equal(foldMasterTriage({lanes: [], legs: [], overallFailed: true, noLegs: true}).verdict, 'inconclusive');

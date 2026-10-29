@@ -27,6 +27,7 @@ const {
     parseCmtJobName,
     fetchPerJobCountsFromConsolidated,
     buildIndividualReportUrl,
+    reportRanNoTests,
 } = require('./cmt-channel-notify');
 const {
     osStatusContext,
@@ -140,6 +141,19 @@ function hasCountsForEveryUploadedReport(detail, perJobCounts, bucketKey) {
         return false;
     }
     return jobNames.every((name) => Object.prototype.hasOwnProperty.call(perJobCounts, name));
+}
+
+/**
+ * Uploaded reports for this bucket that ran no tests: their setup failed before the first test (see
+ * reportRanNoTests, the same rule the channel message uses).
+ *
+ * @returns {number}
+ */
+function countEmptyUploadedReports(detail, perJobCounts, bucketKey, now = Date.now()) {
+    return (detail?.reports || []).filter((report) => {
+        const name = report.gh_job_name || report.display_name;
+        return Boolean(name) && statusBucketKey(parseCmtJobName(name)) === bucketKey && reportRanNoTests(report, perJobCounts, now);
+    }).length;
 }
 
 /**
@@ -377,7 +391,7 @@ function resolveExpectedPolicyOs(expectedPolicyOs) {
  * @param {Object} row
  * @param {boolean} upstreamJobsSucceeded
  * @param {string} incompleteLabel
- * @param {{minReports?: number, uploadedReports?: number, hasPerJobCounts?: boolean, hasCountsForEveryUploadedReport?: boolean, overallFailed?: number}} [completeness]
+ * @param {{minReports?: number, uploadedReports?: number, hasPerJobCounts?: boolean, hasCountsForEveryUploadedReport?: boolean, emptyUploadedReports?: number, overallFailed?: number}} [completeness]
  * @returns {{state: string, description: string}}
  */
 function statusFromTotals(row, upstreamJobsSucceeded, incompleteLabel, completeness = {}) {
@@ -416,6 +430,14 @@ function statusFromTotals(row, upstreamJobsSucceeded, incompleteLabel, completen
         return {
             state: 'error',
             description: 'TSIO per-job counts unavailable with test failures',
+        };
+    }
+    if ((completeness.emptyUploadedReports || 0) > 0) {
+        const empty = completeness.emptyUploadedReports;
+        const total = Number.isInteger(completeness.uploadedReports) && completeness.uploadedReports > 0 ? completeness.uploadedReports : empty;
+        return {
+            state: 'error',
+            description: `Setup problem: ${empty} of ${total} test groups ran no tests (setup failed before the first test)`,
         };
     }
     if (completeness.hasCountsForEveryUploadedReport === false) {
@@ -459,6 +481,7 @@ function bucketCompleteness(bucketKey, minReports, {detail, perJobCounts, hasPer
         hasPerJobCounts,
         overallFailed,
         hasCountsForEveryUploadedReport: hasCountsForEveryUploadedReport(detail, perJobCounts, bucketKey),
+        emptyUploadedReports: countEmptyUploadedReports(detail, perJobCounts, bucketKey),
     };
 }
 
@@ -846,9 +869,7 @@ async function reportTsioStatus({
             `:warning: Report finalized as \`incomplete\` (${uploadedShards}/${totalReportsExpected} shards) — partial results are in the [TSIO report](${displayReportUrl}); see the [workflow run](${runUrl}) for missing legs.`,
         );
     } else if (!isComplete) {
-        const shardsNote = uploadedShards >= totalReportsExpected && totalReportsExpected > 0 ?
-            `All ${uploadedShards}/${totalReportsExpected} shards are uploaded; TSIO consolidation is still \`${detail.status}\`.` :
-            `TSIO group still \`${detail.status}\` after polling (${uploadedShards}/${totalReportsExpected} shards).`;
+        const shardsNote = uploadedShards >= totalReportsExpected && totalReportsExpected > 0 ? `All ${uploadedShards}/${totalReportsExpected} shards are uploaded; TSIO consolidation is still \`${detail.status}\`.` : `TSIO group still \`${detail.status}\` after polling (${uploadedShards}/${totalReportsExpected} shards).`;
         summaryLines.push(
             '',
             `:warning: ${shardsNote} Commit status follows upstream jobs and test failures, not TSIO consolidation — see the [workflow run](${runUrl}).`,
@@ -885,9 +906,7 @@ async function reportTsioStatus({
             // failures — that would flip e2e/<os> to error and clear pending.
             // If the group already has failures, post error instead of success.
             core.warning(
-                overallFailed > 0 ?
-                    `Could not load per-OS TSIO counts with test failures — marking e2e/<os> error: ${error.message}` :
-                    `Could not load per-OS TSIO counts — leaving e2e/<os> statuses pending: ${error.message}`,
+                overallFailed > 0 ? `Could not load per-OS TSIO counts with test failures — marking e2e/<os> error: ${error.message}` : `Could not load per-OS TSIO counts — leaving e2e/<os> statuses pending: ${error.message}`,
             );
             perJobCounts = null;
         }
@@ -968,7 +987,10 @@ async function reportTsioStatus({
         let reason;
         if (readyWhenOs) {
             const row = byKey[readyWhenOs] || EMPTY_OS_ROW;
-            if (!upstreamJobsSucceeded && row.failed === 0 && !row.shardFailed) {
+            const emptyGroups = countEmptyUploadedReports(detail, perJobCounts, readyWhenOs);
+            if (emptyGroups > 0 && row.failed === 0 && !row.shardFailed) {
+                reason = `${readyWhenOs}: setup problem: ${emptyGroups} of ${countReportsForBucket(detail, readyWhenOs)} test groups ran no tests (setup failed before the first test)`;
+            } else if (!upstreamJobsSucceeded && row.failed === 0 && !row.shardFailed) {
                 reason = `an upstream CI job failed with no corresponding test failure (${readyWhenOs})`;
             } else {
                 reason = `${readyWhenOs}: ${row.passed} passed, ${row.failed} failed, shardFailed=${row.shardFailed}`;
@@ -1012,5 +1034,6 @@ module.exports.shouldFailFromScope = shouldFailFromScope;
 module.exports.statusFromTotals = statusFromTotals;
 module.exports.scopedHasShardFailure = scopedHasShardFailure;
 module.exports.hasCountsForEveryUploadedReport = hasCountsForEveryUploadedReport;
+module.exports.countEmptyUploadedReports = countEmptyUploadedReports;
 module.exports.shouldPostPerOsCommitStatuses = shouldPostPerOsCommitStatuses;
 module.exports.resolveMasterMergeContext = resolveMasterMergeContext;
