@@ -16,6 +16,8 @@ const {
     scopedHasShardFailure,
     shouldPostPerOsCommitStatuses,
     resolveMasterMergeContext,
+    statusFromTotals,
+    countEmptyUploadedReports,
 } = require('./tsio-report-status');
 
 const WINDOWS_SHARD = 'e2e-on-windows-2022-master-1-of-3';
@@ -658,6 +660,36 @@ describe('resolveMasterMergeContext', () => {
             await resolveMasterMergeContext({github, context, compositeIdentity: identity, core}),
             {mergedPr: null, headCommit: null},
         );
+    });
+});
+
+describe('setup problem (complete report, no tests)', () => {
+    it('counts uploaded-complete shards with no per-job counts as ran-no-tests', () => {
+        const {detail, perJobCounts} = linuxShards({uploaded: 3, counted: 2});
+        assert.equal(countEmptyUploadedReports(detail, perJobCounts, 'linux'), 1);
+        assert.equal(countEmptyUploadedReports(detail, perJobCounts, 'windows'), 0);
+        assert.equal(countEmptyUploadedReports(detail, null, 'linux'), 0, 'unavailable counts are not a setup diagnosis');
+    });
+
+    it('names the setup problem in the OS status instead of incomplete counts', () => {
+        const status = statusFromTotals(
+            {passed: 140, failed: 0, skipped: 4, shardFailed: false, hasResults: true},
+            true,
+            'E2E incomplete — no results for this OS',
+            {emptyUploadedReports: 1, uploadedReports: 3, hasCountsForEveryUploadedReport: false},
+        );
+        assert.equal(status.state, 'error');
+        assert.equal(status.description, 'Setup problem: 1 of 3 test groups ran no tests (setup failed before the first test)');
+    });
+
+    it('still reports counts incomplete when no uploaded shard is empty', () => {
+        const status = statusFromTotals(
+            {passed: 140, failed: 0, skipped: 4, shardFailed: false, hasResults: true},
+            true,
+            'E2E incomplete — no results for this OS',
+            {emptyUploadedReports: 0, uploadedReports: 3, hasCountsForEveryUploadedReport: false},
+        );
+        assert.equal(status.description, 'TSIO per-job counts incomplete for this OS');
     });
 });
 

@@ -143,6 +143,28 @@ function hasCountsForEveryUploadedReport(detail, perJobCounts, bucketKey) {
 }
 
 /**
+ * Uploaded reports for this bucket that completed with no per-job counts:
+ * the shard uploaded its (empty) report, so its setup died before the first
+ * test ran. Counts that simply have not landed yet do not count here —
+ * only reports TSIO already marked complete.
+ *
+ * @returns {number}
+ */
+function countEmptyUploadedReports(detail, perJobCounts, bucketKey) {
+    if (!perJobCounts) {
+        return 0;
+    }
+    return (detail?.reports || []).filter((report) => {
+        const name = report.gh_job_name || report.display_name;
+        if (!name || statusBucketKey(parseCmtJobName(name)) !== bucketKey) {
+            return false;
+        }
+        const completed = report.status === 'complete' || report.status === 'completed';
+        return completed && !Object.prototype.hasOwnProperty.call(perJobCounts, name);
+    }).length;
+}
+
+/**
  * Whether the poll loop can stop. Per-OS status jobs stop once that OS's
  * shards are uploaded, not when every report in the group has landed.
  *
@@ -377,7 +399,7 @@ function resolveExpectedPolicyOs(expectedPolicyOs) {
  * @param {Object} row
  * @param {boolean} upstreamJobsSucceeded
  * @param {string} incompleteLabel
- * @param {{minReports?: number, uploadedReports?: number, hasPerJobCounts?: boolean, hasCountsForEveryUploadedReport?: boolean, overallFailed?: number}} [completeness]
+ * @param {{minReports?: number, uploadedReports?: number, hasPerJobCounts?: boolean, hasCountsForEveryUploadedReport?: boolean, emptyUploadedReports?: number, overallFailed?: number}} [completeness]
  * @returns {{state: string, description: string}}
  */
 function statusFromTotals(row, upstreamJobsSucceeded, incompleteLabel, completeness = {}) {
@@ -416,6 +438,14 @@ function statusFromTotals(row, upstreamJobsSucceeded, incompleteLabel, completen
         return {
             state: 'error',
             description: 'TSIO per-job counts unavailable with test failures',
+        };
+    }
+    if ((completeness.emptyUploadedReports || 0) > 0) {
+        const empty = completeness.emptyUploadedReports;
+        const total = Number.isInteger(completeness.uploadedReports) && completeness.uploadedReports > 0 ? completeness.uploadedReports : empty;
+        return {
+            state: 'error',
+            description: `Setup problem: ${empty} of ${total} test groups ran no tests (setup failed before the first test)`,
         };
     }
     if (completeness.hasCountsForEveryUploadedReport === false) {
@@ -459,6 +489,7 @@ function bucketCompleteness(bucketKey, minReports, {detail, perJobCounts, hasPer
         hasPerJobCounts,
         overallFailed,
         hasCountsForEveryUploadedReport: hasCountsForEveryUploadedReport(detail, perJobCounts, bucketKey),
+        emptyUploadedReports: countEmptyUploadedReports(detail, perJobCounts, bucketKey),
     };
 }
 
@@ -968,7 +999,10 @@ async function reportTsioStatus({
         let reason;
         if (readyWhenOs) {
             const row = byKey[readyWhenOs] || EMPTY_OS_ROW;
-            if (!upstreamJobsSucceeded && row.failed === 0 && !row.shardFailed) {
+            const emptyGroups = countEmptyUploadedReports(detail, perJobCounts, readyWhenOs);
+            if (emptyGroups > 0 && row.failed === 0 && !row.shardFailed) {
+                reason = `${readyWhenOs}: setup problem: ${emptyGroups} of ${countReportsForBucket(detail, readyWhenOs)} test groups ran no tests (setup failed before the first test)`;
+            } else if (!upstreamJobsSucceeded && row.failed === 0 && !row.shardFailed) {
                 reason = `an upstream CI job failed with no corresponding test failure (${readyWhenOs})`;
             } else {
                 reason = `${readyWhenOs}: ${row.passed} passed, ${row.failed} failed, shardFailed=${row.shardFailed}`;
@@ -1012,5 +1046,6 @@ module.exports.shouldFailFromScope = shouldFailFromScope;
 module.exports.statusFromTotals = statusFromTotals;
 module.exports.scopedHasShardFailure = scopedHasShardFailure;
 module.exports.hasCountsForEveryUploadedReport = hasCountsForEveryUploadedReport;
+module.exports.countEmptyUploadedReports = countEmptyUploadedReports;
 module.exports.shouldPostPerOsCommitStatuses = shouldPostPerOsCommitStatuses;
 module.exports.resolveMasterMergeContext = resolveMasterMergeContext;
