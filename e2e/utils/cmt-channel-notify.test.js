@@ -669,6 +669,43 @@ describe('cmt-channel-notify', () => {
                 assert.ok(!(/exonerated|broken on trunk/).test(text), 'uses the existing triage wording, no new jargon');
             });
 
+            it('calls a shard that uploaded complete but ran no tests a setup problem, not an unsettled failure', () => {
+                // The 2026-10-29 master run: Linux shard 1-of-3 died in
+                // globalSetup (Calls plugin did not disable), uploaded an
+                // empty report, and every other leg passed. 0 failed overall.
+                const text = formatCmtChannelMessage({
+                    compositeIdentity: {
+                        repository: 'mattermost/desktop',
+                        branch: 'master',
+                        commit_sha: 'a1b2c3d4e5f678901234567890abcdef12345678',
+                        name: 'desktop-master',
+                        gh_run_id: '123456',
+                    },
+                    detail: {
+                        status: 'completed',
+                        test_stats: {passed: 672, failed: 0, skipped: 36, total: 708},
+                        reports: [1, 2, 3].map((i) => ({
+                            id: `rid-linux-${i}`,
+                            gh_job_name: `e2e-on-ubuntu-latest-12.1.0-rc2-${i}-of-3`,
+                            status: 'complete',
+                        })),
+                    },
+                    reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
+                    baseUrl: 'https://test-io.test.mattermost.com',
+                    perJobCounts: {
+                        'e2e-on-ubuntu-latest-12.1.0-rc2-2-of-3': {passed: 80, failed: 0, skipped: 2, flaky: 0},
+                        'e2e-on-ubuntu-latest-12.1.0-rc2-3-of-3': {passed: 77, failed: 0, skipped: 2, flaky: 0},
+                    },
+                    upstreamJobsSucceeded: true,
+                    mergedPr: {number: 3916, title: 'Fix the thing', url: 'https://github.com/mattermost/desktop/pull/3916', author: 'dev'},
+                    triageLanes: [],
+                });
+                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — setup problem on `master`\*\*/);
+                assert.match(text, /\*\*0 failed\*\* · 672 passed · 36 skipped/);
+                assert.match(text, /⚙️ Setup problem: 🐧 Linux \/ Server `12\.1\.0-rc2` — 1 of 3 test groups ran no tests \(setup failed before the first test\)\. Not a product bug\./);
+                assert.doesNotMatch(text, /could not settle|needs investigation/);
+            });
+
             it('names the legs triage did clear on a blocking run', () => {
                 const text = formatCmtChannelMessage({
                     compositeIdentity: {

@@ -348,6 +348,25 @@ function shouldPostToChannel(compositeIdentity, {overallFailed = false, missingL
     return Boolean(overallFailed || missingLegs.length > 0 || noLegs);
 }
 
+// Test groups whose report uploaded complete but with zero tests: their
+// setup died before the first test, so there was nothing for triage to
+// judge. One line per OS / server / suite, counting groups affected.
+function formatSetupProblemLines(legs, setupLegs) {
+    const groups = new Map();
+    for (const leg of setupLegs || []) {
+        const key = `${leg.os}|${leg.serverVersion}|${leg.kind}`;
+        if (!groups.has(key)) {
+            const total = (legs || []).filter((l) => l.os === leg.os && l.serverVersion === leg.serverVersion && l.kind === leg.kind).length;
+            groups.set(key, {leg, affected: 0, total});
+        }
+        groups.get(key).affected += 1;
+    }
+    return [...groups.values()].map(({leg, affected, total}) => {
+        const {platform, suite} = formatLegLabels(leg);
+        return `⚙️ Setup problem: ${platform} / ${suite} — ${affected} of ${total} test group${total === 1 ? '' : 's'} ran no tests (setup failed before the first test). Not a product bug.`;
+    });
+}
+
 function formatMasterChannelMessage({
     compositeIdentity,
     detail,
@@ -364,6 +383,7 @@ function formatMasterChannelMessage({
     const {legs, passed, failed, skipped, overallFailed, missingLegs, noLegsReported} = summarizeOutcome({
         detail, perJobCounts, upstreamJobsSucceeded, hasFailures, baseUrl, perJobCountsAvailable,
     });
+    const setupLegs = legs.filter((leg) => leg.status === 'no-results');
     const triage = triageLanes ? foldMasterTriage({
         lanes: triageLanes, legs, missingLegs, upstreamJobsSucceeded, overallFailed, noLegs: noLegsReported,
     }) : null;
@@ -403,6 +423,20 @@ function formatMasterChannelMessage({
         } else if (!upstreamJobsSucceeded) {
             lines.push('A CI job failed outside tracked tests (install/build/teardown); triage cannot clear that.');
         }
+        lines.push(...formatSetupProblemLines(legs, triage.setupLegs));
+        if (links) {
+            lines.push(`➡️ ${links}`);
+        }
+        return lines.join('\n') + '\n';
+    }
+
+    if (triage && triage.verdict === 'setup') {
+        const lines = [
+            `:yellow_circle: **Desktop Master E2E — setup problem on \`${branch}\`**`,
+            `**${failed} failed** · ${passed} passed · ${skipped} skipped`,
+            ...formatSetupProblemLines(legs, triage.setupLegs),
+            formatMasterAttribution({compositeIdentity, mergedPr, headCommit, shortSha}),
+        ];
         if (links) {
             lines.push(`➡️ ${links}`);
         }
@@ -438,13 +472,15 @@ function formatMasterChannelMessage({
     if (triage && triage.verdict === 'blocking' && triage.clearedLegs.length > 0) {
         lines.push(`AI triage cleared ${triage.clearedLegs.length} failing leg${triage.clearedLegs.length === 1 ? '' : 's'} (flaky / failed in master / Infra failure); the rest still block.`);
     }
-    if (missingLegs.length > 0) {
-        const labels = missingLegs.map((leg) => {
+    const missingOnly = missingLegs.filter((leg) => leg.status !== 'no-results');
+    if (missingOnly.length > 0) {
+        const labels = missingOnly.map((leg) => {
             const {platform, suite} = formatLegLabels(leg);
             return `${platform} / ${suite}`;
         }).join(', ');
         lines.push(`Missing/empty: ${labels}`);
     }
+    lines.push(...formatSetupProblemLines(legs, setupLegs));
     if (noLegsReported) {
         lines.push('No per-leg results reported.');
     }
