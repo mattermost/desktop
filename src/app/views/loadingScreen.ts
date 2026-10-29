@@ -14,12 +14,16 @@ enum LoadingScreenState {
     HIDDEN = 3,
 }
 
+// The renderer fade-out animation normally takes ~3 seconds at most
+const FADE_FALLBACK_TIMEOUT_MS = 5000;
+
 const log = new Logger('LoadingScreen');
 
 export class LoadingScreen {
     private view: WebContentsView;
     private state: LoadingScreenState;
     private parent: BrowserWindow;
+    private fadeFallbackTimeout?: NodeJS.Timeout;
 
     constructor(parent: BrowserWindow) {
         this.state = LoadingScreenState.HIDDEN;
@@ -47,6 +51,7 @@ export class LoadingScreen {
      */
 
     show = (condition?: () => boolean) => {
+        this.clearFadeFallback();
         this.state = LoadingScreenState.VISIBLE;
 
         if (this.view.webContents.isLoading()) {
@@ -93,10 +98,18 @@ export class LoadingScreen {
             if (webContents && !webContents.isDestroyed()) {
                 webContents.send(TOGGLE_LOADING_SCREEN_VISIBILITY, false);
             }
+
+            // The renderer only reports the end of the fade through a chain of one-shot CSS events,
+            // so make sure the view never stays on top of the window if one of them is missed
+            this.fadeFallbackTimeout = setTimeout(() => {
+                log.warn('fade: animation did not finish in time, removing loading screen');
+                this.handleAnimationFinished();
+            }, FADE_FALLBACK_TIMEOUT_MS);
         }
     };
 
     destroy = () => {
+        this.clearFadeFallback();
         ipcMain.off(LOADING_SCREEN_ANIMATION_FINISHED, this.handleAnimationFinished);
         performanceMonitor.unregisterView(this.view.webContents.id);
         this.view.webContents.close();
@@ -108,6 +121,7 @@ export class LoadingScreen {
 
     private handleAnimationFinished = () => {
         log.debug('handleLoadingScreenAnimationFinished');
+        this.clearFadeFallback();
 
         if (this.state !== LoadingScreenState.HIDDEN) {
             this.state = LoadingScreenState.HIDDEN;
@@ -118,6 +132,11 @@ export class LoadingScreen {
             app.emit('e2e-app-loaded');
             this.parent.focus();
         }
+    };
+
+    private clearFadeFallback = () => {
+        clearTimeout(this.fadeFallbackTimeout);
+        delete this.fadeFallbackTimeout;
     };
 
     private setBounds = () => {

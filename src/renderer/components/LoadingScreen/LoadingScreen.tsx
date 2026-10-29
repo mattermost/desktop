@@ -23,7 +23,7 @@ type Props = {
  * @param {() => void} onFadeOutComplete - Function to call when the loading animation is completely finished
  */
 function LoadingScreen({loading = false, onFadeOutComplete = () => null}: Props) {
-    const loadingScreenRef = React.useRef(null);
+    const loadingScreenRef = React.useRef<HTMLDivElement>(null);
 
     const [loadingIsComplete, setLoadingIsComplete] = React.useState(true);
     const [loadAnimationIsComplete, setLoadAnimationIsComplete] = React.useState(true);
@@ -43,6 +43,10 @@ function LoadingScreen({loading = false, onFadeOutComplete = () => null}: Props)
     }
 
     useTransitionEnd<HTMLDivElement>(loadingScreenRef, React.useCallback(() => {
+        // If loading restarts mid fade-out, the reversed opacity transition also fires transitionend
+        if (!loadingScreenRef.current?.classList.contains('LoadingScreen--loaded')) {
+            return;
+        }
         setFadeOutIsComplete(true);
         onFadeOutComplete();
     }, []), ['opacity']);
