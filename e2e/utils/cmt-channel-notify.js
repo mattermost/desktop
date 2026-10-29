@@ -150,8 +150,24 @@ function buildIndividualReportUrl(baseUrl, reportId) {
 }
 
 /**
+ * Total tests TSIO reports for one uploaded report, when it carries stats.
+ * A missing total is not zero-test evidence: the report's consolidated
+ * history may simply not have landed yet.
+ *
+ * @param {{test_stats?: {total?: number, passed?: number, failed?: number, skipped?: number, flaky?: number}}} [report]
+ * @returns {number|undefined}
+ */
+function reportTestTotal(report) {
+    const stats = report?.test_stats;
+    if (!stats) {
+        return undefined;
+    }
+    return typeof stats.total === 'number' ? stats.total : (stats.passed || 0) + (stats.failed || 0) + (stats.skipped || 0) + (stats.flaky || 0);
+}
+
+/**
  * @param {Record<string, {passed?: number, failed?: number, skipped?: number, flaky?: number}>} perJobCounts
- * @param {Array<{id?: string, gh_job_name?: string, display_name?: string, status?: string}>} uploadedReports
+ * @param {Array<{id?: string, gh_job_name?: string, display_name?: string, status?: string, test_stats?: Object}>} uploadedReports
  * @param {string} [baseUrl] - TSIO origin used to build per-leg report links
  * @returns {Array<{label: string, status: string, passed: number, failed: number, skipped: number, total: number, os: string, serverVersion: string, reportUrl?: string}>}
  */
@@ -180,7 +196,9 @@ function buildLegSummaries(perJobCounts, uploadedReports, baseUrl) {
         let status;
         if (total === 0) {
             const uploadedOk = uploaded?.status === 'complete' || uploaded?.status === 'completed';
-            status = uploadedOk ? 'no-results' : 'missing';
+            const hasPerJobCounts = Object.prototype.hasOwnProperty.call(perJobCounts || {}, jobName);
+            const hasZeroTestEvidence = (hasPerJobCounts && total === 0) || reportTestTotal(uploaded) === 0;
+            status = uploadedOk && hasZeroTestEvidence ? 'no-results' : 'missing';
         } else {
             status = failed === 0 ? 'passed' : 'failed';
         }
@@ -348,9 +366,9 @@ function shouldPostToChannel(compositeIdentity, {overallFailed = false, missingL
     return Boolean(overallFailed || missingLegs.length > 0 || noLegs);
 }
 
-// Test groups whose report uploaded complete but with zero tests: their
-// setup died before the first test, so there was nothing for triage to
-// judge. One line per OS / server / suite, counting groups affected.
+// Test groups TSIO definitively shows ran zero tests: their setup died
+// before the first test, so there was nothing for triage to judge. One line
+// per OS / server / suite, counting groups affected.
 function formatSetupProblemLines(legs, setupLegs) {
     const groups = new Map();
     for (const leg of setupLegs || []) {
@@ -443,7 +461,7 @@ function formatMasterChannelMessage({
         return lines.join('\n') + '\n';
     }
 
-    if (!triage && perJobCountsAvailable && setupLegs.length > 0 && !overallFailed) {
+    if (!triage && perJobCountsAvailable && setupLegs.length > 0 && !overallFailed && missingLegs.every((leg) => leg.status === 'no-results')) {
         const lines = [
             ':yellow_circle: **Desktop Master E2E — setup problem**',
             `**${failed} failed** · ${passed} passed · ${skipped} skipped`,
