@@ -205,8 +205,9 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
         const leg = {platform: expected.platform || 'unknown', serverVersion: expected.server || ''};
         const record = byKey.get(laneKey(leg));
 
-        // A lane triage could not settle is named as unknown; its tests are not counted as blocking or cleared.
-        if (record && (record.verdict === 'SUCCESS' || record.verdict === 'FAILURE')) {
+        // A lane triage could not settle, or cleared on incomplete results, is named as unknown; its tests are not
+        // counted as blocking or cleared.
+        if (record && (record.verdict === 'FAILURE' || (record.verdict === 'SUCCESS' && !INCOMPLETE.test(record.description)))) {
             recorded.push(record);
         }
         if (!record || !record.verdict) {

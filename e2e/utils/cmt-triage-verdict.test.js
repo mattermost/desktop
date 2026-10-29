@@ -62,10 +62,12 @@ describe('foldCmtVerdicts', () => {
     });
 
     it('never clears a lane on incomplete results, even one triage called SUCCESS', () => {
-        const lanes = [...clearedLinux.slice(1), {platform: 'linux', serverVersion: '10.11.25', verdict: 'SUCCESS', blocking: '0', exonerated: '3', description: '(3 flaky; results incomplete: 4 of 5 reports) 99.6% passed'}];
+        const partial = {title: 'MM-T4054 Open/Close permanent link media preview', file: 'e2e/specs/mattermost/media_preview.test.ts', label: 'flaky', blocking: false};
+        const lanes = [...clearedLinux.slice(1), {platform: 'linux', serverVersion: '10.11.25', verdict: 'SUCCESS', blocking: '0', exonerated: '3', description: '(3 flaky; results incomplete: 4 of 5 reports) 99.6% passed', findings: [partial], findingsRecorded: true}];
         const fold = foldCmtVerdicts({lanes, expectedLanes: linuxLanes, expectTriage: true, stats: {passed: 807, failed: 5, skipped: 12}});
         assert.equal(fold.state, 'yellow');
         assert.equal(fold.clearedLegs.length, 4);
+        assert.deepEqual(fold.tests, [], 'a test seen only on partial results is not called "not a bug"');
         const text = formatCmtVerdictMessage({fold, compositeIdentity: identity, stats: {passed: 807, failed: 5, skipped: 12}});
         assert.match(text, /^⚠️ Results incomplete on 1 lane — re-run$/m);
         assert.equal(fold.statusDescription, 'Results incomplete on 1 lane, re-run');
