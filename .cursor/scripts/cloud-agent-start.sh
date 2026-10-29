@@ -5,6 +5,13 @@ log() {
     printf '[cloud-agent-start] %s\n' "$*" >&2
 }
 
+is_true() {
+    case "${1:-}" in
+        1 | true | TRUE | yes | YES) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
 DISPLAY="${DISPLAY:-:99}"
 export DISPLAY
 
@@ -128,8 +135,8 @@ seed_mattermost() {
 }
 
 ensure_mattermost() {
-    if [ "${CLOUD_AGENT_SKIP_LOCAL_SERVER:-}" = "1" ]; then
-        log "CLOUD_AGENT_SKIP_LOCAL_SERVER=1; skipping the local Mattermost server."
+    if is_true "${CLOUD_AGENT_SKIP_LOCAL_SERVER:-false}"; then
+        log "Skipping the local Mattermost server because CLOUD_AGENT_SKIP_LOCAL_SERVER is set."
         return 0
     fi
     if [ ! -x "$MATTERMOST_DIR/bin/mattermost" ]; then

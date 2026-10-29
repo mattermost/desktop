@@ -5,6 +5,13 @@ log() {
     printf '[cloud-agent-install] %s\n' "$*" >&2
 }
 
+is_true() {
+    case "${1:-}" in
+        1 | true | TRUE | yes | YES) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$ROOT"
 
@@ -40,6 +47,11 @@ ensure_node() {
 # Prebuilt Enterprise Edition release (unlicensed, so Team Edition features). It also bundles mmctl.
 # The start script runs it against the apt PostgreSQL; there is no Docker or Go toolchain in the image.
 ensure_mattermost() {
+    if is_true "${CLOUD_AGENT_SKIP_LOCAL_SERVER:-false}"; then
+        log "Skipping the Mattermost server download because CLOUD_AGENT_SKIP_LOCAL_SERVER is set."
+        return 0
+    fi
+
     if [ -x "$MATTERMOST_DIR/bin/mattermost" ]; then
         log "Mattermost server already present at $MATTERMOST_DIR."
         return 0
@@ -65,8 +77,12 @@ ensure_node
 log "Installing dependencies with npm ci."
 npm ci
 
-log "Installing E2E dependencies."
-npm --prefix e2e ci
+if is_true "${CLOUD_AGENT_SKIP_E2E_DEPS:-false}"; then
+    log "Skipping E2E dependency hydration."
+else
+    log "Installing E2E dependencies."
+    npm --prefix e2e ci
+fi
 
 log "Setting up the Linux dev sandbox."
 npm run linux-dev-setup

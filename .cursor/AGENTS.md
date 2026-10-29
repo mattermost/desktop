@@ -39,7 +39,11 @@ Findings come from a manual session against Desktop App 43.3.0 and Mattermost se
 | Mattermost server release (pinned, about 780 MB) | `cloud-agent-install.sh` | Extracted to `~/mattermost`. Set `CLOUD_AGENT_MATTERMOST_VERSION` to change the version. |
 | PostgreSQL | `Dockerfile` (apt) | Started, and the `mmuser` role and `mattermost_test` database created, by the start script. |
 | `/dev/shm` remount at 2G | `cloud-agent-start.sh` | The 64M default causes `ERR_INSUFFICIENT_RESOURCES` once a real server loads. |
-| Mattermost server running and seeded | `cloud-agent-start.sh` | Log at `/tmp/mattermost-server.log`. Set `CLOUD_AGENT_SKIP_LOCAL_SERVER=1` to skip it. |
+| Mattermost server running and seeded | `cloud-agent-start.sh` | Log at `/tmp/mattermost-server.log`. Set `CLOUD_AGENT_SKIP_LOCAL_SERVER=true` to skip it. |
+
+Set these to `true` (or `1`/`yes`) to shorten startup for narrow tasks, following the convention in the `mattermost/mattermost` `.cursor/` hooks:
+- `CLOUD_AGENT_SKIP_LOCAL_SERVER`: skips the server download (install) and Postgres and Mattermost startup (start).
+- `CLOUD_AGENT_SKIP_E2E_DEPS`: skips `npm --prefix e2e ci`.
 
 Not set up by the scripts:
 - **The app itself.** Launch it as described in `SETUP.md`.
