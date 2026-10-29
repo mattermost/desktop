@@ -416,7 +416,7 @@ function reasonFor(t) {
     const reasons = {
         'app bug': 'the app does not do what the test expects',
         'caused by PR': 'caused by this change',
-        'test bug': 'the test is wrong; master has a fixed version',
+        'test bug': 'the test itself is wrong, not the app',
         'server compat': `the test does not handle ${servers}`,
         'out of date': 'master changed this test after this release was cut',
         'fixed on main': 'master has since fixed this test',

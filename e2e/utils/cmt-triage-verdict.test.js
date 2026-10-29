@@ -274,7 +274,7 @@ describe('per-test CMT message', () => {
             '🧪 **Problems with the test, not product bugs** (3)',
             '• `MM-T5890` Opening channels in new windows — the test does not handle server 10.11.25 · 3 of 15 runs',
             '• `MM-T5611` Open a bookmark URL/link (External and Inter… — the test does not handle server 10.11.25 · 2 of 15 runs',
-            '• `MM-T4054` Open/Close permanent link media preview — the test is wrong; master has a fixed version · 15 of 15 runs',
+            '• `MM-T4054` Open/Close permanent link media preview — the test itself is wrong, not the app · 15 of 15 runs',
             '3323 passed · 26 failed · 306 skipped · [Report](https://test-io.test.mattermost.com/reports/desktop/v6.3.2-rc.2/725fbc7/cmt-desktop) · [Run](https://github.com/mattermost/desktop/actions/runs/40651298431)',
             '',
         ].join('\n'));
