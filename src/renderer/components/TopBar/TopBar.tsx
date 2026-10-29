@@ -12,7 +12,7 @@ import {useConfig} from 'renderer/hooks/useConfig';
 type Props = {
     children?: React.ReactNode;
     title?: string;
-    openMenu: () => void;
+    openMenu: (buttonX: number) => void;
     openPopoutMenu?: () => void;
 }
 
@@ -82,7 +82,7 @@ const TopBar = ({children, title, openMenu, openPopoutMenu}: Props) => {
                 <button
                     ref={threeDotMenu}
                     className='three-dot-menu'
-                    onClick={openMenu}
+                    onClick={(event) => openMenu(Math.round(event.currentTarget.getBoundingClientRect().left))}
                     onMouseOver={focusThreeDotsButton}
                     onMouseOut={unFocusThreeDotsButton}
                     tabIndex={0}

@@ -79,4 +79,17 @@ describe('main/views/serverDropdownView', () => {
         serverDropdownView.handleClose();
         expect(serverDropdownView.view.setBounds).toBeCalledWith({width: 0, height: 0, x: expect.any(Number), y: expect.any(Number)});
     });
+
+    it('should position the dropdown relative to the clicked button', () => {
+        const serverDropdownView = new ServerDropdownView();
+        serverDropdownView.view = {
+            setBounds: jest.fn(),
+            webContents: {
+                focus: jest.fn(),
+            },
+        };
+        serverDropdownView.bounds = {x: 0, y: 0, width: 400, height: 300};
+        serverDropdownView.handleOpen({}, 144);
+        expect(serverDropdownView.view.setBounds).toBeCalledWith({x: 144 - 8 - MENU_SHADOW_WIDTH, y: TAB_BAR_HEIGHT - MENU_SHADOW_WIDTH, width: 400, height: 300});
+    });
 });
