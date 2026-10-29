@@ -706,6 +706,61 @@ describe('cmt-channel-notify', () => {
                 assert.doesNotMatch(text, /could not settle|needs investigation/);
             });
 
+            it('renders the setup message when triage is absent', () => {
+                const text = formatCmtChannelMessage({
+                    compositeIdentity: {
+                        repository: 'mattermost/desktop',
+                        branch: 'master',
+                        commit_sha: 'a1b2c3d4e5f678901234567890abcdef12345678',
+                        name: 'desktop-master',
+                        gh_run_id: '123456',
+                    },
+                    detail: {
+                        status: 'completed',
+                        test_stats: {passed: 157, failed: 0, skipped: 4, total: 161},
+                        reports: [1, 2, 3].map((i) => ({
+                            id: `rid-linux-${i}`,
+                            gh_job_name: `e2e-on-ubuntu-latest-master-${i}-of-3`,
+                            status: 'complete',
+                        })),
+                    },
+                    reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
+                    baseUrl: 'https://test-io.test.mattermost.com',
+                    perJobCounts: {
+                        'e2e-on-ubuntu-latest-master-2-of-3': {passed: 80, failed: 0, skipped: 2, flaky: 0},
+                        'e2e-on-ubuntu-latest-master-3-of-3': {passed: 77, failed: 0, skipped: 2, flaky: 0},
+                    },
+                    upstreamJobsSucceeded: true,
+                });
+                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — setup problem\*\*$/m);
+                assert.match(text, /⚙️ \*\*Setup:\*\* 🐧 Linux · Server `master` · 1 of 3 test groups ran no tests\. Not a product bug\./);
+                assert.doesNotMatch(text, /:red_circle:|Missing\/empty:/);
+            });
+
+            it('does not call legs setup failures when per-leg counts are unavailable', () => {
+                const text = formatCmtChannelMessage({
+                    compositeIdentity: {
+                        repository: 'mattermost/desktop',
+                        branch: 'master',
+                        commit_sha: 'a1b2c3d4e5f678901234567890abcdef12345678',
+                        name: 'desktop-master',
+                        gh_run_id: '123456',
+                    },
+                    detail: {
+                        status: 'completed',
+                        test_stats: {passed: 10, failed: 0, skipped: 1, total: 11},
+                        reports: [{id: 'rid-linux', gh_job_name: 'e2e-on-ubuntu-latest-master', status: 'complete'}],
+                    },
+                    reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
+                    baseUrl: 'https://test-io.test.mattermost.com',
+                    perJobCounts: {},
+                    perJobCountsAvailable: false,
+                    upstreamJobsSucceeded: false,
+                });
+                assert.match(text, /Per-leg counts unavailable/);
+                assert.doesNotMatch(text, /Setup:|setup problem/);
+            });
+
             it('names the legs triage did clear on a blocking run', () => {
                 const text = formatCmtChannelMessage({
                     compositeIdentity: {

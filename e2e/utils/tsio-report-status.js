@@ -143,10 +143,11 @@ function hasCountsForEveryUploadedReport(detail, perJobCounts, bucketKey) {
 }
 
 /**
- * Uploaded reports for this bucket that completed with no per-job counts:
- * the shard uploaded its (empty) report, so its setup died before the first
- * test ran. Counts that simply have not landed yet do not count here —
- * only reports TSIO already marked complete.
+ * Uploaded reports for this bucket that TSIO definitively shows ran no tests.
+ * A completed upload with no consolidated count is only missing data — its
+ * counts may not have landed yet — so it remains incomplete. A setup failure
+ * requires explicit zero-test evidence: either a zero per-job count entry or
+ * the report's own zero `test_stats` total.
  *
  * @returns {number}
  */
@@ -160,7 +161,17 @@ function countEmptyUploadedReports(detail, perJobCounts, bucketKey) {
             return false;
         }
         const completed = report.status === 'complete' || report.status === 'completed';
-        return completed && !Object.prototype.hasOwnProperty.call(perJobCounts, name);
+        if (!completed) {
+            return false;
+        }
+        const counts = perJobCounts[name];
+        const hasExplicitZeroCounts = Boolean(counts) &&
+            ((counts.passed || 0) + (counts.failed || 0) + (counts.skipped || 0) + (counts.flaky || 0) === 0);
+        const stats = report.test_stats;
+        const statsTotal = stats ?
+            (typeof stats.total === 'number' ? stats.total : (stats.passed || 0) + (stats.failed || 0) + (stats.skipped || 0) + (stats.flaky || 0)) :
+            undefined;
+        return hasExplicitZeroCounts || statsTotal === 0;
     }).length;
 }
 

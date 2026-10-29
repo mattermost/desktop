@@ -664,11 +664,23 @@ describe('resolveMasterMergeContext', () => {
 });
 
 describe('setup problem (complete report, no tests)', () => {
-    it('counts uploaded-complete shards with no per-job counts as ran-no-tests', () => {
+    it('keeps a completed upload with no consolidated count incomplete, not a setup failure', () => {
         const {detail, perJobCounts} = linuxShards({uploaded: 3, counted: 2});
-        assert.equal(countEmptyUploadedReports(detail, perJobCounts, 'linux'), 1);
+        assert.equal(countEmptyUploadedReports(detail, perJobCounts, 'linux'), 0);
         assert.equal(countEmptyUploadedReports(detail, perJobCounts, 'windows'), 0);
         assert.equal(countEmptyUploadedReports(detail, null, 'linux'), 0, 'unavailable counts are not a setup diagnosis');
+    });
+
+    it('counts a setup failure only with explicit zero-test evidence', () => {
+        const {detail, perJobCounts} = linuxShards({uploaded: 3, counted: 2});
+        const missingName = 'e2e-on-ubuntu-latest-master-3-of-3';
+
+        perJobCounts[missingName] = {passed: 0, failed: 0, skipped: 0, flaky: 0};
+        assert.equal(countEmptyUploadedReports(detail, perJobCounts, 'linux'), 1, 'explicit zero counts are definitive');
+
+        delete perJobCounts[missingName];
+        detail.reports[2].test_stats = {passed: 0, failed: 0, skipped: 0, flaky: 0, total: 0};
+        assert.equal(countEmptyUploadedReports(detail, perJobCounts, 'linux'), 1, 'a zero report total is definitive');
     });
 
     it('names the setup problem in the OS status instead of incomplete counts', () => {

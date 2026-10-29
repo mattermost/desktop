@@ -383,7 +383,7 @@ function formatMasterChannelMessage({
     const {legs, passed, failed, skipped, overallFailed, missingLegs, noLegsReported} = summarizeOutcome({
         detail, perJobCounts, upstreamJobsSucceeded, hasFailures, baseUrl, perJobCountsAvailable,
     });
-    const setupLegs = legs.filter((leg) => leg.status === 'no-results');
+    const setupLegs = perJobCountsAvailable ? legs.filter((leg) => leg.status === 'no-results') : [];
     const triage = triageLanes ? foldMasterTriage({
         lanes: triageLanes, legs, missingLegs, upstreamJobsSucceeded, overallFailed, noLegs: noLegsReported,
     }) : null;
@@ -435,6 +435,19 @@ function formatMasterChannelMessage({
             ':yellow_circle: **Desktop Master E2E — setup problem**',
             `**${failed} failed** · ${passed} passed · ${skipped} skipped`,
             ...formatSetupProblemLines(legs, triage.setupLegs),
+            formatMasterAttribution({compositeIdentity, mergedPr, headCommit, shortSha}),
+        ];
+        if (links) {
+            lines.push(`➡️ ${links}`);
+        }
+        return lines.join('\n') + '\n';
+    }
+
+    if (!triage && perJobCountsAvailable && setupLegs.length > 0 && !overallFailed) {
+        const lines = [
+            ':yellow_circle: **Desktop Master E2E — setup problem**',
+            `**${failed} failed** · ${passed} passed · ${skipped} skipped`,
+            ...formatSetupProblemLines(legs, setupLegs),
             formatMasterAttribution({compositeIdentity, mergedPr, headCommit, shortSha}),
         ];
         if (links) {
