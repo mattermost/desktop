@@ -33,3 +33,9 @@ export type MessageModalResult = {
     response: number;
     checkboxChecked: boolean;
 }
+
+export type MessageModalOpts = {
+    priority?: boolean;
+    key?: string;
+    serverId?: string;
+}

@@ -110,9 +110,9 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
         callback(true);
     } else {
     // update the callback
-        const errorID = `${parsedURL.origin}:${error}`;
-
         const view = WebContentsManager.getViewByWebContentsId(webContents.id);
+        const errorID = `${view?.serverId}:${parsedURL.origin}:${error}`;
+
         const server = view && ServerManager.getServer(view.serverId);
         if (server) {
             const serverURL = parseURL(server.url);
@@ -150,7 +150,7 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
                     localizeMessage('main.app.app.handleAppCertificateError.certError.button.cancelConnection', 'Cancel Connection'),
                 ],
                 cancelId: 1,
-            });
+            }, {serverId: view?.serverId});
 
             if (result.response === 0) {
                 result = await MessageModal.showMessageModal({
@@ -165,7 +165,7 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
                     cancelId: 1,
                     checkboxChecked: false,
                     checkboxLabel: "Don't ask again",
-                });
+                }, {serverId: view?.serverId});
             } else {
                 result = {response: result.response, checkboxChecked: false};
             }

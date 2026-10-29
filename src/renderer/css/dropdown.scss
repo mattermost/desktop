@@ -141,6 +141,15 @@ body {
     &.addServer {
         padding-left: 24px;
 
+        &:disabled {
+            background-color: transparent;
+            cursor: default;
+
+            > i, > span {
+                color: rgba(var(--center-channel-color-rgb), 0.32);
+            }
+        }
+
         > i.icon-plus {
             margin-top: -2px;
 
@@ -184,6 +193,10 @@ body {
     align-items: center;
     margin-left: 18px;
     min-width: 32px;
+}
+
+.ServerDropdown__badge-pendingModal i {
+    color: var(--away-indicator);
 }
 
 .ServerDropdown__badge-dot {

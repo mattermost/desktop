@@ -81,7 +81,7 @@ export class PluginsPopUpsManager {
 
             // Check for custom protocol
             if (isCustomProtocol(parsedURL)) {
-                allowProtocolDialog.handleDialogEvent(url);
+                allowProtocolDialog.handleDialogEvent(url, WebContentsManager.getViewByWebContentsId(parentId)?.serverId);
                 return {action: 'deny'};
             }
 

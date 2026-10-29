@@ -208,6 +208,31 @@ describe('main/allowProtocolDialog', () => {
 
                 expect(shell.openExternal).toBeCalledWith('bad-protocol://community.mattermost.com');
             });
+
+            it('should not show another prompt for the same server and protocol while one is pending', () => {
+                MessageModal.showMessageModal.mockImplementation(() => new Promise(() => {}));
+                allowProtocolDialog.handleDialogEvent('mattermost://community.mattermost.com', 'server-1');
+                allowProtocolDialog.handleDialogEvent('mattermost://other.mattermost.com', 'server-1');
+
+                expect(MessageModal.showMessageModal).toHaveBeenCalledTimes(1);
+            });
+
+            it('should show a prompt for the same protocol from a different server', () => {
+                MessageModal.showMessageModal.mockImplementation(() => new Promise(() => {}));
+                allowProtocolDialog.handleDialogEvent('mattermost://community.mattermost.com', 'server-1');
+                allowProtocolDialog.handleDialogEvent('mattermost://community.mattermost.com', 'server-2');
+
+                expect(MessageModal.showMessageModal).toHaveBeenCalledTimes(2);
+            });
+
+            it('should show a prompt again once the pending one is answered', async () => {
+                const promise = Promise.resolve({response: 2});
+                MessageModal.showMessageModal.mockImplementation(() => promise);
+                await allowProtocolDialog.handleDialogEvent('mattermost://community.mattermost.com', 'server-1');
+                await allowProtocolDialog.handleDialogEvent('mattermost://community.mattermost.com', 'server-1');
+
+                expect(MessageModal.showMessageModal).toHaveBeenCalledTimes(2);
+            });
         });
     });
 

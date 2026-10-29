@@ -384,8 +384,8 @@ export class MainWindow extends EventEmitter {
         this.sendToRenderer(UPDATE_MENTIONS, viewId, newMentions, newUnreads, isExpired);
     };
 
-    private handleUpdateAppStateForServerId = (serverId: string, expired: boolean, newMentions: number, newUnreads: boolean) => {
-        this.sendToRenderer(UPDATE_MENTIONS_FOR_SERVER, serverId, expired, newMentions, newUnreads);
+    private handleUpdateAppStateForServerId = (serverId: string, expired: boolean, newMentions: number, newUnreads: boolean, hasPendingModal: boolean) => {
+        this.sendToRenderer(UPDATE_MENTIONS_FOR_SERVER, serverId, expired, newMentions, newUnreads, hasPendingModal);
     };
 
     private handleEmitConfiguration = () => {
