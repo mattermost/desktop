@@ -48,7 +48,7 @@ export class URLView {
             this.urlView.webContents.send(SET_URL_FOR_URL_VIEW, urlString);
             this.urlView.setVisible(true);
 
-            const boundaries = this.parent.getBounds();
+            const boundaries = this.parent.getContentBounds();
 
             const hideView = () => {
                 delete this.urlViewCancel;
