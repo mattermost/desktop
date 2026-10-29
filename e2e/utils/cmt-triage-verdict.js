@@ -89,7 +89,7 @@ function normalizeLane(lane) {
  * Each failed test once across the lanes it failed in, most severe label first, then most lanes.
  *
  * @param {Array} lanes - normalized lanes
- * @returns {Array<{title: string, file: string, label: string, blocking: boolean, lanes: number, explanation: string|null}>}
+ * @returns {Array<{title: string, file: string, label: string, blocking: boolean, lanes: number, servers: string[], explanation: string|null}>}
  */
 function groupTests(lanes) {
     const byTest = new Map();
@@ -99,10 +99,13 @@ function groupTests(lanes) {
             const key = `${f.file}\n${f.fullTitle}`;
             const seen = byTest.get(key);
             if (!seen) {
-                byTest.set(key, {title: f.title, fullTitle: f.fullTitle, file: f.file, label: f.label, blocking: f.blocking, lanes: 1, explanation: f.explanation});
+                byTest.set(key, {title: f.title, fullTitle: f.fullTitle, file: f.file, label: f.label, blocking: f.blocking, lanes: 1, servers: [lane.serverVersion], explanation: f.explanation});
                 continue;
             }
             seen.lanes += 1;
+            if (!seen.servers.includes(lane.serverVersion)) {
+                seen.servers.push(lane.serverVersion);
+            }
             seen.blocking = seen.blocking || f.blocking;
 
             // The explanation stays with the label it was given for.
@@ -158,8 +161,8 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
                 state: 'yellow',
                 kind: 'untriaged-upstream-failure',
                 commitStatusState: 'error',
-                statusDescription: 'CI job failed outside tracked tests; triage did not run',
-                note: 'A CI job failed outside tracked tests (install/build/teardown) and triage did not run.',
+                statusDescription: 'A CI job failed outside the tests; nothing was checked',
+                note: 'A CI job failed outside the tests (install, build or cleanup), so no failure was checked.',
             };
         }
         if (failed > 0) {
@@ -168,8 +171,8 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
                 state: 'yellow',
                 kind: 'untriaged-failures',
                 commitStatusState: 'error',
-                statusDescription: 'Test failures present but AI triage did not run — needs investigation',
-                note: 'Test failures are present but AI triage did not run, so nothing is cleared as flaky.',
+                statusDescription: 'Tests failed but were not checked — look at the run',
+                note: 'Tests failed, but the automatic check did not run, so none was checked.',
             };
         }
         return {
@@ -187,15 +190,15 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
         byKey.set(laneKey(normalized), normalized);
     }
 
-    const result = {...base, tests: [], laneCount: expectedLanes?.length || 0};
+    const result = {...base, tests: [], laneCount: expectedLanes?.length || 0, servers: [...new Set((expectedLanes || []).map((l) => l.server || ''))]};
     if (!expectedLanes || expectedLanes.length === 0) {
         return {
             ...result,
             state: 'yellow',
             kind: 'no-triage-lanes',
             commitStatusState: 'error',
-            statusDescription: 'AI triage had no lanes to judge — needs investigation',
-            note: 'Triage was expected but the CMT matrix produced no lanes to judge.',
+            statusDescription: 'No runs to check — look at the run',
+            note: 'Tests failed, but the run had no OS and server combinations to check.',
         };
     }
 
@@ -234,23 +237,23 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
     const incompleteLegs = [...result.blockingLegs, ...result.unknownLegs].filter((leg) => leg.incomplete).length;
 
     if (result.blockingLegs.length > 0) {
-        // Held tests are counted once across lanes; a lane that names none is counted by its own number.
+        // Held tests are counted once across runs; a run that names none is counted as a run.
         const held = result.tests.filter((t) => t.blocking);
-        const appBugs = held.filter((t) => t.label === 'app bug').length;
+        const productBugs = held.filter((t) => PRODUCT.has(t.label)).length;
         const unnamed = result.blockingLegs.filter((leg) => !leg.testsNamed && !leg.incomplete).length;
-        let summary = result.blockingCount > 0 ? `${result.blockingCount} blocking failure${result.blockingCount === 1 ? '' : 's'} after triage — needs investigation` : 'Blocking failures after triage — needs investigation';
-        if (appBugs) {
-            summary = `${appBugs} likely app bug${appBugs === 1 ? '' : 's'}`;
+        let summary = `${count(result.blockingLegs.length, 'run', 'runs')} failed, but which tests is not known — look at the run`;
+        if (productBugs) {
+            summary = `${count(productBugs, 'product bug', 'product bugs')} found`;
         } else if (held.length) {
-            summary = `${held.length} test${held.length === 1 ? ' needs' : 's need'} a look`;
+            summary = `No product bugs found; ${count(held.length, 'failure needs', 'failures need')} a look`;
         } else if (!unnamed && incompleteLegs) {
-            // Red only because results are incomplete: nothing is held, the lanes need a re-run.
-            summary = 'Results incomplete, re-run';
+            // Partial results can hide a failure: nothing is claimed until a re-run.
+            summary = 'Test results did not fully upload, re-run';
         }
         const parts = [
             summary,
-            held.length && unnamed ? `${unnamed} lane${unnamed === 1 ? '' : 's'} red, no test named` : '',
-            incompleteLegs && summary !== 'Results incomplete, re-run' ? 'results incomplete' : '',
+            held.length && unnamed ? `${count(unnamed, 'run', 'runs')} failed with no test named` : '',
+            incompleteLegs && !summary.endsWith('re-run') ? 'some results did not upload' : '',
         ];
         return {
             ...result,
@@ -268,7 +271,7 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
             state: 'yellow',
             kind: 'inconclusive',
             commitStatusState: 'error',
-            statusDescription: incompleteLegs === n ? `Results incomplete on ${n} lane${n === 1 ? '' : 's'}, re-run` : `AI triage inconclusive for ${n} leg${n === 1 ? '' : 's'} — needs investigation`,
+            statusDescription: incompleteLegs === n ? `Test results did not fully upload for ${count(n, 'run', 'runs')}, re-run` : `Could not check ${count(n, 'run', 'runs')} — look at the run`,
         };
     }
 
@@ -278,8 +281,8 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
             state: 'yellow',
             kind: 'untriaged-upstream-failure',
             commitStatusState: 'error',
-            statusDescription: 'CI job failed outside tracked tests; triage cannot clear it',
-            note: 'A CI job failed outside tracked tests (install/build/teardown); triage cannot clear that.',
+            statusDescription: 'A CI job failed outside the tests — look at the run',
+            note: 'A CI job failed outside the tests (install, build or cleanup); that is not a test result, so look at the run.',
         };
     }
 
@@ -289,7 +292,7 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
         state: 'green',
         kind: flaky ? 'flaky' : 'passed',
         commitStatusState: 'success',
-        statusDescription: flaky ? `Flaky — AI triage cleared all failures · ${countsLine}` : countsLine,
+        statusDescription: flaky ? `No product bugs found · ${countsLine}` : countsLine,
     };
 }
 
@@ -358,24 +361,26 @@ function foldMasterTriage({lanes = [], legs = [], missingLegs = [], upstreamJobs
 function formatLeg(leg) {
     const emoji = PLATFORM_EMOJI[leg.platform] || PLATFORM_EMOJI.unknown;
     const name = PLATFORM_LABEL[leg.platform] || PLATFORM_LABEL.unknown;
-    return `${emoji} ${name} ${leg.serverVersion}`;
+    return `${emoji} ${name}, server ${leg.serverVersion}`;
 }
 
-// Each test by its id when its title starts with one (MM-T4054), else its title, cut short; two tests of one
-// file with the same leaf title by their full titles. A name that would read like another test's is spelled
-// out: the full title, then the file too.
+const cut = (text, max) => (text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text);
+
+// Each test by its id and title when its title starts with an id (MM-T4054 Open/Close…), else its title, cut
+// short; two tests of one file with the same leaf title by their full titles. A name that would read like another
+// test's is spelled out: the full title, then the file too.
 function testNames(tests) {
     const shared = sharedTitles(tests);
-    const cut = (text, max) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
     const short = (t) => {
         if (shared.has(`${t.file}\n${t.title}`)) {
-            return cut(t.fullTitle, 60);
+            return `\`${cut(t.fullTitle, 60)}\``;
         }
-        return (/^(MM-T\d+(?:_\d+)?)\b/).exec(t.title)?.[1] || cut(t.title, 40);
+        const id = (/^(MM-T\d+(?:_\d+)?)\b/).exec(t.title)?.[1];
+        return id ? `\`${id}\` ${cut(t.title.slice(id.length).trim(), 45)}` : `\`${cut(t.title, 45)}\``;
     };
     const apart = (names, longer) => names.map((n, i) => (names.filter((m) => m === n).length > 1 ? longer(tests[i]) : n));
-    const names = apart(apart(tests.map(short), (t) => t.fullTitle), (t) => `${t.file} > ${t.fullTitle}`);
-    return new Map(tests.map((t, i) => [t, `\`${names[i]}\``]));
+    const names = apart(apart(tests.map(short), (t) => `\`${t.fullTitle}\``), (t) => `\`${t.file} > ${t.fullTitle}\``);
+    return new Map(tests.map((t, i) => [t, names[i]]));
 }
 
 function sharedTitles(tests) {
@@ -394,14 +399,36 @@ function sharedTitles(tests) {
 // The first three, then how many more.
 function listOf(items, render) {
     const shown = items.slice(0, 3).map(render).join(' · ');
-    return items.length > 3 ? `${shown} · +${items.length - 3} more` : shown;
+    return items.length > 3 ? `${shown} · and ${items.length - 3} more` : shown;
 }
 
 const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+const andList = (items) => (items.length > 1 ? `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}` : items[0] || '');
+
+// Triage's labels, by what they mean for the release: a product bug, a problem with the test, a failure by chance,
+// or one master has too.
+const PRODUCT = new Set(['app bug', 'caused by PR']);
+const TEST_PROBLEM = new Set(['test bug', 'server compat', 'out of date', 'fixed on main']);
+
+// Why a test failed, in plain words.
+function reasonFor(t) {
+    const servers = `server ${andList(t.servers)}`;
+    const reasons = {
+        'app bug': 'the app does not do what the test expects',
+        'caused by PR': 'caused by this change',
+        'test bug': 'the test is wrong; master has a fixed version',
+        'server compat': `the test does not handle ${servers}`,
+        'out of date': 'master changed this test after this release was cut',
+        'fixed on main': 'master has since fixed this test',
+        flaky: 'failed by chance or because of the test machine; it passes on retry or on other runs',
+        'broken on main': 'it fails on master too',
+    };
+    return reasons[t.label] || 'the cause is not clear';
+}
 
 /**
- * The channel message: is it a bug or not, in a few lines. Each test once, with its label;
- * the reasons are in the run.
+ * The channel message: for each failure, whether it is a product bug, a problem with the test, flaky, or a
+ * problem with the test setup, in plain words. The details are in the run.
  *
  * @param {Object} params
  * @param {Object} params.fold - result of foldCmtVerdicts
@@ -414,57 +441,83 @@ const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 function formatCmtVerdictMessage({fold, compositeIdentity, stats = {}, reportUrl, runUrl}) {
     const {passed, failed, skipped} = displayTotals(stats);
     const branch = (compositeIdentity?.branch || '').replace(/^refs\/(heads|tags)\//, '');
-    const name = `**Desktop CMT**${branch ? ` \`${branch}\`` : ''}`;
+    const name = `**Desktop CMT${branch ? ` ${branch}` : ''}**`;
+    const runs = fold.laneCount || 0;
+    const allServers = fold.servers || [];
 
     const tests = fold.tests || [];
     const names = testNames(tests);
-    const lanes = (t) => `${t.lanes}/${fold.laneCount || t.lanes} lane${(fold.laneCount || t.lanes) === 1 ? '' : 's'}`;
-    const appBugs = tests.filter((t) => t.blocking && t.label === 'app bug');
-    const toCheck = tests.filter((t) => t.blocking && t.label !== 'app bug');
-    const notBugs = tests.filter((t) => !t.blocking);
+    const where = (t) => {
+        const onSome = t.servers.length < allServers.length && t.label !== 'server compat' ? `, on server ${andList(t.servers)}` : '';
+        return `${t.lanes} of ${runs || t.lanes} runs${onSome}`;
+    };
+    const line = (t, reason = reasonFor(t)) => `• ${names.get(t)} — ${reason} · ${where(t)}`;
+    const productBugs = tests.filter((t) => t.blocking && PRODUCT.has(t.label));
+    const needsLook = tests.filter((t) => t.blocking && !PRODUCT.has(t.label));
+    const testProblems = tests.filter((t) => !t.blocking && TEST_PROBLEM.has(t.label));
+    const flaky = tests.filter((t) => !t.blocking && t.label === 'flaky');
+    const onMaster = tests.filter((t) => !t.blocking && t.label === 'broken on main');
 
-    // A lane with incomplete results needs a re-run, whether it names a test or triage could not settle it.
+    // A run with incomplete results needs a re-run, whether it names a test or could not be checked.
     const redLegs = fold.kind === 'blocking' ? fold.blockingLegs : [];
     const incomplete = [...redLegs, ...fold.unknownLegs].filter((leg) => leg.incomplete);
     const redUnnamed = redLegs.filter((leg) => !leg.testsNamed && !leg.incomplete);
     const unsettled = fold.unknownLegs.filter((leg) => !leg.incomplete);
 
-    let headline = `:yellow_circle: ${name} — couldn't tell`;
+    const unchecked = {
+        'untriaged-upstream-failure': 'a CI job failed outside the tests',
+        'untriaged-failures': 'tests failed but were not checked',
+        'no-triage-lanes': 'tests failed but there was nothing to check',
+    };
+    let headline = `:yellow_circle: ${name}: ${unchecked[fold.kind] || 'not every run could be checked'}`;
     if (fold.kind === 'blocking') {
-        const held = [
-            appBugs.length ? count(appBugs.length, 'likely app bug', 'likely app bugs') : '',
-            toCheck.length ? count(toCheck.length, 'test to check', 'tests to check') : '',
-        ].filter(Boolean).join(', ');
-        const red = incomplete.length && !redUnnamed.length ? 'results incomplete, re-run' : count(fold.blockingLegs.length, 'lane still red', 'lanes still red');
-        headline = `:red_circle: ${name} — ${held || red}`;
+        let red = `${count(fold.blockingLegs.length, 'run', 'runs')} failed, but which tests is not known`;
+        if (productBugs.length) {
+            red = `${count(productBugs.length, 'product bug', 'product bugs')} found`;
+        } else if (needsLook.length) {
+            red = `no product bugs found · ${count(needsLook.length, 'failure needs', 'failures need')} a look`;
+        } else if (incomplete.length && !redUnnamed.length) {
+            red = 'test results did not fully upload, re-run to see if anything failed';
+        }
+        headline = `:red_circle: ${name}: ${red}`;
     } else if (fold.kind === 'flaky') {
-        headline = `:green_circle: ${name} — no bugs`;
+        headline = `:green_circle: ${name}: no product bugs found`;
     } else if (fold.kind === 'passed') {
-        headline = `:green_circle: ${name} — passed`;
+        headline = `:green_circle: ${name}: all tests passed`;
     }
 
     const lines = [headline];
-    if (appBugs.length) {
-        lines.push(`🐞 **App bug:** ${listOf(appBugs, (t) => `${names.get(t)} ${lanes(t)}`)}`);
+    const section = (title, list, render = line) => {
+        if (list.length) {
+            lines.push(`${title} (${list.length})`, ...list.slice(0, 3).map((t) => render(t)));
+            if (list.length > 3) {
+                lines.push(`…and ${list.length - 3} more in the run`);
+            }
+        }
+    };
+    section('🐞 **Product bugs**', productBugs);
+    section('🔎 **Needs a look**', needsLook, (t) => line(t, t.label === 'needs investigation' || PRODUCT.has(t.label) ? reasonFor(t) : `${reasonFor(t)}, but that may not be the cause`));
+    section('🧪 **Problems with the test, not product bugs**', testProblems);
+    if (flaky.length) {
+        lines.push(`🔁 **Flaky, not product bugs** (${flaky.length}): ${listOf(flaky, (t) => names.get(t))} — ${reasonFor(flaky[0])}`);
     }
-    if (toCheck.length) {
-        lines.push(`🔎 **Check:** ${listOf(toCheck, (t) => `${names.get(t)} ${t.label}, ${lanes(t)}`)}`);
+    if (onMaster.length) {
+        lines.push(`↩️ **Also failing on master** (${onMaster.length}): ${listOf(onMaster, (t) => names.get(t))}`);
     }
-    if (notBugs.length) {
-        lines.push(`✅ **Not bugs:** ${listOf(notBugs, (t) => `${names.get(t)} ${t.label}`)}`);
-    } else if (fold.kind === 'flaky' && fold.clearedCount > 0) {
-        lines.push(`✅ **Not bugs:** ${count(fold.clearedCount, 'failure', 'failures')} cleared by triage`);
+    if (fold.kind === 'flaky' && !tests.length && fold.clearedCount > 0) {
+        lines.push(`🔁 **Not product bugs:** ${count(fold.clearedCount, 'failure was', 'failures were')} checked and cleared`);
     }
     if (incomplete.length) {
-        lines.push(`⚠️ Results incomplete on ${count(incomplete.length, 'lane', 'lanes')} — re-run`);
+        const share = incomplete.length === runs ? `all ${runs}` : `${incomplete.length} of ${runs}`;
+        lines.push(`⚙️ **Setup problem:** test results did not fully upload for ${share} runs — re-run to confirm`);
     }
     if (redUnnamed.length) {
-        lines.push(`⚠️ Red, no test named: ${listOf(redUnnamed, formatLeg)}`);
+        lines.push(`⚙️ **Failed, test not known:** ${listOf(redUnnamed, formatLeg)} — look at the run`);
     }
     if (unsettled.length) {
-        lines.push(`⚠️ Couldn't settle: ${listOf(unsettled, formatLeg)}`);
+        lines.push(`⚙️ **Could not check:** ${listOf(unsettled, formatLeg)} — look at the run`);
     } else if (!fold.unknownLegs.length && fold.state === 'yellow' && fold.note) {
-        lines.push(`⚠️ ${fold.note}`);
+        lines.push(`⚙️ ${fold.note}`);
     }
 
     const links = [
