@@ -163,6 +163,12 @@ seed_mattermost() {
     "$mmctl" --local user search sysadmin >/dev/null 2>&1 || { log "Seeded user sysadmin not found."; failed=1; }
     "$mmctl" --local user search user-1 >/dev/null 2>&1 || { log "Seeded user user-1 not found."; failed=1; }
     "$mmctl" --local team search main >/dev/null 2>&1 || { log "Seeded team main not found."; failed=1; }
+
+    # `team users add` can print an error and still exit 0, so check membership directly.
+    local members
+    members="$("$mmctl" --local user list --team main 2>/dev/null || true)"
+    grep -q ": sysadmin (" <<<"$members" || { log "sysadmin is not a member of team main."; failed=1; }
+    grep -q ": user-1 (" <<<"$members" || { log "user-1 is not a member of team main."; failed=1; }
     return "$failed"
 }
 

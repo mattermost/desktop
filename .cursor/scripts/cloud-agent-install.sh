@@ -44,6 +44,28 @@ ensure_node() {
     log "Using node $(node --version) and npm $(npm --version)"
 }
 
+# Unpacks a release tarball into a staging directory, carries over the server config, stored files and
+# plugins from an existing install (as Mattermost's upgrade procedure does), then swaps it into place.
+install_mattermost_release() {
+    local tarball="$1" stage keep
+    stage="$(mktemp -d "$HOME/.mattermost-stage.XXXXXX")"
+    tar xzf "$tarball" -C "$stage"
+
+    if [ -d "$MATTERMOST_DIR" ]; then
+        for keep in config/config.json data plugins client/plugins; do
+            if [ -e "$MATTERMOST_DIR/$keep" ]; then
+                mkdir -p "$(dirname "$stage/mattermost/$keep")"
+                rm -rf "${stage:?}/mattermost/$keep"
+                mv "$MATTERMOST_DIR/$keep" "$stage/mattermost/$keep"
+            fi
+        done
+        rm -rf "$MATTERMOST_DIR"
+    fi
+
+    mv "$stage/mattermost" "$MATTERMOST_DIR"
+    rmdir "$stage"
+}
+
 # Prebuilt Enterprise Edition release (unlicensed, so Team Edition features). It also bundles mmctl.
 # The start script runs it against the apt PostgreSQL; there is no Docker or Go toolchain in the image.
 ensure_mattermost() {
@@ -54,7 +76,7 @@ ensure_mattermost() {
 
     if [ -x "$MATTERMOST_DIR/bin/mattermost" ]; then
         local installed
-        installed="$("$MATTERMOST_DIR/bin/mattermost" version 2>/dev/null | awk '/^Version:/ {print $2}')"
+        installed="$("$MATTERMOST_DIR/bin/mattermost" version 2>/dev/null | awk '/^Version:/ {print $2}')" || installed=""
         if [ "$installed" = "$MATTERMOST_VERSION" ]; then
             log "Mattermost server ${installed} already present at $MATTERMOST_DIR."
             return 0
@@ -72,8 +94,7 @@ ensure_mattermost() {
         return 0
     fi
 
-    rm -rf "$MATTERMOST_DIR"
-    tar xzf "$tarball" -C "$HOME"
+    install_mattermost_release "$tarball"
     rm -f "$tarball"
     log "Mattermost server extracted to $MATTERMOST_DIR."
 }
