@@ -90,6 +90,6 @@ describe('main/views/serverDropdownView', () => {
         };
         serverDropdownView.bounds = {x: 0, y: 0, width: 400, height: 300};
         serverDropdownView.handleOpen({}, 144);
-        expect(serverDropdownView.view.setBounds).toBeCalledWith({x: 144 - 8 - MENU_SHADOW_WIDTH, y: TAB_BAR_HEIGHT - MENU_SHADOW_WIDTH, width: 400, height: 300});
+        expect(serverDropdownView.view.setBounds).toBeCalledWith({x: 144 - MENU_SHADOW_WIDTH, y: TAB_BAR_HEIGHT - MENU_SHADOW_WIDTH, width: 400, height: 300});
     });
 });

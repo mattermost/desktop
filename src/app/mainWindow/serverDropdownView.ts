@@ -166,7 +166,7 @@ export class ServerDropdownView {
     private getBounds = (width: number, height: number) => {
         let x = process.platform === 'darwin' ? THREE_DOT_MENU_WIDTH_MAC : THREE_DOT_MENU_WIDTH;
         if (this.buttonX !== undefined) {
-            x = this.buttonX - 8;
+            x = this.buttonX;
         }
         return {
             x: x - MENU_SHADOW_WIDTH,
