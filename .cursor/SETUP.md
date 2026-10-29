@@ -33,6 +33,8 @@ This is a manual-testing/computer-use-specific quirk — real users with a physi
 
 The Desktop App needs a real server to add and log into. Spin one up with the prebuilt **Enterprise Edition** binary (unlicensed → Team Edition features; it also bundles `mmctl`) backed by PostgreSQL.
 
+`cloud-agent-install.sh` and `cloud-agent-start.sh` now do all of this automatically (install the release, start PostgreSQL and the server, seed the accounts below). Verify with step 4 first and only run the steps below that haven't already been done (for example, in an environment that doesn't use those scripts).
+
 1. Install and start PostgreSQL, then create the DB user and database:
 
    ```bash

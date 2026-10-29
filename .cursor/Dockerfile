@@ -48,6 +48,8 @@ RUN apt-get update && \
     graphicsmagick \
     icnsutils \
     pkg-config \
+    postgresql \
+    postgresql-client \
     python3 \
     python3-pip \
     sudo \

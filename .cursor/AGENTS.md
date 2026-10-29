@@ -30,20 +30,22 @@ Findings come from a manual session against Desktop App 43.3.0 and Mattermost se
 - **Single screenshots can mislead.** Early passes reported the three-dot menu as invisible and several shortcuts as dead. After the window manager and hidden-window problems below were fixed, the menu rendered and those shortcuts worked. Re-check any "can't" result, and prefer `xwininfo` window lists and logs as evidence.
 - **Never kill windows or processes.** `xdotool windowkill` on a DevTools window took down the window manager and the app.
 
-## What the repo scripts don't set up
+## What the environment scripts set up
 
-`cloud-agent-install.sh` runs `npm ci` and `cloud-agent-start.sh` starts D-Bus and Xvfb. Everything else in this table has to be done per session (see `SETUP.md` for the exact commands).
+| Step | Where | Notes |
+|---|---|---|
+| `npm ci`, `npm --prefix e2e ci`, `npm run linux-dev-setup` | `cloud-agent-install.sh` | `e2e/` has its own `package.json`. |
+| `npm run build-test` | `cloud-agent-install.sh` | A `NODE_ENV=test` build skips the blocking native "Permission Requested" dialog. Output is `e2e/dist/`, not `dist/`. Launch with `./node_modules/.bin/electron e2e/dist/ --disable-dev-mode`, and rebuild after pulling source changes. |
+| Mattermost server release (pinned, about 780 MB) | `cloud-agent-install.sh` | Extracted to `~/mattermost`. Set `CLOUD_AGENT_MATTERMOST_VERSION` to change the version. |
+| PostgreSQL | `Dockerfile` (apt) | Started, and the `mmuser` role and `mattermost_test` database created, by the start script. |
+| `/dev/shm` remount at 2G | `cloud-agent-start.sh` | The 64M default causes `ERR_INSUFFICIENT_RESOURCES` once a real server loads. |
+| Mattermost server running and seeded | `cloud-agent-start.sh` | Log at `/tmp/mattermost-server.log`. Set `CLOUD_AGENT_SKIP_LOCAL_SERVER=1` to skip it. |
 
-| Need | Why |
-|---|---|
-| Window manager | Frames, focus and extra windows. The VM we used ran `xfwm4` from its desktop layer, not from these scripts, and it was not Openbox. Start `xfwm4 --compositor=off` if none is running. |
-| `sudo mount -o remount,size=2G /dev/shm` | The 64M default causes `ERR_INSUFFICIENT_RESOURCES` once a real server loads. |
-| `npm run build-test`, launch `e2e/dist/` | A `NODE_ENV=test` build skips the blocking native "Permission Requested" dialog. Output is `e2e/dist/`, not `dist/`. |
-| PostgreSQL and the Mattermost server release | `apt-get install postgresql`, then download the pinned release (about 780 MB) and run it with the `MM_*` variables in `SETUP.md`. Neither is in the Dockerfile. |
+Not set up by the scripts:
+- **The app itself.** Launch it as described in `SETUP.md`.
+- **A window manager.** The VM we used ran `xfwm4` from its desktop layer, not from these scripts, and it was not Openbox. Start `xfwm4 --compositor=off` if none is running.
 
-Starting a server and seeding it takes a few minutes. Baking Postgres into the Dockerfile and caching the release tarball would shorten this.
-
-Accounts seeded by `SETUP.md`: `sysadmin` / `Sys@dmin-sample1` (system admin), `user-1` / `User-Test-123!`, team `main`. Add `http://localhost:8065` as a server in the app. `localhost` here is the VM's own loopback, because the server and the app run in the same VM.
+Accounts seeded by `cloud-agent-start.sh` (and by `SETUP.md` if you set up the server by hand): `sysadmin` / `Sys@dmin-sample1` (system admin), `user-1` / `User-Test-123!`, team `main`. Add `http://localhost:8065` as a server in the app. `localhost` here is the VM's own loopback, because the server and the app run in the same VM.
 
 ## Running the E2E suite against the local server
 
