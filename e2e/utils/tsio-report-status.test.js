@@ -664,14 +664,26 @@ describe('resolveMasterMergeContext', () => {
 });
 
 describe('setup problem (complete report, no tests)', () => {
-    it('keeps a completed upload with no consolidated count incomplete, not a setup failure', () => {
+    it('keeps a just-completed upload with no consolidated count incomplete, not a setup failure', () => {
         const {detail, perJobCounts} = linuxShards({uploaded: 3, counted: 2});
         assert.equal(countEmptyUploadedReports(detail, perJobCounts, 'linux'), 0);
         assert.equal(countEmptyUploadedReports(detail, perJobCounts, 'windows'), 0);
         assert.equal(countEmptyUploadedReports(detail, null, 'linux'), 0, 'unavailable counts are not a setup diagnosis');
     });
 
-    it('counts a setup failure only with explicit zero-test evidence', () => {
+    // Master run 40816626126: Linux shard 1 of 3 failed global setup at 04:16 and uploaded no tests; the e2e/linux
+    // check ran at 04:26, when the other two shards' tests were in TSIO.
+    it('counts a report complete for minutes with no test, while the others have tests, as a setup failure', () => {
+        const {detail, perJobCounts} = linuxShards({uploaded: 3, counted: 2});
+        const now = Date.parse('2026-10-29T04:26:53Z');
+        detail.reports[2].updated_at = '2026-10-29T04:26:44Z';
+        assert.equal(countEmptyUploadedReports(detail, perJobCounts, 'linux', now), 0, 'its tests may still be landing');
+        detail.reports[2].updated_at = '2026-10-29T04:16:13Z';
+        assert.equal(countEmptyUploadedReports(detail, perJobCounts, 'linux', now), 1);
+        assert.equal(countEmptyUploadedReports(detail, {}, 'linux', now), 0, 'no results read at all is not a setup diagnosis');
+    });
+
+    it('counts a setup failure with explicit zero-test evidence', () => {
         const {detail, perJobCounts} = linuxShards({uploaded: 3, counted: 2});
         const missingName = 'e2e-on-ubuntu-latest-master-3-of-3';
 

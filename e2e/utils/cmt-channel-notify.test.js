@@ -688,6 +688,7 @@ describe('cmt-channel-notify', () => {
                             id: `rid-linux-${i}`,
                             gh_job_name: `e2e-on-ubuntu-latest-12.1.0-rc2-${i}-of-3`,
                             status: 'complete',
+                            updated_at: '2026-10-29T04:16:13Z',
                         })),
                     },
                     reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
@@ -723,6 +724,7 @@ describe('cmt-channel-notify', () => {
                             id: `rid-linux-${i}`,
                             gh_job_name: `e2e-on-ubuntu-latest-master-${i}-of-3`,
                             status: 'complete',
+                            updated_at: '2026-10-29T04:16:13Z',
                         })),
                     },
                     reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
@@ -739,23 +741,13 @@ describe('cmt-channel-notify', () => {
                 assert.doesNotMatch(text, /:red_circle:|Missing\/empty:/);
             });
 
-            it('keeps a completed leg with a missing consolidated count unsettled, not setup', () => {
+            it('does not call a shard that just completed with no tests yet a setup problem: its tests may still be landing', () => {
                 const text = formatCmtChannelMessage({
-                    compositeIdentity: {
-                        repository: 'mattermost/desktop',
-                        branch: 'master',
-                        commit_sha: 'a1b2c3d4e5f678901234567890abcdef12345678',
-                        name: 'desktop-master',
-                        gh_run_id: '123456',
-                    },
+                    compositeIdentity: {repository: 'mattermost/desktop', branch: 'master', commit_sha: 'a1b2c3d4e5f678901234567890abcdef12345678', name: 'desktop-master', gh_run_id: '123456'},
                     detail: {
                         status: 'completed',
                         test_stats: {passed: 157, failed: 0, skipped: 4, total: 161},
-                        reports: [1, 2, 3].map((i) => ({
-                            id: `rid-linux-${i}`,
-                            gh_job_name: `e2e-on-ubuntu-latest-master-${i}-of-3`,
-                            status: 'complete',
-                        })),
+                        reports: [1, 2, 3].map((i) => ({id: `rid-linux-${i}`, gh_job_name: `e2e-on-ubuntu-latest-master-${i}-of-3`, status: 'complete', updated_at: new Date().toISOString()})),
                     },
                     reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
                     baseUrl: 'https://test-io.test.mattermost.com',
@@ -766,9 +758,8 @@ describe('cmt-channel-notify', () => {
                     upstreamJobsSucceeded: true,
                     triageLanes: [],
                 });
-                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — needs investigation on `master`\*\*$/m);
-                assert.match(text, /AI triage could not settle: 🐧 Linux \/ Server `master`/);
-                assert.doesNotMatch(text, /Setup:|setup problem/);
+                assert.doesNotMatch(text, /setup problem|Not a product bug|could not settle/);
+                assert.match(text, /⚙️ \*\*No results:\*\* 🐧 Linux \/ Server `master` — test results did not upload; re-run to see if anything failed/);
             });
 
             it('shows both setup and missing legs when another leg is missing without triage', () => {

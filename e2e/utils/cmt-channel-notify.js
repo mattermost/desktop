@@ -149,6 +149,42 @@ function buildIndividualReportUrl(baseUrl, reportId) {
     return `${baseUrl.replace(/\/$/, '')}/reports/r/${reportId}`;
 }
 
+// How long a report must have been complete before having no tests means it ran none. TSIO before
+// mattermost-test-system-io#126 could mark a report complete a few seconds before its tests were stored.
+const EMPTY_REPORT_SETTLE_MS = 2 * 60 * 1000;
+
+const testTotal = (c) => (c.passed || 0) + (c.failed || 0) + (c.skipped || 0) + (c.flaky || 0);
+
+/**
+ * Whether an uploaded report ran no tests: its setup failed before the first test. Evidence is a zero count or
+ * zero `test_stats` total for it, or that it has been complete for EMPTY_REPORT_SETTLE_MS with no test in this
+ * run's results while another report of the same OS and suite has tests. A report that just completed with no
+ * counts yet may still be storing them: it ran no tests only once that wait is over.
+ *
+ * @param {{gh_job_name?: string, display_name?: string, status?: string, updated_at?: string, test_stats?: Object}} report
+ * @param {Record<string, Object>|null} perJobCounts
+ * @param {number} [now]
+ * @returns {boolean}
+ */
+function reportRanNoTests(report, perJobCounts, now = Date.now()) {
+    const name = report?.gh_job_name || report?.display_name;
+    const parsed = parseCmtJobName(name);
+    if (!parsed || !perJobCounts || (report.status !== 'complete' && report.status !== 'completed')) {
+        return false;
+    }
+    if (perJobCounts[name]) {
+        return testTotal(perJobCounts[name]) === 0;
+    }
+    if (reportTestTotal(report) === 0) {
+        return true;
+    }
+    const siblingHasTests = Object.entries(perJobCounts).some(([job, counts]) => {
+        const other = parseCmtJobName(job);
+        return job !== name && other?.os === parsed.os && (other.kind || 'e2e') === (parsed.kind || 'e2e') && testTotal(counts) > 0;
+    });
+    return siblingHasTests && Date.parse(report.updated_at) <= now - EMPTY_REPORT_SETTLE_MS;
+}
+
 /**
  * Total tests TSIO reports for one uploaded report, when it carries stats.
  * A missing total is not zero-test evidence: the report's consolidated
@@ -169,9 +205,10 @@ function reportTestTotal(report) {
  * @param {Record<string, {passed?: number, failed?: number, skipped?: number, flaky?: number}>} perJobCounts
  * @param {Array<{id?: string, gh_job_name?: string, display_name?: string, status?: string, test_stats?: Object}>} uploadedReports
  * @param {string} [baseUrl] - TSIO origin used to build per-leg report links
+ * @param {number} [now] - for reportRanNoTests
  * @returns {Array<{label: string, status: string, passed: number, failed: number, skipped: number, total: number, os: string, serverVersion: string, reportUrl?: string}>}
  */
-function buildLegSummaries(perJobCounts, uploadedReports, baseUrl) {
+function buildLegSummaries(perJobCounts, uploadedReports, baseUrl, now = Date.now()) {
     const jobNames = new Set([
         ...Object.keys(perJobCounts || {}),
         ...(uploadedReports || []).map((r) => r.gh_job_name || r.display_name).filter(Boolean),
@@ -193,12 +230,10 @@ function buildLegSummaries(perJobCounts, uploadedReports, baseUrl) {
             (r) => (r.gh_job_name || r.display_name) === jobName,
         );
 
+        // A report with no tests is `no-results` (its setup failed) only on evidence; until then it is missing.
         let status;
         if (total === 0) {
-            const uploadedOk = uploaded?.status === 'complete' || uploaded?.status === 'completed';
-            const hasPerJobCounts = Object.prototype.hasOwnProperty.call(perJobCounts || {}, jobName);
-            const hasZeroTestEvidence = (hasPerJobCounts && total === 0) || reportTestTotal(uploaded) === 0;
-            status = uploadedOk && hasZeroTestEvidence ? 'no-results' : 'missing';
+            status = reportRanNoTests(uploaded, perJobCounts, now) ? 'no-results' : 'missing';
         } else {
             status = failed === 0 ? 'passed' : 'failed';
         }
@@ -432,13 +467,22 @@ function formatMasterChannelMessage({
             formatMasterAttribution({compositeIdentity, mergedPr, headCommit, shortSha}),
             `**${failed} failed** · ${passed} passed · ${skipped} skipped`,
         ];
-        if (triage.unknownLegs.length > 0) {
-            const labels = triage.unknownLegs.map((leg) => {
-                const {platform, suite} = formatLegLabels(leg);
-                return `${platform} / ${suite}`;
-            }).join(', ');
-            lines.push(`AI triage could not settle: ${labels} — not counted as flaky or as a bug`);
-        } else if (!upstreamJobsSucceeded) {
+
+        // A leg with failures triage did not settle, and a leg whose results never arrived (nothing to judge), are
+        // named for what they are.
+        const labelsOf = (unknown) => [...new Set(unknown.map((leg) => {
+            const {platform, suite} = formatLegLabels(leg);
+            return `${platform} / ${suite}`;
+        }))].join(', ');
+        const unsettled = triage.unknownLegs.filter((leg) => leg.status !== 'missing');
+        const noResults = triage.unknownLegs.filter((leg) => leg.status === 'missing');
+        if (unsettled.length > 0) {
+            lines.push(`AI triage could not settle: ${labelsOf(unsettled)} — not counted as flaky or as a bug`);
+        }
+        if (noResults.length > 0) {
+            lines.push(`⚙️ **No results:** ${labelsOf(noResults)} — test results did not upload; re-run to see if anything failed`);
+        }
+        if (triage.unknownLegs.length === 0 && !upstreamJobsSucceeded) {
             lines.push('A CI job failed outside tracked tests (install/build/teardown); triage cannot clear that.');
         }
         lines.push(...formatSetupProblemLines(legs, triage.setupLegs));
@@ -967,6 +1011,7 @@ async function notifyCmtChannel({
 
 module.exports = {
     parseCmtJobName,
+    reportRanNoTests,
     resolveWebhookUrl,
     buildIndividualReportUrl,
     buildLegSummaries,

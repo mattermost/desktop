@@ -27,6 +27,7 @@ const {
     parseCmtJobName,
     fetchPerJobCountsFromConsolidated,
     buildIndividualReportUrl,
+    reportRanNoTests,
 } = require('./cmt-channel-notify');
 const {
     osStatusContext,
@@ -143,36 +144,15 @@ function hasCountsForEveryUploadedReport(detail, perJobCounts, bucketKey) {
 }
 
 /**
- * Uploaded reports for this bucket that TSIO definitively shows ran no tests.
- * A completed upload with no consolidated count is only missing data — its
- * counts may not have landed yet — so it remains incomplete. A setup failure
- * requires explicit zero-test evidence: either a zero per-job count entry or
- * the report's own zero `test_stats` total.
+ * Uploaded reports for this bucket that ran no tests: their setup failed before the first test (see
+ * reportRanNoTests, the same rule the channel message uses).
  *
  * @returns {number}
  */
-function countEmptyUploadedReports(detail, perJobCounts, bucketKey) {
-    if (!perJobCounts) {
-        return 0;
-    }
+function countEmptyUploadedReports(detail, perJobCounts, bucketKey, now = Date.now()) {
     return (detail?.reports || []).filter((report) => {
         const name = report.gh_job_name || report.display_name;
-        if (!name || statusBucketKey(parseCmtJobName(name)) !== bucketKey) {
-            return false;
-        }
-        const completed = report.status === 'complete' || report.status === 'completed';
-        if (!completed) {
-            return false;
-        }
-        const counts = perJobCounts[name];
-        const hasExplicitZeroCounts = Boolean(counts) &&
-            ((counts.passed || 0) + (counts.failed || 0) + (counts.skipped || 0) + (counts.flaky || 0) === 0);
-        const stats = report.test_stats;
-        let statsTotal;
-        if (stats) {
-            statsTotal = typeof stats.total === 'number' ? stats.total : (stats.passed || 0) + (stats.failed || 0) + (stats.skipped || 0) + (stats.flaky || 0);
-        }
-        return hasExplicitZeroCounts || statsTotal === 0;
+        return Boolean(name) && statusBucketKey(parseCmtJobName(name)) === bucketKey && reportRanNoTests(report, perJobCounts, now);
     }).length;
 }
 
@@ -889,9 +869,7 @@ async function reportTsioStatus({
             `:warning: Report finalized as \`incomplete\` (${uploadedShards}/${totalReportsExpected} shards) — partial results are in the [TSIO report](${displayReportUrl}); see the [workflow run](${runUrl}) for missing legs.`,
         );
     } else if (!isComplete) {
-        const shardsNote = uploadedShards >= totalReportsExpected && totalReportsExpected > 0 ?
-            `All ${uploadedShards}/${totalReportsExpected} shards are uploaded; TSIO consolidation is still \`${detail.status}\`.` :
-            `TSIO group still \`${detail.status}\` after polling (${uploadedShards}/${totalReportsExpected} shards).`;
+        const shardsNote = uploadedShards >= totalReportsExpected && totalReportsExpected > 0 ? `All ${uploadedShards}/${totalReportsExpected} shards are uploaded; TSIO consolidation is still \`${detail.status}\`.` : `TSIO group still \`${detail.status}\` after polling (${uploadedShards}/${totalReportsExpected} shards).`;
         summaryLines.push(
             '',
             `:warning: ${shardsNote} Commit status follows upstream jobs and test failures, not TSIO consolidation — see the [workflow run](${runUrl}).`,
@@ -928,9 +906,7 @@ async function reportTsioStatus({
             // failures — that would flip e2e/<os> to error and clear pending.
             // If the group already has failures, post error instead of success.
             core.warning(
-                overallFailed > 0 ?
-                    `Could not load per-OS TSIO counts with test failures — marking e2e/<os> error: ${error.message}` :
-                    `Could not load per-OS TSIO counts — leaving e2e/<os> statuses pending: ${error.message}`,
+                overallFailed > 0 ? `Could not load per-OS TSIO counts with test failures — marking e2e/<os> error: ${error.message}` : `Could not load per-OS TSIO counts — leaving e2e/<os> statuses pending: ${error.message}`,
             );
             perJobCounts = null;
         }
