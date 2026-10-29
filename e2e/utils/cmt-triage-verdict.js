@@ -230,22 +230,26 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
         }
     }
     result.tests = groupTests(recorded);
+    const incompleteLegs = [...result.blockingLegs, ...result.unknownLegs].filter((leg) => leg.incomplete).length;
 
     if (result.blockingLegs.length > 0) {
         // Held tests are counted once across lanes; a lane that names none is counted by its own number.
         const held = result.tests.filter((t) => t.blocking);
         const appBugs = held.filter((t) => t.label === 'app bug').length;
+        const unnamed = result.blockingLegs.filter((leg) => !leg.testsNamed && !leg.incomplete).length;
         let summary = result.blockingCount > 0 ? `${result.blockingCount} blocking failure${result.blockingCount === 1 ? '' : 's'} after triage — needs investigation` : 'Blocking failures after triage — needs investigation';
         if (appBugs) {
             summary = `${appBugs} likely app bug${appBugs === 1 ? '' : 's'}`;
         } else if (held.length) {
             summary = `${held.length} test${held.length === 1 ? ' needs' : 's need'} a look`;
+        } else if (!unnamed && incompleteLegs) {
+            // Red only because results are incomplete: nothing is held, the lanes need a re-run.
+            summary = 'Results incomplete, re-run';
         }
-        const unnamed = result.blockingLegs.filter((leg) => !leg.testsNamed && !leg.incomplete).length;
         const parts = [
             summary,
             held.length && unnamed ? `${unnamed} lane${unnamed === 1 ? '' : 's'} red, no test named` : '',
-            result.blockingLegs.some((leg) => leg.incomplete) ? 'results incomplete' : '',
+            incompleteLegs && summary !== 'Results incomplete, re-run' ? 'results incomplete' : '',
         ];
         return {
             ...result,
@@ -257,12 +261,13 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
     }
 
     if (result.unknownLegs.length > 0) {
+        const n = result.unknownLegs.length;
         return {
             ...result,
             state: 'yellow',
             kind: 'inconclusive',
             commitStatusState: 'error',
-            statusDescription: `AI triage inconclusive for ${result.unknownLegs.length} leg${result.unknownLegs.length === 1 ? '' : 's'} — needs investigation`,
+            statusDescription: incompleteLegs === n ? `Results incomplete on ${n} lane${n === 1 ? '' : 's'}, re-run` : `AI triage inconclusive for ${n} leg${n === 1 ? '' : 's'} — needs investigation`,
         };
     }
 

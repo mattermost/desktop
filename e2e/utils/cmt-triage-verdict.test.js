@@ -68,6 +68,11 @@ describe('foldCmtVerdicts', () => {
         assert.equal(fold.clearedLegs.length, 4);
         const text = formatCmtVerdictMessage({fold, compositeIdentity: identity, stats: {passed: 807, failed: 5, skipped: 12}});
         assert.match(text, /^⚠️ Results incomplete on 1 lane — re-run$/m);
+        assert.equal(fold.statusDescription, 'Results incomplete on 1 lane, re-run');
+
+        // Beside a blocking lane, the status still asks for the re-run.
+        const withRed = [...lanes.slice(0, 3), {platform: 'linux', serverVersion: '12.1.0-rc2', verdict: 'FAILURE', blocking: '2', exonerated: '1'}, lanes[4]];
+        assert.match(foldCmtVerdicts({lanes: withRed, expectedLanes: linuxLanes, expectTriage: true, stats: {passed: 807, failed: 5}}).statusDescription, /^2 blocking failures after triage — needs investigation; results incomplete · /);
     });
 
     it('treats an empty verdict as unknown (yellow)', () => {
@@ -327,8 +332,10 @@ describe('per-test CMT message', () => {
         assert.match(allText, /^🔎 \*\*Check:\*\* `MM-T2633` needs investigation, 6\/15 lanes$/m);
         assert.match(allText, /^⚠️ Results incomplete on 15 lanes — re-run$/m, 'a lane that names a held test, or that triage cleared, still needs a re-run');
         const noneHeld = lanes.map(incomplete);
-        const red = formatCmtVerdictMessage({fold: foldCmtVerdicts({lanes: noneHeld, expectedLanes: matrix, expectTriage: true, stats}), compositeIdentity: identity, stats, ...links});
+        const noneHeldFold = foldCmtVerdicts({lanes: noneHeld, expectedLanes: matrix, expectTriage: true, stats});
+        const red = formatCmtVerdictMessage({fold: noneHeldFold, compositeIdentity: identity, stats, ...links});
         assert.match(red, /^:red_circle: \*\*Desktop CMT\*\* `v6\.2\.5-rc\.1` — results incomplete, re-run$/m);
+        assert.match(noneHeldFold.statusDescription, /^Results incomplete, re-run · /, 'the status says the same as the message, not "blocking failures"');
     });
 
     it('keeps each explanation with the label it was given for', () => {
