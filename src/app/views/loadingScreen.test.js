@@ -21,6 +21,7 @@ jest.mock('electron', () => {
             const mockWebContents = new EventEmitter();
             mockWebContents.send = jest.fn();
             mockWebContents.loadURL = jest.fn();
+            mockWebContents.close = jest.fn();
             mockWebContents.isLoading = jest.fn();
             mockWebContents.isDestroyed = jest.fn(() => false);
 
@@ -33,6 +34,7 @@ jest.mock('electron', () => {
 });
 jest.mock('main/performanceMonitor', () => ({
     registerView: jest.fn(),
+    unregisterView: jest.fn(),
 }));
 jest.mock('main/utils', () => ({
     getLocalPreload: jest.fn(),
@@ -199,14 +201,23 @@ describe('main/views/loadingScreen', () => {
             expect(mainWindow.contentView.removeChildView).not.toHaveBeenCalled();
         });
 
-        it('should not remove the loading screen again once the renderer reports the end of the fade', () => {
+        it('should cancel the fallback once the renderer reports the end of the fade', () => {
             loadingScreen.fade();
             loadingScreen.handleAnimationFinished();
-            loadingScreen.show();
 
             jest.advanceTimersByTime(5000);
 
             expect(mainWindow.contentView.removeChildView).toHaveBeenCalledTimes(1);
+            expect(mainWindow.focus).toHaveBeenCalledTimes(1);
+        });
+
+        it('should not remove the loading screen after it has been destroyed', () => {
+            loadingScreen.fade();
+            loadingScreen.destroy();
+
+            jest.advanceTimersByTime(5000);
+
+            expect(mainWindow.contentView.removeChildView).not.toHaveBeenCalled();
         });
     });
 });
