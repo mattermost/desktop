@@ -286,4 +286,4 @@ Open Settings (`Ctrl/Cmd+,`) → switch logging to **Debug** → reproduce → *
 
 ## Cursor Cloud specific instructions
 
-These can be found in .cursor/SETUP.md.
+Environment and server setup can be found in .cursor/SETUP.md. GUI testing with the `computerUse` subagent and the E2E suite against a local server are covered in .cursor/AGENTS.md.
