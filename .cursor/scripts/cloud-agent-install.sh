@@ -134,7 +134,14 @@ ensure_system_packages() {
 
     if [ -z "$(pg_lsclusters --no-header 2>/dev/null)" ]; then
         local pg_version
-        pg_version="$(find /usr/lib/postgresql -mindepth 1 -maxdepth 1 -printf '%f\n' 2>/dev/null | sort -V | tail -n 1)"
+        # Only versions with server binaries qualify; a newer postgresql-client can sit beside an older server.
+        pg_version=""
+        local candidate
+        while read -r candidate; do
+            if [ -x "/usr/lib/postgresql/${candidate}/bin/postgres" ] && [ -x "/usr/lib/postgresql/${candidate}/bin/initdb" ]; then
+                pg_version="$candidate"
+            fi
+        done < <(find /usr/lib/postgresql -mindepth 1 -maxdepth 1 -printf '%f\n' 2>/dev/null | sort -V)
         if [ -n "$pg_version" ]; then
             log "Creating PostgreSQL ${pg_version} cluster 'main'."
             sudo pg_createcluster "$pg_version" main

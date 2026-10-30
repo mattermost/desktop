@@ -84,7 +84,13 @@ ensure_xvfb() {
 # Checks the EWMH window-manager property on $DISPLAY rather than for an xfwm4 process, which could belong to
 # another display. Without a window manager the app's windows have no frames or focus handling.
 ensure_window_manager() {
-    if xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | grep -q 'window id'; then
+    # The root property can outlive a window manager that exited, so also check that the window it names still
+    # exists and points back at itself.
+    local wm_window
+    wm_window="$(xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | awk '/window id/ {print $NF; exit}')"
+    if [ -n "$wm_window" ] &&
+        xprop -id "$wm_window" _NET_SUPPORTING_WM_CHECK 2>/dev/null |
+        awk -v wm_window="$wm_window" '/window id/ && $NF == wm_window {found=1} END {exit !found}'; then
         return 0
     fi
     if ! command -v xfwm4 >/dev/null 2>&1; then
