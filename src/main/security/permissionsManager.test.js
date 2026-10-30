@@ -8,6 +8,7 @@ import MainWindow from 'app/mainWindow/mainWindow';
 import MessageModal from 'app/mainWindow/modals/messageModal';
 import WebContentsManager from 'app/views/webContentsManager';
 import Config from 'common/config';
+import {migratePermissions} from 'common/config/migrationPreferences';
 import {parseURL, isTrustedURL} from 'common/utils/url';
 import {localizeMessage} from 'main/i18nManager';
 
@@ -51,6 +52,10 @@ jest.mock('common/config', () => ({
     },
 }));
 
+jest.mock('common/config/migrationPreferences', () => ({
+    migratePermissions: jest.fn(),
+}));
+
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
@@ -79,6 +84,31 @@ jest.mock('app/views/webContentsManager', () => ({
 }));
 
 describe('main/PermissionsManager', () => {
+    describe('constructor', () => {
+        let writeToFile;
+
+        beforeEach(() => {
+            writeToFile = jest.spyOn(PermissionsManager.prototype, 'writeToFile').mockResolvedValue();
+        });
+
+        afterEach(() => {
+            writeToFile.mockRestore();
+        });
+
+        it('should write the permissions file after migrating it', () => {
+            migratePermissions.mockReturnValue(true);
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            expect(migratePermissions).toHaveBeenCalledWith(permissionsManager.json);
+            expect(writeToFile).toHaveBeenCalled();
+        });
+
+        it('should not write the permissions file when there was nothing to migrate', () => {
+            migratePermissions.mockReturnValue(false);
+            new PermissionsManager('anyfile.json');
+            expect(writeToFile).not.toHaveBeenCalled();
+        });
+    });
+
     describe('setForServer', () => {
         beforeEach(() => {
             systemPreferences.getMediaAccessStatus.mockClear();
@@ -408,12 +438,12 @@ describe('main/PermissionsManager', () => {
             isTrustedURL.mockReturnValue(true);
             const permissionsManager = new PermissionsManager('anyfile.json');
             permissionsManager.json = {
-                'http://anyurl.com': {screenShare: {allowed: true}},
+                'http://anyurl.com': {'display-capture': {allowed: true}},
             };
             const cb = jest.fn();
             await permissionsManager.handlePermissionRequest(
                 {id: 2},
-                'screenShare',
+                'display-capture',
                 cb,
                 {requestingUrl: 'http://anyurl.com'},
             );
@@ -422,12 +452,12 @@ describe('main/PermissionsManager', () => {
             expect(CallsWidgetWindow.getViewURL).toHaveBeenCalled();
         });
 
-        it('should check display-capture requests against the screenShare permission', async () => {
+        it('should allow display-capture requests from the Calls widget when previously allowed', async () => {
             CallsWidgetWindow.isCallsWidget.mockReturnValue(true);
             CallsWidgetWindow.getViewURL.mockReturnValue(new URL('http://anyurl.com'));
             const permissionsManager = new PermissionsManager('anyfile.json');
             permissionsManager.json = {
-                'http://anyurl.com': {screenShare: {allowed: true}},
+                'http://anyurl.com': {'display-capture': {allowed: true}},
             };
             const cb = jest.fn();
             await permissionsManager.handlePermissionRequest(
@@ -445,7 +475,7 @@ describe('main/PermissionsManager', () => {
             CallsWidgetWindow.getViewURL.mockReturnValue(new URL('http://anyurl.com'));
             const permissionsManager = new PermissionsManager('anyfile.json');
             permissionsManager.json = {
-                'http://anyurl.com': {media: {allowed: true}, screenShare: {alwaysDeny: true}},
+                'http://anyurl.com': {media: {allowed: true}, 'display-capture': {alwaysDeny: true}},
             };
             const cb = jest.fn();
             await permissionsManager.handlePermissionRequest(
@@ -464,7 +494,7 @@ describe('main/PermissionsManager', () => {
             const cb = jest.fn();
             await permissionsManager.handlePermissionRequest(
                 {id: 2},
-                'screenShare',
+                'display-capture',
                 cb,
                 {requestingUrl: 'http://anyurl.com'},
             );
