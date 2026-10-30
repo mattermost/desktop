@@ -29,6 +29,7 @@ jest.mock('electron', () => ({
         webContents: {
             id: 42,
             loadURL: jest.fn(),
+            insertCSS: jest.fn().mockResolvedValue('thread-preview-compatibility'),
             on: jest.fn(),
             once: jest.fn(),
             off: jest.fn(),
@@ -335,6 +336,24 @@ describe('main/views/MattermostWebContentsView', () => {
             mattermostView.loadSuccess('http://server-1.com')();
             jest.runAllTimers();
             expect(mattermostView.maxRetries).toBe(3);
+        });
+
+        it('should disable line clamping on the thread preview container', () => {
+            mattermostView.loadSuccess('http://server-1.com')();
+
+            expect(mattermostView.webContentsView.webContents.insertCSS).toHaveBeenCalledWith(
+                expect.stringContaining('.ThreadItem div.preview'),
+            );
+            expect(mattermostView.webContentsView.webContents.insertCSS).toHaveBeenCalledWith(
+                expect.stringContaining('-webkit-line-clamp: unset'),
+            );
+        });
+
+        it('should also apply the style when the server version is not yet available', () => {
+            ServerManager.getRemoteInfo.mockReturnValue(undefined);
+            mattermostView.loadSuccess('http://server-1.com')();
+
+            expect(mattermostView.webContentsView.webContents.insertCSS).toHaveBeenCalledTimes(1);
         });
     });
 
