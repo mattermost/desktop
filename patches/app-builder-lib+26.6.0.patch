@@ -21,7 +21,7 @@ index 6fe63f1..85e3925 100644
                      result += `${fileSpace}  </Shortcut>\n`;
                  }
 diff --git a/node_modules/app-builder-lib/templates/msi/template.xml b/node_modules/app-builder-lib/templates/msi/template.xml
-index 2d5cd3c..ef2d419 100644
+index 2d5cd3c..3889113 100644
 --- a/node_modules/app-builder-lib/templates/msi/template.xml
 +++ b/node_modules/app-builder-lib/templates/msi/template.xml
 @@ -1,5 +1,8 @@
@@ -34,7 +34,7 @@ index 2d5cd3c..ef2d419 100644
    <!-- https://blogs.msdn.microsoft.com/gremlininthemachine/2006/12/05/msi-wix-and-unicode/ -->
    <Product Id="*" Name="${productName}" UpgradeCode="${upgradeCode}" Version="${version}" Language="1033" Codepage="65001" Manufacturer="${manufacturer}">
      <Package Compressed="yes" InstallerVersion="500"/>
-@@ -13,19 +16,50 @@
+@@ -13,19 +16,55 @@
  
        So, AllowSameVersionUpgrades="yes" allows to build and test MSI with the same version, and previously installed app will be removed.
      -->
@@ -54,6 +54,11 @@ index 2d5cd3c..ef2d419 100644
 +    <Property Id="EXEINSTALLEREXISTS">
 +      <DirectorySearch Path="[LocalAppDataFolder]\Programs\mattermost-desktop" Depth="0">
 +        <FileSearch Id="SearchEXEUninstaller" Name="Uninstall ${productName}.exe" />
++      </DirectorySearch>
++    </Property>
++    <Property Id="DESKTOPSHORTCUTEXISTS" Secure="yes">
++      <DirectorySearch Id="SearchDesktopFolder" Path="[DesktopFolder]" Depth="0">
++        <FileSearch Id="SearchDesktopShortcut" Name="${shortcutName}.lnk" />
 +      </DirectorySearch>
 +    </Property>
  
@@ -86,7 +91,7 @@ index 2d5cd3c..ef2d419 100644
      {{ if (isRunAfterFinish) { }}
        <CustomAction Id="runAfterFinish" FileKey="mainExecutable" ExeCommand="" Execute="immediate" Impersonate="yes" Return="asyncNoWait"/>
        {{ if (!isAssisted) { }}
-@@ -42,6 +76,7 @@
+@@ -42,6 +81,7 @@
        <Property Id="ALLUSERS" Secure="yes" Value="2"/>
      {{ } -}}
      <Property Id="MSIINSTALLPERUSER" Secure="yes" Value="1"/>
@@ -94,7 +99,7 @@ index 2d5cd3c..ef2d419 100644
  
      {{ if (isAssisted) { }}
        <WixVariable Id="WixUISupportPerUser" Value="1" Overridable="yes"/>
-@@ -80,6 +115,7 @@
+@@ -80,6 +120,7 @@
        </UI>
      {{ } -}}
  
@@ -102,3 +107,26 @@ index 2d5cd3c..ef2d419 100644
      <Directory Id="TARGETDIR" Name="SourceDir">
        <Directory Id="${programFilesId}">
          {{ if (menuCategory) { }}
+@@ -92,9 +133,7 @@
+       </Directory>
+ 
+       <!-- Desktop link -->
+-      {{ if (isCreateDesktopShortcut) { }}
+       <Directory Id="DesktopFolder" Name="Desktop"/>
+-      {{ } -}}
+ 
+       <!-- Start menu link -->
+       {{ if (isCreateStartMenuShortcut) { }}
+@@ -111,6 +150,12 @@
+ 
+     <ComponentGroup Id="ProductComponents" Directory="APPLICATIONFOLDER">
+       {{-files}}
++      <!-- Only create on fresh install, or on upgrade if the user kept the shortcut -->
++      <Component Id="desktopShortcutComponent" Directory="DesktopFolder">
++        <Condition>NOT (WIX_UPGRADE_DETECTED OR PREVMSIINSTALLER) OR DESKTOPSHORTCUTEXISTS</Condition>
++        <Shortcut Id="desktopShortcut" Name="${shortcutName}" Target="[#mainExecutable]" WorkingDirectory="APPLICATIONFOLDER"/>
++        <RegistryValue Root="HKCU" Key="Software\${manufacturer}\${productName}" Name="desktopShortcut" Type="integer" Value="1" KeyPath="yes"/>
++      </Component>
+     </ComponentGroup>
+   </Product>
+ </Wix>

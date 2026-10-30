@@ -212,6 +212,7 @@ const config = {
         additionalWixArgs: ['-ext', 'WixUtilExtension'],
         upgradeCode: '{8523DAF0-699D-4CC7-9A65-C5E696A9DE6D}',
         perMachine: true,
+        createDesktopShortcut: false,
     },
     rpm: {
         fpm: ['--rpm-rpmbuild-define', '_build_id_links none', '--rpm-digest=sha256'],
