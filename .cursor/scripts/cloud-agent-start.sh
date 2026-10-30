@@ -87,7 +87,7 @@ ensure_window_manager() {
     # The root property can outlive a window manager that exited, so also check that the window it names still
     # exists and points back at itself.
     local wm_window
-    wm_window="$(xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | awk '/window id/ {print $NF; exit}')"
+    wm_window="$(xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | awk '/window id/ {print $NF; exit}')" || wm_window=""
     if [ -n "$wm_window" ] &&
         xprop -id "$wm_window" _NET_SUPPORTING_WM_CHECK 2>/dev/null |
         awk -v wm_window="$wm_window" '/window id/ && $NF == wm_window {found=1} END {exit !found}'; then
