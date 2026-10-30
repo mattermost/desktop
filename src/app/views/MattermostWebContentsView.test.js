@@ -338,14 +338,20 @@ describe('main/views/MattermostWebContentsView', () => {
             expect(mattermostView.maxRetries).toBe(3);
         });
 
-        it('should disable line clamping on the thread preview container', () => {
+        it('should move line clamping from the thread preview container to its children', () => {
             mattermostView.loadSuccess('http://server-1.com')();
 
             expect(mattermostView.webContentsView.webContents.insertCSS).toHaveBeenCalledWith(
-                expect.stringContaining('.ThreadItem div.preview'),
+                expect.stringContaining('.ThreadItem div.preview {'),
             );
             expect(mattermostView.webContentsView.webContents.insertCSS).toHaveBeenCalledWith(
                 expect.stringContaining('-webkit-line-clamp: unset'),
+            );
+            expect(mattermostView.webContentsView.webContents.insertCSS).toHaveBeenCalledWith(
+                expect.stringContaining('.ThreadItem div.preview > *'),
+            );
+            expect(mattermostView.webContentsView.webContents.insertCSS).toHaveBeenCalledWith(
+                expect.stringContaining('-webkit-line-clamp: 2'),
             );
         });
 
