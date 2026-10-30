@@ -30,20 +30,36 @@ Findings come from a manual session against Desktop App 43.3.0 and Mattermost se
 - **Single screenshots can mislead.** Early passes reported the three-dot menu as invisible and several shortcuts as dead. After the window manager and hidden-window problems below were fixed, the menu rendered and those shortcuts worked. Re-check any "can't" result, and prefer `xwininfo` window lists and logs as evidence.
 - **Never kill windows or processes.** `xdotool windowkill` on a DevTools window took down the window manager and the app.
 
-## What the repo scripts don't set up
+## What the environment scripts set up
 
-`cloud-agent-install.sh` runs `npm ci` and `cloud-agent-start.sh` starts D-Bus and Xvfb. Everything else in this table has to be done per session (see `SETUP.md` for the exact commands).
+| Step | Where | Notes |
+|---|---|---|
+| `npm ci`, `npm --prefix e2e ci`, `npm run linux-dev-setup` | `cloud-agent-install.sh` | `e2e/` has its own `package.json`. |
+| `npm run build-test` | `cloud-agent-install.sh` | A `NODE_ENV=test` build skips the blocking native "Permission Requested" dialog. Output is `e2e/dist/`, not `dist/`. Launch with `./node_modules/.bin/electron e2e/dist/ --disable-dev-mode`, and rebuild after pulling source changes. |
+| Mattermost server release (pinned, about 780 MB) | `cloud-agent-install.sh` | Extracted to `~/mattermost`. Set `CLOUD_AGENT_MATTERMOST_VERSION` to change the version; an install of a different version is replaced (the running server is stopped first), keeping its `config/config.json`, `data`, and plugins. |
+| PostgreSQL | `Dockerfile` (apt) | Started, and the `mmuser` role and `mattermost_test` database created, by the start script. |
+| `xfwm4 --compositor=off` | `cloud-agent-start.sh` | Started if not already running, so windows get frames and focus. |
+| `/dev/shm` remount at 2G | `cloud-agent-start.sh` | The 64M default causes `ERR_INSUFFICIENT_RESOURCES` once a real server loads. |
+| Mattermost server running and seeded | `cloud-agent-start.sh` | Log at `/tmp/mattermost-server.log`. Listens on `127.0.0.1:8065` only, and won't seed a different server that already answers on that port. Seeding failures, including missing team membership, are logged rather than reported as success. Set `CLOUD_AGENT_SKIP_LOCAL_SERVER=true` to skip it. |
 
-| Need | Why |
-|---|---|
-| Window manager | Frames, focus and extra windows. The VM we used ran `xfwm4` from its desktop layer, not from these scripts, and it was not Openbox. Start `xfwm4 --compositor=off` if none is running. |
-| `sudo mount -o remount,size=2G /dev/shm` | The 64M default causes `ERR_INSUFFICIENT_RESOURCES` once a real server loads. |
-| `npm run build-test`, launch `e2e/dist/` | A `NODE_ENV=test` build skips the blocking native "Permission Requested" dialog. Output is `e2e/dist/`, not `dist/`. |
-| PostgreSQL and the Mattermost server release | `apt-get install postgresql`, then download the pinned release (about 780 MB) and run it with the `MM_*` variables in `SETUP.md`. Neither is in the Dockerfile. |
+Set these to `true` (or `1`/`yes`) to shorten startup for narrow tasks, following the convention in the `mattermost/mattermost` `.cursor/` hooks:
+- `CLOUD_AGENT_SKIP_LOCAL_SERVER`: skips the server download (install) and Postgres and Mattermost startup (start).
+- `CLOUD_AGENT_SKIP_E2E_DEPS`: skips `npm --prefix e2e ci`.
 
-Starting a server and seeding it takes a few minutes. Baking Postgres into the Dockerfile and caching the release tarball would shorten this.
+Not set up by the scripts:
+- **The app itself.** Launch it in its own tmux session so it outlives the shell, and only once (`ps -ef | grep -i electron` first):
 
-Accounts seeded by `SETUP.md`: `sysadmin` / `Sys@dmin-sample1` (system admin), `user-1` / `User-Test-123!`, team `main`. Add `http://localhost:8065` as a server in the app. `localhost` here is the VM's own loopback, because the server and the app run in the same VM.
+  ```bash
+  tmux -f /exec-daemon/tmux.portal.conf new-session -d -s mm-desktop -c /workspace
+  tmux -f /exec-daemon/tmux.portal.conf send-keys -t mm-desktop:0.0 \
+    'npm run linux-dev-setup && ./node_modules/.bin/electron e2e/dist/ --disable-dev-mode' C-m
+  ```
+
+  The main window title is "Mattermost Desktop App" (`DISPLAY=:99 xwininfo -root -tree`).
+
+If the VM did not boot from this `Dockerfile` (symptoms: no `node_modules`, no `e2e/dist`, `pg_lsclusters` prints nothing, no `~/mattermost`), run `bash .cursor/scripts/cloud-agent-install.sh` and then `bash .cursor/scripts/cloud-agent-start.sh`. Together they take about 2 minutes (a 780 MB download) and are safe to re-run.
+
+Accounts seeded by `cloud-agent-start.sh` (and by `SETUP.md` if you set up the server by hand): `sysadmin` / `Sys@dmin-sample1` (system admin), `user-1` / `User-Test-123!`, team `main`. Add `http://localhost:8065` as a server in the app. `localhost` here is the VM's own loopback, because the server and the app run in the same VM.
 
 ## Running the E2E suite against the local server
 
@@ -107,4 +123,3 @@ exactly one electron process tree and the window manager are still running.
 - Calls and the Call Widget.
 - System tray, native notifications, SSO and screen sharing.
 - `Ctrl+F`, `F11` and the `Alt` menu mnemonics (no effect observed; worth a manual check).
-- The full setup run as one script. The steps were run one at a time.

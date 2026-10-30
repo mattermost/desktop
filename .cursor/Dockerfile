@@ -48,6 +48,8 @@ RUN apt-get update && \
     graphicsmagick \
     icnsutils \
     pkg-config \
+    postgresql \
+    postgresql-client \
     python3 \
     python3-pip \
     sudo \
@@ -55,6 +57,8 @@ RUN apt-get update && \
     unzip \
     x11-utils \
     xauth \
+    xdotool \
+    xfwm4 \
     xvfb && \
     locale-gen en_US.UTF-8 && \
     rm -rf /var/lib/apt/lists/*
