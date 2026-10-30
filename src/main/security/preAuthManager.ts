@@ -141,6 +141,11 @@ export class PreAuthManager {
     ) => {
         log.debug('handleClientCert');
 
+        // Info level on purpose: this is the only way to tell from a log whether a server asked for a client
+        // certificate and how many candidates Electron found. Only the count is logged, since certificate
+        // subjects can identify people.
+        log.info(`Client certificate requested by ${url.split(/[?#]/)[0]}, ${list.length} candidate certificate(s)`);
+
         if (list.length <= 1) {
             log.info(`There were ${list.length} candidate certificates. Skipping certificate selection`);
             return;

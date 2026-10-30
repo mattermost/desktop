@@ -8,6 +8,7 @@ import {BrowserWindow} from 'electron';
 import MessageModal from 'app/mainWindow/modals/messageModal';
 import NavigationManager from 'app/navigationManager';
 import WebContentsManager from 'app/views/webContentsManager';
+import Config from 'common/config';
 import {getLevel} from 'common/log';
 import ContextMenu from 'main/contextMenu';
 import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
@@ -142,6 +143,139 @@ describe('main/views/webContentsEvents', () => {
         });
     });
 
+    describe('willNavigate with trusted auth origins', () => {
+        const serverURL = new URL('https://server.example.com');
+        const idp = 'https://login.example.com';
+        const fiveMinutes = 5 * 60 * 1000;
+
+        let manager;
+        let logger;
+        let now;
+        let dateSpy;
+
+        // Returns true when the navigation was blocked.
+        const blocked = (url, webContentsId = 1) => {
+            const ev = {preventDefault: jest.fn()};
+            manager.generateWillNavigate(webContentsId)(ev, url);
+            return ev.preventDefault.mock.calls.length > 0;
+        };
+
+        beforeEach(() => {
+            manager = new WebContentsEventManager();
+            manager.getServerURLFromWebContentsId = (id) => (id === 99 ? undefined : serverURL);
+            WebContentsManager.getViewByWebContentsId.mockReturnValue({id: 'view-1'});
+            logger = {info: jest.fn(), debug: jest.fn(), warn: jest.fn(), error: jest.fn()};
+            manager.log = () => logger;
+            Config.data = {trustedAuthOrigins: [idp]};
+            now = 1_000_000;
+            dateSpy = jest.spyOn(Date, 'now').mockImplementation(() => now);
+        });
+
+        afterEach(() => {
+            dateSpy.mockRestore();
+            Config.data = undefined;
+            WebContentsManager.getViewByWebContentsId.mockReset();
+        });
+
+        it('should allow navigation to a trusted auth origin', () => {
+            expect(blocked(`${idp}/auth/realms/example/protocol/openid-connect/auth?state=abc`)).toBe(false);
+        });
+
+        it('should block the same host when it is not listed', () => {
+            Config.data = {trustedAuthOrigins: []};
+            expect(blocked(`${idp}/auth`)).toBe(true);
+        });
+
+        it('should block http, other-port, subdomain and lookalike variants of a listed origin', () => {
+            expect(blocked('http://login.example.com/auth')).toBe(true);
+            expect(blocked('https://login.example.com:8443/auth')).toBe(true);
+            expect(blocked('https://evil.login.example.com/auth')).toBe(true);
+            expect(blocked('https://login.example.com.evil.com/auth')).toBe(true);
+        });
+
+        it('should not trust auth origins for web contents that have no server', () => {
+            expect(blocked(`${idp}/auth`, 99)).toBe(true);
+        });
+
+        // The Calls widget and pop-out also resolve a server URL but are not server views: they are meant to stay
+        // pinned to their own page and must not be able to hop to a sign-in provider or wander the server.
+        it('should not apply trusted auth origins or the return leg to web contents that are not server views', () => {
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(undefined);
+
+            expect(blocked(`${idp}/auth`, 5)).toBe(true);
+            expect(blocked(`${serverURL.origin}/oauth/callback`, 5)).toBe(true);
+        });
+
+        it('should not open an auth window for web contents that are not server views', () => {
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(undefined);
+            blocked(`${idp}/auth`, 5);
+            WebContentsManager.getViewByWebContentsId.mockReturnValue({id: 'view-1'});
+
+            expect(blocked(`${serverURL.origin}/oauth/callback`, 5)).toBe(true);
+        });
+
+        it('should allow the return to the server (e.g. /oauth/callback) after a trusted auth hop', () => {
+            expect(blocked(`${idp}/auth`)).toBe(false);
+            expect(blocked(`${serverURL.origin}/oauth/callback?code=1&state=2`)).toBe(false);
+        });
+
+        it('should block /oauth/callback when no trusted auth hop happened first', () => {
+            expect(blocked(`${serverURL.origin}/oauth/callback?code=1&state=2`)).toBe(true);
+        });
+
+        it('should still block other external origins during the auth window', () => {
+            expect(blocked(`${idp}/auth`)).toBe(false);
+            expect(blocked('https://evil.example.com/')).toBe(true);
+        });
+
+        it('should stop allowing the return path once the auth window has expired', () => {
+            expect(blocked(`${idp}/auth`)).toBe(false);
+            now += fiveMinutes + 1;
+            expect(blocked(`${serverURL.origin}/oauth/callback`)).toBe(true);
+        });
+
+        it('should keep the auth window open while the user navigates within the IdP', () => {
+            expect(blocked(`${idp}/auth`)).toBe(false);
+            now += fiveMinutes - 1000;
+            expect(blocked(`${idp}/auth/login-actions/authenticate`)).toBe(false);
+            now += fiveMinutes - 1000;
+            expect(blocked(`${serverURL.origin}/oauth/callback`)).toBe(false);
+        });
+
+        it('should end the auth window once the load lands on a normal team URL', () => {
+            expect(blocked(`${idp}/auth`)).toBe(false);
+            expect(blocked(`${serverURL.origin}/oauth/callback`)).toBe(false);
+            expect(blocked(`${serverURL.origin}/team/channels/town-square`)).toBe(false);
+            expect(blocked(`${serverURL.origin}/oauth/callback`)).toBe(true);
+        });
+
+        it('should scope the auth window to the web contents that made the hop', () => {
+            expect(blocked(`${idp}/auth`, 1)).toBe(false);
+            expect(blocked(`${serverURL.origin}/oauth/callback`, 2)).toBe(true);
+        });
+
+        // The origin is all that is needed to add a provider to the list. Paths can carry tokens or identifiers.
+        it('should log only the origin of a blocked URL, never its path or query string', () => {
+            blocked('https://other.example.com/reset/PATHTOKEN123/confirm?state=SECRETSTATE&nonce=SECRETNONCE');
+
+            const messages = logger.info.mock.calls.map((call) => call.join(' ')).join('\n');
+            expect(messages).toContain('https://other.example.com');
+            expect(messages).not.toContain('PATHTOKEN123');
+            expect(messages).not.toContain('/reset/');
+            expect(messages).not.toContain('SECRETSTATE');
+            expect(messages).not.toContain('SECRETNONCE');
+        });
+
+        it('should log only the scheme of a blocked URL that has no origin', () => {
+            blocked('mattermost://SECRETHOST/secret/path?q=SECRETQUERY');
+
+            const messages = logger.info.mock.calls.map((call) => call.join(' ')).join('\n');
+            expect(messages).toContain('mattermost:');
+            expect(messages).not.toContain('SECRETHOST');
+            expect(messages).not.toContain('SECRETQUERY');
+        });
+    });
+
     describe('addWebContentsEventListeners', () => {
         const setupContents = () => {
             const handlers = {};
@@ -191,6 +325,57 @@ describe('main/views/webContentsEvents', () => {
             const externalEvent = {preventDefault: jest.fn(), isMainFrame: true, url: 'http://someotherurl.com'};
             willRedirect(externalEvent, externalEvent.url);
             expect(externalEvent.preventDefault).toHaveBeenCalled();
+        });
+
+        it('redirect guard lets a main-frame redirect through a trusted auth origin and back to the server', () => {
+            Config.data = {trustedAuthOrigins: ['https://login.example.com']};
+            WebContentsManager.getViewByWebContentsId.mockReturnValue({id: 'view-1'});
+            try {
+                const webContentsEventManager = new WebContentsEventManager();
+                webContentsEventManager.getServerURLFromWebContentsId = () => new URL('https://server.example.com');
+                webContentsEventManager.log = () => ({info: jest.fn(), debug: jest.fn(), warn: jest.fn(), error: jest.fn()});
+                const {handlers, contents} = setupContents();
+                webContentsEventManager.addWebContentsEventListeners(contents);
+                const willRedirect = handlers['will-redirect'];
+
+                const redirectTo = (url) => {
+                    const ev = {preventDefault: jest.fn(), isMainFrame: true, url};
+                    willRedirect(ev, url);
+                    return ev.preventDefault.mock.calls.length > 0;
+                };
+
+                expect(redirectTo('https://login.example.com/auth/realms/x?state=1')).toBe(false);
+                expect(redirectTo('https://server.example.com/oauth/callback?code=1')).toBe(false);
+                expect(redirectTo('https://evil.example.com/')).toBe(true);
+            } finally {
+                Config.data = undefined;
+                WebContentsManager.getViewByWebContentsId.mockReset();
+            }
+        });
+
+        it('redirect guard clears the auth window when the web contents listeners are removed', () => {
+            Config.data = {trustedAuthOrigins: ['https://login.example.com']};
+            WebContentsManager.getViewByWebContentsId.mockReturnValue({id: 'view-1'});
+            try {
+                const webContentsEventManager = new WebContentsEventManager();
+                webContentsEventManager.getServerURLFromWebContentsId = () => new URL('https://server.example.com');
+                webContentsEventManager.log = () => ({info: jest.fn(), debug: jest.fn(), warn: jest.fn(), error: jest.fn()});
+                const {handlers, contents} = setupContents();
+                webContentsEventManager.addWebContentsEventListeners(contents);
+
+                handlers['will-redirect']({preventDefault: jest.fn(), isMainFrame: true}, 'https://login.example.com/auth');
+                webContentsEventManager.removeWebContentsListeners(1);
+
+                // Same id reused by a fresh web contents must not inherit the previous round trip
+                const freshHandlers = setupContents();
+                webContentsEventManager.addWebContentsEventListeners(freshHandlers.contents);
+                const ev = {preventDefault: jest.fn(), isMainFrame: true};
+                freshHandlers.handlers['will-redirect'](ev, 'https://server.example.com/oauth/callback');
+                expect(ev.preventDefault).toHaveBeenCalled();
+            } finally {
+                Config.data = undefined;
+                WebContentsManager.getViewByWebContentsId.mockReset();
+            }
         });
 
         it('redirect guard applies the subframe policy to subframe redirects', () => {

@@ -208,6 +208,15 @@ const configDataSchemaV4 = Joi.object<ConfigV4>({
         serverOrigin: originOnlyStringSchema.required(),
         embeddedOrigin: originOnlyStringSchema.required(),
     })).default([]),
+
+    // Never fails on purpose: a validation failure resets config.json to defaults, which also drops the configured
+    // servers. Entries are checked when they are used (see isTrustedAuthOrigin) and anything unusable is ignored.
+    trustedAuthOrigins: Joi.any().custom((value) => {
+        if (Array.isArray(value)) {
+            return value;
+        }
+        return typeof value === 'string' ? [value] : [];
+    }).default([]),
 });
 
 // eg. data['community.mattermost.com'] = { data: 'certificate data', issuerName: 'COMODO RSA Domain Validation Secure Server CA'};

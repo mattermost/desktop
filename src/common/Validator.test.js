@@ -245,10 +245,60 @@ describe('common/Validator', () => {
                     embeddedOrigin: 'https://meet.example.com',
                 },
             ],
+            trustedAuthOrigins: ['https://login.example.com'],
         };
 
         it('should validate v4 config data', () => {
             expect(Validator.validateV4ConfigData(config)).toStrictEqual(config);
+        });
+
+        it('should default trustedAuthOrigins to an empty list', () => {
+            const configWithout = {...config};
+            delete configWithout.trustedAuthOrigins;
+            expect(Validator.validateV4ConfigData(configWithout).trustedAuthOrigins).toStrictEqual([]);
+        });
+
+        // Config falls back to defaults and rewrites config.json when validation fails,
+        // so a typo in this hand-edited list must never be fatal.
+        it('should keep the config valid when trustedAuthOrigins has malformed entries', () => {
+            const modifiedConfig = {
+                ...config,
+                trustedAuthOrigins: ['https://login.example.com/', 'not a url', 'http://insecure.example.com'],
+            };
+            expect(Validator.validateV4ConfigData(modifiedConfig)).toStrictEqual(modifiedConfig);
+        });
+
+        // Hand-editing mistakes must never reset config.json (which also drops the configured servers). Entries are
+        // checked when they are used, so anything that is not a usable origin is simply ignored.
+        it('should keep the config valid when trustedAuthOrigins has empty or non-string entries', () => {
+            const modifiedConfig = {
+                ...config,
+                trustedAuthOrigins: ['', 123, null, ['https://nested.example.com'], {origin: 'https://obj.example.com'}, 'https://login.example.com'],
+            };
+            expect(Validator.validateV4ConfigData(modifiedConfig)).toStrictEqual(modifiedConfig);
+            expect(() => Validator.validateConfigData(modifiedConfig)).not.toThrow();
+        });
+
+        it.each([
+            ['a number', 5],
+            ['null', null],
+            ['an object', {origin: 'https://login.example.com'}],
+            ['a boolean', true],
+        ])('should keep the config valid and trust nothing when trustedAuthOrigins is %s', (_, value) => {
+            const modifiedConfig = {...config, trustedAuthOrigins: value};
+            const validated = Validator.validateV4ConfigData(modifiedConfig);
+            expect(validated).not.toBeNull();
+            expect(validated.trustedAuthOrigins).toStrictEqual([]);
+            expect(validated.servers).toStrictEqual(config.servers);
+            expect(() => Validator.validateConfigData(modifiedConfig)).not.toThrow();
+        });
+
+        it('should accept a single string for trustedAuthOrigins instead of discarding the config', () => {
+            const modifiedConfig = {
+                ...config,
+                trustedAuthOrigins: 'https://login.example.com',
+            };
+            expect(Validator.validateV4ConfigData(modifiedConfig).trustedAuthOrigins).toStrictEqual(['https://login.example.com']);
         });
 
         it('should remove invalid spellchecker URLs', () => {

@@ -75,6 +75,32 @@ export const isTrustedURL = (url: URL, rootURL: URL) => {
         (getFormattedPathName(rootParsedURL.pathname) === '/' && equalUrlsIgnoringSubpath(rootParsedURL, parsedURL));
 };
 
+/**
+ * Whether the URL is on an identity provider origin the user has explicitly trusted in config.json.
+ * Entries must be bare https origins (a trailing slash is tolerated). Anything else, including values of the
+ * wrong type, is ignored rather than rejected, so a mistake in a hand-edited list can never invalidate the
+ * whole config file.
+ */
+export const isTrustedAuthOrigin = (url: URL, trustedOrigins: string[] = []) => {
+    if (url.protocol !== 'https:') {
+        return false;
+    }
+
+    return trustedOrigins.some((entry) => {
+        if (typeof entry !== 'string') {
+            return false;
+        }
+        const trustedURL = parseURL(entry);
+        if (!trustedURL || trustedURL.protocol !== 'https:') {
+            return false;
+        }
+        if (trustedURL.pathname !== '/' || trustedURL.search || trustedURL.hash || trustedURL.username || trustedURL.password) {
+            return false;
+        }
+        return trustedURL.origin === url.origin;
+    });
+};
+
 export const isUrlType = (urlType: string, serverURL: URL, inputURL: URL) => {
     if (!isInternalURL(inputURL, serverURL)) {
         return false;

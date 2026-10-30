@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import {Config} from 'common/config';
+import * as Validator from 'common/Validator';
 
 const configPath = '/fake/config/path';
 const appName = 'app-name';
@@ -21,8 +22,13 @@ jest.mock('common/Validator', () => ({
     validateV1ConfigData: (configData) => (configData.version === 1 ? configData : null),
     validateV2ConfigData: (configData) => (configData.version === 2 ? configData : null),
     validateV3ConfigData: (configData) => (configData.version === 3 ? configData : null),
-    validateConfigData: (configData) => (configData.version === 3 ? configData : null),
+    validateConfigData: jest.fn((configData) => (configData.version === 3 ? configData : null)),
 }));
+
+jest.mock('common/log', () => {
+    const mockLogger = {info: jest.fn(), debug: jest.fn(), verbose: jest.fn(), silly: jest.fn(), warn: jest.fn(), error: jest.fn()};
+    return {Logger: jest.fn(() => mockLogger), mockLogger};
+});
 
 const buildServer = {
     name: 'build-server-1',
@@ -288,6 +294,67 @@ describe('common/config', () => {
 
             const configData = config.loadLocalConfigFile();
             expect(configData).toStrictEqual({version: 3});
+        });
+
+        // Falling back to defaults also drops the user's servers, so the log has to say why it happened.
+        describe('reporting why the file could not be used', () => {
+            const {mockLogger} = jest.requireMock('common/log');
+            const warned = () => mockLogger.warn.mock.calls.map((call) => call.map((arg) => (typeof arg === 'string' ? arg : Object.values(arg).join(' '))).join(' ')).join('\n');
+
+            const loadWithBrokenFile = () => {
+                const config = new Config();
+                config.reload = jest.fn();
+                config.init(configPath, appName, appPath);
+                config.defaultConfigData = {test: 'test', version: 3};
+                mockLogger.warn.mockClear();
+                return config.loadLocalConfigFile();
+            };
+
+            afterEach(() => {
+                delete mockJsonFileManager.loadError;
+            });
+
+            it('should include the validation error that caused the fallback', () => {
+                mockJsonFileManager.json = {version: 3, trustedAuthOrigins: 'not-an-array'};
+                Validator.validateConfigData.mockImplementationOnce(() => {
+                    throw new Error('"trayIconTheme" must be one of [light, dark, use_system]');
+                });
+
+                loadWithBrokenFile();
+
+                expect(warned()).toContain('Using defaults');
+                expect(warned()).toContain('"trayIconTheme" must be one of [light, dark, use_system]');
+            });
+
+            it('should report the JSON syntax error rather than the schema complaint about the empty fallback object', () => {
+                mockJsonFileManager.json = {};
+                mockJsonFileManager.loadError = new SyntaxError("Expected ',' or '}' after property value in JSON at position 912 (line 38 column 3)");
+
+                loadWithBrokenFile();
+
+                expect(warned()).toContain('position 912 (line 38 column 3)');
+                expect(warned()).not.toContain('does not validate');
+            });
+
+            it('should still say why when the file simply does not validate and nothing threw', () => {
+                mockJsonFileManager.json = {version: -1};
+
+                loadWithBrokenFile();
+
+                expect(warned()).toContain('Using defaults');
+                expect(warned()).toContain('does not validate');
+            });
+
+            it('should not warn when the file is fine', () => {
+                const config = new Config();
+                config.init(configPath, appName, appPath);
+                mockJsonFileManager.json = {version: 3};
+                mockLogger.warn.mockClear();
+
+                config.loadLocalConfigFile();
+
+                expect(mockLogger.warn).not.toHaveBeenCalled();
+            });
         });
     });
 

@@ -58,6 +58,7 @@ const defaultPreferences: ConfigV4 = {
     themeSyncing: true,
     useNativeTitleBar: false,
     trustedEmbeddedMediaOrigins: [],
+    trustedAuthOrigins: [],
 };
 
 export default defaultPreferences;

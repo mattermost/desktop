@@ -10,6 +10,10 @@ const log = new Logger('JsonFileManager');
 export default class JsonFileManager<T> {
     jsonFile: string;
     json: T;
+
+    // Why the file couldn't be used, when `json` is the empty fallback. Callers can't otherwise tell a missing
+    // file or a syntax error apart from a file that really was `{}`.
+    loadError?: unknown;
     private saving?: Promise<void>;
 
     constructor(file: string) {
@@ -18,6 +22,7 @@ export default class JsonFileManager<T> {
             this.json = JSON.parse(fs.readFileSync(file, 'utf-8'));
         } catch (err) {
             this.json = {} as T;
+            this.loadError = err;
         }
     }
 
