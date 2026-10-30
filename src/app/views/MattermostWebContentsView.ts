@@ -48,6 +48,19 @@ enum Status {
     WAITING_MM,
     ERROR = -1,
 }
+
++// Older web apps clamp rich Markdown on the thread preview container. Newer
++// Electron renderers can paint the block children over each other in that layout.
++// Newer web apps clamp a child instead, so this leaves their clamping in place.
++// Both layouts have a fixed preview height and overflow: hidden.
+const THREAD_PREVIEW_CSS = `
+    .ThreadItem div.preview {
+        display: block !important;
+        -webkit-line-clamp: unset !important;
+        -webkit-box-orient: initial !important;
+    }
+`;
+
 export class MattermostWebContentsView extends EventEmitter {
     private view: MattermostView;
     private parentWindow: BrowserWindow;
@@ -446,6 +459,9 @@ export class MattermostWebContentsView extends EventEmitter {
             }
             const serverInfo = ServerManager.getRemoteInfo(this.view.serverId);
             if (!serverInfo?.serverVersion || semver.gte(serverInfo.serverVersion, '9.4.0')) {
+                this.webContents?.insertCSS(THREAD_PREVIEW_CSS).catch((error) => {
+                    this.log.error('Failed to apply thread preview compatibility style', {error});
+                });
                 this.log.verbose('finished loading URL');
                 this.sendToParentWindow(LOAD_SUCCESS, this.id);
                 this.maxRetries = MAX_SERVER_RETRIES;
