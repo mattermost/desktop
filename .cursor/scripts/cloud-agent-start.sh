@@ -81,9 +81,10 @@ ensure_xvfb() {
     return 1
 }
 
-# Without a window manager the app's windows have no frames or focus handling.
+# Checks the EWMH window-manager property on $DISPLAY rather than for an xfwm4 process, which could belong to
+# another display. Without a window manager the app's windows have no frames or focus handling.
 ensure_window_manager() {
-    if pgrep -x xfwm4 >/dev/null 2>&1; then
+    if xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | grep -q 'window id'; then
         return 0
     fi
     if ! command -v xfwm4 >/dev/null 2>&1; then

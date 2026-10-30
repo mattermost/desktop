@@ -121,15 +121,27 @@ ensure_mattermost() {
 # The Dockerfile installs these; an environment that wasn't built from it (no PostgreSQL cluster) gets them here.
 ensure_system_packages() {
     local missing=()
-    command -v pg_lsclusters >/dev/null 2>&1 || missing+=(postgresql postgresql-client)
+    # pg_lsclusters ships with postgresql-common, which can be installed without the server itself.
+    compgen -G '/usr/lib/postgresql/*/bin/postgres' >/dev/null || missing+=(postgresql)
+    command -v psql >/dev/null 2>&1 || missing+=(postgresql-client)
     command -v xfwm4 >/dev/null 2>&1 || missing+=(xfwm4)
     command -v xdotool >/dev/null 2>&1 || missing+=(xdotool)
-    if [ "${#missing[@]}" -eq 0 ]; then
-        return 0
+    if [ "${#missing[@]}" -gt 0 ]; then
+        log "Installing missing system packages: ${missing[*]}."
+        sudo apt-get update -qq
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends "${missing[@]}"
     fi
-    log "Installing missing system packages: ${missing[*]}."
-    sudo apt-get update -qq
-    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends "${missing[@]}"
+
+    if [ -z "$(pg_lsclusters --no-header 2>/dev/null)" ]; then
+        local pg_version
+        pg_version="$(find /usr/lib/postgresql -mindepth 1 -maxdepth 1 -printf '%f\n' 2>/dev/null | sort -V | tail -n 1)"
+        if [ -n "$pg_version" ]; then
+            log "Creating PostgreSQL ${pg_version} cluster 'main'."
+            sudo pg_createcluster "$pg_version" main
+        else
+            log "No PostgreSQL server installed; the local Mattermost server cannot start."
+        fi
+    fi
 }
 
 ensure_node
