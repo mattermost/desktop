@@ -118,7 +118,22 @@ ensure_mattermost() {
     log "Mattermost server extracted to $MATTERMOST_DIR."
 }
 
+# The Dockerfile installs these; an environment that wasn't built from it (no PostgreSQL cluster) gets them here.
+ensure_system_packages() {
+    local missing=()
+    command -v pg_lsclusters >/dev/null 2>&1 || missing+=(postgresql postgresql-client)
+    command -v xfwm4 >/dev/null 2>&1 || missing+=(xfwm4)
+    command -v xdotool >/dev/null 2>&1 || missing+=(xdotool)
+    if [ "${#missing[@]}" -eq 0 ]; then
+        return 0
+    fi
+    log "Installing missing system packages: ${missing[*]}."
+    sudo apt-get update -qq
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends "${missing[@]}"
+}
+
 ensure_node
+ensure_system_packages
 
 log "Installing dependencies with npm ci."
 npm ci

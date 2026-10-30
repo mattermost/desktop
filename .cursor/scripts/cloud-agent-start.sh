@@ -81,6 +81,19 @@ ensure_xvfb() {
     return 1
 }
 
+# Without a window manager the app's windows have no frames or focus handling.
+ensure_window_manager() {
+    if pgrep -x xfwm4 >/dev/null 2>&1; then
+        return 0
+    fi
+    if ! command -v xfwm4 >/dev/null 2>&1; then
+        log "xfwm4 is not installed; GUI windows will be unmanaged."
+        return 0
+    fi
+    setsid nohup xfwm4 --compositor=off >/tmp/xfwm4.log 2>&1 </dev/null &
+    log "Started xfwm4."
+}
+
 # Electron/Chromium renderers share /dev/shm; the 64MB default surfaces as ERR_INSUFFICIENT_RESOURCES
 # once a real Mattermost server is loaded in a WebContentsView.
 ensure_shm() {
@@ -220,6 +233,7 @@ ensure_mattermost() {
 
 ensure_dbus
 ensure_xvfb
+ensure_window_manager
 ensure_shm
 ensure_mattermost
 
