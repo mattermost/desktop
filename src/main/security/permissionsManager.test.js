@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import fs from 'fs';
+
 import {shell, systemPreferences} from 'electron';
 
 import CallsWidgetWindow from 'app/callsWidgetWindow';
@@ -379,6 +381,18 @@ describe('main/PermissionsManager', () => {
             await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
             expect(permissionsManager.json['http://anyurl.com'].media.allowed).toBe(true);
             expect(permissionsManager.writeToFile).toHaveBeenCalled();
+            expect(cb).toHaveBeenCalledWith(true);
+        });
+
+        it('should treat a permissions file containing null as empty', async () => {
+            fs.readFileSync.mockReturnValue('null');
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            permissionsManager.writeToFile = jest.fn();
+            const cb = jest.fn();
+            MessageModal.showMessageModal.mockReturnValue(Promise.resolve({response: 2}));
+            await permissionsManager.handlePermissionRequest({id: 2}, 'media', cb, {securityOrigin: 'http://anyurl.com'});
+            expect(MessageModal.showMessageModal).toHaveBeenCalled();
+            expect(permissionsManager.json['http://anyurl.com'].media.allowed).toBe(true);
             expect(cb).toHaveBeenCalledWith(true);
         });
 

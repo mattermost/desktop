@@ -72,6 +72,9 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
     constructor(file: string) {
         super(file);
 
+        // JsonFileManager only falls back to {} when parsing fails, so a file containing `null` needs this too
+        this.json = this.json ?? {};
+
         if (migratePermissions(this.json)) {
             this.writeToFile().catch((error) => {
                 log.error('Failed to save the migrated permissions', {error});
