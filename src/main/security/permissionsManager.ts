@@ -25,6 +25,7 @@ import {
     UPDATE_PATHS,
 } from 'common/communication';
 import Config from 'common/config';
+import {migratePermissions} from 'common/config/migrationPreferences';
 import JsonFileManager from 'common/JsonFileManager';
 import {Logger} from 'common/log';
 import type {MattermostServer} from 'common/servers/MattermostServer';
@@ -47,7 +48,7 @@ const supportedPermissionTypes = [
     'fullscreen',
     'openExternal',
     'clipboard-sanitized-write',
-    'screenShare',
+    'display-capture',
 ];
 
 // permissions that require a dialog
@@ -56,7 +57,7 @@ const authorizablePermissionTypes = [
     'geolocation',
     'notifications',
     'openExternal',
-    'screenShare',
+    'display-capture',
 ];
 
 type PermissionsByOrigin = {
@@ -70,6 +71,12 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
 
     constructor(file: string) {
         super(file);
+
+        if (migratePermissions(this.json)) {
+            this.writeToFile().catch((error) => {
+                log.error('Failed to save the migrated permissions', {error});
+            });
+        }
 
         this.inflightPermissionChecks = new Map();
 
@@ -271,12 +278,12 @@ t('main.permissionsManager.checkPermission.dialog.message.media');
 t('main.permissionsManager.checkPermission.dialog.message.geolocation');
 t('main.permissionsManager.checkPermission.dialog.message.notifications');
 t('main.permissionsManager.checkPermission.dialog.message.openExternal');
-t('main.permissionsManager.checkPermission.dialog.message.screenShare');
+t('main.permissionsManager.checkPermission.dialog.message.display-capture');
 t('main.permissionsManager.checkPermission.dialog.detail.media');
 t('main.permissionsManager.checkPermission.dialog.detail.geolocation');
 t('main.permissionsManager.checkPermission.dialog.detail.notifications');
 t('main.permissionsManager.checkPermission.dialog.detail.openExternal');
-t('main.permissionsManager.checkPermission.dialog.detail.screenShare');
+t('main.permissionsManager.checkPermission.dialog.detail.display-capture');
 
 let permissionsManager = new PermissionsManager(permissionsJson);
 

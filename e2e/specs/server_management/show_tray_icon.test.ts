@@ -15,18 +15,21 @@ async function evaluateTrayExists(app: ElectronApplication): Promise<boolean> {
     const deadline = Date.now() + 15_000;
     while (Date.now() < deadline) {
         try {
-            return await app.evaluate(() => {
+            const exists = await app.evaluate(() => {
                 const refs = (global as any).__e2eTestRefs;
                 const tray = refs?.TrayIcon?.tray;
                 return Boolean(tray && !tray.isDestroyed?.());
             });
+            if (exists) {
+                return true;
+            }
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             if (!message.includes('Execution context was destroyed')) {
                 throw error;
             }
-            await new Promise((resolve) => setTimeout(resolve, 100));
         }
+        await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
     return false;

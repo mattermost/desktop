@@ -536,7 +536,7 @@ export class CallsWidgetWindow {
         if (!serverURL) {
             throw new Error('handleGetDesktopSources: serverURL not found');
         }
-        if (!await PermissionsManager.doPermissionRequest(view.webContentsId, 'screenShare', {requestingUrl: serverURL.toString(), isMainFrame: false})) {
+        if (!await PermissionsManager.doPermissionRequest(view.webContentsId, 'display-capture', {requestingUrl: serverURL.toString(), isMainFrame: false})) {
             throw new Error('permissions denied');
         }
 

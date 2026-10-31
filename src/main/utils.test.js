@@ -10,9 +10,6 @@ import * as Utils from './utils';
 
 jest.mock('electron', () => ({
     app: {
-        getLoginItemSettings: () => ({
-            wasOpenedAsHidden: true,
-        }),
         getAppPath: () => '/path/to/app',
     },
     shell: {
@@ -41,27 +38,6 @@ jest.mock('fs', () => ({
 }));
 
 describe('main/utils', () => {
-    describe('shouldBeHiddenOnStartup', () => {
-        let originalPlatform;
-
-        beforeAll(() => {
-            originalPlatform = process.platform;
-            Object.defineProperty(process, 'platform', {
-                value: 'darwin',
-            });
-        });
-
-        it('should be hidden on mac when opened as hidden', () => {
-            expect(Utils.shouldBeHiddenOnStartup({})).toBe(true);
-        });
-
-        afterAll(() => {
-            Object.defineProperty(process, 'platform', {
-                value: originalPlatform,
-            });
-        });
-    });
-
     describe('getWindowBoundaries', () => {
         it('should include tab bar height', () => {
             expect(Utils.getWindowBoundaries({

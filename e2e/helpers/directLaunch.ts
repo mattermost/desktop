@@ -32,7 +32,7 @@ export type LaunchDirectTestAppOptions = {
     extraEnv?: Record<string, string>;
     writeConfig?: boolean;
 
-    // Pre-grant media/screenShare for the configured servers. Off by default — it
+    // Pre-grant media/display-capture for the configured servers. Off by default — it
     // disables the main process PermissionsManager's test-mode denial, which a
     // permissions test would need left intact.
     grantMediaPermissions?: boolean;

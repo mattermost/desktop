@@ -8,6 +8,8 @@ import MainWindow from 'app/mainWindow/mainWindow';
 import MessageModal from 'app/mainWindow/modals/messageModal';
 import WebContentsManager from 'app/views/webContentsManager';
 import Config from 'common/config';
+import {migratePermissions} from 'common/config/migrationPreferences';
+import {Logger} from 'common/log';
 import {parseURL, isTrustedURL} from 'common/utils/url';
 import {localizeMessage} from 'main/i18nManager';
 
@@ -51,6 +53,10 @@ jest.mock('common/config', () => ({
     },
 }));
 
+jest.mock('common/config/migrationPreferences', () => ({
+    migratePermissions: jest.fn(),
+}));
+
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
@@ -78,7 +84,47 @@ jest.mock('app/views/webContentsManager', () => ({
     getServerURLByViewId: jest.fn(),
 }));
 
+// The global common/log mock gives every Logger the same functions, so this sees PermissionsManager's log calls
+const log = new Logger();
+
 describe('main/PermissionsManager', () => {
+    describe('constructor', () => {
+        let writeToFile;
+
+        beforeEach(() => {
+            writeToFile = jest.spyOn(PermissionsManager.prototype, 'writeToFile').mockResolvedValue();
+        });
+
+        afterEach(() => {
+            writeToFile.mockRestore();
+            migratePermissions.mockReset();
+        });
+
+        it('should write the permissions file after migrating it', () => {
+            migratePermissions.mockReturnValue(true);
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            expect(migratePermissions).toHaveBeenCalledWith(permissionsManager.json);
+            expect(writeToFile).toHaveBeenCalled();
+        });
+
+        it('should not write the permissions file when there was nothing to migrate', () => {
+            migratePermissions.mockReturnValue(false);
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            expect(migratePermissions).toHaveBeenCalledWith(permissionsManager.json);
+            expect(writeToFile).not.toHaveBeenCalled();
+        });
+
+        it('should log a failure to write the migrated permissions instead of rejecting', async () => {
+            migratePermissions.mockReturnValue(true);
+            const error = new Error('EACCES');
+            writeToFile.mockRejectedValue(error);
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            await new Promise((resolve) => setImmediate(resolve));
+            expect(log.error).toHaveBeenCalledWith('Failed to save the migrated permissions', {error});
+            expect(permissionsManager.json).toBeDefined();
+        });
+    });
+
     describe('setForServer', () => {
         beforeEach(() => {
             systemPreferences.getMediaAccessStatus.mockClear();
@@ -422,18 +468,53 @@ describe('main/PermissionsManager', () => {
             isTrustedURL.mockReturnValue(true);
             const permissionsManager = new PermissionsManager('anyfile.json');
             permissionsManager.json = {
-                'http://anyurl.com': {screenShare: {allowed: true}},
+                'http://anyurl.com': {'display-capture': {allowed: true}},
             };
             const cb = jest.fn();
             await permissionsManager.handlePermissionRequest(
                 {id: 2},
-                'screenShare',
+                'display-capture',
                 cb,
                 {requestingUrl: 'http://anyurl.com'},
             );
             expect(cb).toHaveBeenCalledWith(true);
             expect(WebContentsManager.getViewByWebContentsId).not.toHaveBeenCalled();
             expect(CallsWidgetWindow.getViewURL).toHaveBeenCalled();
+        });
+
+        it('should allow display-capture requests from the Calls widget when previously allowed', async () => {
+            CallsWidgetWindow.isCallsWidget.mockReturnValue(true);
+            CallsWidgetWindow.getViewURL.mockReturnValue(new URL('http://anyurl.com'));
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            permissionsManager.json = {
+                'http://anyurl.com': {'display-capture': {allowed: true}},
+            };
+            const cb = jest.fn();
+            await permissionsManager.handlePermissionRequest(
+                {id: 2},
+                'display-capture',
+                cb,
+                {requestingUrl: 'http://anyurl.com/plugins/com.mattermost.calls/standalone/widget.html', securityOrigin: 'http://anyurl.com', mediaTypes: ['video']},
+            );
+            expect(cb).toHaveBeenCalledWith(true);
+            expect(MessageModal.showMessageModal).not.toHaveBeenCalled();
+        });
+
+        it('should not grant display-capture requests from the media permission', async () => {
+            CallsWidgetWindow.isCallsWidget.mockReturnValue(true);
+            CallsWidgetWindow.getViewURL.mockReturnValue(new URL('http://anyurl.com'));
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            permissionsManager.json = {
+                'http://anyurl.com': {media: {allowed: true}, 'display-capture': {alwaysDeny: true}},
+            };
+            const cb = jest.fn();
+            await permissionsManager.handlePermissionRequest(
+                {id: 2},
+                'display-capture',
+                cb,
+                {requestingUrl: 'http://anyurl.com/plugins/com.mattermost.calls/standalone/widget.html', securityOrigin: 'http://anyurl.com', mediaTypes: ['video']},
+            );
+            expect(cb).toHaveBeenCalledWith(false);
         });
 
         it('PM-U02: should deny Calls widget request when getViewURL returns null', async () => {
@@ -443,7 +524,7 @@ describe('main/PermissionsManager', () => {
             const cb = jest.fn();
             await permissionsManager.handlePermissionRequest(
                 {id: 2},
-                'screenShare',
+                'display-capture',
                 cb,
                 {requestingUrl: 'http://anyurl.com'},
             );

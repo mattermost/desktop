@@ -7,7 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig, writeConfigFile} from '../../helpers/config';
-import {closeElectronAppFast} from '../../helpers/electronApp';
+import {closeElectronAppFast, waitForWindow} from '../../helpers/electronApp';
 
 async function launchWithRemoveServerModal(testInfo: {outputDir: string}) {
     const {mkdirSync} = await import('fs');
@@ -24,21 +24,13 @@ async function launchWithRemoveServerModal(testInfo: {outputDir: string}) {
     await waitForAppReady(app);
 
     const mainView = app.windows().find((w) => w.url().includes('index'))!;
-    let dropdownView = app.windows().find((w) => w.url().includes('dropdown'));
-    if (!dropdownView) {
-        dropdownView = await app.waitForEvent('window', {
-            predicate: (w) => w.url().includes('dropdown'),
-            timeout: 10000,
-        });
-    }
+    const dropdownView = await waitForWindow(app, 'dropdown', 10000);
 
     await mainView.click('.ServerDropdownButton');
     await dropdownView.hover('.ServerDropdown .ServerDropdown__button:nth-child(1)');
     await dropdownView.click('.ServerDropdown .ServerDropdown__button:nth-child(1) button.ServerDropdown__button-remove');
 
-    const removeServerView = await app.waitForEvent('window', {
-        predicate: (w) => w.url().includes('removeServer'),
-    });
+    const removeServerView = await waitForWindow(app, 'removeServer');
 
     return {app, removeServerView, userDataDir};
 }

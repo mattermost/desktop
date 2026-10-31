@@ -1106,7 +1106,7 @@ describe('main/windows/callsWidgetWindow', () => {
             ]);
             expect(PermissionsManager.doPermissionRequest).toHaveBeenCalledWith(
                 3,
-                'screenShare',
+                'display-capture',
                 {requestingUrl: 'http://server-1.com', isMainFrame: false},
             );
         });
