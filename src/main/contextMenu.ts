@@ -2,14 +2,17 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {BrowserWindow, BrowserView, WebviewTag, WebContents, ContextMenuParams, Event, MenuItemConstructorOptions} from 'electron';
+import type {BrowserWindow, WebContents, ContextMenuParams, Event, MenuItemConstructorOptions} from 'electron';
 import {clipboard} from 'electron';
 import type {Options} from 'electron-context-menu';
 import electronContextMenu from 'electron-context-menu';
 
+import {Logger} from 'common/log';
 import {parseURL} from 'common/utils/url';
 import {localizeMessage} from 'main/i18nManager';
 import {getEmailAddressFromMailtoLink} from 'main/utils';
+
+const log = new Logger('ContextMenu');
 
 const defaultMenuOptions = {
     shouldShowMenu: (e: Event, p: ContextMenuParams) => {
@@ -32,7 +35,7 @@ const defaultMenuOptions = {
 };
 
 export default class ContextMenu {
-    view: BrowserWindow | BrowserView | WebviewTag | WebContents;
+    view: BrowserWindow | WebContents;
     menuOptions: Options;
     menuDispose?: () => void;
 
@@ -48,7 +51,9 @@ export default class ContextMenu {
                 items.push({
                     label: localizeMessage('app.menus.contextMenu.copyEmailAddress', 'Copy Email Address'),
                     click() {
-                        clipboard.writeText(emailAddress);
+                        clipboard.writeText(emailAddress).catch((err) => {
+                            log.error('Failed to copy the email address', {err});
+                        });
                     },
                 });
             }
