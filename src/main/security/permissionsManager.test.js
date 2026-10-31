@@ -56,6 +56,16 @@ jest.mock('common/config/migrationPreferences', () => ({
     migratePermissions: jest.fn(),
 }));
 
+const mockLogError = jest.fn();
+jest.mock('common/log', () => ({
+    Logger: jest.fn().mockImplementation(() => ({
+        error: (...args) => mockLogError(...args),
+        warn: jest.fn(),
+        info: jest.fn(),
+        debug: jest.fn(),
+    })),
+}));
+
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
@@ -106,6 +116,16 @@ describe('main/PermissionsManager', () => {
             migratePermissions.mockReturnValue(false);
             new PermissionsManager('anyfile.json');
             expect(writeToFile).not.toHaveBeenCalled();
+        });
+
+        it('should log a failure to write the migrated permissions instead of rejecting', async () => {
+            migratePermissions.mockReturnValue(true);
+            const error = new Error('EACCES');
+            writeToFile.mockRejectedValue(error);
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            await new Promise((resolve) => setImmediate(resolve));
+            expect(mockLogError).toHaveBeenCalledWith('Failed to save the migrated permissions', {error});
+            expect(permissionsManager.json).toBeDefined();
         });
     });
 

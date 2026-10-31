@@ -73,7 +73,9 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
         super(file);
 
         if (migratePermissions(this.json)) {
-            this.writeToFile();
+            this.writeToFile().catch((error) => {
+                log.error('Failed to save the migrated permissions', {error});
+            });
         }
 
         this.inflightPermissionChecks = new Map();

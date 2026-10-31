@@ -110,7 +110,7 @@ export function showBadgeOSX(sessionExpired: boolean, mentionCount: number, show
     app.dock?.setBadge(badge);
 }
 
-function showBadgeLinux(sessionExpired: boolean, mentionCount: number) {
+export function showBadgeLinux(sessionExpired: boolean, mentionCount: number) {
     const countExpired = sessionExpired ? 1 : 0;
     app.setBadgeCount(mentionCount + countExpired);
 }
