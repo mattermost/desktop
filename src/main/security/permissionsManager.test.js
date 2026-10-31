@@ -114,7 +114,8 @@ describe('main/PermissionsManager', () => {
 
         it('should not write the permissions file when there was nothing to migrate', () => {
             migratePermissions.mockReturnValue(false);
-            new PermissionsManager('anyfile.json');
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            expect(migratePermissions).toHaveBeenCalledWith(permissionsManager.json);
             expect(writeToFile).not.toHaveBeenCalled();
         });
 
