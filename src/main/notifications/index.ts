@@ -14,7 +14,9 @@ import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import viewManager from 'common/views/viewManager';
 import DeveloperMode from 'main/developerMode';
+import {localizeMessage} from 'main/i18nManager';
 import PermissionsManager from 'main/security/permissionsManager';
+import {openExternalSafely} from 'main/utils';
 
 import getLinuxDoNotDisturb from './dnd-linux';
 import getWindowsDoNotDisturb from './dnd-windows';
@@ -23,6 +25,8 @@ import {Mention} from './Mention';
 import {NewVersionNotification, UpgradeNotification} from './Upgrade';
 
 const log = new Logger('Notifications');
+
+const MACOS_DND_TIMEOUT = 1000;
 
 class NotificationManager {
     private mentionsPerChannel?: Map<string, Mention>;
@@ -52,7 +56,8 @@ class NotificationManager {
             return {status: 'error', reason: 'notification_api', data: 'notification not supported'};
         }
 
-        if (await getDoNotDisturb()) {
+        const doNotDisturb = await getDoNotDisturb();
+        if (shouldSuppressForDoNotDisturb(doNotDisturb)) {
             log.debug('do not disturb is on, will not send');
             return {status: 'not_sent', reason: 'os_dnd'};
         }
@@ -132,11 +137,15 @@ class NotificationManager {
                             }
                             this.mentionsPerChannel?.set(mentionKey, mention);
                         }
-                        const notificationSound = mention.getNotificationSound();
-                        if (notificationSound) {
-                            MainWindow.sendToRenderer(PLAY_SOUND, notificationSound);
+
+                        // The OS can't silence our own sound or the dock bounce, so skip them under DND
+                        if (!doNotDisturb) {
+                            const notificationSound = mention.getNotificationSound();
+                            if (notificationSound) {
+                                MainWindow.sendToRenderer(PLAY_SOUND, notificationSound);
+                            }
+                            flashFrame(true);
                         }
-                        flashFrame(true);
                         clearTimeout(timeout);
                         resolve({status: 'success'});
                     }
@@ -169,7 +178,8 @@ class NotificationManager {
             return;
         }
 
-        if (await getDoNotDisturb()) {
+        const doNotDisturb = await getDoNotDisturb();
+        if (shouldSuppressForDoNotDisturb(doNotDisturb)) {
             return;
         }
 
@@ -177,7 +187,9 @@ class NotificationManager {
         this.allActiveNotifications?.set(download.uId, download);
 
         download.on('show', () => {
-            flashFrame(true);
+            if (!doNotDisturb) {
+                flashFrame(true);
+            }
         });
 
         download.on('click', () => {
@@ -195,12 +207,56 @@ class NotificationManager {
         download.show();
     }
 
-    public async displayUpgrade(version: string, handleUpgrade: () => void) {
+    public async displayServerModal(serverId: string) {
         if (!Notification.isSupported()) {
             log.error('notification not supported');
             return;
         }
         if (await getDoNotDisturb()) {
+            return;
+        }
+
+        const server = ServerManager.getServer(serverId);
+        if (!server) {
+            return;
+        }
+
+        const notificationKey = `serverModal-${serverId}`;
+        const notification = new Notification({
+            title: localizeMessage('main.notifications.serverModal.title', '{serverName} needs your attention', {serverName: server.name}),
+            body: localizeMessage('main.notifications.serverModal.body', 'Switch to this server to respond.'),
+            silent: false,
+        });
+        this.allActiveNotifications?.set(notificationKey, notification);
+
+        notification.on('show', () => {
+            flashFrame(true);
+        });
+
+        notification.on('click', () => {
+            MainWindow.show();
+            if (ServerManager.getServer(serverId)) {
+                ServerManager.updateCurrentServer(serverId);
+            }
+            this.allActiveNotifications?.delete(notificationKey);
+        });
+
+        notification.on('close', () => {
+            this.allActiveNotifications?.delete(notificationKey);
+        });
+
+        notification.on('failed', () => {
+            this.allActiveNotifications?.delete(notificationKey);
+        });
+        notification.show();
+    }
+
+    public async displayUpgrade(version: string, handleUpgrade: () => void) {
+        if (!Notification.isSupported()) {
+            log.error('notification not supported');
+            return;
+        }
+        if (shouldSuppressForDoNotDisturb(await getDoNotDisturb())) {
             return;
         }
 
@@ -220,7 +276,7 @@ class NotificationManager {
             log.error('notification not supported');
             return;
         }
-        if (await getDoNotDisturb()) {
+        if (shouldSuppressForDoNotDisturb(await getDoNotDisturb())) {
             return;
         }
 
@@ -235,10 +291,10 @@ class NotificationManager {
     private openNotificationPreferences() {
         switch (process.platform) {
         case 'darwin':
-            shell.openExternal('x-apple.systempreferences:com.apple.preference.notifications?Notifications');
+            openExternalSafely('x-apple.systempreferences:com.apple.preference.notifications?Notifications');
             break;
         case 'win32':
-            shell.openExternal('ms-settings:notifications');
+            openExternalSafely('ms-settings:notifications');
             break;
         }
     }
@@ -251,12 +307,24 @@ export async function getDoNotDisturb() {
 
     // We have to turn this off for dev mode because the Electron binary doesn't have the focus center API entitlement
     if (process.platform === 'darwin' && !isDev) {
+        // The Focus status check doesn't resolve until the user answers the Focus status permission prompt,
+        // so don't let it hold up notifications indefinitely
+        let timeout: NodeJS.Timeout | undefined;
         try {
-            const dnd = await getDarwinDoNotDisturb();
-            return dnd;
+            return await Promise.race([
+                getDarwinDoNotDisturb(),
+                new Promise<boolean>((resolve) => {
+                    timeout = setTimeout(() => {
+                        log.warn('macOS DND check timed out');
+                        resolve(false);
+                    }, MACOS_DND_TIMEOUT);
+                }),
+            ]);
         } catch (e) {
             log.warn('macOS DND check threw an error', {e});
             return false;
+        } finally {
+            clearTimeout(timeout);
         }
     }
 
@@ -265,6 +333,13 @@ export async function getDoNotDisturb() {
     }
 
     return false;
+}
+
+// macOS applies Focus itself, including any apps the user allowed through it,
+// so the notification is always handed to the OS there. Focus status only tells us
+// whether a Focus is on, not whether it allows this app.
+function shouldSuppressForDoNotDisturb(doNotDisturb: boolean) {
+    return doNotDisturb && process.platform !== 'darwin';
 }
 
 export function flashFrame(flash: boolean) {

@@ -5,6 +5,7 @@ import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 import {app, BrowserWindow, Menu} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import ServerViewState from 'app/serverHub';
 import {APP_MENU_WILL_CLOSE} from 'common/communication';
@@ -128,7 +129,7 @@ export function handleMentionNotification(event: IpcMainInvokeEvent, title: stri
     return NotificationManager.displayMention(title, body, channelId, teamId, url, silent, event.sender, soundName);
 }
 
-export function handleOpenAppMenu(event: IpcMainEvent) {
+export function handleOpenAppMenu(event: IpcMainEvent, buttonX: number) {
     log.debug('handleOpenAppMenu');
 
     const windowMenu = Menu.getApplicationMenu();
@@ -147,7 +148,7 @@ export function handleOpenAppMenu(event: IpcMainEvent) {
     });
     windowMenu.popup({
         window,
-        x: 18,
+        x: buttonX + 14,
         y: 18,
     });
 }
@@ -183,7 +184,7 @@ export function handleToggleSecureInput(event: IpcMainEvent, secureInput: boolea
 
 export function handleShowSettingsModal() {
     const mainWindow = MainWindow.get();
-    if (!mainWindow) {
+    if (!mainWindow || MessageModal.isCloseConfirmOpen()) {
         return;
     }
 

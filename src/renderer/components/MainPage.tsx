@@ -26,7 +26,7 @@ enum Status {
 }
 
 type Props = {
-    openMenu: () => void;
+    openMenu: (buttonX: number) => void;
     appName: string;
 };
 
@@ -40,8 +40,10 @@ type State = {
     mentionCounts: Record<string, number>;
     mentionsPerServer: Record<string, number>;
     unreadsPerServer: Record<string, boolean>;
+    pendingModalsPerServer: Record<string, boolean>;
     tabViewStatus: Map<string, TabViewStatus>;
     modalOpen?: boolean;
+    isServerModalOpen?: boolean;
     isMenuOpen: boolean;
     isDownloadsDropdownOpen: boolean;
     showDownloadsBadge: boolean;
@@ -72,6 +74,7 @@ class MainPage extends React.PureComponent<Props, State> {
             mentionCounts: {},
             mentionsPerServer: {},
             unreadsPerServer: {},
+            pendingModalsPerServer: {},
             tabViewStatus: new Map(),
             isMenuOpen: false,
             isDownloadsDropdownOpen: false,
@@ -253,12 +256,12 @@ class MainPage extends React.PureComponent<Props, State> {
             playSound(soundName);
         });
 
-        window.desktop.onModalOpen(() => {
-            this.setState({modalOpen: true});
+        window.desktop.onModalOpen((isServerModal) => {
+            this.setState({modalOpen: true, isServerModalOpen: isServerModal});
         });
 
         window.desktop.onModalClose(() => {
-            this.setState({modalOpen: false});
+            this.setState({modalOpen: false, isServerModalOpen: false});
         });
 
         window.desktop.onUpdateMentions((view, mentions, unreads, isExpired) => {
@@ -276,8 +279,8 @@ class MainPage extends React.PureComponent<Props, State> {
             this.setState({unreadCounts: newUnreads, mentionCounts: newMentionCounts, sessionsExpired: expired});
         });
 
-        window.desktop.onUpdateMentionsForServer((serverId, _, mentions, unreads) => {
-            const {mentionsPerServer, unreadsPerServer} = this.state;
+        window.desktop.onUpdateMentionsForServer((serverId, _, mentions, unreads, hasPendingModal) => {
+            const {mentionsPerServer, unreadsPerServer, pendingModalsPerServer} = this.state;
 
             const newMentionsPerServer = {...mentionsPerServer};
             if (mentions) {
@@ -293,7 +296,14 @@ class MainPage extends React.PureComponent<Props, State> {
                 delete newUnreadsPerServer[serverId];
             }
 
-            this.setState({mentionsPerServer: newMentionsPerServer, unreadsPerServer: newUnreadsPerServer});
+            const newPendingModalsPerServer = {...pendingModalsPerServer};
+            if (hasPendingModal) {
+                newPendingModalsPerServer[serverId] = hasPendingModal;
+            } else {
+                delete newPendingModalsPerServer[serverId];
+            }
+
+            this.setState({mentionsPerServer: newMentionsPerServer, unreadsPerServer: newUnreadsPerServer, pendingModalsPerServer: newPendingModalsPerServer});
         });
 
         window.desktop.onCloseServersDropdown(() => {
@@ -483,6 +493,7 @@ class MainPage extends React.PureComponent<Props, State> {
             }
             return sum || this.state.unreadsPerServer[key];
         }, false);
+        const hasPendingModals = Object.keys(this.state.pendingModalsPerServer).some((key) => key !== this.state.activeServerId);
 
         const activeServer = this.state.servers.find((srv) => srv.id === this.state.activeServerId);
         const tabStatus = activeServer && this.getTabViewStatus();
@@ -510,12 +521,13 @@ class MainPage extends React.PureComponent<Props, State> {
                 {activeServer && (
                     <>
                         <ServerDropdownButton
-                            isDisabled={this.state.modalOpen}
+                            isDisabled={this.state.modalOpen && !this.state.isServerModalOpen}
                             activeServerName={activeServer.name}
                             totalMentionCount={totalMentionCount}
                             currentMentions={this.state.mentionsPerServer[this.state.activeServerId!] ?? 0}
                             currentUnread={this.state.unreadsPerServer[this.state.activeServerId!] ?? false}
                             hasUnreads={hasAnyUnreads}
+                            hasPendingModals={hasPendingModals}
                             isMenuOpen={this.state.isMenuOpen}
                         />
                     </>

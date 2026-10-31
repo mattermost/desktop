@@ -143,9 +143,9 @@ contextBridge.exposeInMainWorld('process', {
 
 contextBridge.exposeInMainWorld('desktop', {
     quit: (reason, stack) => ipcRenderer.send(QUIT, reason, stack),
-    openAppMenu: () => ipcRenderer.send(OPEN_APP_MENU),
+    openAppMenu: (buttonX) => ipcRenderer.send(OPEN_APP_MENU, buttonX),
     closeServersDropdown: () => ipcRenderer.send(CLOSE_SERVERS_DROPDOWN),
-    openServersDropdown: () => ipcRenderer.send(OPEN_SERVERS_DROPDOWN),
+    openServersDropdown: (buttonX) => ipcRenderer.send(OPEN_SERVERS_DROPDOWN, buttonX),
     switchTab: (viewId) => ipcRenderer.send(SWITCH_TAB, viewId),
     closeTab: (viewId) => ipcRenderer.send(CLOSE_TAB, viewId),
     exitFullScreen: () => ipcRenderer.send(EXIT_FULLSCREEN),
@@ -233,10 +233,10 @@ contextBridge.exposeInMainWorld('desktop', {
     onEnterFullScreen: (listener) => ipcRenderer.on('enter-full-screen', () => listener()),
     onLeaveFullScreen: (listener) => ipcRenderer.on('leave-full-screen', () => listener()),
     onPlaySound: (listener) => ipcRenderer.on(PLAY_SOUND, (_, soundName) => listener(soundName)),
-    onModalOpen: (listener) => ipcRenderer.on(MODAL_OPEN, () => listener()),
+    onModalOpen: (listener) => ipcRenderer.on(MODAL_OPEN, (_, isServerModal) => listener(isServerModal)),
     onModalClose: (listener) => ipcRenderer.on(MODAL_CLOSE, () => listener()),
     onUpdateMentions: (listener) => ipcRenderer.on(UPDATE_MENTIONS, (_event, view, mentions, unreads, isExpired) => listener(view, mentions, unreads, isExpired)),
-    onUpdateMentionsForServer: (listener) => ipcRenderer.on(UPDATE_MENTIONS_FOR_SERVER, (_, serverId, expired, mentions, unreads) => listener(serverId, expired, mentions, unreads)),
+    onUpdateMentionsForServer: (listener) => ipcRenderer.on(UPDATE_MENTIONS_FOR_SERVER, (_, serverId, expired, mentions, unreads, hasPendingModal) => listener(serverId, expired, mentions, unreads, hasPendingModal)),
     onCloseServersDropdown: (listener) => ipcRenderer.on(CLOSE_SERVERS_DROPDOWN, () => listener()),
     onOpenServersDropdown: (listener) => ipcRenderer.on(OPEN_SERVERS_DROPDOWN, () => listener()),
     onCloseDownloadsDropdown: (listener) => ipcRenderer.on(CLOSE_DOWNLOADS_DROPDOWN, () => listener()),
@@ -289,6 +289,8 @@ contextBridge.exposeInMainWorld('desktop', {
             mentions,
             unreads,
             windowBounds,
+            isModalOpen,
+            pendingModals,
         ) => listener(
             servers,
             activeServer,
@@ -298,6 +300,8 @@ contextBridge.exposeInMainWorld('desktop', {
             mentions,
             unreads,
             windowBounds,
+            isModalOpen,
+            pendingModals,
         )),
     },
 

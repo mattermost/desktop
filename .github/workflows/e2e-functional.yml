@@ -377,6 +377,7 @@ jobs:
           sparse-checkout: |
             e2e/utils/tsio-report-status.js
             e2e/utils/cmt-channel-notify.js
+            e2e/utils/cmt-triage-verdict.js
             e2e/utils/github-actions.js
           sparse-checkout-cone-mode: false
       - name: Flip e2e/macos-policy and e2e/windows-policy
@@ -411,7 +412,9 @@ jobs:
   # Uses e2e/utils/tsio-report-status.js, not test-system-io-summary — summary
   # only reads /api/v1/orchestration/status, which report-upload never
   # populates (see that file's header comment).
-  # Channel notify lives here; merge statuses are posted by the per-OS jobs.
+  # Channel notify lives here for PRs; master alerts are deferred to
+  # master-e2e-verdict so AI triage can judge them first. Merge statuses
+  # are posted by the per-OS jobs.
   tsio-summary:
     name: TSIO summary
     runs-on: ubuntu-24.04
@@ -424,11 +427,17 @@ jobs:
       - e2e-policy-macos
       - e2e-policy-windows
     if: ${{ always() && !cancelled() }}
+    outputs:
+      report-url: ${{ steps.summary.outputs.report-url }}
+      stats: ${{ steps.summary.outputs.stats }}
+      detail: ${{ steps.summary.outputs.detail }}
     permissions:
       contents: read
       actions: read
       id-token: write
       statuses: write
+      # Master alerts name the merged PR for the head commit (best-effort lookup).
+      pull-requests: read
     steps:
       # tsio-report-status.js is repo code, not fetched by github-script itself.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -438,6 +447,7 @@ jobs:
           sparse-checkout: |
             e2e/utils/tsio-report-status.js
             e2e/utils/cmt-channel-notify.js
+            e2e/utils/cmt-triage-verdict.js
             e2e/utils/github-actions.js
           sparse-checkout-cone-mode: false
 
@@ -461,22 +471,259 @@ jobs:
         with:
           script: |
             const {canonicalizeOs, E2E_POLICY_OS_LIST} = require('./e2e/utils/github-actions.js');
+            const compositeIdentity = JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY);
             const platforms = JSON.parse(process.env.PLATFORMS || '[]');
             const expectedOs = [...new Set(
               platforms.map((p) => canonicalizeOs(p.platform || p.os, p.runner)).filter(Boolean),
             )];
-            const {reportUrl, status, stats} = await require('./e2e/utils/tsio-report-status.js')({
-              core, context, github,
-              compositeIdentity: JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY),
-              totalReportsExpected: parseInt(process.env.TSIO_TOTAL_REPORTS_EXPECTED, 10),
-              upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
-              perOsCommitStatuses: false,
-              expectedOs,
-              expectedPolicyOs: E2E_POLICY_OS_LIST,
-              failOnTestFailures: true,
-              notifyChannel: true,
+            // Master channel alerts wait for AI triage: master-e2e-verdict
+            // posts them once tsio-triage has judged the failures (silent
+            // when cleared, red only when blocking). PR alerts post here.
+            // Outputs are set before rethrowing so the verdict job still
+            // gets the settled TSIO snapshot on a red run.
+            const pickDetail = (d) => ({
+              status: d?.status,
+              test_stats: d?.test_stats,
+              reports: (d?.reports || []).map((r) => ({id: r.id, gh_job_name: r.gh_job_name, display_name: r.display_name, status: r.status})),
             });
-            core.info(`TSIO report ${reportUrl}: ${status} (${JSON.stringify(stats)})`);
+            let result;
+            try {
+              result = await require('./e2e/utils/tsio-report-status.js')({
+                core, context, github,
+                compositeIdentity,
+                totalReportsExpected: parseInt(process.env.TSIO_TOTAL_REPORTS_EXPECTED, 10),
+                upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
+                perOsCommitStatuses: false,
+                expectedOs,
+                expectedPolicyOs: E2E_POLICY_OS_LIST,
+                failOnTestFailures: true,
+                notifyChannel: compositeIdentity.name !== 'desktop-master',
+              });
+            } catch (error) {
+              core.setOutput('report-url', error.reportUrl || '');
+              core.setOutput('stats', JSON.stringify(error.stats || {}));
+              core.setOutput('detail', JSON.stringify(pickDetail(error.detail)));
+              throw error;
+            }
+            core.setOutput('report-url', result.reportUrl || '');
+            core.setOutput('stats', JSON.stringify(result.stats || {}));
+            core.setOutput('detail', JSON.stringify(pickDetail(result.detail)));
+            core.info(`TSIO report ${result.reportUrl}: ${result.status} (${JSON.stringify(result.stats)})`);
+
+
+
+  # Is this red E2E run the PR's fault? The job asks Test System IO for the past
+  # executions of exactly the tests that failed, applies history rules (broken on
+  # trunk, flaky on trunk, recurring on other PRs, owned by the PR's own diff) and
+  # escalates only what the rules cannot settle to a second judge that must cite
+  # evidence a reviewer can open.
+  #
+  # Deliberately its own job rather than a step in tsio-summary: that job checks
+  # out the branch under test and loads its helper files into github-script, so it
+  # must never hold pull-requests: write. This job checks out only the triage
+  # composite action, from the dispatch ref, and runs a single SHA-pinned action
+  # through it.
+  #
+  # It needs tsio-summary only for ordering — that job polls until every leg has
+  # joined the group, so by the time this runs the group is settled.
+  #
+  # It runs on master as well as on PRs. On master the question changes from "is
+  # this the PR's fault" to "is master noisy or actually broken", and only
+  # intermittency clears a failure: a test that failed in the previous master run
+  # too is a streak, not a flake, and stays red. A master run has no PR to comment
+  # on, so the story lands in the job summary.
+  #
+  # Report only by default: each leg narrows to its own OS report and writes its
+  # line on the e2e/<os> status, "(4 cleared by triage) 99.7% passed (...)", but
+  # keeps the status's state, so a red check stays red. Setting the
+  # E2E_TRIAGE_MODE variable to enforce lets triage turn it green when every
+  # failure is attributable to master or other PRs.
+  tsio-triage:
+    name: Triage E2E failures (${{ matrix.platform }})
+    runs-on: ubuntu-24.04
+    needs:
+      - prepare-matrix
+      - tsio-summary
+      # The e2e/triage summary also reads the policy lanes, so their final
+      # statuses must be posted before triage computes it.
+      - e2e-policy-status
+    # prepare-matrix is skipped when instance_details is empty and can finish
+    # without an identity when preparation fails, so guard on the identity itself.
+    if: >-
+      always()
+      && needs.prepare-matrix.outputs.tsio-composite-identity != ''
+      && needs.tsio-summary.result != 'success'
+    permissions:
+      contents: read
+      statuses: write
+      pull-requests: read
+    # One triage per operating system, over the same matrix the tests ran on.
+    # A run uploads one report per OS into a shared group, so a single triage
+    # could only ever write one status covering all of them -- which is why this
+    # used to write a decorative e2e/triage rather than the e2e/<os> contexts
+    # that actually gate the pull request. Narrowing by report name gives each OS
+    # its own verdict and lets it write the status it is answerable for.
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.prepare-matrix.outputs.platforms) }}
+    steps:
+      # The triage composite is a local action, so it has to be in the workspace before
+      # the composite step runs. Only that directory is checked out, from the dispatch
+      # ref like this workflow file: the composite that runs is the one shipped with
+      # the workflow, not the branch under test (tsio-summary checks out version_name
+      # for its helper scripts; this job must not).
+      - name: Checkout triage action
+        continue-on-error: true
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/actions/e2e-triage/
+          sparse-checkout-cone-mode: false
+      # Answers cache restore, toolkit e2e/triage and answers cache save for this lane.
+      # See .github/actions/e2e-triage/action.yml.
+      - name: e2e/triage
+        id: triage
+        continue-on-error: true
+        uses: ./.github/actions/e2e-triage
+        with:
+          platform: ${{ matrix.platform }}
+          runner: ${{ matrix.runner }}
+          composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Triage must never change the outcome of the E2E run itself.
+          mode: ${{ vars.E2E_TRIAGE_MODE || 'report-only' }}
+
+      # master-e2e-verdict folds these per-OS verdicts into the post-merge
+      # channel alert. Always record a file — an empty verdict is how the
+      # fold knows this lane was never triaged (unknown, never green).
+      - name: e2e/record-triage-verdict
+        if: always()
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          VERDICT: ${{ steps.triage.outputs.verdict }}
+          BLOCKING: ${{ steps.triage.outputs.blocking }}
+          EXONERATED: ${{ steps.triage.outputs.exonerated }}
+        run: |
+          jq -n \
+            --arg platform "${PLATFORM}" \
+            --arg verdict "${VERDICT}" \
+            --arg blocking "${BLOCKING}" \
+            --arg exonerated "${EXONERATED}" \
+            '{platform: $platform, verdict: $verdict, blocking: $blocking, exonerated: $exonerated}' \
+            > e2e-triage-verdict.json
+
+      - name: e2e/upload-triage-verdict
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-triage-verdict-${{ matrix.platform }}
+          path: e2e-triage-verdict.json
+          retention-days: 1
+
+  # Post-merge channel alert, driven by the triage verdicts above instead of
+  # raw TSIO conclusions: silent when triage cleared every failure (flaky /
+  # failed in master / Infra failure) — the same failure-only posture as a
+  # green run — red only when a lane still blocks, yellow when triage could
+  # not settle it. tsio-summary defers the master notify to this job; the
+  # commit statuses are unaffected (they are posted by tsio-summary, the
+  # per-OS jobs, and triage itself in enforce mode).
+  master-e2e-verdict:
+    name: Master E2E verdict
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    needs:
+      - prepare-matrix
+      - e2e-linux
+      - e2e-macos
+      - e2e-windows
+      - e2e-policy-macos
+      - e2e-policy-windows
+      - tsio-summary
+      - tsio-triage
+    if: >-
+      always() && !cancelled()
+      && needs.prepare-matrix.outputs.tsio-composite-identity != ''
+      && fromJson(needs.prepare-matrix.outputs.tsio-composite-identity).name == 'desktop-master'
+    permissions:
+      contents: read
+      # Master alerts name the merged PR for the head commit (best-effort lookup).
+      pull-requests: read
+    steps:
+      # Same checkout posture as tsio-summary: helper scripts come from the
+      # ref under test (inputs.version_name).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.version_name }}
+          persist-credentials: false
+          sparse-checkout: |
+            e2e/utils/tsio-report-status.js
+            e2e/utils/cmt-channel-notify.js
+            e2e/utils/cmt-triage-verdict.js
+            e2e/utils/github-actions.js
+          sparse-checkout-cone-mode: false
+
+      - name: e2e/download-triage-verdicts
+        continue-on-error: true
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: e2e-triage-verdict-*
+          merge-multiple: true
+          path: e2e-triage-verdicts
+
+      - name: e2e/post-master-verdict
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          TSIO_COMPOSITE_IDENTITY: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
+          DETAIL: ${{ needs.tsio-summary.outputs.detail }}
+          REPORT_URL: ${{ needs.tsio-summary.outputs.report-url }}
+          STATS: ${{ needs.tsio-summary.outputs.stats }}
+          UPSTREAM_JOBS_SUCCEEDED: ${{ (needs.e2e-linux.result == 'success' || needs.e2e-linux.result == 'skipped') && (needs.e2e-macos.result == 'success' || needs.e2e-macos.result == 'skipped') && (needs.e2e-windows.result == 'success' || needs.e2e-windows.result == 'skipped') && (needs.e2e-policy-macos.result == 'success' || needs.e2e-policy-macos.result == 'skipped') && (needs.e2e-policy-windows.result == 'success' || needs.e2e-policy-windows.result == 'skipped') }}
+          MATTERMOST_MASTER_HEALTH_WEBHOOK_URL: ${{ secrets.MM_E2E_MASTER_HEALTH_WEBHOOK_URL }}
+          TSIO_BASE_URL: https://test-io.test.mattermost.com
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const {notifyCmtChannel} = require('./e2e/utils/cmt-channel-notify.js');
+            const {resolveMasterMergeContext} = require('./e2e/utils/tsio-report-status.js');
+
+            const compositeIdentity = JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY);
+
+            let detail = {};
+            let stats = {};
+            try {
+              detail = JSON.parse(process.env.DETAIL || '{}');
+              stats = JSON.parse(process.env.STATS || '{}');
+            } catch {
+              core.warning('Could not parse TSIO summary outputs; the alert falls back to job results');
+            }
+
+            let triageLanes = [];
+            try {
+              triageLanes = fs.readdirSync('e2e-triage-verdicts')
+                .filter((file) => file.endsWith('.json'))
+                .map((file) => JSON.parse(fs.readFileSync(path.join('e2e-triage-verdicts', file), 'utf8')));
+            } catch (error) {
+              core.info(`No triage verdict artifacts: ${error.message}`);
+            }
+
+            const mergeContext = await resolveMasterMergeContext({github, context, compositeIdentity, core});
+            const hasFailures = (stats.failed || 0) > 0 || (detail.reports || []).some((report) => report.status === 'failed');
+            await notifyCmtChannel({
+              core,
+              baseUrl: process.env.TSIO_BASE_URL,
+              compositeIdentity,
+              detail,
+              reportUrl: process.env.REPORT_URL || '',
+              upstreamJobsSucceeded: process.env.UPSTREAM_JOBS_SUCCEEDED === 'true',
+              hasFailures,
+              webhookUrl: process.env.MATTERMOST_MASTER_HEALTH_WEBHOOK_URL || '',
+              mergedPr: mergeContext.mergedPr,
+              headCommit: mergeContext.headCommit,
+              triageLanes,
+            });
 
   remove-e2e-label:
     name: Remove E2E label from PR

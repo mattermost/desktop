@@ -12,7 +12,7 @@ import {useConfig} from 'renderer/hooks/useConfig';
 type Props = {
     children?: React.ReactNode;
     title?: string;
-    openMenu: () => void;
+    openMenu: (buttonX: number) => void;
     openPopoutMenu?: () => void;
 }
 
@@ -21,6 +21,7 @@ const TopBar = ({children, title, openMenu, openPopoutMenu}: Props) => {
     const {config} = useConfig();
     const [fullScreen, setFullScreen] = useState(false);
     const [threeDotsIsFocused, setThreeDotsIsFocused] = useState(false);
+    const [titlebarAreaRect, setTitlebarAreaRect] = useState(window.navigator.windowControlsOverlay?.getTitlebarAreaRect());
     const topBar = useRef<HTMLDivElement>(null);
     const threeDotMenu = useRef<HTMLButtonElement>(null);
 
@@ -52,10 +53,18 @@ const TopBar = ({children, title, openMenu, openPopoutMenu}: Props) => {
         }
     }, []);
 
+    useEffect(() => {
+        const handleGeometryChange = () => setTitlebarAreaRect(window.navigator.windowControlsOverlay?.getTitlebarAreaRect());
+        window.navigator.windowControlsOverlay?.addEventListener('geometrychange', handleGeometryChange);
+        return () => window.navigator.windowControlsOverlay?.removeEventListener('geometrychange', handleGeometryChange);
+    }, []);
+
     const topBarClassName = classNames('topBar', {
         macOS: window.process.platform === 'darwin',
         fullScreen,
     });
+
+    const showWindowControlsSpacers = window.process.platform !== 'darwin' && !fullScreen && (window.process.platform !== 'linux' || !config?.useNativeTitleBar);
 
     return (
         <div
@@ -67,10 +76,13 @@ const TopBar = ({children, title, openMenu, openPopoutMenu}: Props) => {
                 ref={topBar}
                 className={'topBar-bg'}
             >
+                {showWindowControlsSpacers && Boolean(titlebarAreaRect?.x) && (
+                    <span style={{flex: `0 0 ${titlebarAreaRect?.x}px`}}/>
+                )}
                 <button
                     ref={threeDotMenu}
                     className='three-dot-menu'
-                    onClick={openMenu}
+                    onClick={(event) => openMenu(Math.round(event.currentTarget.getBoundingClientRect().left))}
                     onMouseOver={focusThreeDotsButton}
                     onMouseOut={unFocusThreeDotsButton}
                     tabIndex={0}
@@ -96,8 +108,8 @@ const TopBar = ({children, title, openMenu, openPopoutMenu}: Props) => {
                         <i className='icon icon-arrow-collapse'/>
                     </div>
                 )}
-                {window.process.platform !== 'darwin' && !fullScreen && (window.process.platform !== 'linux' || !config?.useNativeTitleBar) && (
-                    <span style={{width: `${window.innerWidth - (window.navigator.windowControlsOverlay?.getTitlebarAreaRect().width ?? 0)}px`}}/>
+                {showWindowControlsSpacers && (
+                    <span style={{width: `${window.innerWidth - (titlebarAreaRect?.x ?? 0) - (titlebarAreaRect?.width ?? 0)}px`}}/>
                 )}
             </div>
         </div>

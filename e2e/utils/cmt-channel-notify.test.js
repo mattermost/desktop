@@ -13,6 +13,9 @@ const {
     buildLegSummaries,
     formatLegResultText,
     formatCmtChannelMessage,
+    sanitizeInlineText,
+    shouldPostToChannel,
+    notifyCmtChannel,
     collapseSpecAttempts,
     resolveChannelTotals,
 } = require('./cmt-channel-notify');
@@ -377,10 +380,10 @@ describe('cmt-channel-notify', () => {
                 upstreamJobsSucceeded: true,
                 hasFailures: true,
             });
-            assert.match(text, /^## ❌ Desktop Master E2E\n/);
-            assert.match(text, /\| ❌ Failed \| \*\*100\*\* \| \*\*0\*\* \| \*\*0\*\* \|/);
+            assert.match(text, /^:red_circle: \*\*Desktop Master E2E — failure on `master`\*\*\n/);
+            assert.match(text, /\*\*0 failed\*\* · 100 passed · 0 skipped/);
             assert.match(text, /TSIO reported failed shard\(s\) not reflected in the test totals/);
-            assert.doesNotMatch(text, /failing test/);
+            assert.doesNotMatch(text, /Detailed results/);
         });
 
         it('keeps overall passed when TSIO is still consolidating with 0 failures', () => {
@@ -440,8 +443,8 @@ describe('cmt-channel-notify', () => {
                 perJobCounts: {},
                 upstreamJobsSucceeded: true,
             });
-            assert.match(text, /^## ❌ Desktop Master E2E\n/);
-            assert.match(text, /TSIO report status: `incomplete`/);
+            assert.match(text, /^:red_circle: \*\*Desktop Master E2E — failure on `master`\*\*\n/);
+            assert.match(text, /TSIO status: `incomplete`/);
         });
 
         it('folds test_stats.flaky into the headline passed count', () => {
@@ -454,14 +457,467 @@ describe('cmt-channel-notify', () => {
                 detail: {
                     status: 'completed',
                     test_stats: {passed: 200, failed: 0, skipped: 5, flaky: 3, total: 208},
-                    reports: [],
+                    reports: [
+                        {id: 'rid-linux', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1', status: 'complete'},
+                    ],
                 },
                 reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
                 baseUrl: 'https://test-io.test.mattermost.com',
+                perJobCounts: {
+                    'e2e-on-ubuntu-latest-12.1.0-rc1': {passed: 200, failed: 0, skipped: 5, flaky: 3},
+                },
+                upstreamJobsSucceeded: true,
+            });
+            assert.match(text, /^:white_check_mark: \*\*Desktop Master E2E\*\* — passed on `master` @ `a1b2c3d` \(203 passed, 5 skipped\)/);
+            assert.doesNotMatch(text, /Detailed results/);
+        });
+    });
+
+    describe('desktop-master short failure alerts', () => {
+        const masterFailure = (extra = {}) => formatCmtChannelMessage({
+            compositeIdentity: {
+                repository: 'mattermost/desktop',
+                branch: 'master',
+                commit_sha: 'a1b2c3d4e5f678901234567890abcdef12345678',
+                name: 'desktop-master',
+                gh_run_id: '123456',
+            },
+            detail: {
+                status: 'completed',
+                test_stats: {passed: 752, failed: 1, skipped: 42, total: 795},
+                reports: [
+                    {id: 'rid-linux-1', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1-1-of-3', status: 'complete'},
+                    {id: 'rid-linux-2', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1-2-of-3', status: 'complete'},
+                ],
+            },
+            reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
+            baseUrl: 'https://test-io.test.mattermost.com',
+            perJobCounts: {
+                'e2e-on-ubuntu-latest-12.1.0-rc1-1-of-3': {passed: 70, failed: 1, skipped: 2, flaky: 0},
+                'e2e-on-ubuntu-latest-12.1.0-rc1-2-of-3': {passed: 71, failed: 0, skipped: 2, flaky: 0},
+            },
+            upstreamJobsSucceeded: true,
+            mergedPr: {number: 3916, title: 'Fix the thing', url: 'https://github.com/mattermost/desktop/pull/3916', author: 'dev'},
+            ...extra,
+        });
+
+        it('is short, names master, the merged PR, and the failing suite', () => {
+            const text = masterFailure();
+            assert.match(text, /^:red_circle: \*\*Desktop Master E2E — failure on `master`\*\*$/m);
+            assert.match(text, /After merge of \[#3916 Fix the thing\]\(https:\/\/github\.com\/mattermost\/desktop\/pull\/3916\) by @\u200bdev · commit `a1b2c3d`/);
+            assert.match(text, /Failing: 🐧 Linux Server `12\.1\.0-rc1` — 1 failed \(\[report\]\(https:\/\/test-io\.test\.mattermost\.com\/reports\/r\/rid-linux-1\)\)/);
+            assert.match(text, /\[Workflow run\]\(https:\/\/github\.com\/mattermost\/desktop\/actions\/runs\/123456\)/);
+            assert.doesNotMatch(text, /Detailed results|\| Overall \|/);
+            assert.ok(text.trimEnd().split('\n').length <= 10, text);
+        });
+
+        it('falls back to the head commit, then to the SHA alone, without a merged PR', () => {
+            const withCommit = masterFailure({mergedPr: null, headCommit: {subject: 'Fix the thing (#3916)', author: 'dev'}});
+            assert.match(withCommit, /After commit `a1b2c3d` by @\u200bdev — Fix the thing \\\(#3916\\\)/);
+            const bare = masterFailure({mergedPr: null, headCommit: null});
+            assert.match(bare, /On `master` · commit `a1b2c3d`/);
+        });
+
+        it('escapes Markdown and defuses mentions in PR titles and commit subjects', () => {
+            assert.equal(
+                sanitizeInlineText('Hi @channel [x](https://evil.example)'),
+                'Hi @\u200bchannel \\[x\\]\\(https://evil.example\\)',
+            );
+            const text = masterFailure({mergedPr: {number: 3916, title: 'Ping @here ](https://evil.example)', author: 'dev'}});
+            assert.doesNotMatch(text, /@here/);
+            assert.doesNotMatch(text, /\]\(https:\/\/evil\.example\)/);
+            assert.match(text, /After merge of \[#3916 Ping @\u200bhere \\\]\\\(https:\/\/evil\.example\\\)\]\(https:\/\/github\.com\/mattermost\/desktop\/pull\/3916\)/);
+        });
+
+        it('defuses mentions in PR-author and commit-author bylines', () => {
+            const prText = masterFailure({mergedPr: {number: 3916, title: 'Fix the thing', author: 'channel'}});
+            assert.doesNotMatch(prText, /by @channel/);
+            assert.match(prText, /by @\u200bchannel · commit `a1b2c3d`/);
+
+            const commitText = masterFailure({mergedPr: null, headCommit: {subject: 'Direct push', author: '@here'}});
+            assert.doesNotMatch(commitText, /by @here/);
+            assert.match(commitText, /by @\u200bhere — Direct push/);
+        });
+
+        it('posts only on failure (or missing legs) for master, always for other reports', () => {
+            const oneLeg = {legs: [{}]};
+            assert.equal(shouldPostToChannel({name: 'desktop-master'}, {overallFailed: false, missingLegs: [], ...oneLeg}), false);
+            assert.equal(shouldPostToChannel({name: 'desktop-master'}, {overallFailed: true, missingLegs: [], ...oneLeg}), true);
+            assert.equal(shouldPostToChannel({name: 'desktop-master'}, {overallFailed: false, missingLegs: [{}], ...oneLeg}), true);
+            assert.equal(shouldPostToChannel({name: 'desktop-pr'}, {overallFailed: false, missingLegs: []}), true);
+            assert.equal(shouldPostToChannel({name: 'cmt-desktop'}, {overallFailed: false, missingLegs: []}), true);
+
+            // Triage-cleared master failures stay silent; unsettled ones post.
+            assert.equal(shouldPostToChannel({name: 'desktop-master'}, {overallFailed: true, missingLegs: [], legs: [{}]}, 'cleared'), false);
+            assert.equal(shouldPostToChannel({name: 'desktop-master'}, {overallFailed: true, missingLegs: [], legs: [{}]}, 'inconclusive'), true);
+            assert.equal(shouldPostToChannel({name: 'desktop-master'}, {overallFailed: true, missingLegs: [], legs: [{}]}, 'blocking'), true);
+        });
+
+        it('alerts when a master run reports no legs, unless counts are unavailable', () => {
+            assert.equal(shouldPostToChannel({name: 'desktop-master'}, {overallFailed: false, missingLegs: [], legs: []}), true);
+            assert.equal(shouldPostToChannel({name: 'desktop-master'}, {overallFailed: false, missingLegs: [], legs: [], perJobCountsAvailable: false}), false);
+
+            const text = formatCmtChannelMessage({
+                compositeIdentity: {branch: 'master', commit_sha: 'a1b2c3d4', name: 'desktop-master'},
+                detail: {status: 'completed', test_stats: {passed: 10, failed: 0, skipped: 1}, reports: []},
+                reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
                 perJobCounts: {},
                 upstreamJobsSucceeded: true,
             });
-            assert.match(text, /\| ✅ Passed \| \*\*203\*\* \| \*\*0\*\* \| \*\*5\*\* \|/);
+            assert.match(text, /^:red_circle: \*\*Desktop Master E2E — failure on `master`\*\*/);
+            assert.match(text, /No per-leg results reported\./);
+        });
+
+        it('notifyCmtChannel suppresses a passed master run and posts a failed one', async () => {
+            const originalFetch = global.fetch;
+            const calls = [];
+            let specStatus = 'passed';
+            global.fetch = async (url) => {
+                calls.push(String(url));
+                const specs = [{
+                    history: [{commit_sha: 'a1b2c3d4', run_attempt: '1', report_id: 'rid-linux', status: specStatus}],
+                }];
+                return {ok: true, text: async () => '', json: async () => ({specs})};
+            };
+            const core = {info: () => {}, warning: () => {}};
+            const identity = {
+                branch: 'master', commit_sha: 'a1b2c3d4', name: 'desktop-master', gh_run_id: '1', gh_run_attempt: '1',
+            };
+            const detail = (failed) => ({
+                status: 'completed',
+                test_stats: {passed: 10, failed, skipped: 1},
+                reports: [{id: 'rid-linux', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1', status: 'complete'}],
+            });
+            const base = {
+                core,
+                baseUrl: 'https://test-io.test.mattermost.com',
+                reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
+                webhookUrl: 'https://mm.example/hooks/master-health',
+                compositeIdentity: identity,
+            };
+            try {
+                await notifyCmtChannel({...base, detail: detail(0)});
+                assert.ok(!calls.some((url) => url.includes('mm.example')), `passed master must not post, got ${calls}`);
+
+                specStatus = 'failed';
+                await notifyCmtChannel({...base, detail: detail(1), mergedPr: {number: 3916, title: 'Fix the thing', author: 'dev'}});
+                assert.ok(calls.some((url) => url.includes('mm.example')), 'failed master must post');
+            } finally {
+                global.fetch = originalFetch;
+            }
+        });
+
+        it('notifyCmtChannel does not invent missing legs when the per-leg count fetch fails', async () => {
+            const originalFetch = global.fetch;
+            const webhookBodies = [];
+            global.fetch = async (url, options) => {
+                if (String(url).includes('/api/v1/reports/consolidated')) {
+                    throw new Error('consolidated unavailable');
+                }
+                webhookBodies.push(JSON.parse(options.body).text);
+                return {ok: true, text: async () => '', json: async () => ({})};
+            };
+            const core = {info: () => {}, warning: () => {}};
+            const base = {
+                core,
+                baseUrl: 'https://test-io.test.mattermost.com',
+                reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
+                webhookUrl: 'https://mm.example/hooks/master-health',
+                compositeIdentity: {
+                    repository: 'mattermost/desktop',
+                    branch: 'master',
+                    commit_sha: 'a1b2c3d4e5f678901234567890abcdef12345678',
+                    name: 'desktop-master',
+                    gh_run_id: '123456',
+                },
+            };
+            const detail = (failed) => ({
+                status: 'completed',
+                test_stats: {passed: 10, failed, skipped: 1},
+                reports: [{id: 'rid-linux', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1', status: 'complete'}],
+            });
+            try {
+                await notifyCmtChannel({...base, detail: detail(0)});
+                assert.equal(webhookBodies.length, 0, 'green master with unavailable counts must not post');
+
+                await notifyCmtChannel({...base, detail: detail(1)});
+                assert.equal(webhookBodies.length, 1, 'failed master must still post');
+                assert.match(webhookBodies[0], /Per-leg counts unavailable/);
+                assert.doesNotMatch(webhookBodies[0], /Missing\/empty/);
+            } finally {
+                global.fetch = originalFetch;
+            }
+        });
+
+        describe('triage-driven master alerts', () => {
+            const lanes = (verdict, extra = {}) => [{platform: 'linux', verdict, blocking: '0', exonerated: '1', ...extra}];
+
+            it('renders green when triage cleared the failing legs', () => {
+                const text = masterFailure({triageLanes: lanes('SUCCESS')});
+                assert.match(text, /^:green_circle: \*\*Desktop Master E2E — flaky, no bug found\*\*/);
+            });
+
+            it('stays red when triage leaves blocking failures', () => {
+                const text = masterFailure({triageLanes: lanes('FAILURE', {blocking: '1'})});
+                assert.match(text, /^:red_circle: \*\*Desktop Master E2E — failure on `master`\*\*/);
+            });
+
+            it('renders yellow when triage could not settle a leg', () => {
+                const text = masterFailure({triageLanes: lanes('ACTION_REQUIRED')});
+                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — needs investigation on `master`\*\*/);
+                assert.match(text, /AI triage could not settle: 🐧 Linux \/ Server `12\.1\.0-rc1` — not counted as flaky or as a bug/);
+                assert.ok(!(/exonerated|broken on trunk/).test(text), 'uses the existing triage wording, no new jargon');
+            });
+
+            it('calls a shard that uploaded complete but ran no tests a setup problem, not an unsettled failure', () => {
+                // The 2026-10-29 master run: Linux shard 1-of-3 died in
+                // globalSetup (Calls plugin did not disable), uploaded an
+                // empty report, and every other leg passed. 0 failed overall.
+                const text = formatCmtChannelMessage({
+                    compositeIdentity: {
+                        repository: 'mattermost/desktop',
+                        branch: 'master',
+                        commit_sha: 'a1b2c3d4e5f678901234567890abcdef12345678',
+                        name: 'desktop-master',
+                        gh_run_id: '123456',
+                    },
+                    detail: {
+                        status: 'completed',
+                        test_stats: {passed: 672, failed: 0, skipped: 36, total: 708},
+                        reports: [1, 2, 3].map((i) => ({
+                            id: `rid-linux-${i}`,
+                            gh_job_name: `e2e-on-ubuntu-latest-12.1.0-rc2-${i}-of-3`,
+                            status: 'complete',
+                            updated_at: '2026-10-29T04:16:13Z',
+                        })),
+                    },
+                    reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
+                    baseUrl: 'https://test-io.test.mattermost.com',
+                    perJobCounts: {
+                        'e2e-on-ubuntu-latest-12.1.0-rc2-1-of-3': {passed: 0, failed: 0, skipped: 0, flaky: 0},
+                        'e2e-on-ubuntu-latest-12.1.0-rc2-2-of-3': {passed: 340, failed: 0, skipped: 18, flaky: 0},
+                        'e2e-on-ubuntu-latest-12.1.0-rc2-3-of-3': {passed: 332, failed: 0, skipped: 18, flaky: 0},
+                    },
+                    upstreamJobsSucceeded: true,
+                    mergedPr: {number: 3916, title: 'Fix the thing', url: 'https://github.com/mattermost/desktop/pull/3916', author: 'dev'},
+                    triageLanes: [],
+                });
+                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — setup problem\*\*$/m);
+                assert.match(text, /\*\*0 failed\*\* · 672 passed · 36 skipped/);
+                assert.match(text, /⚙️ \*\*Setup:\*\* 🐧 Linux · Server `12\.1\.0-rc2` · 1 of 3 test groups ran no tests\. Not a product bug\./);
+                assert.doesNotMatch(text, /could not settle|needs investigation/);
+            });
+
+            it('renders the setup message when triage is absent', () => {
+                const text = formatCmtChannelMessage({
+                    compositeIdentity: {
+                        repository: 'mattermost/desktop',
+                        branch: 'master',
+                        commit_sha: 'a1b2c3d4e5f678901234567890abcdef12345678',
+                        name: 'desktop-master',
+                        gh_run_id: '123456',
+                    },
+                    detail: {
+                        status: 'completed',
+                        test_stats: {passed: 157, failed: 0, skipped: 4, total: 161},
+                        reports: [1, 2, 3].map((i) => ({
+                            id: `rid-linux-${i}`,
+                            gh_job_name: `e2e-on-ubuntu-latest-master-${i}-of-3`,
+                            status: 'complete',
+                            updated_at: '2026-10-29T04:16:13Z',
+                        })),
+                    },
+                    reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
+                    baseUrl: 'https://test-io.test.mattermost.com',
+                    perJobCounts: {
+                        'e2e-on-ubuntu-latest-master-1-of-3': {passed: 0, failed: 0, skipped: 0, flaky: 0},
+                        'e2e-on-ubuntu-latest-master-2-of-3': {passed: 80, failed: 0, skipped: 2, flaky: 0},
+                        'e2e-on-ubuntu-latest-master-3-of-3': {passed: 77, failed: 0, skipped: 2, flaky: 0},
+                    },
+                    upstreamJobsSucceeded: true,
+                });
+                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — setup problem\*\*$/m);
+                assert.match(text, /⚙️ \*\*Setup:\*\* 🐧 Linux · Server `master` · 1 of 3 test groups ran no tests\. Not a product bug\./);
+                assert.doesNotMatch(text, /:red_circle:|Missing\/empty:/);
+            });
+
+            it('does not call a shard that just completed with no tests yet a setup problem: its tests may still be landing', () => {
+                const text = formatCmtChannelMessage({
+                    compositeIdentity: {repository: 'mattermost/desktop', branch: 'master', commit_sha: 'a1b2c3d4e5f678901234567890abcdef12345678', name: 'desktop-master', gh_run_id: '123456'},
+                    detail: {
+                        status: 'completed',
+                        test_stats: {passed: 157, failed: 0, skipped: 4, total: 161},
+                        reports: [1, 2, 3].map((i) => ({id: `rid-linux-${i}`, gh_job_name: `e2e-on-ubuntu-latest-master-${i}-of-3`, status: 'complete', updated_at: new Date().toISOString()})),
+                    },
+                    reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
+                    baseUrl: 'https://test-io.test.mattermost.com',
+                    perJobCounts: {
+                        'e2e-on-ubuntu-latest-master-2-of-3': {passed: 80, failed: 0, skipped: 2, flaky: 0},
+                        'e2e-on-ubuntu-latest-master-3-of-3': {passed: 77, failed: 0, skipped: 2, flaky: 0},
+                    },
+                    upstreamJobsSucceeded: true,
+                    triageLanes: [],
+                });
+                assert.doesNotMatch(text, /setup problem|Not a product bug|could not settle/);
+                assert.match(text, /⚙️ \*\*No results:\*\* 🐧 Linux \/ Server `master` — test results did not upload; re-run to see if anything failed/);
+            });
+
+            it('shows both setup and missing legs when another leg is missing without triage', () => {
+                const text = formatCmtChannelMessage({
+                    compositeIdentity: {
+                        repository: 'mattermost/desktop',
+                        branch: 'master',
+                        commit_sha: 'a1b2c3d4e5f678901234567890abcdef12345678',
+                        name: 'desktop-master',
+                        gh_run_id: '123456',
+                    },
+                    detail: {
+                        status: 'completed',
+                        test_stats: {passed: 10, failed: 0, skipped: 0, total: 10},
+                        reports: [
+                            {id: 'rid-linux', gh_job_name: 'e2e-on-ubuntu-latest-master', status: 'complete'},
+                            {id: 'rid-windows', gh_job_name: 'e2e-on-windows-2022-master', status: 'complete'},
+                            {id: 'rid-macos', gh_job_name: 'e2e-on-macos-26-master', status: 'processing'},
+                        ],
+                    },
+                    reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
+                    baseUrl: 'https://test-io.test.mattermost.com',
+                    perJobCounts: {
+                        'e2e-on-ubuntu-latest-master': {passed: 0, failed: 0, skipped: 0, flaky: 0},
+                        'e2e-on-windows-2022-master': {passed: 10, failed: 0, skipped: 0, flaky: 0},
+                    },
+                    upstreamJobsSucceeded: true,
+                });
+                assert.match(text, /^:red_circle: \*\*Desktop Master E2E — failure on `master`\*\*$/m);
+                assert.match(text, /⚙️ \*\*Setup:\*\* 🐧 Linux · Server `master` · 1 of 1 test group ran no tests\. Not a product bug\./);
+                assert.match(text, /Missing\/empty: 🍎 macOS \/ Server `master`/);
+            });
+
+            it('keeps the failures triage cleared in a setup-problem message', () => {
+                const text = formatCmtChannelMessage({
+                    compositeIdentity: {repository: 'mattermost/desktop', branch: 'master', commit_sha: 'a1b2c3d4e5f678901234567890abcdef12345678', name: 'desktop-master', gh_run_id: '123456'},
+                    detail: {
+                        status: 'completed',
+                        test_stats: {passed: 155, failed: 2, skipped: 4, total: 161},
+                        reports: [1, 2, 3].map((i) => ({id: `rid-linux-${i}`, gh_job_name: `e2e-on-ubuntu-latest-master-${i}-of-3`, status: 'complete', updated_at: '2026-10-29T04:16:13Z'})),
+                    },
+                    reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
+                    baseUrl: 'https://test-io.test.mattermost.com',
+                    perJobCounts: {
+                        'e2e-on-ubuntu-latest-master-2-of-3': {passed: 78, failed: 2, skipped: 2, flaky: 0},
+                        'e2e-on-ubuntu-latest-master-3-of-3': {passed: 77, failed: 0, skipped: 2, flaky: 0},
+                    },
+                    upstreamJobsSucceeded: true,
+                    triageLanes: [{platform: 'linux', verdict: 'SUCCESS', blocking: 0, exonerated: 2}],
+                });
+                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — setup problem\*\*$/m);
+                assert.match(text, /^🔁 The 2 failed tests \(1 leg\) are not product bugs: AI triage found them flaky, already failing on master, or an infra failure\.$/m);
+                assert.match(text, /⚙️ \*\*Setup:\*\* 🐧 Linux · Server `master` · 1 of 3 test groups ran no tests\./);
+            });
+
+            it('does not call legs setup failures when per-leg counts are unavailable', () => {
+                const text = formatCmtChannelMessage({
+                    compositeIdentity: {
+                        repository: 'mattermost/desktop',
+                        branch: 'master',
+                        commit_sha: 'a1b2c3d4e5f678901234567890abcdef12345678',
+                        name: 'desktop-master',
+                        gh_run_id: '123456',
+                    },
+                    detail: {
+                        status: 'completed',
+                        test_stats: {passed: 10, failed: 0, skipped: 1, total: 11},
+                        reports: [{id: 'rid-linux', gh_job_name: 'e2e-on-ubuntu-latest-master', status: 'complete'}],
+                    },
+                    reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
+                    baseUrl: 'https://test-io.test.mattermost.com',
+                    perJobCounts: {},
+                    perJobCountsAvailable: false,
+                    upstreamJobsSucceeded: false,
+                });
+                assert.match(text, /Per-leg counts unavailable/);
+                assert.doesNotMatch(text, /Setup:|setup problem/);
+            });
+
+            it('names the legs triage did clear on a blocking run', () => {
+                const text = formatCmtChannelMessage({
+                    compositeIdentity: {
+                        repository: 'mattermost/desktop',
+                        branch: 'master',
+                        commit_sha: 'a1b2c3d4e5f678901234567890abcdef12345678',
+                        name: 'desktop-master',
+                        gh_run_id: '123456',
+                    },
+                    detail: {
+                        status: 'completed',
+                        test_stats: {passed: 100, failed: 3, skipped: 0, total: 103},
+                        reports: [
+                            {id: 'r-linux', gh_job_name: 'e2e-on-ubuntu-latest-master', status: 'complete'},
+                            {id: 'r-macos', gh_job_name: 'e2e-on-macos-26-master', status: 'complete'},
+                        ],
+                    },
+                    reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
+                    baseUrl: 'https://test-io.test.mattermost.com',
+                    perJobCounts: {
+                        'e2e-on-ubuntu-latest-master': {passed: 50, failed: 2, skipped: 0, flaky: 0},
+                        'e2e-on-macos-26-master': {passed: 50, failed: 1, skipped: 0, flaky: 0},
+                    },
+                    upstreamJobsSucceeded: true,
+                    triageLanes: [
+                        {platform: 'linux', verdict: 'FAILURE', blocking: '2', exonerated: '0'},
+                        {platform: 'macos', verdict: 'SUCCESS', blocking: '0', exonerated: '1'},
+                    ],
+                });
+                assert.match(text, /^:red_circle:/);
+                assert.match(text, /Failing: 🐧 Linux Server `master` — 2 failed/);
+                assert.doesNotMatch(text, /🍎 macOS Server/, 'cleared legs are not listed as failing');
+                assert.match(text, /AI triage cleared 1 failing leg \(flaky \/ failed in master \/ Infra failure\); the rest still block\./);
+            });
+
+            it('notifyCmtChannel stays silent when triage cleared the failure and posts yellow when inconclusive', async () => {
+                const originalFetch = global.fetch;
+                const webhookBodies = [];
+                global.fetch = async (url, options) => {
+                    if (String(url).includes('mm.example')) {
+                        webhookBodies.push(JSON.parse(options.body).text);
+                        return {ok: true, text: async () => '', json: async () => ({})};
+                    }
+                    const specs = [{
+                        history: [{commit_sha: 'a1b2c3d4e5f678901234567890abcdef12345678', run_attempt: '1', report_id: 'rid-linux', status: 'failed'}],
+                    }];
+                    return {ok: true, text: async () => '', json: async () => ({specs})};
+                };
+                const core = {info: () => {}, warning: () => {}};
+                const base = {
+                    core,
+                    baseUrl: 'https://test-io.test.mattermost.com',
+                    reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
+                    webhookUrl: 'https://mm.example/hooks/master-health',
+                    compositeIdentity: {
+                        repository: 'mattermost/desktop',
+                        branch: 'master',
+                        commit_sha: 'a1b2c3d4e5f678901234567890abcdef12345678',
+                        name: 'desktop-master',
+                        gh_run_id: '123456',
+                        gh_run_attempt: '1',
+                    },
+                    detail: {
+                        status: 'completed',
+                        test_stats: {passed: 10, failed: 1, skipped: 1},
+                        reports: [{id: 'rid-linux', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1', status: 'complete'}],
+                    },
+                };
+                try {
+                    await notifyCmtChannel({...base, triageLanes: lanes('SUCCESS')});
+                    assert.equal(webhookBodies.length, 0, 'triage-cleared master failure must not post');
+
+                    await notifyCmtChannel({...base, triageLanes: lanes('ACTION_REQUIRED')});
+                    assert.equal(webhookBodies.length, 1, 'inconclusive master failure must post');
+                    assert.match(webhookBodies[0], /^:yellow_circle:/);
+                } finally {
+                    global.fetch = originalFetch;
+                }
+            });
         });
     });
 
@@ -480,6 +936,22 @@ describe('cmt-channel-notify', () => {
                 '11.9.0-linux',
                 '10.5.14-windows',
             ]);
+        });
+
+        it('requires explicit zero-test evidence before marking a completed leg no-results', () => {
+            const reports = [
+                {gh_job_name: 'e2e-on-ubuntu-latest-11.9.0', status: 'complete'},
+                {gh_job_name: 'e2e-on-macos-14-11.9.0', status: 'complete'},
+                {gh_job_name: 'e2e-on-windows-2022-11.9.0', status: 'complete', test_stats: {passed: 0, failed: 0, skipped: 0, flaky: 0, total: 0}},
+            ];
+            const byOs = (rows) => Object.fromEntries(rows.map((r) => [r.os, r.status]));
+
+            assert.equal(byOs(buildLegSummaries({}, reports)).linux, 'missing', 'a missing consolidated count is not zero-test evidence');
+            assert.equal(byOs(buildLegSummaries(
+                {'e2e-on-ubuntu-latest-11.9.0': {passed: 0, failed: 0, skipped: 0, flaky: 0}},
+                reports,
+            )).linux, 'no-results', 'an explicit zero per-job count is zero-test evidence');
+            assert.equal(byOs(buildLegSummaries({}, reports)).windows, 'no-results', 'a zero report total is zero-test evidence');
         });
     });
 });

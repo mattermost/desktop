@@ -45,6 +45,48 @@ const threeOs = [
     {platform: 'windows', runner: 'windows-2022', url: 'https://windows.example'},
 ];
 
+describe('E2E/Override label handlers', () => {
+    // Regression (#4040): removing E2E/Run and adding E2E/Override together fired
+    // both label handlers concurrently and the cancel handler posted `error`
+    // last, overwriting the waiver. All three status writers must consult
+    // current labels before posting.
+    it('consult current labels before posting statuses', () => {
+        const trigger = workflow('e2e-pr-trigger.yml');
+        assert.match(trigger, /no longer has E2E\/Override — skipping waiver/);
+        assert.match(trigger, /has E2E\/Override again — skipping re-arm/);
+        assert.match(trigger, /has E2E\/Override — skipping cancelled status update/);
+    });
+
+    it('serializes label handlers per PR and re-reads labels before final writes', () => {
+        const trigger = workflow('e2e-pr-trigger.yml');
+        assert.match(trigger, /group: e2e-pr-trigger-\$\{\{ github\.event\.pull_request\.number \}\}/);
+        assert.match(trigger, /cancel-in-progress: false/);
+        assert.match(trigger, /lost E2E\/Override before the waiver posted — skipping/);
+        assert.match(trigger, /regained E2E\/Override before re-arm — skipping/);
+    });
+
+    it('paginates every label read', () => {
+        const trigger = workflow('e2e-pr-trigger.yml');
+        const paginated = trigger.split('github.paginate(github.rest.issues.listLabelsOnIssue').length - 1;
+        const raw = trigger.split('await github.rest.issues.listLabelsOnIssue').length - 1;
+        assert.ok(paginated >= 4, `expected >=4 paginated label reads, got ${paginated}`);
+        assert.equal(raw, 0);
+    });
+
+    // The label job checks out the base ref, so a step that require()s a helper
+    // added by the same PR crashes until that PR merges
+    // ("isE2EOverrideActive is not a function", run 40287658710), and a local
+    // composite action is likewise loaded from the base checkout. Current-label
+    // checks must be inlined in the workflow, never require()d or delegated.
+    it('never require()s a branch-only helper from the base-ref checkout', () => {
+        const trigger = workflow('e2e-pr-trigger.yml');
+        assert.doesNotMatch(trigger, /isE2EOverrideActive/);
+        assert.doesNotMatch(trigger, /uses: \.\/\.github\/actions\/cancel-e2e-runs/);
+        assert.equal('isE2EOverrideActive' in require('./github-actions'), false);
+        assert.equal(fs.existsSync(path.join(repoRoot, '.github/actions/cancel-e2e-runs/action.yml')), false);
+    });
+});
+
 describe('expandPlatformShards / prepareE2eMatrix', () => {
     it('shards linux×3, macos×2, windows×3', () => {
         assert.deepEqual(E2E_PLAYWRIGHT_SHARDS, {linux: 3, macos: 2, windows: 3});
@@ -178,6 +220,62 @@ describe('e2e-functional.yml status jobs', () => {
             }
         }
     });
+
+    it('checks out cmt-triage-verdict.js wherever cmt-channel-notify.js is loaded', () => {
+        // cmt-channel-notify.js requires ./cmt-triage-verdict; a sparse
+        // checkout missing it crashes the status job at require time
+        // (PR E2E run 40478469985: every status job failed, tests passed).
+        const sparseBlocks = (source) => {
+            const blocks = [];
+            const lines = source.split(/\r?\n/);
+            for (let i = 0; i < lines.length; i++) {
+                if (!(/sparse-checkout: \|/).test(lines[i])) {
+                    continue;
+                }
+                const block = [];
+                for (let j = i + 1; j < lines.length; j++) {
+                    const match = lines[j].match(/^\s+(\S+)$/);
+                    if (!match) {
+                        break;
+                    }
+                    block.push(match[1]);
+                }
+                blocks.push(block);
+            }
+            return blocks;
+        };
+        for (const file of ['e2e-functional.yml', 'e2e-post-os-status.yml', 'compatibility-matrix-testing.yml']) {
+            for (const block of sparseBlocks(workflow(file))) {
+                if (block.includes('e2e/utils/cmt-channel-notify.js')) {
+                    assert.ok(
+                        block.includes('e2e/utils/cmt-triage-verdict.js'),
+                        `${file} sparse checkout loads cmt-channel-notify.js without cmt-triage-verdict.js: ${block.join(', ')}`,
+                    );
+                }
+            }
+        }
+    });
+
+    it('defers the master channel alert to the post-triage verdict job', () => {
+        // tsio-summary still notifies PRs immediately, but never master.
+        assert.match(jobLines(yml, 'tsio-summary').join('\n'), /notifyChannel: compositeIdentity\.name !== 'desktop-master'/);
+        assert.match(jobLines(yml, 'tsio-summary').join('\n'), /report-url: /);
+
+        // Every triage lane records its verdict for the fold.
+        const triage = jobLines(yml, 'tsio-triage').join('\n');
+        assert.match(triage, /id: triage/);
+        assert.match(triage, /name: e2e-triage-verdict-/);
+
+        // The verdict job judges every master run: notifyCmtChannel stays
+        // silent on green, and missing/empty legs still alert even when the
+        // summary itself succeeded.
+        const verdict = jobLines(yml, 'master-e2e-verdict').join('\n');
+        assert.match(verdict, /fromJson\(needs\.prepare-matrix\.outputs\.tsio-composite-identity\)\.name == 'desktop-master'/);
+        assert.doesNotMatch(verdict, /needs\.tsio-summary\.result/);
+        assert.match(verdict, /pattern: e2e-triage-verdict-\*/);
+        assert.match(verdict, /notifyCmtChannel/);
+        assert.match(verdict, /triageLanes/);
+    });
 });
 
 describe('e2e job timeout-minutes', () => {
@@ -207,11 +305,14 @@ describe('CMT posts only e2e/compatibility-matrix-testing', () => {
         assert.doesNotMatch(cmt, /perOsCommitStatuses: true/);
     });
 
-    it('uses the CMT aggregate context and keeps channel notify on', () => {
+    it('uses the CMT aggregate context and defers channel notify to the verdict job', () => {
         assert.match(cmt, /context: e2e\/compatibility-matrix-testing/);
         assert.match(cmt, /COMMIT_STATUS_CONTEXT: e2e\/compatibility-matrix-testing/);
         assert.match(cmt, /MATTERMOST_CMT_WEBHOOK_URL:/);
-        assert.doesNotMatch(cmt, /notifyChannel: false/);
+
+        // The summary no longer posts the verbose rollup itself; cmt-verdict
+        // posts one short triage-driven message once cmt-triage has folded.
+        assert.match(cmt, /notifyChannel: false/);
     });
 
     it('runs unsharded per-OS legs; linux/windows wait on their install job, macos does not', () => {
@@ -222,6 +323,28 @@ describe('CMT posts only e2e/compatibility-matrix-testing', () => {
         assert.doesNotMatch(linux, /e2e-(macos|windows)-install/);
         assert.doesNotMatch(jobLines(cmt, 'e2e-macos').join('\n'), /e2e-.*-install/);
         assert.match(jobLines(cmt, 'e2e-windows').join('\n'), /- e2e-windows-install/);
+    });
+
+    it('gives each triage lane its own verdict file, so the merged download keeps every lane', () => {
+        // With one shared file name, merge-multiple kept only the last lane: the run was judged on 1 of 15.
+        const triage = jobLines(cmt, 'cmt-triage').join('\n');
+        assert.match(triage, /VERDICT_FILE="cmt-triage-verdict-\$\(printf '%s-%s' "\$\{PLATFORM\}" "\$\{SERVER_VERSION\}" \| tr -c 'A-Za-z0-9\._-' '_'\)-\$\(printf '%s\\n%s' "\$\{PLATFORM\}" "\$\{SERVER_VERSION\}" \| sha256sum \| cut -c1-8\)\.json"/);
+        assert.match(triage, /> "\$\{VERDICT_FILE\}"/);
+        assert.match(triage, /path: \$\{\{ steps\.record-verdict\.outputs\.file \}\}/);
+        assert.doesNotMatch(triage, /cmt-triage-verdict\.json/);
+        assert.match(jobLines(cmt, 'cmt-verdict').join('\n'), /merge-multiple: true/);
+    });
+
+    it('records each failed test with its lane verdict, from the triage findings file', () => {
+        const triage = jobLines(cmt, 'cmt-triage').join('\n');
+        assert.match(triage, /findings-file: e2e-triage-findings\.json/);
+        assert.match(triage, /if \.schema == 2 then \[\.findings\[\] \| \{title, full_title, file, label, blocking, explanation: \.ai\.explanation\}\]/);
+        assert.match(triage, /elif \.schema == 1 then \[\.findings\[\] \| \{title, full_title, file, blocking, explanation: null,/);
+        assert.match(triage, /--argjson findingsRecorded "\$\{RECORDED\}"/);
+        assert.match(triage, /--argjson findings "\$\{FINDINGS\}"/);
+        const action = read('.github/actions/e2e-triage/action.yml');
+        assert.match(action, /findings-file: \$\{\{ inputs\.findings-file \}\}/);
+        assert.match(action, / {2}findings-file:\r?\n(?:.*\r?\n){2} {4}default: ''/, 'off unless a caller asks: PR and master lanes write none');
     });
 });
 

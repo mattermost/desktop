@@ -27,6 +27,7 @@ const {
     parseCmtJobName,
     fetchPerJobCountsFromConsolidated,
     buildIndividualReportUrl,
+    reportRanNoTests,
 } = require('./cmt-channel-notify');
 const {
     osStatusContext,
@@ -34,6 +35,59 @@ const {
     E2E_OS_LIST,
     E2E_POLICY_OS_LIST,
 } = require('./github-actions');
+
+/**
+ * Master runs are dispatched with no PR number, so the merge that produced the
+ * head commit is resolved from the commit itself. Best-effort: any API failure
+ * returns nulls and the channel alert falls back to the short SHA.
+ *
+ * @returns {Promise<{mergedPr: Object|null, headCommit: Object|null}>}
+ */
+async function resolveMasterMergeContext({github, context, compositeIdentity, core}) {
+    const fallback = {mergedPr: null, headCommit: null};
+    if (!compositeIdentity?.commit_sha || !context?.repo?.owner || !context?.repo?.repo) {
+        return fallback;
+    }
+    const owner = context.repo.owner;
+    const repo = context.repo.repo;
+    try {
+        const {data} = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+            owner,
+            repo,
+            commit_sha: compositeIdentity.commit_sha,
+        });
+        const merged = (Array.isArray(data) ? data : []).filter((pr) => pr.merged_at);
+        if (merged.length > 0) {
+            const branch = (compositeIdentity.branch || '').replace(/^refs\/(heads|tags)\//, '');
+            const pr = merged.find((candidate) => candidate.base?.ref === branch) || merged[0];
+            return {
+                mergedPr: {
+                    number: pr.number,
+                    title: pr.title || '',
+                    url: pr.html_url || '',
+                    author: pr.user?.login || '',
+                },
+                headCommit: null,
+            };
+        }
+    } catch (error) {
+        core?.warning?.(`Could not resolve merged PR for ${compositeIdentity.commit_sha}: ${error.message}`);
+        return fallback;
+    }
+    try {
+        const {data} = await github.rest.repos.getCommit({owner, repo, ref: compositeIdentity.commit_sha});
+        const subject = (data?.commit?.message || '').split('\n')[0].trim();
+        if (subject) {
+            return {
+                mergedPr: null,
+                headCommit: {subject, author: data.author?.login || data.commit?.author?.name || ''},
+            };
+        }
+    } catch (error) {
+        core?.warning?.(`Could not resolve head commit ${compositeIdentity.commit_sha}: ${error.message}`);
+    }
+    return fallback;
+}
 
 /**
  * Bucket key for commit-status aggregation.
@@ -87,6 +141,19 @@ function hasCountsForEveryUploadedReport(detail, perJobCounts, bucketKey) {
         return false;
     }
     return jobNames.every((name) => Object.prototype.hasOwnProperty.call(perJobCounts, name));
+}
+
+/**
+ * Uploaded reports for this bucket that ran no tests: their setup failed before the first test (see
+ * reportRanNoTests, the same rule the channel message uses).
+ *
+ * @returns {number}
+ */
+function countEmptyUploadedReports(detail, perJobCounts, bucketKey, now = Date.now()) {
+    return (detail?.reports || []).filter((report) => {
+        const name = report.gh_job_name || report.display_name;
+        return Boolean(name) && statusBucketKey(parseCmtJobName(name)) === bucketKey && reportRanNoTests(report, perJobCounts, now);
+    }).length;
 }
 
 /**
@@ -324,7 +391,7 @@ function resolveExpectedPolicyOs(expectedPolicyOs) {
  * @param {Object} row
  * @param {boolean} upstreamJobsSucceeded
  * @param {string} incompleteLabel
- * @param {{minReports?: number, uploadedReports?: number, hasPerJobCounts?: boolean, hasCountsForEveryUploadedReport?: boolean, overallFailed?: number}} [completeness]
+ * @param {{minReports?: number, uploadedReports?: number, hasPerJobCounts?: boolean, hasCountsForEveryUploadedReport?: boolean, emptyUploadedReports?: number, overallFailed?: number}} [completeness]
  * @returns {{state: string, description: string}}
  */
 function statusFromTotals(row, upstreamJobsSucceeded, incompleteLabel, completeness = {}) {
@@ -363,6 +430,14 @@ function statusFromTotals(row, upstreamJobsSucceeded, incompleteLabel, completen
         return {
             state: 'error',
             description: 'TSIO per-job counts unavailable with test failures',
+        };
+    }
+    if ((completeness.emptyUploadedReports || 0) > 0) {
+        const empty = completeness.emptyUploadedReports;
+        const total = Number.isInteger(completeness.uploadedReports) && completeness.uploadedReports > 0 ? completeness.uploadedReports : empty;
+        return {
+            state: 'error',
+            description: `Setup problem: ${empty} of ${total} test groups ran no tests (setup failed before the first test)`,
         };
     }
     if (completeness.hasCountsForEveryUploadedReport === false) {
@@ -406,6 +481,7 @@ function bucketCompleteness(bucketKey, minReports, {detail, perJobCounts, hasPer
         hasPerJobCounts,
         overallFailed,
         hasCountsForEveryUploadedReport: hasCountsForEveryUploadedReport(detail, perJobCounts, bucketKey),
+        emptyUploadedReports: countEmptyUploadedReports(detail, perJobCounts, bucketKey),
     };
 }
 
@@ -449,6 +525,20 @@ async function flipPerOsCommitStatuses({
         fallbackUrl: targetUrl,
     });
 
+    const withRun = (url) => {
+        if (!url || !compositeIdentity?.gh_run_id || !compositeIdentity?.gh_run_attempt) {
+            return url;
+        }
+        try {
+            const u = new URL(url);
+            u.searchParams.set('gh_run_id', String(compositeIdentity.gh_run_id));
+            u.searchParams.set('gh_run_attempt', String(compositeIdentity.gh_run_attempt));
+            return u.href;
+        } catch {
+            return url;
+        }
+    };
+
     const posts = [
         ...oss.map(async (os) => {
             const row = byKey[os] || emptyRow;
@@ -466,7 +556,7 @@ async function flipPerOsCommitStatuses({
                     state,
                     context: osStatusContext(os),
                     description: description.slice(0, 140),
-                    target_url: urlFor(os),
+                    target_url: withRun(urlFor(os)),
                 });
             } catch (error) {
                 core.warning(`Failed to create ${osStatusContext(os)} status: ${error.message}`);
@@ -552,7 +642,7 @@ function shouldPostPerOsCommitStatuses(perOsCommitStatuses, compositeIdentity) {
  *   12, or TSIO_POLL_ATTEMPTS env). CMT runs with many legs should pass a higher value.
  * @param {number} [params.pollDelayMs] - Delay between polls in ms (default 5000, or
  *   TSIO_POLL_DELAY_MS env).
- * @returns {Promise<{reportUrl: string, status: string, stats: Object}>}
+ * @returns {Promise<{reportUrl: string, status: string, stats: Object, detail: Object}>}
  */
 async function reportTsioStatus({
     core,
@@ -779,9 +869,7 @@ async function reportTsioStatus({
             `:warning: Report finalized as \`incomplete\` (${uploadedShards}/${totalReportsExpected} shards) — partial results are in the [TSIO report](${displayReportUrl}); see the [workflow run](${runUrl}) for missing legs.`,
         );
     } else if (!isComplete) {
-        const shardsNote = uploadedShards >= totalReportsExpected && totalReportsExpected > 0 ?
-            `All ${uploadedShards}/${totalReportsExpected} shards are uploaded; TSIO consolidation is still \`${detail.status}\`.` :
-            `TSIO group still \`${detail.status}\` after polling (${uploadedShards}/${totalReportsExpected} shards).`;
+        const shardsNote = uploadedShards >= totalReportsExpected && totalReportsExpected > 0 ? `All ${uploadedShards}/${totalReportsExpected} shards are uploaded; TSIO consolidation is still \`${detail.status}\`.` : `TSIO group still \`${detail.status}\` after polling (${uploadedShards}/${totalReportsExpected} shards).`;
         summaryLines.push(
             '',
             `:warning: ${shardsNote} Commit status follows upstream jobs and test failures, not TSIO consolidation — see the [workflow run](${runUrl}).`,
@@ -818,9 +906,7 @@ async function reportTsioStatus({
             // failures — that would flip e2e/<os> to error and clear pending.
             // If the group already has failures, post error instead of success.
             core.warning(
-                overallFailed > 0 ?
-                    `Could not load per-OS TSIO counts with test failures — marking e2e/<os> error: ${error.message}` :
-                    `Could not load per-OS TSIO counts — leaving e2e/<os> statuses pending: ${error.message}`,
+                overallFailed > 0 ? `Could not load per-OS TSIO counts with test failures — marking e2e/<os> error: ${error.message}` : `Could not load per-OS TSIO counts — leaving e2e/<os> statuses pending: ${error.message}`,
             );
             perJobCounts = null;
         }
@@ -862,6 +948,10 @@ async function reportTsioStatus({
                 // Prefer TSIO links even when the poll timed out at in_progress
                 // (commit status may still point at the Actions run URL).
                 const channelReportUrl = displayReportUrl || groupReportUrl || targetUrl;
+                let mergeContext = {mergedPr: null, headCommit: null};
+                if (compositeIdentity.name === 'desktop-master') {
+                    mergeContext = await resolveMasterMergeContext({github, context, compositeIdentity, core});
+                }
                 await notifyCmtChannel({
                     core,
                     baseUrl,
@@ -871,6 +961,8 @@ async function reportTsioStatus({
                     upstreamJobsSucceeded,
                     hasFailures,
                     webhookUrl,
+                    mergedPr: mergeContext.mergedPr,
+                    headCommit: mergeContext.headCommit,
                 });
             }
         }
@@ -895,7 +987,10 @@ async function reportTsioStatus({
         let reason;
         if (readyWhenOs) {
             const row = byKey[readyWhenOs] || EMPTY_OS_ROW;
-            if (!upstreamJobsSucceeded && row.failed === 0 && !row.shardFailed) {
+            const emptyGroups = countEmptyUploadedReports(detail, perJobCounts, readyWhenOs);
+            if (emptyGroups > 0 && row.failed === 0 && !row.shardFailed) {
+                reason = `${readyWhenOs}: setup problem: ${emptyGroups} of ${countReportsForBucket(detail, readyWhenOs)} test groups ran no tests (setup failed before the first test)`;
+            } else if (!upstreamJobsSucceeded && row.failed === 0 && !row.shardFailed) {
                 reason = `an upstream CI job failed with no corresponding test failure (${readyWhenOs})`;
             } else {
                 reason = `${readyWhenOs}: ${row.passed} passed, ${row.failed} failed, shardFailed=${row.shardFailed}`;
@@ -909,7 +1004,14 @@ async function reportTsioStatus({
         } else {
             reason = `status=${detail.status}, failed=${stats.failed || 0}`;
         }
-        throw new Error(`TSIO report ${reportId} did not pass: ${reason}`);
+        const failure = new Error(`TSIO report ${reportId} did not pass: ${reason}`);
+
+        // Callers that catch (e.g. CMT, which defers its channel post to a
+        // post-triage verdict job) still need the report link and totals.
+        failure.reportUrl = displayReportUrl || groupReportUrl;
+        failure.stats = stats;
+        failure.detail = detail;
+        throw failure;
     }
 
     if (!isComplete && overallState === 'success') {
@@ -919,7 +1021,7 @@ async function reportTsioStatus({
         );
     }
 
-    return {reportUrl: displayReportUrl || groupReportUrl, status: detail.status, stats};
+    return {reportUrl: displayReportUrl || groupReportUrl, status: detail.status, stats, detail};
 }
 
 module.exports = reportTsioStatus;
@@ -932,4 +1034,6 @@ module.exports.shouldFailFromScope = shouldFailFromScope;
 module.exports.statusFromTotals = statusFromTotals;
 module.exports.scopedHasShardFailure = scopedHasShardFailure;
 module.exports.hasCountsForEveryUploadedReport = hasCountsForEveryUploadedReport;
+module.exports.countEmptyUploadedReports = countEmptyUploadedReports;
 module.exports.shouldPostPerOsCommitStatuses = shouldPostPerOsCommitStatuses;
+module.exports.resolveMasterMergeContext = resolveMasterMergeContext;

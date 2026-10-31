@@ -28,6 +28,8 @@ type State = {
     unreads?: Map<string, boolean>;
     mentions?: Map<string, number>;
     expired?: Map<string, boolean>;
+    isModalOpen?: boolean;
+    pendingModals?: Map<string, boolean>;
     isAnyDragging: boolean;
     windowBounds?: Electron.Rectangle;
     nonce?: string;
@@ -69,6 +71,8 @@ class ServerDropdown extends React.PureComponent<Record<string, never>, State> {
         expired?: Map<string, boolean>,
         mentions?: Map<string, number>,
         unreads?: Map<string, boolean>,
+        isModalOpen?: boolean,
+        pendingModals?: Map<string, boolean>,
     ) => {
         this.setState({
             servers,
@@ -78,6 +82,8 @@ class ServerDropdown extends React.PureComponent<Record<string, never>, State> {
             mentions,
             expired,
             windowBounds,
+            isModalOpen,
+            pendingModals,
         });
     };
 
@@ -273,12 +279,19 @@ class ServerDropdown extends React.PureComponent<Record<string, never>, State> {
                                 >
                                     {this.state.servers?.map((server, orderedIndex) => {
                                         const index = this.state.servers?.indexOf(server);
+                                        const hasPendingModal = this.state.pendingModals?.get(server.id!);
                                         const sessionExpired = this.state.expired?.get(server.id!);
                                         const hasUnreads = this.state.unreads?.get(server.id!);
                                         const mentionCount = this.state.mentions?.get(server.id!);
 
                                         let badgeDiv: React.ReactNode;
-                                        if (sessionExpired) {
+                                        if (hasPendingModal) {
+                                            badgeDiv = (
+                                                <div className='ServerDropdown__badge-pendingModal'>
+                                                    <i className='icon-alert-outline'/>
+                                                </div>
+                                            );
+                                        } else if (sessionExpired) {
                                             badgeDiv = (
                                                 <div className='ServerDropdown__badge-expired'>
                                                     <i className='icon-alert-circle-outline'/>
@@ -327,13 +340,15 @@ class ServerDropdown extends React.PureComponent<Record<string, never>, State> {
                                                             <span>{server.name}</span>
                                                         </div>
                                                         <div className='ServerDropdown__indicators'>
-                                                            <button
-                                                                className='ServerDropdown__button-edit'
-                                                                onClick={this.editServer(server.id!)}
-                                                            >
-                                                                <i className='icon-pencil-outline'/>
-                                                            </button>
-                                                            {!server.isPredefined &&
+                                                            {!this.state.isModalOpen &&
+                                                                <button
+                                                                    className='ServerDropdown__button-edit'
+                                                                    onClick={this.editServer(server.id!)}
+                                                                >
+                                                                    <i className='icon-pencil-outline'/>
+                                                                </button>
+                                                            }
+                                                            {!server.isPredefined && !this.state.isModalOpen &&
                                                                 <button
                                                                     className='ServerDropdown__button-remove'
                                                                     onClick={this.removeServer(server.id!)}
@@ -363,6 +378,7 @@ class ServerDropdown extends React.PureComponent<Record<string, never>, State> {
                             }}
                             className='ServerDropdown__button addServer'
                             onClick={this.addServer}
+                            disabled={this.state.isModalOpen}
                         >
                             <i className='icon-plus'/>
                             <FormattedMessage

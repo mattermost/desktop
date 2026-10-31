@@ -2,7 +2,7 @@
 
 **Every instruction below is mandatory and must be followed exactly, in full, no matter what.** Do not skip, abbreviate, or substitute a step even if the app appears to work without it — issues from a skipped step (e.g. blank/`ERR_INSUFFICIENT_RESOURCES` views, blocking dialogs, stray processes) often only surface later and are hard to attribute back to the missing step.
 
-- A virtual display is already running (`DISPLAY=:99` via Xvfb) with Openbox as the window manager. GUI/manual testing of the app's internal UI (onboarding, settings, modals, tab bar) works out of the box.
+- A virtual display is already running (`DISPLAY=:99` via Xvfb) with `xfwm4` as the window manager. GUI/manual testing of the app's internal UI (onboarding, settings, modals, tab bar) works out of the box.
 - Passwordless sudo is available and required by `npm run linux-dev-setup` (sets the chrome-sandbox setuid bit).
 - `npm start` runs `linux-dev-setup` then launches `electron dist/ --disable-dev-mode`.
 - Benign on startup, not bugs: GTK accel-group assertion warnings, one-time `ENOENT bounds-info.json` on first launch, and isolated `net::ERR_FAILED` from first-launch requests that have no configured server yet (e.g. update checks before any server is added). Treat `net::ERR_FAILED` (and other network errors) as **actionable** when connecting to a configured Mattermost server URL or any other resource the task depends on.
@@ -20,7 +20,7 @@
 
 ### Typing into a server view (WebContentsView)
 
-Each server renders in a `WebContentsView` whose `webContents.focus()` is gated on the main window being focused (`src/app/views/MattermostWebContentsView.ts`). A synthetic click (computer use / `xdotool`) landing *inside* the WebContentsView content (e.g. directly on the login form) does not reliably transfer OS/Electron-level keyboard focus to it, even though the outer `BrowserWindow` and Openbox both report the window as focused — this is not a missing-window-manager issue.
+Each server renders in a `WebContentsView` whose `webContents.focus()` is gated on the main window being focused (`src/app/views/MattermostWebContentsView.ts`). A synthetic click (computer use / `xdotool`) landing *inside* the WebContentsView content (e.g. directly on the login form) does not reliably transfer OS/Electron-level keyboard focus to it, even though the outer `BrowserWindow` and the window manager both report the window as focused — this is not a missing-window-manager issue.
 
 Working procedure for manual/GUI keyboard entry into a server view (e.g. the login form):
 
@@ -60,7 +60,7 @@ The Desktop App needs a real server to add and log into. Spin one up with the pr
 3. Seed a system admin, a regular user, and a team (local mode needs no login):
 
    ```bash
-   ./bin/mmctl --local user create --email admin@example.com --username sysadmin --password 'Sys-Admin-123!' --system-admin
+   ./bin/mmctl --local user create --email admin@example.com --username sysadmin --password 'Sys@dmin-sample1' --system-admin
    ./bin/mmctl --local user create --email user1@example.com --username user-1 --password 'User-Test-123!'
    ./bin/mmctl --local team create --name main --display-name "Main Team"
    ./bin/mmctl --local team users add main sysadmin user-1
@@ -68,4 +68,4 @@ The Desktop App needs a real server to add and log into. Spin one up with the pr
 
 4. Verify it's up: `curl -s http://localhost:8065/api/v4/system/ping` → `{"status":"OK"}`.
 
-The Desktop App can now add `http://localhost:8065` and log in as `sysadmin` / `Sys-Admin-123!`. Server-backed E2E specs read these credentials from `MM_TEST_SERVER_URL`, `MM_TEST_USER_NAME`, and `MM_TEST_PASSWORD`.
+The Desktop App can now add `http://localhost:8065` and log in as `sysadmin` / `Sys@dmin-sample1`. Server-backed E2E specs read these credentials from `MM_TEST_SERVER_URL`, `MM_TEST_USER_NAME`, and `MM_TEST_PASSWORD`; they match the values used in `e2e/AGENTS.md`.

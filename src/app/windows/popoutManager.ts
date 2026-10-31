@@ -342,8 +342,7 @@ export class PopoutManager {
             return undefined;
         }
 
-        const callsViewId = CallsWidgetWindow.isCallsWidget(event.sender.id) && CallsWidgetWindow.mainViewId;
-        const view = callsViewId ? WebContentsManager.getView(callsViewId) : WebContentsManager.getViewByWebContentsId(event.sender.id);
+        const view = this.getSenderView(event);
         if (!view) {
             return undefined;
         }
@@ -399,13 +398,24 @@ export class PopoutManager {
         parentView.sendToRenderer(MESSAGE_FROM_POPOUT, view.id, channel, ...args);
     };
 
-    private handleSendToPopout = (_: IpcMainEvent, id: string, channel: string, ...args: unknown[]) => {
+    private handleSendToPopout = (event: IpcMainEvent, id: string, channel: string, ...args: unknown[]) => {
+        const senderView = this.getSenderView(event);
+        const popout = ViewManager.getView(id);
+        if (!senderView || popout?.type !== ViewType.WINDOW || popout.parentViewId !== senderView.id || popout.serverId !== senderView.serverId) {
+            log.debug('handleSendToPopout: sender is not the parent of the popout', {id});
+            return;
+        }
         const view = WebContentsManager.getView(id);
         if (!view) {
             log.debug('handleSendToPopout: no view found', {id});
             return;
         }
         view.sendToRenderer(MESSAGE_FROM_PARENT, channel, ...args);
+    };
+
+    private getSenderView = (event: IpcMainEvent | IpcMainInvokeEvent) => {
+        const callsViewId = CallsWidgetWindow.isCallsWidget(event.sender.id) && CallsWidgetWindow.mainViewId;
+        return callsViewId ? WebContentsManager.getView(callsViewId) : WebContentsManager.getViewByWebContentsId(event.sender.id);
     };
 
     private handleWindowClose = (event: IpcMainEvent) => {

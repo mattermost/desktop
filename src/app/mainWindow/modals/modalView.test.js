@@ -47,6 +47,7 @@ describe('main/views/modalView', () => {
                 addChildView: jest.fn(),
                 removeChildView: jest.fn(),
             },
+            isFocused: jest.fn(),
         };
         const onResolve = jest.fn();
         const onReject = jest.fn();
@@ -65,6 +66,7 @@ describe('main/views/modalView', () => {
             );
 
             modalView.view.webContents.isLoading = jest.fn().mockReturnValue(false);
+            window.isFocused.mockReturnValue(true);
         });
 
         it('should add to window', () => {
@@ -91,6 +93,29 @@ describe('main/views/modalView', () => {
             expect(modalView.view.webContents.focus).not.toHaveBeenCalled();
             callback();
             expect(modalView.view.webContents.focus).toHaveBeenCalled();
+        });
+
+        it('should focus the modal when the window is focused', () => {
+            modalView.show();
+            expect(modalView.view.webContents.focus).toHaveBeenCalled();
+        });
+
+        it('should not focus the modal when the window is not focused', () => {
+            window.isFocused.mockReturnValue(false);
+            modalView.show();
+            expect(modalView.view.webContents.focus).not.toHaveBeenCalled();
+        });
+
+        it('should not focus the modal after loading when the window is not focused', () => {
+            let callback;
+            modalView.view.webContents.isLoading = jest.fn().mockReturnValue(true);
+            modalView.view.webContents.once = jest.fn().mockImplementation((event, cb) => {
+                callback = cb;
+            });
+            window.isFocused.mockReturnValue(false);
+            modalView.show();
+            callback();
+            expect(modalView.view.webContents.focus).not.toHaveBeenCalled();
         });
 
         it('should open dev tools when specified', () => {
@@ -142,6 +167,13 @@ describe('main/views/modalView', () => {
             mockContextMenu.dispose.mockClear();
             modalView.hide();
             expect(mockContextMenu.dispose).toHaveBeenCalled();
+        });
+
+        it('should destroy web contents on hide when suspended', () => {
+            delete modalView.windowAttached;
+            modalView.hide();
+            expect(modalView.view.webContents.close).toBeCalled();
+            expect(window.contentView.removeChildView).not.toBeCalled();
         });
     });
 });

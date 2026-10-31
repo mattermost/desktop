@@ -1,23 +1,35 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {shell} from 'electron';
-
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import NavigationManager from 'app/navigationManager';
 import WebContentsManager from 'app/views/webContentsManager';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
 
 import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
+import {openExternalSafely} from 'main/utils';
 
 import PluginsPopUpsManager from './pluginsPopUps';
+import {showInvalidLinkModal} from './webContentEventsCommon';
 
 import allowProtocolDialog from '../../main/security/allowProtocolDialog';
 
-jest.mock('electron', () => ({
-    shell: {
-        openExternal: jest.fn(),
+jest.mock('electron', () => ({}));
+
+jest.mock('app/mainWindow/modals/messageModal', () => ({
+    __esModule: true,
+    default: {
+        showErrorModal: jest.fn(),
     },
+}));
+
+jest.mock('main/i18nManager', () => ({
+    localizeMessage: jest.fn(),
+}));
+
+jest.mock('main/utils', () => ({
+    openExternalSafely: jest.fn(),
 }));
 
 jest.mock('common/servers/serverManager', () => ({
@@ -149,23 +161,29 @@ describe('PluginsPopUpsManager', () => {
 
         // Verify opening new windows is not allowed
         expect(handlers['window-open']({url: ''})).toEqual({action: 'deny'});
-        expect(shell.openExternal).not.toHaveBeenCalled();
+        expect(openExternalSafely).not.toHaveBeenCalled();
 
         // Verify internal link is routed in main view
         WebContentsManager.getViewByWebContentsId.mockReturnValue({name: 'parent', webContentsId: 1, serverId: 'server-1'});
         ServerManager.getServer.mockReturnValue({id: 'server-1', url: parseURL('http://localhost:8065')});
         expect(handlers['window-open']({url: 'http://localhost:8065/team/channel'})).toEqual({action: 'deny'});
-        expect(shell.openExternal).not.toHaveBeenCalled();
+        expect(openExternalSafely).not.toHaveBeenCalled();
         expect(NavigationManager.openLinkInNewTab).toHaveBeenCalledWith(parseURL('http://localhost:8065/team/channel'));
 
         // Verify opening custom protocols is handled through allowProtocolDialog
         expect(handlers['window-open']({url: 'custom:somelink'})).toEqual({action: 'deny'});
-        expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith('custom:somelink');
-        expect(shell.openExternal).not.toHaveBeenCalledWith('custom:somelink');
+        expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith('custom:somelink', 'server-1');
+        expect(openExternalSafely).not.toHaveBeenCalled();
 
         // Verify opening external links is allowed through browser
         expect(handlers['window-open']({url: 'https://www.example.com'})).toEqual({action: 'deny'});
-        expect(shell.openExternal).toHaveBeenCalledWith('https://www.example.com/');
+        expect(openExternalSafely).toHaveBeenCalledWith('https://www.example.com/', showInvalidLinkModal);
+
+        // Verify failing to open an external link shows the invalid link dialog
+        openExternalSafely.mockImplementationOnce((url, onError) => onError(new Error('Invalid URL')));
+        expect(handlers['window-open']({url: 'https://example.com}'})).toEqual({action: 'deny'});
+        expect(openExternalSafely).toHaveBeenCalledWith('https://example.com}/', showInvalidLinkModal);
+        expect(MessageModal.showErrorModal).toHaveBeenCalled();
 
         // Simulate render process gone
         handlers['render-process-gone'](null, {reason: 'oom'});

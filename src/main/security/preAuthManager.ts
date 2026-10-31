@@ -5,6 +5,7 @@ import {type Certificate, type WebContents, type Event, app, type Authentication
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
+import WebContentsManager from 'app/views/webContentsManager';
 import {SERVER_REMOVED} from 'common/communication';
 import {ModalConstants} from 'common/constants';
 import {SECURE_STORAGE_KEYS} from 'common/constants/secureStorage';
@@ -46,7 +47,7 @@ export class PreAuthManager {
         if (headerName && details.responseHeaders[headerName]?.includes('pre-auth')) {
             const server = ServerManager.lookupServerByURL(details.url, false, true);
             if (server) {
-                this.handlePreAuthSecret(server.url.toString(), async (secret) => {
+                this.handlePreAuthSecret(server.url.toString(), server.id, async (secret) => {
                     if (secret) {
                         ServerManager.updatePreAuthSecret(server.id, secret);
                         await secureStorage.setSecret(server.url.toString(), SECURE_STORAGE_KEYS.PREAUTH, secret);
@@ -92,6 +93,7 @@ export class PreAuthManager {
 
     private handlePreAuthSecret = (
         url: string,
+        serverId: string,
         callback: (preAuthSecret?: string) => void,
         hasError: boolean,
     ) => {
@@ -108,7 +110,7 @@ export class PreAuthManager {
         }
         const modalKey = `${ModalConstants.PRE_AUTH_MODAL}-${url}`;
         const modalPromise = ModalManager.addModal<{url: string; hasError: boolean}, string>(
-            modalKey, preAuthModalHtml, preload, {url, hasError}, mainWindow);
+            modalKey, preAuthModalHtml, preload, {url, hasError}, mainWindow, false, serverId);
         if (modalPromise) {
             modalPromise.then((secret) => {
                 callback(secret.trim());
@@ -132,7 +134,7 @@ export class PreAuthManager {
 
     private handleClientCert = (
         event: Event,
-        _: WebContents | null,
+        webContents: WebContents | null,
         url: string,
         list: Certificate[],
         callback: (certificate?: Certificate) => void,
@@ -151,8 +153,10 @@ export class PreAuthManager {
             log.info('No main window found. Skipping certificate selection');
             return;
         }
+        const serverId = webContents ? WebContentsManager.getViewByWebContentsId(webContents.id)?.serverId : undefined;
         const modalPromise = ModalManager.addModal<CertificateModalData, {cert: Certificate}>(
-            `${ModalConstants.CERTIFICATE_MODAL}-${url}`, html, preload, {url, list}, mainWindow,
+            `${ModalConstants.CERTIFICATE_MODAL}-${url}`, html, preload, {url, list}, mainWindow, false,
+            serverId,
         );
         if (modalPromise) {
             modalPromise.then((data) => {
@@ -166,7 +170,7 @@ export class PreAuthManager {
 
     private handleBasicAuth = (
         event: Event,
-        _: WebContents | null,
+        webContents: WebContents | null,
         request: AuthenticationResponseDetails,
         authInfo: AuthInfo,
         callback: (username?: string, password?: string) => void,
@@ -183,9 +187,12 @@ export class PreAuthManager {
         if (!mainWindow) {
             return;
         }
-        const modalKey = authInfo.isProxy ? `${ModalConstants.PROXY_LOGIN_MODAL}-${authInfo.host}` : `${ModalConstants.LOGIN_MODAL}-${request.url}`;
+        const viewServerId = webContents ? WebContentsManager.getViewByWebContentsId(webContents.id)?.serverId : undefined;
+        const serverId = viewServerId ?? ServerManager.lookupServerByURL(request.url)?.id;
+        const serverUrl = serverId ? ServerManager.getServer(serverId)?.url.toString() : request.url;
+        const modalKey = authInfo.isProxy ? `${ModalConstants.PROXY_LOGIN_MODAL}-${authInfo.host}` : `${ModalConstants.LOGIN_MODAL}-${serverUrl}`;
         const modalPromise = ModalManager.addModal<LoginModalData, {username: string; password: string}>(
-            modalKey, loginModalHtml, preload, {request, authInfo}, mainWindow);
+            modalKey, loginModalHtml, preload, {request, authInfo}, mainWindow, false, authInfo.isProxy ? undefined : serverId);
         if (modalPromise) {
             modalPromise.then((data) => {
                 const {username, password} = data;
