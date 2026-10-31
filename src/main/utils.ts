@@ -15,8 +15,6 @@ import {MAILTO_PREFIX} from 'common/constants';
 import {Logger} from 'common/log';
 import {TAB_BAR_HEIGHT} from 'common/utils/constants';
 
-import type {Args} from 'types/args';
-
 const log = new Logger('Utils');
 
 export async function openExternalSafely(url: string, onError?: (error: unknown) => void) {
@@ -57,10 +55,6 @@ export function isInsideRectangle(container: Electron.Rectangle, rect: Electron.
     }
 
     return true;
-}
-
-export function shouldBeHiddenOnStartup(parsedArgv: Args) {
-    return Boolean(parsedArgv.hidden);
 }
 
 export function getWindowBoundaries(win: BrowserWindow) {

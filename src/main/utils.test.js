@@ -38,16 +38,6 @@ jest.mock('fs', () => ({
 }));
 
 describe('main/utils', () => {
-    describe('shouldBeHiddenOnStartup', () => {
-        it('should be hidden when launched with --hidden', () => {
-            expect(Utils.shouldBeHiddenOnStartup({hidden: true})).toBe(true);
-        });
-
-        it('should not be hidden otherwise', () => {
-            expect(Utils.shouldBeHiddenOnStartup({})).toBe(false);
-        });
-    });
-
     describe('getWindowBoundaries', () => {
         it('should include tab bar height', () => {
             expect(Utils.getWindowBoundaries({

@@ -28,10 +28,10 @@ export default function migrateConfigItems(config: CurrentConfig) {
 
 // Electron reports screen capture requests as `display-capture`, so the permission saved as `screenShare` is renamed to match.
 // This is safe to repeat, so it doesn't set a migration-info.json flag: writing that file here races with migrateConfigItems on a fresh install.
-export function migratePermissions(permissions: Record<string, Permissions>) {
+export function migratePermissions(permissions: Record<string, Permissions> | null) {
     let didMigrate = false;
 
-    for (const originPermissions of Object.values(permissions)) {
+    for (const originPermissions of Object.values(permissions ?? {})) {
         if (originPermissions?.screenShare) {
             originPermissions['display-capture'] = originPermissions.screenShare;
             delete originPermissions.screenShare;

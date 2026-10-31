@@ -9,6 +9,7 @@ import MessageModal from 'app/mainWindow/modals/messageModal';
 import WebContentsManager from 'app/views/webContentsManager';
 import Config from 'common/config';
 import {migratePermissions} from 'common/config/migrationPreferences';
+import {Logger} from 'common/log';
 import {parseURL, isTrustedURL} from 'common/utils/url';
 import {localizeMessage} from 'main/i18nManager';
 
@@ -56,16 +57,6 @@ jest.mock('common/config/migrationPreferences', () => ({
     migratePermissions: jest.fn(),
 }));
 
-const mockLogError = jest.fn();
-jest.mock('common/log', () => ({
-    Logger: jest.fn().mockImplementation(() => ({
-        error: (...args) => mockLogError(...args),
-        warn: jest.fn(),
-        info: jest.fn(),
-        debug: jest.fn(),
-    })),
-}));
-
 jest.mock('main/i18nManager', () => ({
     localizeMessage: jest.fn(),
 }));
@@ -93,6 +84,9 @@ jest.mock('app/views/webContentsManager', () => ({
     getServerURLByViewId: jest.fn(),
 }));
 
+// The global common/log mock gives every Logger the same functions, so this sees PermissionsManager's log calls
+const log = new Logger();
+
 describe('main/PermissionsManager', () => {
     describe('constructor', () => {
         let writeToFile;
@@ -103,6 +97,7 @@ describe('main/PermissionsManager', () => {
 
         afterEach(() => {
             writeToFile.mockRestore();
+            migratePermissions.mockReset();
         });
 
         it('should write the permissions file after migrating it', () => {
@@ -125,7 +120,7 @@ describe('main/PermissionsManager', () => {
             writeToFile.mockRejectedValue(error);
             const permissionsManager = new PermissionsManager('anyfile.json');
             await new Promise((resolve) => setImmediate(resolve));
-            expect(mockLogError).toHaveBeenCalledWith('Failed to save the migrated permissions', {error});
+            expect(log.error).toHaveBeenCalledWith('Failed to save the migrated permissions', {error});
             expect(permissionsManager.json).toBeDefined();
         });
     });

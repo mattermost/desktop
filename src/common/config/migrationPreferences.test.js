@@ -61,6 +61,10 @@ describe('common/config/migrationPreferences', () => {
             });
         });
 
+        it('should not throw when permissions.json contains null', () => {
+            expect(migratePermissions(null)).toBe(false);
+        });
+
         it('should not touch migration-info.json', () => {
             migratePermissions({'http://server-1.com': {screenShare: {allowed: true}}});
             expect(JsonFileManager).not.toHaveBeenCalled();
