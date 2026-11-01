@@ -953,7 +953,11 @@ describe('main/windows/callsWidgetWindow', () => {
         }, []);
         const views = new Map(map);
 
+        // An IPC invoke event coming from a frame on the given origin
+        const fromFrame = (id, origin = 'http://localhost:8065') => ({sender: {id}, senderFrame: {origin}});
+
         beforeEach(() => {
+            urlUtils.parseURL.mockImplementation(jest.requireActual('common/utils/url').parseURL);
             PermissionsManager.doPermissionRequest.mockReturnValue(Promise.resolve(true));
             WebContentsManager.getViewByWebContentsId.mockImplementation((id) => [...views.values()].find((view) => view.webContentsId === id));
             callsWidgetWindow.mainView = views.get('server-1_view-1');
@@ -964,6 +968,62 @@ describe('main/windows/callsWidgetWindow', () => {
         afterEach(() => {
             jest.resetAllMocks();
             callsWidgetWindow.missingScreensharePermissions = undefined;
+        });
+
+        describe('frame origin', () => {
+            const oneScreen = [{id: 'screen0', thumbnail: {toDataURL: jest.fn()}}];
+
+            // The screen sharing permission is looked up for the server's origin, so a page on any other origin
+            // that ends up with the preload (for example a sign-in provider the user chose to trust) must not be
+            // able to borrow the server's grant.
+            it('should refuse a request from a frame outside the server origin and never touch the screen or the permission', async () => {
+                const getSources = jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue(oneScreen);
+
+                await expect(callsWidgetWindow.handleGetDesktopSources(fromFrame(1, 'https://idp.example.com'), {types: ['screen']})).
+                    rejects.toThrow('blocked on unexpected frame origin');
+
+                expect(getSources).not.toHaveBeenCalled();
+                expect(PermissionsManager.doPermissionRequest).not.toHaveBeenCalled();
+            });
+
+            it('should refuse a request from a different port or scheme of the server host', async () => {
+                const getSources = jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue(oneScreen);
+
+                await expect(callsWidgetWindow.handleGetDesktopSources(fromFrame(1, 'http://localhost:9999'), {types: ['screen']})).rejects.toThrow('unexpected frame origin');
+                await expect(callsWidgetWindow.handleGetDesktopSources(fromFrame(1, 'https://localhost:8065'), {types: ['screen']})).rejects.toThrow('unexpected frame origin');
+                expect(getSources).not.toHaveBeenCalled();
+            });
+
+            it('should refuse a request whose frame is no longer known', async () => {
+                const getSources = jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue(oneScreen);
+
+                await expect(callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}, senderFrame: null}, {types: ['screen']})).
+                    rejects.toThrow('unexpected frame origin');
+                await expect(callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {types: ['screen']})).
+                    rejects.toThrow('unexpected frame origin');
+                expect(getSources).not.toHaveBeenCalled();
+            });
+
+            it('should not reset the macOS screen recording permission for a frame outside the server origin', async () => {
+                const originalPlatform = process.platform;
+                Object.defineProperty(process, 'platform', {value: 'darwin'});
+                systemPreferences.getMediaAccessStatus = jest.fn().mockReturnValue('denied');
+                jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue(oneScreen);
+                try {
+                    await expect(callsWidgetWindow.handleGetDesktopSources(fromFrame(1, 'https://idp.example.com'), {types: ['screen']})).
+                        rejects.toThrow('unexpected frame origin');
+                    expect(resetScreensharePermissionsMacOS).not.toHaveBeenCalled();
+                } finally {
+                    Object.defineProperty(process, 'platform', {value: originalPlatform});
+                }
+            });
+
+            it('should still serve a frame on the server origin', async () => {
+                jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue(oneScreen);
+
+                await expect(callsWidgetWindow.handleGetDesktopSources(fromFrame(1, 'http://localhost:8065'), {types: ['screen']})).
+                    resolves.toEqual([{id: 'screen0'}]);
+            });
         });
 
         it('should send sources back - uninitialized', async () => {
@@ -983,7 +1043,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 },
             ]);
 
-            const sources = await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, null);
+            const sources = await callsWidgetWindow.handleGetDesktopSources(fromFrame(1), null);
             expect(sources).toEqual([
                 {
                     id: 'screen0',
@@ -1010,7 +1070,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 },
             ]);
 
-            const sources = await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, null);
+            const sources = await callsWidgetWindow.handleGetDesktopSources(fromFrame(1), null);
             expect(sources).toEqual([
                 {
                     id: 'screen0',
@@ -1024,7 +1084,7 @@ describe('main/windows/callsWidgetWindow', () => {
         it('should throw and send error with no sources', async () => {
             jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue([]);
 
-            await expect(callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, null)).rejects.toThrow('permissions denied');
+            await expect(callsWidgetWindow.handleGetDesktopSources(fromFrame(1), null)).rejects.toThrow('permissions denied');
 
             expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', 'screen-permissions', 'callID');
             expect(views.get('server-1_view-1').sendToRenderer).toHaveBeenCalledWith('calls-error', 'screen-permissions', 'callID');
@@ -1036,7 +1096,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
             jest.spyOn(desktopCapturer, 'getSources').mockResolvedValue([]);
 
-            await expect(callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, null)).rejects.toThrow('permissions denied');
+            await expect(callsWidgetWindow.handleGetDesktopSources(fromFrame(1), null)).rejects.toThrow('permissions denied');
 
             expect(callsWidgetWindow.win.webContents.send).not.toHaveBeenCalled();
             expect(views.get('server-1_view-1').sendToRenderer).not.toHaveBeenCalled();
@@ -1053,7 +1113,7 @@ describe('main/windows/callsWidgetWindow', () => {
             ]);
             jest.spyOn(systemPreferences, 'getMediaAccessStatus').mockReturnValue('denied');
 
-            await expect(callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, null)).rejects.toThrow('permissions denied');
+            await expect(callsWidgetWindow.handleGetDesktopSources(fromFrame(1), null)).rejects.toThrow('permissions denied');
 
             expect(systemPreferences.getMediaAccessStatus).toHaveBeenCalledWith('screen');
             expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', 'screen-permissions', 'callID');
@@ -1075,7 +1135,7 @@ describe('main/windows/callsWidgetWindow', () => {
             ]);
             jest.spyOn(systemPreferences, 'getMediaAccessStatus').mockReturnValue('denied');
 
-            await expect(callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, null)).rejects.toThrow('permissions denied');
+            await expect(callsWidgetWindow.handleGetDesktopSources(fromFrame(1), null)).rejects.toThrow('permissions denied');
 
             expect(systemPreferences.getMediaAccessStatus).toHaveBeenCalledWith('screen');
 
@@ -1098,7 +1158,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 },
             ]);
 
-            const sources = await callsWidgetWindow.handleGetDesktopSources({sender: {id: 3}}, null);
+            const sources = await callsWidgetWindow.handleGetDesktopSources(fromFrame(3, 'http://server-1.com'), null);
             expect(sources).toEqual([
                 {
                     id: 'screen0',
@@ -1117,7 +1177,7 @@ describe('main/windows/callsWidgetWindow', () => {
             callsWidgetWindow.getViewURL = jest.fn().mockReturnValue(undefined);
             WebContentsManager.getServerURLByViewId.mockReturnValue(undefined);
 
-            await expect(callsWidgetWindow.handleGetDesktopSources({sender: {id: 3}}, null)).rejects.toThrow('serverURL not found');
+            await expect(callsWidgetWindow.handleGetDesktopSources(fromFrame(3, 'http://server-1.com'), null)).rejects.toThrow('serverURL not found');
         });
 
         it('macos - no permissions', async () => {
@@ -1136,7 +1196,7 @@ describe('main/windows/callsWidgetWindow', () => {
             ]);
             jest.spyOn(systemPreferences, 'getMediaAccessStatus').mockReturnValue('denied');
 
-            await expect(callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, null)).rejects.toThrow('permissions denied');
+            await expect(callsWidgetWindow.handleGetDesktopSources(fromFrame(1), null)).rejects.toThrow('permissions denied');
 
             expect(callsWidgetWindow.missingScreensharePermissions).toBe(true);
             expect(resetScreensharePermissionsMacOS).toHaveBeenCalledTimes(1);
@@ -1144,7 +1204,7 @@ describe('main/windows/callsWidgetWindow', () => {
             expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith('calls-error', 'screen-permissions', 'callID');
             expect(views.get('server-1_view-1').sendToRenderer).toHaveBeenCalledWith('calls-error', 'screen-permissions', 'callID');
 
-            await expect(callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, null)).rejects.toThrow('permissions denied');
+            await expect(callsWidgetWindow.handleGetDesktopSources(fromFrame(1), null)).rejects.toThrow('permissions denied');
 
             expect(resetScreensharePermissionsMacOS).toHaveBeenCalledTimes(2);
             expect(openScreensharePermissionsSettingsMacOS).toHaveBeenCalledTimes(1);

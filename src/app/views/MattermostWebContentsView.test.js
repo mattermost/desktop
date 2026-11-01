@@ -124,6 +124,8 @@ jest.mock('common/views/viewManager', () => ({
         verbose: jest.fn(),
         error: jest.fn(),
         silly: jest.fn(),
+        debug: jest.fn(),
+        warn: jest.fn(),
     }),
 }));
 
@@ -276,6 +278,45 @@ describe('main/views/MattermostWebContentsView', () => {
             await mattermostView.retryInBackground('http://server-1.com')();
             expect(updateServerInfos).toBeCalled();
             expect(mattermostView.reload).toBeCalled();
+        });
+
+        // The probe uses a main-process request that can't present a client certificate, so for
+        // servers that require one it can never succeed. The web contents can, so let it try.
+        it('should reload instead of retrying forever when the probe only fails for a missing client certificate', async () => {
+            jest.useFakeTimers();
+            try {
+                mattermostView.reload.mockClear();
+                updateServerInfos.mockClear();
+                getServerAPI.mockImplementation((url, isAuth, onSuccess, onAbort, onError) => {
+                    onError(new Error('net::ERR_SSL_CLIENT_AUTH_CERT_NEEDED'), {needsClientCert: true});
+                });
+
+                await mattermostView.retryInBackground('http://server-1.com')();
+
+                expect(mattermostView.reload).toBeCalledWith('http://server-1.com');
+                expect(jest.getTimerCount()).toBe(0);
+            } finally {
+                jest.clearAllTimers();
+                jest.useRealTimers();
+            }
+        });
+
+        it('should keep retrying in the background without reloading when the server is unreachable', async () => {
+            jest.useFakeTimers();
+            try {
+                mattermostView.reload.mockClear();
+                getServerAPI.mockImplementation((url, isAuth, onSuccess, onAbort, onError) => {
+                    onError(new Error('net::ERR_CONNECTION_TIMED_OUT'), {});
+                });
+
+                await mattermostView.retryInBackground('http://server-1.com')();
+
+                expect(mattermostView.reload).not.toBeCalled();
+                expect(jest.getTimerCount()).toBe(1);
+            } finally {
+                jest.clearAllTimers();
+                jest.useRealTimers();
+            }
         });
     });
 

@@ -17,6 +17,7 @@ import WebContentsManager from 'app/views/webContentsManager';
 import Config from 'common/config';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
+import {SECOND} from 'common/utils/constants';
 import {
     isAdminUrl,
     isCallsPopOutURL,
@@ -29,6 +30,7 @@ import {
     isPluginUrl,
     isPublicFilesUrl,
     isTeamUrl,
+    isTrustedAuthOrigin,
     parseURL,
 } from 'common/utils/url';
 import ViewManager from 'common/views/viewManager';
@@ -41,12 +43,19 @@ import {generateHandleConsoleMessage, generateWillFrameNavigate, isCustomProtoco
 
 const log = new Logger('WebContentsEventManager');
 
+// How long after a hop to a trusted auth origin the return to the server (e.g. /oauth/callback) is allowed
+const AUTH_ROUND_TRIP_TIMEOUT = 5 * 60 * SECOND;
+
 export class WebContentsEventManager {
     listeners: Record<number, () => void>;
     popupWindow?: {win: BrowserWindow; serverURL?: URL; contextMenu?: ContextMenu};
 
+    // webContents id -> time until which a sign-in round trip through a trusted auth origin is considered in progress
+    private authInProgressUntil: Record<number, number>;
+
     constructor() {
         this.listeners = {};
+        this.authInProgressUntil = {};
     }
 
     private log = (webContentsId?: number) => {
@@ -67,6 +76,18 @@ export class WebContentsEventManager {
             return false;
         }
         return webContentsId === this.popupWindow.win.webContents.id;
+    };
+
+    private isAuthRoundTripInProgress = (webContentsId: number) => {
+        const until = this.authInProgressUntil[webContentsId];
+        if (until === undefined) {
+            return false;
+        }
+        if (Date.now() > until) {
+            delete this.authInProgressUntil[webContentsId];
+            return false;
+        }
+        return true;
     };
 
     private getServerURLFromWebContentsId = (webContentsId: number) => {
@@ -103,6 +124,11 @@ export class WebContentsEventManager {
 
             const serverURL = this.getServerURLFromWebContentsId(webContentsId);
 
+            // Landing on a normal team page means any sign-in round trip has finished
+            if (serverURL && isTeamUrl(serverURL, parsedURL)) {
+                delete this.authInProgressUntil[webContentsId];
+            }
+
             if (serverURL && (isTeamUrl(serverURL, parsedURL) || isAdminUrl(serverURL, parsedURL) || isLoginUrl(serverURL, parsedURL) || this.isTrustedPopupWindow(webContentsId))) {
                 return;
             }
@@ -120,6 +146,22 @@ export class WebContentsEventManager {
                 return;
             }
 
+            // Servers behind an identity-aware gateway redirect the main frame to an IdP and back (e.g. /oauth/callback,
+            // which isTeamUrl excludes). The IdP has to be opted in via config; the return leg is only allowed
+            // while a round trip through it is in progress. Only for server views: the Calls widget and pop-out also
+            // resolve a server URL but must stay on their own page.
+            if (serverURL && WebContentsManager.getViewByWebContentsId(webContentsId)) {
+                if (isTrustedAuthOrigin(parsedURL, Config.data?.trustedAuthOrigins)) {
+                    this.log(webContentsId).info(`Allowing sign-in navigation to trusted auth origin ${parsedURL.origin}`);
+                    this.authInProgressUntil[webContentsId] = Date.now() + AUTH_ROUND_TRIP_TIMEOUT;
+                    return;
+                }
+
+                if (this.isAuthRoundTripInProgress(webContentsId) && isInternalURL(parsedURL, serverURL)) {
+                    return;
+                }
+            }
+
             if (isCustomProtocol(parsedURL)) {
                 allowProtocolDialog.handleDialogEvent(navigationURL, WebContentsManager.getViewByWebContentsId(webContentsId)?.serverId).catch((err) => {
                     this.log(webContentsId).warn('Error handling custom protocol dialog', err);
@@ -128,7 +170,10 @@ export class WebContentsEventManager {
                 return;
             }
 
-            this.log(webContentsId).info('Prevented desktop from navigating to external URL');
+            // Origin only, which is all that is needed to add a provider to trustedAuthOrigins. Paths and query strings
+            // can carry tokens, identifiers and OIDC state, nonce and code challenge values.
+            const blockedTarget = parsedURL.origin === 'null' ? parsedURL.protocol : parsedURL.origin;
+            this.log(webContentsId).info(`Prevented desktop from navigating to external URL: ${blockedTarget}`);
             event.preventDefault();
         };
     };
@@ -338,6 +383,7 @@ export class WebContentsEventManager {
         addListeners?.(contents);
 
         const removeWebContentsListeners = () => {
+            delete this.authInProgressUntil[contents.id];
             try {
                 contents.removeListener('will-navigate', willNavigate);
                 contents.removeListener('will-frame-navigate', willFrameNavigate);
