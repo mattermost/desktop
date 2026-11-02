@@ -115,7 +115,12 @@ if ! login_page_showing; then
     exit 1
 fi
 
-read -r -a baseline <<<"$(pixel_at "$((WIDTH / 50))" "$((HEIGHT / 2))")"
+baseline_rgb="$(pixel_at "$((WIDTH / 50))" "$((HEIGHT / 2))")" || baseline_rgb=""
+read -r -a baseline <<<"$baseline_rgb"
+if [ "${#baseline[@]}" -ne 3 ]; then
+    log "Could not sample the login page; not typing credentials."
+    exit 1
+fi
 
 printf '%s' "${!username_var}" | xdotool type --delay 30 --file -
 xdotool key Tab
