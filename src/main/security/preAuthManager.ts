@@ -170,7 +170,7 @@ export class PreAuthManager {
 
     private handleBasicAuth = (
         event: Event,
-        webContents: WebContents,
+        webContents: WebContents | null,
         request: AuthenticationResponseDetails,
         authInfo: AuthInfo,
         callback: (username?: string, password?: string) => void,

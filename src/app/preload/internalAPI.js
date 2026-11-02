@@ -141,10 +141,6 @@ contextBridge.exposeInMainWorld('process', {
     },
 });
 
-contextBridge.exposeInMainWorld('timers', {
-    setImmediate,
-});
-
 contextBridge.exposeInMainWorld('desktop', {
     quit: (reason, stack) => ipcRenderer.send(QUIT, reason, stack),
     openAppMenu: (buttonX) => ipcRenderer.send(OPEN_APP_MENU, buttonX),

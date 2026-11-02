@@ -42,12 +42,11 @@ test.describe('notification_trigger/notification_badge', () => {
         await waitForBadgeInfrastructure(electronApp);
     });
 
-    // These three run unconditionally rather than skipping without a running Unity
-    // desktop (true on every headless CI runner): app.getBadgeCount()/setBadgeCount()
-    // are Unity-only no-ops there, so readOsBadge() falls back to re-deriving the
-    // count from __testBadgeState using the same arithmetic showBadgeLinux() uses.
-    // That keeps these tests exercising the real AppState -> showBadge() dispatch
-    // on every run, with a real OS read only when a Unity session happens to exist.
+    // These three run unconditionally. readOsBadge() reads app.getBadgeCount(), which
+    // records what showBadgeLinux() passed to setBadgeCount() whenever Electron knows
+    // the app's desktop name, even on headless CI runners with no dock to render it.
+    // If the desktop name is missing, it falls back to re-deriving the count from
+    // __testBadgeState using the same arithmetic showBadgeLinux() uses.
 
     test('MM-T6153 mention count via AppState',
         {tag: ['@P2', '@linux']},

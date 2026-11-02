@@ -27,9 +27,6 @@ declare global {
                 username?: string;
             };
         };
-        timers: {
-            setImmediate: typeof setImmediate;
-        };
         desktop: {
             quit: (reason: string, stack: string) => void;
             openAppMenu: (buttonX: number) => void;
