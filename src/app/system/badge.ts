@@ -110,11 +110,9 @@ export function showBadgeOSX(sessionExpired: boolean, mentionCount: number, show
     app.dock?.setBadge(badge);
 }
 
-function showBadgeLinux(sessionExpired: boolean, mentionCount: number) {
-    if (app.isUnityRunning()) {
-        const countExpired = sessionExpired ? 1 : 0;
-        app.setBadgeCount(mentionCount + countExpired);
-    }
+export function showBadgeLinux(sessionExpired: boolean, mentionCount: number) {
+    const countExpired = sessionExpired ? 1 : 0;
+    app.setBadgeCount(mentionCount + countExpired);
 }
 
 function showBadge(sessionExpired: boolean, mentionCount: number, showUnreadBadge: boolean) {

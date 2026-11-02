@@ -76,9 +76,7 @@ test.describe('menu_bar/help_menu', () => {
             });
             expect(expectedVersionLabel, 'Help menu must expose a Desktop App Version item').not.toBe('');
 
-            await evaluateInMainProcess(electronApp, ({clipboard}) => {
-                clipboard.writeText('');
-            });
+            await evaluateInMainProcess(electronApp, ({clipboard}) => clipboard.writeText(''));
 
             await clickApplicationMenuItem(electronApp, 'help', {labelIncludes: 'Desktop App Version'});
 

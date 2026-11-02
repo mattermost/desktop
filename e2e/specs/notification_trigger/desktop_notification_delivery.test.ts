@@ -35,15 +35,15 @@ test.describe('notification_trigger/desktop_notification_delivery', () => {
                     return;
                 }
 
-                const unityRunning = process.platform === 'linux' ?
-                    await electronApp.evaluate(({app}) => app.isUnityRunning()) :
+                const badgeCountReadable = process.platform === 'linux' ?
+                    await electronApp.evaluate(() => Boolean(process.env.CHROME_DESKTOP)) :
                     true;
 
-                const beforeBadge = unityRunning ? await readBadgeCount(electronApp) : 0;
+                const beforeBadge = badgeCountReadable ? await readBadgeCount(electronApp) : 0;
 
                 await triggerTestNotification(firstServer!);
 
-                if (unityRunning && process.platform !== 'win32') {
+                if (badgeCountReadable && process.platform !== 'win32') {
                     await expect.poll(
                         () => readBadgeCount(electronApp),
                         {timeout: 10_000, message: 'Badge count must increment after notification'},

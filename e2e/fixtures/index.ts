@@ -31,7 +31,7 @@ type Fixtures = {
     appConfig: AppConfig;
 
     /**
-     * Pre-grant `media`/`screenShare` for every configured server before launch,
+     * Pre-grant `media`/`display-capture` for every configured server before launch,
      * so getUserMedia succeeds without a prompt. Off by default — it disables the
      * main process PermissionsManager's test-mode denial, which a permissions test
      * would need left intact. Opt in with test.use({grantMediaPermissions: true}).

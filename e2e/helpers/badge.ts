@@ -163,12 +163,13 @@ export async function readOsBadge(electronApp: ElectronApplication): Promise<OsB
         }
 
         if (process.platform === 'linux') {
-            // app.getBadgeCount()/setBadgeCount() are no-ops without a running Unity
-            // desktop (true in headless CI), so fall back to re-deriving the count
-            // from the same inputs showBadgeLinux() would have passed to
-            // setBadgeCount() — mentionCount plus 1 for an expired session.
+            // setBadgeCount() only records the count when Electron knows the app's
+            // desktop name (CHROME_DESKTOP), which it needs for the LauncherEntry
+            // D-Bus signal. Without it, fall back to re-deriving the count from the
+            // same inputs showBadgeLinux() would have passed to setBadgeCount() —
+            // mentionCount plus 1 for an expired session.
             let count: number;
-            if (app.isUnityRunning()) {
+            if (process.env.CHROME_DESKTOP) {
                 count = app.getBadgeCount();
             } else if (testState) {
                 count = testState.mentionCount + (testState.sessionExpired ? 1 : 0);

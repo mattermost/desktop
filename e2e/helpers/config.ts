@@ -137,7 +137,7 @@ export function writeConfigFile(userDataDir: string, config: AppConfig): void {
 }
 
 /**
- * Pre-grant `media`/`screenShare` permissions for every configured server so the
+ * Pre-grant `media`/`display-capture` permissions for every configured server so the
  * Calls widget can open a microphone via getUserMedia during E2E.
  *
  * The main process PermissionsManager reads userDataDir/permissions.json keyed by
@@ -163,7 +163,7 @@ export function writePermissionsFile(userDataDir: string, config: AppConfig | ob
         }
         permissions[origin] = {
             media: {allowed: true},
-            screenShare: {allowed: true},
+            'display-capture': {allowed: true},
         };
     }
     fs.writeFileSync(path.join(userDataDir, 'permissions.json'), JSON.stringify(permissions, null, 2));
