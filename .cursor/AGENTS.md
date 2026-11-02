@@ -40,7 +40,7 @@ Findings come from a manual session against Desktop App 43.3.0 on Xvfb `:99`, us
 | `/dev/shm` remount at 2G | `cloud-agent-start.sh` | The 64M default causes `ERR_INSUFFICIENT_RESOURCES` once a real server loads. |
 | Cloud test server added to the app config | `cloud-agent-start.sh` | Only when `DESKTOP_MATTERMOST_URL` is set. See "Cloud test server". |
 
-Set `CLOUD_AGENT_SKIP_E2E_DEPS` to `true` (or `1`/`yes`) to skip `npm --prefix e2e ci`, following the convention in the `mattermost/mattermost` `.cursor/` hooks.
+Set `CLOUD_AGENT_SKIP_E2E_DEPS=true` to skip `npm --prefix e2e ci`.
 
 Not set up by the scripts:
 - **The app itself.** Launch it in its own tmux session so it outlives the shell, and only once (`ps -ef | grep -i electron` first):

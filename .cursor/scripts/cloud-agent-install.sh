@@ -5,13 +5,6 @@ log() {
     printf '[cloud-agent-install] %s\n' "$*" >&2
 }
 
-is_true() {
-    case "${1:-}" in
-        1 | true | TRUE | yes | YES) return 0 ;;
-        *) return 1 ;;
-    esac
-}
-
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$ROOT"
 
@@ -62,7 +55,7 @@ ensure_system_packages
 log "Installing dependencies with npm ci."
 npm ci
 
-if is_true "${CLOUD_AGENT_SKIP_E2E_DEPS:-false}"; then
+if [ "${CLOUD_AGENT_SKIP_E2E_DEPS:-}" = "true" ]; then
     log "Skipping E2E dependency hydration."
 else
     log "Installing E2E dependencies."
