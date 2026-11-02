@@ -46,6 +46,10 @@ inputs:
     description: 'Path to write the per-test findings file to; empty writes none'
     required: false
     default: ''
+  rerun-attempts:
+    description: 'Automatic re-runs a lane red only on infrastructure may get (see e2e-tests-rerun.yml); 0 turns it off. The calling job needs actions: read.'
+    required: false
+    default: '0'
 
 outputs:
   verdict:
@@ -109,6 +113,7 @@ runs:
         mode: ${{ inputs.mode }}
         answers-cache: e2e-triage-answers.json
         findings-file: ${{ inputs.findings-file }}
+        rerun-attempts: ${{ inputs.rerun-attempts }}
     - name: Save triage answers
       if: always() && hashFiles('e2e-triage-answers.json') != ''
       continue-on-error: true

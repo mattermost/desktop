@@ -557,6 +557,8 @@ jobs:
       contents: read
       statuses: write
       pull-requests: read
+      # Triage reads the run's failed jobs before it asks for an automatic re-run.
+      actions: read
     # One triage per operating system, over the same matrix the tests ran on.
     # A run uploads one report per OS into a shared group, so a single triage
     # could only ever write one status covering all of them -- which is why this
@@ -594,6 +596,9 @@ jobs:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           # Triage must never change the outcome of the E2E run itself.
           mode: ${{ vars.E2E_TRIAGE_MODE || 'report-only' }}
+          # A lane red only on infrastructure (a dead job, missing reports) asks for one
+          # automatic re-run of the failed jobs; e2e-tests-rerun.yml carries it out.
+          rerun-attempts: '1'
 
       # master-e2e-verdict folds these per-OS verdicts into the post-merge
       # channel alert. Always record a file — an empty verdict is how the
