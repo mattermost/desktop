@@ -119,9 +119,10 @@ configure_cloud_server() {
 
     local config_dir="$HOME/.config/Electron"
     mkdir -p "$config_dir"
-    CONFIG_FILE="$config_dir/config.json" python3 - <<'PY'
+    server_count="$(CONFIG_FILE="$config_dir/config.json" python3 - <<'PY'
 import json
 import os
+from urllib.parse import urlsplit
 
 path = os.environ["CONFIG_FILE"]
 url = os.environ["DESKTOP_MATTERMOST_URL"].strip()
@@ -131,7 +132,11 @@ try:
 except (FileNotFoundError, json.JSONDecodeError):
     config = {"version": 4}
 servers = config.setdefault("servers", [])
-key = lambda u: u.strip().rstrip("/").lower()
+def key(u):
+    parts = urlsplit(u.strip())
+    return f"{parts.scheme.lower()}://{parts.netloc.lower()}{parts.path.rstrip('/')}"
+
+
 # Mirror ServerManager.init: servers are ordered by `order` and duplicate URLs collapse, so lastActiveServer
 # indexes this normalized list rather than the raw one.
 unique = {}
@@ -147,12 +152,17 @@ config["lastActiveServer"] = list(unique).index(key(url))
 config["hideOnStart"] = False
 with open(path, "w") as f:
     json.dump(config, f, indent=2)
+print(len(servers))
 PY
+    )"
 
     if curl -fsS -m 10 "${DESKTOP_MATTERMOST_URL%/}/api/v4/system/ping" >/dev/null 2>&1; then
         log "Cloud test server added to the app config and reachable."
     else
         log "Cloud test server added to the app config but did not answer a ping; check network egress."
+    fi
+    if [ "$server_count" -gt 1 ]; then
+        log "The app config has ${server_count} servers; cloud-agent-login.sh needs the cloud test server to be the only one. Existing servers were kept."
     fi
 }
 
