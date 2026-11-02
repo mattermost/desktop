@@ -599,6 +599,7 @@ jobs:
       # channel alert. Always record a file — an empty verdict is how the
       # fold knows this lane was never triaged (unknown, never green).
       - name: e2e/record-triage-verdict
+        id: record-verdict
         if: always()
         env:
           PLATFORM: ${{ matrix.platform }}
@@ -606,20 +607,23 @@ jobs:
           BLOCKING: ${{ steps.triage.outputs.blocking }}
           EXONERATED: ${{ steps.triage.outputs.exonerated }}
         run: |
+          VERDICT_FILE="e2e-triage-verdict-${PLATFORM}.json"
           jq -n \
             --arg platform "${PLATFORM}" \
             --arg verdict "${VERDICT}" \
             --arg blocking "${BLOCKING}" \
             --arg exonerated "${EXONERATED}" \
             '{platform: $platform, verdict: $verdict, blocking: $blocking, exonerated: $exonerated}' \
-            > e2e-triage-verdict.json
+            > "${VERDICT_FILE}"
+          echo "file=${VERDICT_FILE}" >> "${GITHUB_OUTPUT}"
 
       - name: e2e/upload-triage-verdict
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: e2e-triage-verdict-${{ matrix.platform }}
-          path: e2e-triage-verdict.json
+          # One name per OS: merge-multiple keeps only the last of files sharing a name.
+          path: ${{ steps.record-verdict.outputs.file }}
           retention-days: 1
 
   # Post-merge channel alert, driven by the triage verdicts above instead of

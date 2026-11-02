@@ -265,6 +265,12 @@ describe('e2e-functional.yml status jobs', () => {
         const triage = jobLines(yml, 'tsio-triage').join('\n');
         assert.match(triage, /id: triage/);
         assert.match(triage, /name: e2e-triage-verdict-/);
+        // One file per OS: with one shared name, merge-multiple kept only the last OS downloaded, and a
+        // Windows failure triage had cleared posted as "could not settle" (run 41462716210).
+        assert.match(triage, /VERDICT_FILE="e2e-triage-verdict-\$\{PLATFORM\}\.json"/);
+        assert.match(triage, /> "\$\{VERDICT_FILE\}"/);
+        assert.match(triage, /path: \$\{\{ steps\.record-verdict\.outputs\.file \}\}/);
+        assert.doesNotMatch(triage, /e2e-triage-verdict\.json/);
 
         // The verdict job judges every master run: notifyCmtChannel stays
         // silent on green, and missing/empty legs still alert even when the
