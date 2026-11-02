@@ -2,9 +2,9 @@
 
 This directory holds the Cursor Cloud Agent environment (`Dockerfile`, `environment.json`, `scripts/`) and the setup notes in [`SETUP.md`](./SETUP.md).
 
-This guide covers driving the built Desktop App through its GUI with the `computerUse` subagent against a real, loggable Mattermost server running in the same VM. `SETUP.md` has the mandatory build, launch and server setup steps. This file adds what is and isn't possible, the extra setup the repo scripts don't do, and the failure modes we hit.
+This guide covers driving the built Desktop App through its GUI with the `computerUse` subagent against the shared cloud test server. `SETUP.md` has the mandatory build and launch steps. This file adds what is and isn't possible, the extra setup the repo scripts don't do, and the failure modes we hit.
 
-Findings come from a manual session against Desktop App 43.3.0 and Mattermost server 11.9.0 on Xvfb `:99`.
+Findings come from a manual session against Desktop App 43.3.0 on Xvfb `:99`, using a local Mattermost 11.9.0 server before the move to the cloud test server.
 
 ## What `computerUse` can and can't do
 
@@ -36,15 +36,11 @@ Findings come from a manual session against Desktop App 43.3.0 and Mattermost se
 |---|---|---|
 | `npm ci`, `npm --prefix e2e ci`, `npm run linux-dev-setup` | `cloud-agent-install.sh` | `e2e/` has its own `package.json`. |
 | `npm run build-test` | `cloud-agent-install.sh` | A `NODE_ENV=test` build skips the blocking native "Permission Requested" dialog. Output is `e2e/dist/`, not `dist/`. Launch with `./node_modules/.bin/electron e2e/dist/ --disable-dev-mode`, and rebuild after pulling source changes. |
-| Mattermost server release (pinned, about 780 MB) | `cloud-agent-install.sh` | Extracted to `~/mattermost`. Set `CLOUD_AGENT_MATTERMOST_VERSION` to change the version; an install of a different version is replaced (the running server is stopped first), keeping its `config/config.json`, `data`, and plugins. |
-| PostgreSQL | `Dockerfile` (apt) | Started, and the `mmuser` role and `mattermost_test` database created, by the start script. |
 | `xfwm4 --compositor=off` | `cloud-agent-start.sh` | Started if not already running, so windows get frames and focus. |
 | `/dev/shm` remount at 2G | `cloud-agent-start.sh` | The 64M default causes `ERR_INSUFFICIENT_RESOURCES` once a real server loads. |
-| Mattermost server running and seeded | `cloud-agent-start.sh` | Log at `/tmp/mattermost-server.log`. Listens on `127.0.0.1:8065` only, and won't seed a different server that already answers on that port. Seeding failures, including missing team membership, are logged rather than reported as success. Set `CLOUD_AGENT_SKIP_LOCAL_SERVER=true` to skip it. |
+| Cloud test server added to the app config | `cloud-agent-start.sh` | Only when `DESKTOP_MATTERMOST_URL` is set. See "Cloud test server". |
 
-Set these to `true` (or `1`/`yes`) to shorten startup for narrow tasks, following the convention in the `mattermost/mattermost` `.cursor/` hooks:
-- `CLOUD_AGENT_SKIP_LOCAL_SERVER`: skips the server download (install) and Postgres and Mattermost startup (start).
-- `CLOUD_AGENT_SKIP_E2E_DEPS`: skips `npm --prefix e2e ci`.
+Set `CLOUD_AGENT_SKIP_E2E_DEPS` to `true` (or `1`/`yes`) to skip `npm --prefix e2e ci`, following the convention in the `mattermost/mattermost` `.cursor/` hooks.
 
 Not set up by the scripts:
 - **The app itself.** Launch it in its own tmux session so it outlives the shell, and only once (`ps -ef | grep -i electron` first):
@@ -57,24 +53,40 @@ Not set up by the scripts:
 
   The main window title is "Mattermost Desktop App" (`DISPLAY=:99 xwininfo -root -tree`).
 
-If the VM did not boot from this `Dockerfile` (symptoms: no `node_modules`, no `e2e/dist`, `pg_lsclusters` prints nothing, no `~/mattermost`), run `bash .cursor/scripts/cloud-agent-install.sh` and then `bash .cursor/scripts/cloud-agent-start.sh`. Together they take about 2 minutes (a 780 MB download) and are safe to re-run.
+If the VM did not boot from this `Dockerfile` (symptoms: no `node_modules`, no `e2e/dist`), run `bash .cursor/scripts/cloud-agent-install.sh` and then `bash .cursor/scripts/cloud-agent-start.sh`. Both are safe to re-run.
 
-Accounts seeded by `cloud-agent-start.sh` (and by `SETUP.md` if you set up the server by hand): `sysadmin` / `Sys@dmin-sample1` (system admin), `user-1` / `User-Test-123!`, team `main`. Add `http://localhost:8065` as a server in the app. `localhost` here is the VM's own loopback, because the server and the app run in the same VM.
+## Cloud test server
 
-## Running the E2E suite against the local server
+The only Mattermost server the agent logs into. Five repository secrets describe a shared test server:
 
-With the server from `SETUP.md` running and the `sysadmin` account seeded, server-backed Playwright specs work as documented in `e2e/AGENTS.md`:
+| Secret | Use |
+|---|---|
+| `DESKTOP_MATTERMOST_URL` | Server URL |
+| `DESKTOP_MATTERMOST_ADMIN_USERNAME`, `DESKTOP_MATTERMOST_ADMIN_PASSWORD` | Admin account |
+| `DESKTOP_MATTERMOST_USERNAME`, `DESKTOP_MATTERMOST_USER_PASSWORD` | Normal user account |
+
+**Never print, log, screenshot or paste these values** (no `echo`, `env`, `printenv`, `set -x`, or typing them in a `computerUse` prompt). Refer to them by name and read them only inside scripts.
+
+1. `cloud-agent-start.sh` adds the server to `~/.config/Electron/config.json` (named `cloud-test-server`, as the active server) and checks that it answers a ping, without logging the URL. Run it before launching the app, since the app overwrites its config on exit. An existing server entry for the same URL is reused.
+2. After launching the app (see above), run `bash .cursor/scripts/cloud-agent-login.sh user` (or `admin`). It clicks the top bar, then types the credentials with `xdotool` straight from the environment, so neither the agent nor the screenshots ever see the values. It exits with an error naming the missing variable if a secret isn't set.
+3. Tell `computerUse` to take over once the login has been submitted. Check the result with a screenshot.
+
+The VM needs network egress to the server. If the start script reports that the server did not answer a ping, check the environment's egress policy.
+
+Without the secrets, the agent can only test public servers (for example `https://community.mattermost.com`, not logged in) and UI that doesn't need a server (Settings, the Add Server modal, menus).
+
+### Running E2E specs against it
+
+Pass the variables straight through so they are not expanded into your command output:
 
 ```bash
 npm run build-test              # outputs to e2e/dist/
 npm --prefix e2e ci             # once; e2e/ has its own package.json
-cd e2e && env MM_TEST_SERVER_URL=http://localhost:8065 MM_TEST_USER_NAME=sysadmin MM_TEST_PASSWORD='Sys@dmin-sample1' \
-  npx playwright test specs/search_box/search_box.test.ts --reporter=list --workers=1
+cd e2e && env MM_TEST_SERVER_URL="$DESKTOP_MATTERMOST_URL" MM_TEST_USER_NAME="$DESKTOP_MATTERMOST_ADMIN_USERNAME" \
+  MM_TEST_PASSWORD="$DESKTOP_MATTERMOST_ADMIN_PASSWORD" npx playwright test <spec> --reporter=list --workers=1
 ```
 
-- Each spec launches its own Electron with an isolated `userDataDir`, so it does not touch `~/.config/Electron` or a manually started app. It does use the same `e2e/dist/` build, so don't rebuild while a manual session is running from it.
-- `specs/search_box/search_box.test.ts` (logs in with the env vars) and `specs/server_management/popout_windows.test.ts` both passed this way on Xvfb `:99`.
-- The seeded `sysadmin` password must match `MM_TEST_PASSWORD`. `SETUP.md` seeds `Sys@dmin-sample1`, the value used throughout `e2e/AGENTS.md`.
+Each spec launches its own Electron with an isolated `userDataDir`, so it does not touch `~/.config/Electron` or a manually started app. It does use the same `e2e/dist/` build, so don't rebuild while a manual session is running from it. Specs that assume the `sysadmin` / `main` team fixtures from `e2e/AGENTS.md` may not match this server.
 
 ## Typing into the server view
 
@@ -95,8 +107,7 @@ Include this in every `computerUse` prompt.
 | Black screen, no window frames, focus broken | The window manager died (for example after `xdotool windowkill`). | Restart `xfwm4 --compositor=off`. Never use `windowkill`, `xkill` or `kill`. |
 | `xfwm4` warns `Unsupported GL renderer (llvmpipe)` | Software GL in Xvfb. | Use `--compositor=off`. |
 | Typing does nothing in the login page | WebContentsView focus gating. | See "Typing into the server view". |
-| `ERR_CONNECTION_REFUSED` for `localhost:8065` | A server entry exists but Mattermost isn't running or hasn't finished starting. | Start the server first. The app retries every 5 seconds. |
-| The server is reachable at `localhost:8065` on the developer's own machine | Cursor's Auto-Forward Ports forwarded the VM's listening port. | In Cursor, open the Agents Window, then the editor panel, then Forwarded Ports, and turn off Auto-Forward Ports. If a forward persists, restart the listener. The seeded credentials are weak and the server is a throwaway, so keep it in the VM. |
+| `cloud-agent-login.sh` reports a variable is not set | The `DESKTOP_MATTERMOST_*` secrets weren't injected into this run. | Add them as Cloud Agent secrets for this repo and start a new run. GitHub Actions secrets aren't visible to cloud agents. |
 | Benign noise | GTK accel-group assertions, one-time `ENOENT bounds-info.json`, `Failed to connect to the bus: /run/dbus/system_bus_socket`. | Ignore. |
 
 ## Prompt preamble for `computerUse`
@@ -107,8 +118,10 @@ Do NOT start another electron/npm process, do NOT open a browser to work around 
 use windowkill/xkill/kill on windows or processes. Close windows with their close button, Escape,
 or Ctrl+W when focused. Do not change Settings > General checkboxes ("Launch app minimized").
 
-Local test server (this VM): http://localhost:8065, sysadmin / Sys@dmin-sample1 (second user
-user-1 / User-Test-123!), team "Main Team" (url name "main"). Log in to this local server only.
+Cloud test server: already added as "cloud-test-server". Do not ask for or type its credentials; the
+login is done by `bash .cursor/scripts/cloud-agent-login.sh user`. Never print the DESKTOP_MATTERMOST_*
+environment variables. If no cloud server is configured, test only public servers and UI that doesn't
+need a server (Settings, Add Server modal, menus).
 
 Typing into the server view: click once on the app's top bar/tab area (not inside the web content),
 then use keyboard only (Tab, type, Enter). Do not click inside the web content a second time.

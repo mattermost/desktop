@@ -5,22 +5,8 @@ log() {
     printf '[cloud-agent-start] %s\n' "$*" >&2
 }
 
-is_true() {
-    case "${1:-}" in
-        1 | true | TRUE | yes | YES) return 0 ;;
-        *) return 1 ;;
-    esac
-}
-
 DISPLAY="${DISPLAY:-:99}"
 export DISPLAY
-
-MATTERMOST_DIR="$HOME/mattermost"
-MATTERMOST_URL="http://localhost:8065"
-MATTERMOST_LOG="/tmp/mattermost-server.log"
-DB_NAME="mattermost_test"
-DB_USER="mmuser"
-DB_PASSWORD="mmuser_password"
 
 persist_dbus_env() {
     printf 'export DBUS_SESSION_BUS_ADDRESS=%q\n' "${DBUS_SESSION_BUS_ADDRESS}" > /home/ubuntu/.cloud-agent-env
@@ -111,130 +97,42 @@ ensure_shm() {
     fi
 }
 
-ensure_postgres() {
-    local cluster version
-    cluster="$(pg_lsclusters --no-header 2>/dev/null | head -n 1 || true)"
-    if [ -z "$cluster" ]; then
-        log "No PostgreSQL cluster found; skipping the local Mattermost server."
-        return 1
-    fi
-    version="$(awk '{print $1}' <<<"$cluster")"
-
-    if ! pg_isready -q; then
-        sudo pg_ctlcluster "$version" main start
-        for _ in {1..30}; do
-            pg_isready -q && break
-            sleep 1
-        done
-    fi
-    pg_isready -q || {
-        log "PostgreSQL did not become ready."
-        return 1
-    }
-
-    if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='${DB_USER}'" | grep -q 1; then
-        sudo -u postgres psql -qc "CREATE USER ${DB_USER} WITH PASSWORD '${DB_PASSWORD}';"
-    fi
-    if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='${DB_NAME}'" | grep -q 1; then
-        sudo -u postgres psql -qc "CREATE DATABASE ${DB_NAME} OWNER ${DB_USER};"
-    fi
-}
-
-mattermost_ready() {
-    curl -fsS -m 2 "${MATTERMOST_URL}/api/v4/system/ping" >/dev/null 2>&1
-}
-
-# True when a `mattermost` process started from $MATTERMOST_DIR is running, as opposed to some other
-# server that happens to answer on the same port.
-owned_mattermost_running() {
-    local pid
-    for pid in $(pgrep -x mattermost 2>/dev/null || true); do
-        if [ "$(readlink "/proc/${pid}/cwd" 2>/dev/null)" = "$MATTERMOST_DIR" ]; then
-            return 0
-        fi
-    done
-    return 1
-}
-
-# Runs an mmctl command and tolerates only "already exists" failures, so re-runs are idempotent
-# while real errors (for example local mode being disabled) are reported.
-mmctl_seed() {
-    local output
-    if output="$("$MATTERMOST_DIR/bin/mmctl" --local "$@" 2>&1)"; then
-        return 0
-    fi
-    if grep -qi "already exists" <<<"$output"; then
-        return 0
-    fi
-    log "mmctl --local $1 $2 failed: ${output//$'\n'/ }"
-    return 1
-}
-
-# Local mode lets mmctl seed without authenticating. Onboarding is disabled so the "Welcome to Mattermost"
-# checklist modal doesn't appear after login. Seeded accounts match the credentials in e2e/AGENTS.md.
-seed_mattermost() {
-    local mmctl="$MATTERMOST_DIR/bin/mmctl"
-    local failed=0
-    mmctl_seed user create --email admin@example.com --username sysadmin --password 'Sys@dmin-sample1' --system-admin || failed=1
-    mmctl_seed user create --email user1@example.com --username user-1 --password 'User-Test-123!' || failed=1
-    mmctl_seed team create --name main --display-name "Main Team" || failed=1
-    mmctl_seed team users add main sysadmin user-1 || failed=1
-
-    "$mmctl" --local user search sysadmin >/dev/null 2>&1 || { log "Seeded user sysadmin not found."; failed=1; }
-    "$mmctl" --local user search user-1 >/dev/null 2>&1 || { log "Seeded user user-1 not found."; failed=1; }
-    "$mmctl" --local team search main >/dev/null 2>&1 || { log "Seeded team main not found."; failed=1; }
-
-    # `team users add` can print an error and still exit 0, so check membership directly.
-    local members
-    members="$("$mmctl" --local user list --team main 2>/dev/null || true)"
-    grep -q ": sysadmin (" <<<"$members" || { log "sysadmin is not a member of team main."; failed=1; }
-    grep -q ": user-1 (" <<<"$members" || { log "user-1 is not a member of team main."; failed=1; }
-    return "$failed"
-}
-
-ensure_mattermost() {
-    if is_true "${CLOUD_AGENT_SKIP_LOCAL_SERVER:-false}"; then
-        log "Skipping the local Mattermost server because CLOUD_AGENT_SKIP_LOCAL_SERVER is set."
-        return 0
-    fi
-    if [ ! -x "$MATTERMOST_DIR/bin/mattermost" ]; then
-        log "Mattermost server not installed at $MATTERMOST_DIR; skipping the local test server."
-        return 0
-    fi
-    ensure_postgres || return 0
-
-    if mattermost_ready && ! owned_mattermost_running; then
-        log "Something other than ${MATTERMOST_DIR}/bin/mattermost is already answering at ${MATTERMOST_URL}; not seeding it."
+# Points the app at the shared cloud test server named by the DESKTOP_MATTERMOST_URL secret, so a fresh app
+# launch opens it directly. Never print the URL or credentials; they are secrets.
+configure_cloud_server() {
+    if [ -z "${DESKTOP_MATTERMOST_URL:-}" ]; then
+        log "DESKTOP_MATTERMOST_URL is not set; only public servers and server-less UI can be tested."
         return 0
     fi
 
-    if ! mattermost_ready; then
-        (
-            cd "$MATTERMOST_DIR"
-            export MM_SQLSETTINGS_DRIVERNAME=postgres
-            export MM_SQLSETTINGS_DATASOURCE="postgres://${DB_USER}:${DB_PASSWORD}@127.0.0.1:5432/${DB_NAME}?sslmode=disable&connect_timeout=10"
-            export MM_SERVICESETTINGS_SITEURL="$MATTERMOST_URL"
-            export MM_SERVICESETTINGS_LISTENADDRESS="127.0.0.1:8065"
-            export MM_SERVICESETTINGS_ENABLELOCALMODE=true
-            export MM_SERVICESETTINGS_ENABLEONBOARDINGFLOW=false
-            setsid nohup ./bin/mattermost >"$MATTERMOST_LOG" 2>&1 </dev/null &
-        )
-        for _ in {1..120}; do
-            mattermost_ready && break
-            sleep 1
-        done
-    fi
+    local config_dir="$HOME/.config/Electron"
+    mkdir -p "$config_dir"
+    CONFIG_FILE="$config_dir/config.json" python3 - <<'PY'
+import json
+import os
 
-    if ! mattermost_ready; then
-        log "Mattermost did not become ready; see $MATTERMOST_LOG."
-        tail -n 20 "$MATTERMOST_LOG" >&2 || true
-        return 0
-    fi
+path = os.environ["CONFIG_FILE"]
+url = os.environ["DESKTOP_MATTERMOST_URL"].strip()
+try:
+    with open(path) as f:
+        config = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError):
+    config = {"version": 4}
+servers = config.setdefault("servers", [])
+index = next((i for i, s in enumerate(servers) if s.get("url", "").rstrip("/") == url.rstrip("/")), None)
+if index is None:
+    servers.append({"name": "cloud-test-server", "url": url, "order": len(servers)})
+    index = len(servers) - 1
+config["lastActiveServer"] = index
+config["hideOnStart"] = False
+with open(path, "w") as f:
+    json.dump(config, f, indent=2)
+PY
 
-    if seed_mattermost; then
-        log "Mattermost is ready at ${MATTERMOST_URL} (sysadmin / Sys@dmin-sample1)."
+    if curl -fsS -m 10 "${DESKTOP_MATTERMOST_URL%/}/api/v4/system/ping" >/dev/null 2>&1; then
+        log "Cloud test server added to the app config and reachable."
     else
-        log "Mattermost is running at ${MATTERMOST_URL} but seeding the test accounts failed; see the messages above."
+        log "Cloud test server added to the app config but did not answer a ping; check network egress."
     fi
 }
 
@@ -242,6 +140,6 @@ ensure_dbus
 ensure_xvfb
 ensure_window_manager
 ensure_shm
-ensure_mattermost
+configure_cloud_server
 
 log "Headless display environment configured (DISPLAY=${DISPLAY})."

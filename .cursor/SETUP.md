@@ -7,7 +7,7 @@
 - `npm start` runs `linux-dev-setup` then launches `electron dist/ --disable-dev-mode`.
 - Benign on startup, not bugs: GTK accel-group assertion warnings, one-time `ENOENT bounds-info.json` on first launch, and isolated `net::ERR_FAILED` from first-launch requests that have no configured server yet (e.g. update checks before any server is added). Treat `net::ERR_FAILED` (and other network errors) as **actionable** when connecting to a configured Mattermost server URL or any other resource the task depends on.
 - Reset app to the fresh onboarding screen: `rm -rf ~/.config/Electron`.
-- The base image has **no Docker daemon and no Go toolchain**. Don't try to build the server from source or run `docker`/`docker-compose`; use the prebuilt server release + PostgreSQL from `apt` (see below).
+- The base image has **no Docker daemon and no Go toolchain**. Don't try to build the server from source or run `docker`/`docker-compose`; use the cloud test server (see below).
 - `/dev/shm` defaults to a **64MB tmpfs**, which is too small for Electron/Chromium once a real Mattermost server is loaded in a `WebContentsView` (each renderer process shares it). This surfaces as `ERR_INSUFFICIENT_RESOURCES` in the view instead of the loaded web app, even though host RAM is plentiful — it's not a memory-sizing problem, it's this mount. Remount it larger before launching the app: `sudo mount -o remount,size=2G /dev/shm`.
 - **Manual/GUI testing (including computer-use) needs a `NODE_ENV=test` build**, not a plain `npm run build` + `npm start`. `webpack.config.base.js`'s `DefinePlugin` inlines `process.env.NODE_ENV` into the bundle at **build time**, so setting `NODE_ENV=test` only when launching has no effect on an already-built `dist/`. Without a test build, connecting to a server pops a blocking native "Permission Requested" (notifications) dialog on top of the app that computer-use/`xdotool` cannot reliably click through, since `dialog.showMessageBox` is only skipped when the build itself was compiled with `NODE_ENV=test` (`src/main/security/permissionsManager.ts`). Build and launch instead:
 
@@ -29,45 +29,6 @@ Working procedure for manual/GUI keyboard entry into a server view (e.g. the log
 
 This is a manual-testing/computer-use-specific quirk — real users with a physical mouse don't hit it. For scripted (non-GUI) testing, the E2E harness avoids it entirely by driving `webContents` via Playwright/CDP (`loginToMattermost` / `ServerView` helper, see `e2e/AGENTS.md` and `e2e/helpers/`) instead of OS-level synthetic input.
 
-### Running a local Mattermost server (for login / manual testing)
+### Cloud test server
 
-The Desktop App needs a real server to add and log into. Spin one up with the prebuilt **Enterprise Edition** binary (unlicensed → Team Edition features; it also bundles `mmctl`) backed by PostgreSQL.
-
-`cloud-agent-install.sh` and `cloud-agent-start.sh` now do all of this automatically (install the release, start PostgreSQL and the server, seed the accounts below). Verify with step 4 first and only run the steps below that haven't already been done (for example, in an environment that doesn't use those scripts).
-
-1. Install and start PostgreSQL, then create the DB user and database:
-
-   ```bash
-   sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql
-   sudo pg_ctlcluster 16 main start
-   sudo -u postgres psql -c "CREATE USER mmuser WITH PASSWORD 'mmuser_password';"
-   sudo -u postgres psql -c "CREATE DATABASE mattermost_test OWNER mmuser;"
-   ```
-
-2. Download and extract a pinned server release, then start it in a long-lived session (e.g. tmux). Configure it via `MM_*` env vars and enable local mode so `mmctl` can seed without auth:
-
-   ```bash
-   MATTERMOST_VERSION=11.9.0
-   curl -fsSL -o /tmp/mattermost.tar.gz "https://releases.mattermost.com/${MATTERMOST_VERSION}/mattermost-${MATTERMOST_VERSION}-linux-amd64.tar.gz"
-   tar xzf /tmp/mattermost.tar.gz -C ~/
-   cd ~/mattermost
-   export MM_SQLSETTINGS_DRIVERNAME=postgres
-   export MM_SQLSETTINGS_DATASOURCE="postgres://mmuser:mmuser_password@127.0.0.1:5432/mattermost_test?sslmode=disable&connect_timeout=10"
-   export MM_SERVICESETTINGS_SITEURL="http://localhost:8065"
-   export MM_SERVICESETTINGS_ENABLELOCALMODE=true
-   export MM_SERVICESETTINGS_ENABLEONBOARDINGFLOW=false   # skip the "Welcome to Mattermost" checklist modal after login
-   ./bin/mattermost   # keep running; wait for "Server is listening on"
-   ```
-
-3. Seed a system admin, a regular user, and a team (local mode needs no login):
-
-   ```bash
-   ./bin/mmctl --local user create --email admin@example.com --username sysadmin --password 'Sys@dmin-sample1' --system-admin
-   ./bin/mmctl --local user create --email user1@example.com --username user-1 --password 'User-Test-123!'
-   ./bin/mmctl --local team create --name main --display-name "Main Team"
-   ./bin/mmctl --local team users add main sysadmin user-1
-   ```
-
-4. Verify it's up: `curl -s http://localhost:8065/api/v4/system/ping` → `{"status":"OK"}`.
-
-The Desktop App can now add `http://localhost:8065` and log in as `sysadmin` / `Sys@dmin-sample1`. Server-backed E2E specs read these credentials from `MM_TEST_SERVER_URL`, `MM_TEST_USER_NAME`, and `MM_TEST_PASSWORD`; they match the values used in `e2e/AGENTS.md`.
+The agent logs into the shared cloud test server described by the `DESKTOP_MATTERMOST_*` secrets. `cloud-agent-start.sh` adds `DESKTOP_MATTERMOST_URL` to the app config, and `bash .cursor/scripts/cloud-agent-login.sh [user|admin]` logs in with the credentials from the environment. **Never print or log those values**; see `.cursor/AGENTS.md` ("Cloud test server"). Without them, only public servers and UI that doesn't need a server can be tested.
