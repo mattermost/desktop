@@ -19,6 +19,7 @@ RUN apt-get update && \
     curl \
     dbus \
     dbus-x11 \
+    ffmpeg \
     git \
     gnupg \
     jq \

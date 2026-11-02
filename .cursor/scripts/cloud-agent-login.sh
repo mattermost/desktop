@@ -27,12 +27,32 @@ user)
     ;;
 esac
 
-for var in "$username_var" "$password_var"; do
+for var in DESKTOP_MATTERMOST_URL "$username_var" "$password_var"; do
     if [ -z "${!var:-}" ]; then
         log "$var is not set."
         exit 1
     fi
 done
+
+# The app can't report its active server from here, but with only the cloud server configured it has to be the
+# one on screen. Another configured server could be the active one, so refuse rather than send it these credentials.
+if ! CONFIG_FILE="$HOME/.config/Electron/config.json" python3 - <<'PY'
+import json
+import os
+import sys
+
+url = os.environ["DESKTOP_MATTERMOST_URL"].strip().rstrip("/")
+try:
+    with open(os.environ["CONFIG_FILE"]) as f:
+        servers = json.load(f).get("servers", [])
+except (FileNotFoundError, json.JSONDecodeError):
+    sys.exit(1)
+sys.exit(0 if len(servers) == 1 and servers[0].get("url", "").rstrip("/") == url else 1)
+PY
+then
+    log "The app config must contain only the cloud test server; not typing credentials."
+    exit 1
+fi
 
 windows="$(xdotool search --onlyvisible --class '^electron$' 2>/dev/null || true)"
 if [ -z "$windows" ] || [ "$(wc -l <<<"$windows")" -ne 1 ]; then
@@ -41,25 +61,50 @@ if [ -z "$windows" ] || [ "$(wc -l <<<"$windows")" -ne 1 ]; then
 fi
 window="$windows"
 
-# Focus has to go through the app's own top bar, not the server web content; see .cursor/AGENTS.md.
 eval "$(xdotool getwindowgeometry --shell "$window")"
-xdotool windowfocus "$window"
-xdotool mousemove --window "$window" "$((WIDTH / 2))" 20 click 1
-sleep 1
 
-# The login page is light across the left edge, where a signed-in app shows its dark sidebar. There is no DOM
-# access from here, so this is the guard against typing credentials into a signed-in or still-loading app.
-is_light_pixel() {
-    local rgb channel
-    rgb="$(ffmpeg -loglevel error -f x11grab -video_size "${WIDTH}x${HEIGHT}" -i "${DISPLAY}+${X},${Y}" \
-        -frames:v 1 -vf "crop=1:1:$1:$2" -f rawvideo -pix_fmt rgb24 - | od -An -tu1)" || return 1
-    for channel in $rgb; do
-        [ "$channel" -ge 235 ] || return 1
-    done
-    [ -n "$rgb" ]
+pixel_at() {
+    ffmpeg -loglevel error -f x11grab -video_size "${WIDTH}x${HEIGHT}" -i "${DISPLAY}+${X},${Y}" \
+        -frames:v 1 -vf "crop=1:1:$1:$2" -f rawvideo -pix_fmt rgb24 - | od -An -tu1
 }
 
-if ! is_light_pixel "$((WIDTH / 10))" "$((HEIGHT / 2))" || ! is_light_pixel "$((WIDTH / 10))" "$((HEIGHT * 9 / 10))"; then
+# There is no DOM access from here, so the page is judged by the left edge: the login page is light there,
+# and a signed-in app shows its dark sidebar. This guards against typing into a signed-in or still-loading app.
+login_page_showing() {
+    local y rgb channel
+    for y in "$((HEIGHT / 2))" "$((HEIGHT * 9 / 10))"; do
+        rgb="$(pixel_at "$((WIDTH / 10))" "$y")" || return 1
+        [ -n "$rgb" ] || return 1
+        for channel in $rgb; do
+            [ "$channel" -ge 235 ] || return 1
+        done
+    done
+}
+
+signed_in() {
+    local rgb channel
+    rgb="$(pixel_at "$((WIDTH / 10))" "$((HEIGHT / 2))")" || return 1
+    [ -n "$rgb" ] || return 1
+    for channel in $rgb; do
+        [ "$channel" -le 120 ] || return 1
+    done
+}
+
+# Focus has to go through the app's own top bar, not the server web content; see .cursor/AGENTS.md.
+focus_top_bar() {
+    xdotool windowfocus "$window"
+    xdotool mousemove --window "$window" "$((WIDTH / 2))" 20 click 1
+    sleep 1
+}
+
+# The page remembers its last focused field, for example the password after a failed attempt. A reload puts the
+# focus back on the username field, which is where typing has to start.
+focus_top_bar
+xdotool key ctrl+r
+sleep 5
+focus_top_bar
+
+if ! login_page_showing; then
     log "The login page is not showing (already signed in or still loading); not typing credentials."
     exit 1
 fi
@@ -68,4 +113,16 @@ printf '%s' "${!username_var}" | xdotool type --delay 30 --file -
 xdotool key Tab
 printf '%s' "${!password_var}" | xdotool type --delay 30 --file -
 xdotool key Return
-log "Submitted the ${role} credentials; check the app window for the result."
+
+for _ in {1..20}; do
+    sleep 1
+    if signed_in; then
+        log "Logged in with the ${role} account."
+        exit 0
+    fi
+done
+
+# A failed login leaves the username visible in the form, so clear both fields before anyone takes a screenshot.
+xdotool key ctrl+a BackSpace Tab ctrl+a BackSpace
+log "The signed-in app did not appear after submitting the ${role} credentials; the form was cleared."
+exit 1

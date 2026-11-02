@@ -47,6 +47,7 @@ ensure_system_packages() {
     local missing=()
     command -v xfwm4 >/dev/null 2>&1 || missing+=(xfwm4)
     command -v xdotool >/dev/null 2>&1 || missing+=(xdotool)
+    command -v ffmpeg >/dev/null 2>&1 || missing+=(ffmpeg)
     if [ "${#missing[@]}" -gt 0 ]; then
         log "Installing missing system packages: ${missing[*]}."
         sudo apt-get update -qq
