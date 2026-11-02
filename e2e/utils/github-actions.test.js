@@ -265,6 +265,10 @@ describe('e2e-functional.yml status jobs', () => {
         const triage = jobLines(yml, 'tsio-triage').join('\n');
         assert.match(triage, /id: triage/);
         assert.match(triage, /name: e2e-triage-verdict-/);
+        // One file name per OS: the verdict job downloads every lane into one folder with
+        // merge-multiple, where files sharing a name overwrite each other.
+        assert.match(triage, /> "e2e-triage-verdict-\$\{PLATFORM\}\.json"/);
+        assert.match(triage, /path: e2e-triage-verdict-\$\{\{ matrix\.platform \}\}\.json/);
 
         // The verdict job judges every master run: notifyCmtChannel stays
         // silent on green, and missing/empty legs still alert even when the

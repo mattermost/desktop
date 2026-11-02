@@ -612,14 +612,16 @@ jobs:
             --arg blocking "${BLOCKING}" \
             --arg exonerated "${EXONERATED}" \
             '{platform: $platform, verdict: $verdict, blocking: $blocking, exonerated: $exonerated}' \
-            > e2e-triage-verdict.json
+            > "e2e-triage-verdict-${PLATFORM}.json"
 
+      # The file name is per OS too: the verdict job downloads every lane into one folder with
+      # merge-multiple, where files that share a name overwrite each other.
       - name: e2e/upload-triage-verdict
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: e2e-triage-verdict-${{ matrix.platform }}
-          path: e2e-triage-verdict.json
+          path: e2e-triage-verdict-${{ matrix.platform }}.json
           retention-days: 1
 
   # Post-merge channel alert, driven by the triage verdicts above instead of
