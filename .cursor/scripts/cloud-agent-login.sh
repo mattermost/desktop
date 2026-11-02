@@ -69,11 +69,11 @@ pixel_at() {
 }
 
 # There is no DOM access from here, so the page is judged by the left edge: the login page is light there,
-# and a signed-in app shows its dark sidebar. This guards against typing into a signed-in or still-loading app.
+# while a signed-in app shows its sidebar. This guards against typing into a signed-in or still-loading app.
 login_page_showing() {
     local y rgb channel
     for y in "$((HEIGHT / 2))" "$((HEIGHT * 9 / 10))"; do
-        rgb="$(pixel_at "$((WIDTH / 10))" "$y")" || return 1
+        rgb="$(pixel_at "$((WIDTH / 50))" "$y")" || return 1
         [ -n "$rgb" ] || return 1
         for channel in $rgb; do
             [ "$channel" -ge 235 ] || return 1
@@ -81,13 +81,19 @@ login_page_showing() {
     done
 }
 
+# A signed-in app replaces the login page's light background at the left edge with its sidebar, whatever the
+# theme, so any clear change from the pre-login pixel counts as signed in. A failed login leaves that edge as is.
 signed_in() {
-    local rgb channel
-    rgb="$(pixel_at "$((WIDTH / 10))" "$((HEIGHT / 2))")" || return 1
-    [ -n "$rgb" ] || return 1
-    for channel in $rgb; do
-        [ "$channel" -le 120 ] || return 1
+    local rgb after i
+    rgb="$(pixel_at "$((WIDTH / 50))" "$((HEIGHT / 2))")" || return 1
+    read -r -a after <<<"$rgb"
+    [ "${#after[@]}" -eq 3 ] || return 1
+    for i in 0 1 2; do
+        if [ "$(( after[i] > baseline[i] ? after[i] - baseline[i] : baseline[i] - after[i] ))" -ge 40 ]; then
+            return 0
+        fi
     done
+    return 1
 }
 
 # Focus has to go through the app's own top bar, not the server web content; see .cursor/AGENTS.md.
@@ -108,6 +114,8 @@ if ! login_page_showing; then
     log "The login page is not showing (already signed in or still loading); not typing credentials."
     exit 1
 fi
+
+read -r -a baseline <<<"$(pixel_at "$((WIDTH / 50))" "$((HEIGHT / 2))")"
 
 printf '%s' "${!username_var}" | xdotool type --delay 30 --file -
 xdotool key Tab
