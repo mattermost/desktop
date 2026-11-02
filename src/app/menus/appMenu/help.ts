@@ -105,7 +105,9 @@ export default function createHelpMenu(): MenuItemConstructorOptions {
     submenu.push({
         label: version,
         click() {
-            clipboard.writeText(version);
+            clipboard.writeText(version).catch((err) => {
+                log.error('Failed to copy the version', {err});
+            });
         },
     });
 
@@ -124,7 +126,9 @@ export default function createHelpMenu(): MenuItemConstructorOptions {
             enabled: version !== undefined,
             click() {
                 if (version) {
-                    clipboard.writeText(versionLabel);
+                    clipboard.writeText(versionLabel).catch((err) => {
+                        log.error('Failed to copy the server version', {err});
+                    });
                 }
             },
         });

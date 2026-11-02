@@ -13,6 +13,7 @@ jest.mock('electron', () => ({
         dock: {
             setBadge: jest.fn(),
         },
+        setBadgeCount: jest.fn(),
     },
     nativeImage: {
         createFromDataURL: jest.fn(),
@@ -114,6 +115,22 @@ describe('main/badge', () => {
             Badge.setUnreadBadgeSetting(true);
             Badge.showBadgeOSX(false, 0, true);
             expect(app.dock.setBadge).toBeCalledWith('•');
+        });
+    });
+
+    describe('showBadgeLinux', () => {
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should set the badge count to the mention count', () => {
+            Badge.showBadgeLinux(false, 7);
+            expect(app.setBadgeCount).toBeCalledWith(7);
+        });
+
+        it('should add one to the badge count when session expired', () => {
+            Badge.showBadgeLinux(true, 7);
+            expect(app.setBadgeCount).toBeCalledWith(8);
         });
     });
 });

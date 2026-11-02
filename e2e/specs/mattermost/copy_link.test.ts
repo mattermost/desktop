@@ -22,9 +22,7 @@ test.describe('copylink', () => {
         await loginToMattermost(firstServer);
         await prepareMattermostServerView(electronApp, firstServer.webContentsId);
 
-        await electronApp.evaluate(({clipboard}) => {
-            clipboard.writeText('');
-        });
+        await electronApp.evaluate(({clipboard}) => clipboard.writeText(''));
 
         await firstServer.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
         await prepareMattermostServerView(electronApp, serverEntry.webContentsId);

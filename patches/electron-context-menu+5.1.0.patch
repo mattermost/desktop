@@ -1,0 +1,29 @@
+diff --git a/node_modules/electron-context-menu/index.js b/node_modules/electron-context-menu/index.js
+index 2b85025..8db1678 100644
+--- a/node_modules/electron-context-menu/index.js
++++ b/node_modules/electron-context-menu/index.js
+@@ -1,22 +1,14 @@
+ import process from 'node:process';
+ import electron from 'electron';
+ import cliTruncate from 'cli-truncate';
+-import {download, CancelError} from 'electron-dl';
+ import isDev from 'electron-is-dev';
+ 
+ const webContents = win => win.webContents ?? win;
+ 
+ const applyTransform = (menuItem, value) => menuItem.transform ? menuItem.transform(value) : value;
+ 
+-const downloadFile = async (target, url, options) => {
+-	try {
+-		await download(target, url, options);
+-	} catch (error) {
+-		// Cancelling the save dialog is a normal user action, not an error.
+-		if (!(error instanceof CancelError)) {
+-			electron.dialog.showErrorBox('Download Error', error.message);
+-		}
+-	}
++const downloadFile = async (target, url) => {
++	target.webContents.downloadURL(url);
+ };
+ 
+ const writeBookmark = async (title, url) => electron.clipboard.write([
