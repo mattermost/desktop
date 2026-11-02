@@ -68,15 +68,20 @@ ensure_xvfb() {
 }
 
 # Checks the EWMH window-manager property on $DISPLAY rather than for an xfwm4 process, which could belong to
-# another display. Without a window manager the app's windows have no frames or focus handling.
-ensure_window_manager() {
-    # The root property can outlive a window manager that exited, so also check that the window it names still
-    # exists and points back at itself.
+# another display. The root property can outlive a window manager that exited, so also check that the window it
+# names still exists and points back at itself.
+window_manager_running() {
     local wm_window
     wm_window="$(xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | awk '/window id/ {print $NF; exit}')" || wm_window=""
-    if [ -n "$wm_window" ] &&
+    [ -n "$wm_window" ] &&
         xprop -id "$wm_window" _NET_SUPPORTING_WM_CHECK 2>/dev/null |
-        awk -v wm_window="$wm_window" '/window id/ && $NF == wm_window {found=1} END {exit !found}'; then
+        awk -v wm_window="$wm_window" '/window id/ && $NF == wm_window {found=1} END {exit !found}'
+}
+
+# Without a window manager the app's windows have no frames or focus handling. Problems are logged rather than
+# fatal so a missing GUI prerequisite doesn't stop the VM from starting.
+ensure_window_manager() {
+    if window_manager_running; then
         return 0
     fi
     if ! command -v xfwm4 >/dev/null 2>&1; then
@@ -84,7 +89,14 @@ ensure_window_manager() {
         return 0
     fi
     setsid nohup xfwm4 --compositor=off >/tmp/xfwm4.log 2>&1 </dev/null &
-    log "Started xfwm4."
+    for _ in {1..30}; do
+        if window_manager_running; then
+            log "Started xfwm4."
+            return 0
+        fi
+        sleep 0.2
+    done
+    log "xfwm4 did not take over ${DISPLAY}; GUI windows will be unmanaged. See /tmp/xfwm4.log."
 }
 
 # Electron/Chromium renderers share /dev/shm; the 64MB default surfaces as ERR_INSUFFICIENT_RESOURCES
@@ -119,11 +131,19 @@ try:
 except (FileNotFoundError, json.JSONDecodeError):
     config = {"version": 4}
 servers = config.setdefault("servers", [])
-index = next((i for i, s in enumerate(servers) if s.get("url", "").rstrip("/") == url.rstrip("/")), None)
-if index is None:
-    servers.append({"name": "cloud-test-server", "url": url, "order": len(servers)})
-    index = len(servers) - 1
-config["lastActiveServer"] = index
+key = lambda u: u.strip().rstrip("/").lower()
+# Mirror ServerManager.init: servers are ordered by `order` and duplicate URLs collapse, so lastActiveServer
+# indexes this normalized list rather than the raw one.
+unique = {}
+for server in sorted(servers, key=lambda s: s.get("order", 0)):
+    unique.setdefault(key(server.get("url", "")), server)
+if key(url) not in unique:
+    unique[key(url)] = {"name": "cloud-test-server", "url": url}
+servers = list(unique.values())
+for order, server in enumerate(servers):
+    server["order"] = order
+config["servers"] = servers
+config["lastActiveServer"] = list(unique).index(key(url))
 config["hideOnStart"] = False
 with open(path, "w") as f:
     json.dump(config, f, indent=2)
