@@ -19,6 +19,7 @@ RUN apt-get update && \
     curl \
     dbus \
     dbus-x11 \
+    ffmpeg \
     git \
     gnupg \
     jq \
@@ -55,6 +56,8 @@ RUN apt-get update && \
     unzip \
     x11-utils \
     xauth \
+    xdotool \
+    xfwm4 \
     xvfb && \
     locale-gen en_US.UTF-8 && \
     rm -rf /var/lib/apt/lists/*

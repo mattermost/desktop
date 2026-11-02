@@ -35,9 +35,38 @@ ensure_node() {
     log "Using node $(node --version) and npm $(npm --version)"
 }
 
+# The Dockerfile installs these; an environment that wasn't built from it gets them here.
+ensure_system_packages() {
+    local missing=()
+    command -v xfwm4 >/dev/null 2>&1 || missing+=(xfwm4)
+    command -v xdotool >/dev/null 2>&1 || missing+=(xdotool)
+    command -v xprop >/dev/null 2>&1 || missing+=(x11-utils)
+    command -v ffmpeg >/dev/null 2>&1 || missing+=(ffmpeg)
+    if [ "${#missing[@]}" -gt 0 ]; then
+        log "Installing missing system packages: ${missing[*]}."
+        sudo apt-get update -qq
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends "${missing[@]}"
+    fi
+}
+
 ensure_node
+ensure_system_packages
 
 log "Installing dependencies with npm ci."
 npm ci
+
+if [ "${CLOUD_AGENT_SKIP_E2E_DEPS:-}" = "true" ]; then
+    log "Skipping E2E dependency hydration."
+else
+    log "Installing E2E dependencies."
+    npm --prefix e2e ci
+fi
+
+log "Setting up the Linux dev sandbox."
+npm run linux-dev-setup
+
+# GUI and computer-use testing needs a NODE_ENV=test build (outputs to e2e/dist/); see .cursor/SETUP.md.
+log "Building the test bundle."
+npm run build-test
 
 log "Install hook complete."
