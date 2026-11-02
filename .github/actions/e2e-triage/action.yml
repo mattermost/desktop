@@ -99,6 +99,8 @@ runs:
         triage-lanes: ${{ inputs.triage-lanes }}
         lane: ${{ inputs.platform }}
         test-root: e2e/specs
+        # A failure in an unchanged spec is "merge master" when master changed the code it runs through.
+        support-paths: e2e/helpers,e2e/modules,e2e/utils,e2e/fixtures
         github-token: ${{ inputs.github-token }}
         # The PR changes the app, which can't take the separate test server down or put a
         # proxy page in front of it: a test that failed on that environment is not the PR's.
