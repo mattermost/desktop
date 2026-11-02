@@ -68,7 +68,7 @@ The only Mattermost server the agent logs into. Five repository secrets describe
 **Never print, log, screenshot or paste these values** (no `echo`, `env`, `printenv`, `set -x`, or typing them in a `computerUse` prompt). Refer to them by name and read them only inside scripts.
 
 1. `cloud-agent-start.sh` adds the server to `~/.config/Electron/config.json` (named `cloud-test-server`, as the active server) and checks that it answers a ping, without logging the URL. Run it before launching the app, since the app overwrites its config on exit. An existing server entry for the same URL is reused.
-2. After launching the app (see above), run `bash .cursor/scripts/cloud-agent-login.sh user` (or `admin`). It clicks the top bar, then types the credentials with `xdotool` straight from the environment, so neither the agent nor the screenshots ever see the values. It exits with an error naming the missing variable if a secret isn't set.
+2. After launching the app (see above), run `bash .cursor/scripts/cloud-agent-login.sh user` (or `admin`). It clicks the top bar, then types the credentials with `xdotool` straight from the environment, so neither the agent nor the screenshots ever see the values. It refuses to type unless exactly one Electron window is visible (close popouts and DevTools first) and the login page is showing (not already signed in or still loading), and it exits with an error naming the missing variable if a secret isn't set.
 3. Tell `computerUse` to take over once the login has been submitted. Check the result with a screenshot.
 
 The VM needs network egress to the server. If the start script reports that the server did not answer a ping, check the environment's egress policy.
