@@ -89,7 +89,7 @@ runs:
     - name: e2e/triage
       id: triage
       continue-on-error: true
-      uses: mattermost/mattermost-test-automation-toolkit/actions/e2e-test-triage@main # actions/e2e-test-triage
+      uses: mattermost/mattermost-test-automation-toolkit/actions/e2e-test-triage@86070f7fe08b27ebb0c6f4885fa3f4b72ef9a4d7 # actions/e2e-test-triage 2026-11-03
       with:
         composite-identity: ${{ inputs.composite-identity }}
         # The reports are named e2e-on-<runner>-<version>; the version moves
