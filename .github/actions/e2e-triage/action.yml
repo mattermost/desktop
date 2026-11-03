@@ -46,6 +46,10 @@ inputs:
     description: 'Path to write the per-test findings file to; empty writes none'
     required: false
     default: ''
+  rerun-attempts:
+    description: 'Automatic re-runs a lane red only on infrastructure may get (see e2e-tests-rerun.yml); 0 turns it off. The calling job needs actions: read.'
+    required: false
+    default: '0'
 
 outputs:
   verdict:
@@ -99,6 +103,8 @@ runs:
         triage-lanes: ${{ inputs.triage-lanes }}
         lane: ${{ inputs.platform }}
         test-root: e2e/specs
+        # A failure in an unchanged spec is "merge master" when master changed the code it runs through.
+        support-paths: e2e/helpers,e2e/modules,e2e/utils,e2e/fixtures
         github-token: ${{ inputs.github-token }}
         # The PR changes the app, which can't take the separate test server down or put a
         # proxy page in front of it: a test that failed on that environment is not the PR's.
@@ -107,6 +113,7 @@ runs:
         mode: ${{ inputs.mode }}
         answers-cache: e2e-triage-answers.json
         findings-file: ${{ inputs.findings-file }}
+        rerun-attempts: ${{ inputs.rerun-attempts }}
     - name: Save triage answers
       if: always() && hashFiles('e2e-triage-answers.json') != ''
       continue-on-error: true

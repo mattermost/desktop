@@ -533,11 +533,11 @@ jobs:
   # too is a streak, not a flake, and stays red. A master run has no PR to comment
   # on, so the story lands in the job summary.
   #
-  # Report only by default: each leg narrows to its own OS report and writes its
-  # line on the e2e/<os> status, "(4 cleared by triage) 99.7% passed (...)", but
-  # keeps the status's state, so a red check stays red. Setting the
-  # E2E_TRIAGE_MODE variable to enforce lets triage turn it green when every
-  # failure is attributable to master or other PRs.
+  # Enforce by default: each leg narrows to its own OS report, writes its line on
+  # the e2e/<os> status, "(4 cleared by triage) 99.7% passed (...)", and turns it
+  # green when every failure is attributable to master or other PRs. Setting the
+  # E2E_TRIAGE_MODE variable to report-only keeps the status's state instead, so
+  # a red check stays red.
   tsio-triage:
     name: Triage E2E failures (${{ matrix.platform }})
     runs-on: ubuntu-24.04
@@ -547,6 +547,12 @@ jobs:
       # The e2e/triage summary also reads the policy lanes, so their final
       # statuses must be posted before triage computes it.
       - e2e-policy-status
+      # Enforce writes the same e2e/<os> contexts these jobs flip, and GitHub keeps the
+      # latest status per context: triage must come last or the raw failure overwrites
+      # a cleared lane.
+      - e2e-linux-status
+      - e2e-macos-status
+      - e2e-windows-status
     # prepare-matrix is skipped when instance_details is empty and can finish
     # without an identity when preparation fails, so guard on the identity itself.
     if: >-
@@ -557,6 +563,8 @@ jobs:
       contents: read
       statuses: write
       pull-requests: read
+      # Triage reads the run's failed jobs before it asks for an automatic re-run.
+      actions: read
     # One triage per operating system, over the same matrix the tests ran on.
     # A run uploads one report per OS into a shared group, so a single triage
     # could only ever write one status covering all of them -- which is why this
@@ -593,7 +601,10 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           # Triage must never change the outcome of the E2E run itself.
-          mode: ${{ vars.E2E_TRIAGE_MODE || 'report-only' }}
+          mode: ${{ vars.E2E_TRIAGE_MODE || 'enforce' }}
+          # A lane red only on infrastructure (a dead job, missing reports) asks for one
+          # automatic re-run of the failed jobs; e2e-tests-rerun.yml carries it out.
+          rerun-attempts: '1'
 
       # master-e2e-verdict folds these per-OS verdicts into the post-merge
       # channel alert. Always record a file — an empty verdict is how the
@@ -612,14 +623,16 @@ jobs:
             --arg blocking "${BLOCKING}" \
             --arg exonerated "${EXONERATED}" \
             '{platform: $platform, verdict: $verdict, blocking: $blocking, exonerated: $exonerated}' \
-            > e2e-triage-verdict.json
+            > "e2e-triage-verdict-${PLATFORM}.json"
 
+      # The file name is per OS too: the verdict job downloads every lane into one folder with
+      # merge-multiple, where files that share a name overwrite each other.
       - name: e2e/upload-triage-verdict
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: e2e-triage-verdict-${{ matrix.platform }}
-          path: e2e-triage-verdict.json
+          path: e2e-triage-verdict-${{ matrix.platform }}.json
           retention-days: 1
 
   # Post-merge channel alert, driven by the triage verdicts above instead of

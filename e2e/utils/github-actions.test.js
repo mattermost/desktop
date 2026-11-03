@@ -221,6 +221,13 @@ describe('e2e-functional.yml status jobs', () => {
         }
     });
 
+    it('runs triage after every job that writes a status triage can overwrite', () => {
+        const block = jobLines(yml, 'tsio-triage').join('\n');
+        for (const job of ['e2e-linux-status', 'e2e-macos-status', 'e2e-windows-status', 'e2e-policy-status']) {
+            assert.match(block, new RegExp(`- ${job}$`, 'm'));
+        }
+    });
+
     it('checks out cmt-triage-verdict.js wherever cmt-channel-notify.js is loaded', () => {
         // cmt-channel-notify.js requires ./cmt-triage-verdict; a sparse
         // checkout missing it crashes the status job at require time
@@ -265,6 +272,11 @@ describe('e2e-functional.yml status jobs', () => {
         const triage = jobLines(yml, 'tsio-triage').join('\n');
         assert.match(triage, /id: triage/);
         assert.match(triage, /name: e2e-triage-verdict-/);
+
+        // One file name per OS: the verdict job downloads every lane into one folder with
+        // merge-multiple, where files sharing a name overwrite each other.
+        assert.match(triage, /> "e2e-triage-verdict-\$\{PLATFORM\}\.json"/);
+        assert.match(triage, /path: e2e-triage-verdict-\$\{\{ matrix\.platform \}\}\.json/);
 
         // The verdict job judges every master run: notifyCmtChannel stays
         // silent on green, and missing/empty legs still alert even when the
