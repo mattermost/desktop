@@ -172,6 +172,15 @@ describe('main/app/app', () => {
             expect(callback).toHaveBeenCalledWith(true);
         });
 
+        it('should ignore and untrust when webContents does not belong to a registered server view', async () => {
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(undefined);
+
+            await handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
+            expect(event.preventDefault).toHaveBeenCalled();
+            expect(callback).toHaveBeenCalledWith(false);
+            expect(MessageModal.showMessageModal).not.toHaveBeenCalled();
+        });
+
         it('should ignore and untrust when the origin of the certificate does not match the server URL', async () => {
             // Mock the server lookup to return a server with a different origin
             const mockServer = {url: 'http://server-1.com'};

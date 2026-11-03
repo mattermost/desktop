@@ -65,7 +65,7 @@ export class ViewManager extends EventEmitter {
                 title = channelName;
             }
         } else {
-            title = teamName ?? serverName;
+            title = teamName || serverName;
         }
 
         if (view.type === ViewType.WINDOW) {

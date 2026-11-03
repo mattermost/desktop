@@ -109,9 +109,14 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
         event.preventDefault();
         callback(true);
     } else {
-    // update the callback
+        // update the callback
         const view = WebContentsManager.getViewByWebContentsId(webContents.id);
-        const errorID = `${view?.serverId}:${parsedURL.origin}:${error}`;
+        if (!view) {
+            event.preventDefault();
+            callback(false);
+            return;
+        }
+        const errorID = `${view.serverId}:${parsedURL.origin}:${error}`;
 
         const server = view && ServerManager.getServer(view.serverId);
         if (server) {

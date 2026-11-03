@@ -32,7 +32,7 @@ export default function SettingsModal({
 
     const saveQueue = useRef<SaveQueueItem[]>([]);
     const saveDebounce = useRef<boolean>(false);
-    const resetDebounce = useRef<boolean>(false);
+    const resetDebounce = useRef<NodeJS.Timeout | null>(null);
 
     const [savingState, setSavingState] = useState<SavingState>(SavingState.DONE);
     const [selectedCategory, setSelectedCategory] = useState<string>();
@@ -54,18 +54,15 @@ export default function SettingsModal({
     }, [intl, selectedCategory]);
 
     const setSavingStateToDone = useCallback(() => {
-        resetDebounce.current = false;
-        if (savingState !== SavingState.SAVING) {
-            setSavingState(SavingState.DONE);
-        }
-    }, [savingState]);
+        resetDebounce.current = null;
+        setSavingState((prev) => (prev === SavingState.SAVING ? prev : SavingState.DONE));
+    }, []);
 
     const resetSaveState = useCallback(() => {
         if (resetDebounce.current) {
-            return;
+            clearTimeout(resetDebounce.current);
         }
-        resetDebounce.current = true;
-        setTimeout(setSavingStateToDone, 2000);
+        resetDebounce.current = setTimeout(setSavingStateToDone, 2000);
     }, [setSavingStateToDone]);
 
     const updateConfiguration = useCallback(() => {
@@ -92,6 +89,10 @@ export default function SettingsModal({
     }, [sendSave]);
 
     const save = useCallback((key: keyof CurrentConfig, data: CurrentConfig[keyof CurrentConfig]) => {
+        if (resetDebounce.current) {
+            clearTimeout(resetDebounce.current);
+            resetDebounce.current = null;
+        }
         saveQueue.current.push({
             key,
             data,
