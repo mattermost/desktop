@@ -547,6 +547,12 @@ jobs:
       # The e2e/triage summary also reads the policy lanes, so their final
       # statuses must be posted before triage computes it.
       - e2e-policy-status
+      # Enforce writes the same e2e/<os> contexts these jobs flip, and GitHub keeps the
+      # latest status per context: triage must come last or the raw failure overwrites
+      # a cleared lane.
+      - e2e-linux-status
+      - e2e-macos-status
+      - e2e-windows-status
     # prepare-matrix is skipped when instance_details is empty and can finish
     # without an identity when preparation fails, so guard on the identity itself.
     if: >-
