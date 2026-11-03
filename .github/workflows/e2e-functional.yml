@@ -533,11 +533,11 @@ jobs:
   # too is a streak, not a flake, and stays red. A master run has no PR to comment
   # on, so the story lands in the job summary.
   #
-  # Report only by default: each leg narrows to its own OS report and writes its
-  # line on the e2e/<os> status, "(4 cleared by triage) 99.7% passed (...)", but
-  # keeps the status's state, so a red check stays red. Setting the
-  # E2E_TRIAGE_MODE variable to enforce lets triage turn it green when every
-  # failure is attributable to master or other PRs.
+  # Enforce by default: each leg narrows to its own OS report, writes its line on
+  # the e2e/<os> status, "(4 cleared by triage) 99.7% passed (...)", and turns it
+  # green when every failure is attributable to master or other PRs. Setting the
+  # E2E_TRIAGE_MODE variable to report-only keeps the status's state instead, so
+  # a red check stays red.
   tsio-triage:
     name: Triage E2E failures (${{ matrix.platform }})
     runs-on: ubuntu-24.04
@@ -595,7 +595,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           # Triage must never change the outcome of the E2E run itself.
-          mode: ${{ vars.E2E_TRIAGE_MODE || 'report-only' }}
+          mode: ${{ vars.E2E_TRIAGE_MODE || 'enforce' }}
           # A lane red only on infrastructure (a dead job, missing reports) asks for one
           # automatic re-run of the failed jobs; e2e-tests-rerun.yml carries it out.
           rerun-attempts: '1'
