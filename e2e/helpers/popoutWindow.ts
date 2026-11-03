@@ -154,18 +154,42 @@ export async function closePopoutWindow(
     popoutWindow: Page,
     waitForAllClosed = false,
 ): Promise<void> {
-    const browserWindow = await app.browserWindow(popoutWindow);
     const closeTimeout = process.platform === 'linux' ? 5_000 : 15_000;
-    await Promise.all([
-        popoutWindow.waitForEvent('close', {timeout: closeTimeout}),
-        browserWindow.evaluate((w) => (w as Electron.BrowserWindow).close()),
-    ]).catch(async () => {
+    try {
+        const browserWindow = await app.browserWindow(popoutWindow);
         await browserWindow.evaluate((w) => {
-            if (!(w as Electron.BrowserWindow).isDestroyed()) {
-                (w as Electron.BrowserWindow).destroy();
-            }
-        }).catch(() => {});
-    });
+            const win = w as Electron.BrowserWindow;
+            setImmediate(() => {
+                if (!win.isDestroyed()) {
+                    win.close();
+                }
+            });
+        });
+    } catch {
+        // Window may already be closing or closed.
+    }
+
+    const closedGracefully = await expect.poll(
+        () => popoutWindow.isClosed(),
+        {timeout: closeTimeout},
+    ).toBe(true).then(() => true).catch(() => false);
+
+    if (!closedGracefully) {
+        try {
+            const browserWindow = await app.browserWindow(popoutWindow);
+            await browserWindow.evaluate((w) => {
+                const win = w as Electron.BrowserWindow;
+                setImmediate(() => {
+                    if (!win.isDestroyed()) {
+                        win.destroy();
+                    }
+                });
+            });
+        } catch {
+            // Ignore errors if window is already destroyed.
+        }
+        await expect.poll(() => popoutWindow.isClosed(), {timeout: 5_000}).toBe(true).catch(() => {});
+    }
 
     if (!waitForAllClosed) {
         return;

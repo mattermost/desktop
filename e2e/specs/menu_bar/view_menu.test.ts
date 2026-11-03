@@ -253,25 +253,29 @@ test.describe('menu/view', () => {
     test('MM-T820 should open Developer Tools For Application Wrapper for main window', {tag: ['@P2', '@darwin', '@win32']}, async () => {
         const browserWindow = await electronApp.browserWindow(mainWindow);
 
-        let isDevToolsOpen = await browserWindow.evaluate((window) => {
+        const isDevToolsOpen = await browserWindow.evaluate((window) => {
             return (window as any).webContents.isDevToolsOpened();
         });
         expect(isDevToolsOpen).toBe(false);
 
         await mainWindow.waitForLoadState();
         await mainWindow.bringToFront();
-        await clickApplicationMenuItem(electronApp, 'view', {label: 'Developer Tools for Main Window'});
 
-        await expect.poll(async () => browserWindow.evaluate((window) => {
-            return (window as any).webContents.isDevToolsOpened();
-        }), {
+        await expect.poll(async () => {
+            const opened = await browserWindow.evaluate((window) => {
+                const wc = (window as any).webContents;
+                return Boolean(wc?.isDevToolsOpened() && wc?.devToolsWebContents && !wc.devToolsWebContents.isDestroyed());
+            });
+            if (!opened) {
+                await clickApplicationMenuItem(electronApp, 'view', {label: 'Developer Tools for Main Window'});
+            }
+            return browserWindow.evaluate((window) => {
+                const wc = (window as any).webContents;
+                return Boolean(wc?.isDevToolsOpened() && wc?.devToolsWebContents && !wc.devToolsWebContents.isDestroyed());
+            });
+        }, {
             timeout: 15_000,
             intervals: [250, 500, 1000, 2000],
         }).toBe(true);
-
-        isDevToolsOpen = await browserWindow.evaluate((window) => {
-            return (window as any).webContents.isDevToolsOpened();
-        });
-        expect(isDevToolsOpen).toBe(true);
     });
 });

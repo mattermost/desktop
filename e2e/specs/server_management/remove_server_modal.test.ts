@@ -23,7 +23,7 @@ async function launchWithRemoveServerModal(testInfo: {outputDir: string}) {
     });
     await waitForAppReady(app);
 
-    const mainView = app.windows().find((w) => w.url().includes('index'))!;
+    const mainView = await waitForWindow(app, 'index');
     const dropdownView = await waitForWindow(app, 'dropdown', 10000);
 
     await mainView.click('.ServerDropdownButton');

@@ -144,9 +144,22 @@ async function openAndCloseDevTools(app: ElectronApplication): Promise<void> {
             throw new Error('Main window not found');
         }
 
-        // Docked, not detach: on macOS a detached DevTools BrowserWindow can stay
-        // open after closeDevTools() and hang the next main-process evaluate.
-        win.webContents.openDevTools({mode: 'bottom'});
+        return new Promise<void>((resolve, reject) => {
+            const timeout = setTimeout(() => reject(new Error('Timed out waiting for devtools-opened')), 10_000);
+            const finish = () => {
+                clearTimeout(timeout);
+                resolve();
+            };
+            if (win.webContents.isDevToolsOpened()) {
+                finish();
+                return;
+            }
+            win.webContents.once('devtools-opened', finish);
+
+            // Docked, not detach: on macOS a detached DevTools BrowserWindow can stay
+            // open after closeDevTools() and hang the next main-process evaluate.
+            win.webContents.openDevTools({mode: 'bottom'});
+        });
     });
 
     await expect.poll(
@@ -157,7 +170,15 @@ async function openAndCloseDevTools(app: ElectronApplication): Promise<void> {
     ).toBe(true);
 
     await evaluateInMainProcess(app, () => {
-        (global as any).__e2eTestRefs?.MainWindow?.get?.()?.webContents.closeDevTools();
+        const win = (global as any).__e2eTestRefs?.MainWindow?.get?.();
+        if (!win || !win.webContents.isDevToolsOpened()) {
+            return;
+        }
+        setImmediate(() => {
+            if (!win.isDestroyed() && win.webContents.isDevToolsOpened()) {
+                win.webContents.closeDevTools();
+            }
+        });
     });
 
     await expect.poll(
@@ -210,14 +231,21 @@ async function exerciseWindowChrome(
     if (openSettings) {
         const settingsWindow = await openSettingsWindow(electronApp);
         await settingsWindow.click('#settingCategoryButton-general');
-        await settingsWindow.evaluate(() => {
-            const desktop = (window as Window & {desktop?: {modals?: {cancelModal?: () => void}}}).desktop;
-            if (!desktop?.modals?.cancelModal) {
-                throw new Error('desktop.modals.cancelModal is not available');
+        try {
+            await settingsWindow.evaluate(() => {
+                const desktop = (window as Window & {desktop?: {modals?: {cancelModal?: () => void}}}).desktop;
+                if (!desktop?.modals?.cancelModal) {
+                    throw new Error('desktop.modals.cancelModal is not available');
+                }
+                desktop.modals.cancelModal();
+            });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            if (!message.includes('Target page, context or browser has been closed') && !message.includes('Target closed')) {
+                throw error;
             }
-            desktop.modals.cancelModal();
-        });
-        await settingsWindow.waitForEvent('close', {timeout: 10_000});
+        }
+        await expect.poll(() => settingsWindow.isClosed(), {timeout: 10_000}).toBe(true);
     }
 
     await openAndCloseDevTools(electronApp);

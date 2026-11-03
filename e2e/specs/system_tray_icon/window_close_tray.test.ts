@@ -3,7 +3,7 @@
 
 import {test, expect} from '../../fixtures/index';
 import {demoConfig, type AppConfig} from '../../helpers/config';
-import {waitForWindow} from '../../helpers/electronApp';
+import {answerMessageModal} from '../../helpers/dialog';
 import {evaluateInMainProcess} from '../../helpers/testRefs';
 import {isMainWindowVisible} from '../../helpers/tray';
 
@@ -33,8 +33,7 @@ test.describe('system_tray_icon/window_close_tray', () => {
                 refs.MainWindow.get()?.close();
             });
 
-            const messageModal = await waitForWindow(electronApp, 'message.html');
-            await messageModal.click('button:has-text("No")');
+            await answerMessageModal(electronApp, 1, 15_000);
 
             await expect.poll(
                 () => electronApp.windows().some((window) => window.url().includes('index')),

@@ -13,7 +13,6 @@ import {
     startCall,
     toggleMuteViaShortcut,
     waitForCallsClientReady,
-    waitForCallsWidgetWindow,
 } from '../../helpers/callsWidget';
 import {demoMattermostConfig} from '../../helpers/config';
 import {loginToMattermost, logoutFromMattermost} from '../../helpers/login';
@@ -102,17 +101,7 @@ test.describe('calls/calls_functionality', () => {
     test('MM-T4841 Calls UI Functionality - Self-managed',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
-            await serverWin.waitForSelector('#post_textbox', {timeout: 10_000});
-            await serverWin.type('#post_textbox', '/call start');
-
-            // wc.insertText() leaves window.getSelection() outside the Slate
-            // contenteditable so keyboard Enter is ignored. Click Send instead.
-            await serverWin.click('[data-testid="SendMessageButton"]');
-
-            const widgetWindow = await waitForCallsWidgetWindow(electronApp);
-            if (!widgetWindow) {
-                throw new Error('Calls widget did not open — is the Calls plugin enabled and media available?');
-            }
+            const widgetWindow = await startCall(electronApp, serverWin);
 
             expect(widgetWindow.url(), 'Widget URL must point to Calls plugin').toContain(
                 '/plugins/com.mattermost.calls/standalone/widget.html',
@@ -149,16 +138,7 @@ test.describe('calls/calls_functionality', () => {
     test('MM-T5411 Calls - Keyboard Shortcuts (self-managed)',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
-            await serverWin.waitForSelector('#post_textbox', {timeout: 10_000});
-            await serverWin.type('#post_textbox', '/call start');
-            await serverWin.click('[data-testid="SendMessageButton"]');
-
-            const widgetWindow = await waitForCallsWidgetWindow(electronApp, 30_000);
-            if (!widgetWindow) {
-                throw new Error('Calls widget did not open — is the Calls plugin enabled and media available?');
-            }
-
-            await waitForCallsClientReady(widgetWindow);
+            const widgetWindow = await startCall(electronApp, serverWin);
             await widgetWindow.bringToFront();
             await toggleMuteViaShortcut(electronApp, widgetWindow);
             await closeCallsWidget(electronApp, widgetWindow, serverWin);

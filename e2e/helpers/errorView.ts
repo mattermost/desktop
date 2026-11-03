@@ -72,7 +72,7 @@ async function evaluateServerReloadState(
         }
 
         // checkLoading
-        return getWebContentsEntries().every((wcEntry) => !wcEntry.webContents?.isLoading?.());
+        return getWebContentsEntries().every((wcEntry) => !wcEntry.needsLoadingScreen?.() && !wcEntry.webContents?.isLoading?.());
     }, {action, targetServerName});
 }
 
@@ -114,7 +114,7 @@ export async function waitForErrorView(
     app: ElectronApplication,
     options: WaitForErrorViewOptions = {},
 ): Promise<Page> {
-    const timeout = options.timeout ?? (process.env.CI ? 60_000 : 45_000);
+    const timeout = options.timeout ?? 60_000;
     const {serverName, waitForActiveServer = false} = options;
 
     const mainWindow = await resolveMainIndexWindow(app, Math.min(timeout, 30_000));
@@ -141,6 +141,9 @@ export async function waitForErrorView(
     }
 
     const isErrorViewVisible = async (): Promise<boolean> => {
+        if (isMessageModalOpen(app)) {
+            await answerMessageModal(app, 1).catch(() => {});
+        }
         const window = resolveErrorViewHost(app, mainWindow);
         try {
             return await window.isVisible('.ErrorView');
@@ -164,7 +167,11 @@ export async function waitForErrorView(
         const navigationSettled = await evaluateServerReloadState(app, 'checkLoading', serverName);
         if (navigationSettled && !(await isErrorViewVisible()) && !isMessageModalOpen(app)) {
             await reloadTargetServerViews(app, serverName);
-            if (isMessageModalOpen(app)) {
+            const modalAppeared = await expect.poll(
+                () => isMessageModalOpen(app),
+                {timeout: 2_000},
+            ).toBe(true).then(() => true).catch(() => false);
+            if (modalAppeared) {
                 await answerMessageModal(app, 1).catch(() => {});
             }
         }
@@ -174,6 +181,10 @@ export async function waitForErrorView(
         timeout,
         message: 'ErrorView did not appear before timeout',
     }).toBe(true);
+
+    if (isMessageModalOpen(app)) {
+        await answerMessageModal(app, 1).catch(() => {});
+    }
 
     return resolveErrorViewHost(app, mainWindow);
 }

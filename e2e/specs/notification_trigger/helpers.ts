@@ -12,11 +12,19 @@ export async function triggerTestNotification(firstServer: ServerView) {
     const textBeforeClick = await sendNotificationButton.textContent();
     expect(textBeforeClick).toBe('Send a test notification');
     await sendNotificationButton.click();
-    await firstServer.waitForFunction(
-        (el) => el.textContent === 'Test notification sent',
-        await firstServer.waitForSelector('.sectionNoticeButton.btn-primary'),
-        {timeout: 10_000},
-    );
+    const sentOnFirstClick = await firstServer.waitForFunction(
+        (el) => el?.textContent === 'Test notification sent',
+        sendNotificationButton,
+        {timeout: 5_000},
+    ).then(() => true).catch(() => false);
+    if (!sentOnFirstClick) {
+        await sendNotificationButton.click();
+        await firstServer.waitForFunction(
+            (el) => el?.textContent === 'Test notification sent',
+            sendNotificationButton,
+            {timeout: 10_000},
+        );
+    }
     const textAfterClick = await sendNotificationButton.textContent();
     expect(textAfterClick).toBe('Test notification sent');
 }

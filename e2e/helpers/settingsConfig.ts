@@ -7,7 +7,23 @@ import {expect} from '@playwright/test';
 import type {Page} from 'playwright';
 
 export function readConfigValue<T>(configFilePath: string, key: string): T {
-    return JSON.parse(fs.readFileSync(configFilePath, 'utf-8'))[key];
+    let lastError: unknown;
+    for (let attempt = 0; attempt < 20; attempt++) {
+        try {
+            const raw = fs.readFileSync(configFilePath, 'utf-8');
+            if (raw.trim().length > 0) {
+                return JSON.parse(raw)[key];
+            }
+            lastError = new SyntaxError('Unexpected end of JSON input');
+        } catch (error) {
+            lastError = error;
+            if (!(error instanceof SyntaxError)) {
+                throw error;
+            }
+        }
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25);
+    }
+    throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 
 export async function waitForConfigValue<T>(

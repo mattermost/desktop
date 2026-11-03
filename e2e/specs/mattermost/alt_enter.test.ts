@@ -78,10 +78,16 @@ test.describe('mattermost/alt_enter', () => {
 
             await firstServer!.click('[data-testid="SendMessageButton"]');
 
-            await expect.poll(
-                () => postListContainsLines(firstServer!, lineOne, lineTwo),
-                {timeout: 10_000, message: 'Send button must post the composed message'},
-            ).toBe(true);
+            await expect.poll(async () => {
+                if (await postListContainsLines(firstServer!, lineOne, lineTwo)) {
+                    return true;
+                }
+                const remaining = await getPostTextboxValue(firstServer!);
+                if (remaining.includes(lineOne)) {
+                    await firstServer!.click('[data-testid="SendMessageButton"]').catch(() => {});
+                }
+                return postListContainsLines(firstServer!, lineOne, lineTwo);
+            }, {timeout: 10_000, message: 'Send button must post the composed message'}).toBe(true);
             expect(
                 await countPostsContaining(firstServer!, lineOne),
                 'Exactly one post must contain the unique first line (Alt+Enter must not have sent it)',

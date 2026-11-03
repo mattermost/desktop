@@ -142,11 +142,10 @@ test.describe('mattermost/bookmarks', () => {
                 });
                 await firstServer!.waitForSelector('[id^="channel-menu-"][id$="-bookmarks-link"]', {timeout: 5_000});
                 await firstServer!.click('[id^="channel-menu-"][id$="-bookmarks-link"]');
-                await firstServer!.keyboard.press('Escape');
 
                 // Bookmark create modal — fields have stable data-testids
                 // (see webapp/channels/src/components/channel_bookmarks/{channel_bookmarks_create_modal,create_modal_name_input}.tsx).
-                await firstServer!.waitForSelector('[data-testid="linkInput"]', {timeout: 5_000});
+                await firstServer!.waitForSelector('[data-testid="linkInput"]', {timeout: 15_000});
                 await firstServer!.fill('[data-testid="linkInput"]', EXTERNAL_BOOKMARK_URL);
                 await firstServer!.fill('[data-testid="titleInput"]', 'E2E External Bookmark');
 

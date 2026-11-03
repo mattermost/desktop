@@ -84,16 +84,23 @@ test.describe('permissions/untrusted_links', () => {
 
             try {
                 await typeIntoPostTextbox(serverWin, UNTRUSTED_LINK_MARKDOWN);
-                const sent = await serverWin.evaluate(() => {
-                    const sendButton = document.querySelector(
-                        '#channelHeaderSubmitButton, button[aria-label*="Send" i], [data-testid="SendMessageButton"]',
-                    ) as HTMLButtonElement | null;
-                    if (!sendButton) {
+                const sent = await serverWin.runInRenderer<boolean>(`
+                    const selector = '#channelHeaderSubmitButton, button[aria-label*="Send" i], [data-testid="SendMessageButton"]';
+                    let sendButton = document.querySelector(selector);
+                    const deadline = Date.now() + 5000;
+                    while (
+                        Date.now() < deadline &&
+                        (!sendButton || (sendButton instanceof HTMLButtonElement && sendButton.disabled) || sendButton.getAttribute('aria-disabled') === 'true')
+                    ) {
+                        await new Promise((resolve) => setTimeout(resolve, 50));
+                        sendButton = document.querySelector(selector);
+                    }
+                    if (!(sendButton instanceof HTMLElement) || (sendButton instanceof HTMLButtonElement && sendButton.disabled)) {
                         return false;
                     }
                     sendButton.click();
                     return true;
-                });
+                `, true);
                 if (!sent) {
                     await pressPostTextboxKey(serverWin, 'Enter');
                 }
@@ -103,8 +110,10 @@ test.describe('permissions/untrusted_links', () => {
                     const href = await findRenderedUntrustedLinkHref(serverWin, serverBaseUrl);
                     if (href) {
                         resolvedUrl = href;
+                        return href;
                     }
-                    return href;
+                    await pressPostTextboxKey(serverWin, 'Enter').catch(() => {});
+                    return null;
                 }, {
                     timeout: 15_000,
                     message: 'Untrusted markdown link must render as a clickable anchor',

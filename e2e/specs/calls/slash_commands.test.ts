@@ -19,6 +19,27 @@ async function sendSlashCommand(serverWin: ServerView, command: string): Promise
     await serverWin.waitForSelector('#post_textbox', {timeout: 10_000});
     await serverWin.type('#post_textbox', command);
     await serverWin.click('[data-testid="SendMessageButton"]');
+
+    await expect.poll(async () => {
+        const remaining = await serverWin.runInRenderer<string>(`
+            const el = document.querySelector('#post_textbox');
+            if (!el) {
+                return '';
+            }
+            if (el instanceof HTMLTextAreaElement || el instanceof HTMLInputElement) {
+                return (el.value || '').trim();
+            }
+            return (el.textContent || '').trim();
+        `);
+        if (remaining.includes(command)) {
+            await serverWin.click('[data-testid="SendMessageButton"]').catch(() => {});
+        }
+        return remaining;
+    }, {
+        timeout: 10_000,
+        intervals: [250, 500, 1000],
+        message: `Slash command "${command}" must be submitted from #post_textbox`,
+    }).toBe('');
 }
 
 test.describe('calls/slash_commands', () => {

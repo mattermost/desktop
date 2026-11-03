@@ -17,7 +17,7 @@ export type OsBadgeState = {
 
 export async function waitForBadgeInfrastructure(app: ElectronApplication): Promise<void> {
     await expect.poll(
-        async () => app.evaluate(() => {
+        async () => evaluateInMainProcess(app, () => {
             const e2eTestRefsKey = '__e2eTestRefs';
             const refs = (global as Record<string, unknown>)[e2eTestRefsKey] as E2eGlobalRefs | undefined;
             return Boolean(refs?.AppState && refs?.ServerManager);

@@ -130,12 +130,37 @@ async function getVisibleTabOrder() {
     const order: string[] = [];
 
     for (let index = 0; index < tabCount; index++) {
-        const tab = tabs.nth(index);
-        await tab.click();
+        const tabLabel = tabs.nth(index).locator('span').first();
+        await tabLabel.click();
         order.push(await getCurrentActiveTabId());
     }
 
     return order;
+}
+
+async function createExtraTabs(serverName: string) {
+    const currentMainWindow = mainWindow;
+    for (const targetCount of [2, 3]) {
+        await expect.poll(async () => {
+            const currentCount = await currentMainWindow.locator('.TabBar li.serverTabItem').count();
+            if (currentCount < targetCount) {
+                await currentMainWindow.click('#newTabButton').catch(() => {});
+            }
+            return currentMainWindow.locator('.TabBar li.serverTabItem').count();
+        }, {
+            timeout: 15_000,
+            intervals: [250, 500, 1000],
+            message: `TabBar must render ${targetCount} tabs`,
+        }).toBeGreaterThanOrEqual(targetCount);
+    }
+
+    let localServerMap = await buildServerMap(electronApp);
+    await expect.poll(async () => {
+        localServerMap = await buildServerMap(electronApp);
+        return localServerMap[serverName]?.length ?? 0;
+    }, {timeout: 30_000}).toBeGreaterThanOrEqual(3);
+
+    return localServerMap;
 }
 
 /**
@@ -144,21 +169,14 @@ async function getVisibleTabOrder() {
  * Shared by MM-T2635_1 and MM-T2635_2, which otherwise duplicated this setup.
  */
 async function navigateToSecondAndThirdTabs(serverName: string) {
-    let localServerMap = await buildServerMap(electronApp);
-    await expect.poll(async () => {
-        localServerMap = await buildServerMap(electronApp);
-        return localServerMap[serverName]?.length ?? 0;
-    }, {timeout: 30_000}).toBeGreaterThanOrEqual(3);
+    const localServerMap = await createExtraTabs(serverName);
 
-    const secondTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 10_000});
-    await secondTab.click();
     const secondView = localServerMap[serverName][1].win;
     await activateServerView(electronApp, localServerMap[serverName][1].webContentsId);
     await waitForMattermostShellReady(secondView, {channelItem: '#sidebarItem_off-topic'});
     await secondView.click('#sidebarItem_off-topic');
+    await expect(mainWindow.locator('.TabBar li.serverTabItem:nth-child(2)')).toContainText('Off-Topic', {timeout: 15_000});
 
-    const thirdTab = await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 10_000});
-    await thirdTab.click();
     const thirdView = localServerMap[serverName][2].win;
     await activateServerView(electronApp, localServerMap[serverName][2].webContentsId);
     await waitForMattermostShellReady(thirdView, {channelItem: '#sidebarItem_town-square'});
@@ -189,16 +207,6 @@ test.describe('server_management/drag_and_drop', () => {
 
     test.describe('MM-T2635 should be able to drag and drop tabs', () => {
         test('MM-T2635_1 should be in the original order', {tag: ['@P2', '@all']}, async () => {
-            await mainWindow.click('#newTabButton');
-            await mainWindow.click('#newTabButton');
-
-            await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 15_000});
-            await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 15_000});
-
-            // Wait until all 3 views are registered in WebContentsManager before accessing them.
-            // Using buildServerMap by index avoids a race condition where the IPC tab-switch
-            // message from the renderer hasn't yet been processed by the main process when
-            // getCurrentActiveTabView() runs.
             const serverName = config.servers[0].name;
             await navigateToSecondAndThirdTabs(serverName);
 
@@ -209,12 +217,6 @@ test.describe('server_management/drag_and_drop', () => {
         });
 
         test('MM-T2635_2 after moving the tab to the right, the tab should be in the new order', {tag: ['@P2', '@all']}, async () => {
-            await mainWindow.click('#newTabButton');
-            await mainWindow.click('#newTabButton');
-
-            await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(2)', {timeout: 15_000});
-            await mainWindow.waitForSelector('.TabBar li.serverTabItem:nth-child(3)', {timeout: 15_000});
-
             const serverName = config.servers[0].name;
             await navigateToSecondAndThirdTabs(serverName);
 

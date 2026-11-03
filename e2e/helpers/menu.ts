@@ -4,6 +4,7 @@
 import type {ElectronApplication} from 'playwright';
 
 import {waitForAppReady} from './appReadiness';
+import {waitForWindow} from './electronApp';
 import {isTransientEvaluateError} from './testRefs';
 
 type MenuItemMatcher = {
@@ -141,18 +142,6 @@ export async function openSignInToAnotherServerModal(app: ElectronApplication) {
     await waitForAppReady(app);
 
     const menuId = process.platform === 'darwin' ? 'app' : 'file';
-    const newServerWindowPromise = app.waitForEvent('window', {
-        predicate: (window) => window.url().includes('newServer'),
-        timeout: 30_000,
-    });
-    newServerWindowPromise.catch(() => undefined);
-
-    try {
-        await clickApplicationMenuItem(app, menuId, {labelIncludes: 'Sign in'});
-    } catch (error) {
-        await newServerWindowPromise.catch(() => undefined);
-        throw error;
-    }
-
-    return newServerWindowPromise;
+    await clickApplicationMenuItem(app, menuId, {labelIncludes: 'Sign in'});
+    return waitForWindow(app, 'newServer', 30_000);
 }
