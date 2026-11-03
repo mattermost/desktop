@@ -221,6 +221,13 @@ describe('e2e-functional.yml status jobs', () => {
         }
     });
 
+    it('runs triage after every job that writes a status triage can overwrite', () => {
+        const block = jobLines(yml, 'tsio-triage').join('\n');
+        for (const job of ['e2e-linux-status', 'e2e-macos-status', 'e2e-windows-status', 'e2e-policy-status']) {
+            assert.match(block, new RegExp(`- ${job}$`, 'm'));
+        }
+    });
+
     it('checks out cmt-triage-verdict.js wherever cmt-channel-notify.js is loaded', () => {
         // cmt-channel-notify.js requires ./cmt-triage-verdict; a sparse
         // checkout missing it crashes the status job at require time
