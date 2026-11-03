@@ -35,6 +35,7 @@ export class SentryHandler {
             sendDefaultPii: false,
             environment: isPrerelease ? 'prerelease' : 'stable',
             attachStacktrace: true,
+            beforeSend: this.scrubHomeDirectory,
             ...this.getInitialScope(),
         });
 
@@ -54,6 +55,32 @@ export class SentryHandler {
         }
 
         return {initialScope: {user: {id: installId}}};
+    };
+
+    private scrubHomeDirectory = (event: Sentry.ErrorEvent) => {
+        const homeDir = os.homedir();
+
+        // Paths can appear with native separators, forward slashes (file URLs), or JSON-escaped
+        const homeDirForms = [homeDir, homeDir.replaceAll('\\', '/'), JSON.stringify(homeDir).slice(1, -1)];
+        const scrub = (value: string) => homeDirForms.reduce((result, form) => result.replaceAll(form, '~'), value);
+
+        if (event.message) {
+            event.message = scrub(event.message);
+        }
+        event.exception?.values?.forEach((exception) => {
+            if (exception.value) {
+                exception.value = scrub(exception.value);
+            }
+        });
+        event.breadcrumbs?.forEach((breadcrumb) => {
+            if (breadcrumb.message) {
+                breadcrumb.message = scrub(breadcrumb.message);
+            }
+            if (breadcrumb.data) {
+                breadcrumb.data = JSON.parse(scrub(JSON.stringify(breadcrumb.data)));
+            }
+        });
+        return event;
     };
 
     private addSentryContext = () => {

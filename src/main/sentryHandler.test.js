@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import os from 'os';
+
 import * as Sentry from '@sentry/electron/main';
 import {app} from 'electron';
 
@@ -29,6 +31,7 @@ jest.mock('os', () => ({
     cpus: jest.fn(() => [{}, {}, {}, {}]),
     totalmem: jest.fn(() => 8589934592),
     freemem: jest.fn(() => 4294967296),
+    homedir: jest.fn(() => '/Users/jane'),
 }));
 
 jest.mock('common/config', () => ({
@@ -165,6 +168,54 @@ describe('main/sentryHandler', () => {
                 expect.objectContaining({dsn: 'https://test@sentry.io/123'}),
             );
             expect(Sentry.init.mock.calls[0][0]).not.toHaveProperty('initialScope');
+        });
+    });
+
+    describe('home directory scrubbing', () => {
+        let beforeSend;
+
+        beforeEach(() => {
+            process.env = {NODE_ENV: 'production'};
+            Sentry.init.mockImplementation((options) => {
+                beforeSend = options.beforeSend;
+            });
+            sentryHandler.init();
+        });
+
+        afterEach(() => {
+            os.homedir.mockReturnValue('/Users/jane');
+        });
+
+        it('should scrub the home directory from messages and exception values', () => {
+            const event = beforeSend({
+                message: 'Failed to read /Users/jane/Downloads/file.pdf',
+                exception: {values: [{value: "ENOENT: no such file or directory, open '/Users/jane/Downloads/file.pdf'"}]},
+            });
+            expect(event.message).toBe('Failed to read ~/Downloads/file.pdf');
+            expect(event.exception.values[0].value).toBe("ENOENT: no such file or directory, open '~/Downloads/file.pdf'");
+        });
+
+        it('should scrub the home directory from breadcrumbs', () => {
+            const event = beforeSend({
+                breadcrumbs: [{
+                    message: 'Saved to /Users/jane/Downloads/file.pdf',
+                    data: {arguments: ['Saved to', {path: '/Users/jane/Downloads/file.pdf'}]},
+                }],
+            });
+            expect(event.breadcrumbs[0]).toEqual({
+                message: 'Saved to ~/Downloads/file.pdf',
+                data: {arguments: ['Saved to', {path: '~/Downloads/file.pdf'}]},
+            });
+        });
+
+        it('should scrub Windows home directories with either separator', () => {
+            os.homedir.mockReturnValue('C:\\Users\\jane');
+            const event = beforeSend({
+                exception: {values: [{value: 'Failed to load file:///C:/Users/jane/file.pdf from C:\\Users\\jane\\file.pdf'}]},
+                breadcrumbs: [{data: {path: 'C:\\Users\\jane\\file.pdf'}}],
+            });
+            expect(event.exception.values[0].value).toBe('Failed to load file:///~/file.pdf from ~\\file.pdf');
+            expect(event.breadcrumbs[0].data).toEqual({path: '~\\file.pdf'});
         });
     });
 
