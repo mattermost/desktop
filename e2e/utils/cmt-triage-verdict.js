@@ -299,16 +299,18 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
 }
 
 /**
- * The status jobs that are red for a reason triage did not clear: an OS status whose triage lane is not SUCCESS, or the
- * policy status (triage never judges policy legs). The summary judges the whole group, so it can pass while one OS
- * status is red; with no failing leg to match then, the fold would read the run as cleared and post nothing.
+ * The status jobs that are red for a reason triage did not clear: an OS status whose triage lane did not clear at least
+ * one test failure (verdict === 'SUCCESS' with exonerated > 0 or findings.length > 0), or the policy status (triage
+ * never judges policy legs). A green OS lane returns SUCCESS with 0 exonerated and no findings when its status job
+ * failed outside the tests; keeping it here prevents suppressing the master alert.
  *
  * @param {Record<string, string>} statusResults - each status job's result ('success', 'failure', ...) by OS: linux, macos, windows, policy
- * @param {Array<{platform: string, verdict?: string}>} lanes - verdict records from the per-OS triage lanes
+ * @param {Array<{platform: string, verdict?: string, exonerated?: number|string, findings?: Array}>} lanes - verdict records from the per-OS triage lanes
  * @returns {string[]} the uncleared status keys, in statusResults order
  */
 function unclearedStatuses(statusResults = {}, lanes = []) {
-    const cleared = new Set((lanes || []).map(normalizeLane).filter((lane) => lane.verdict === 'SUCCESS').map((lane) => lane.platform));
+    const normalized = (lanes || []).map(normalizeLane);
+    const cleared = new Set(normalized.filter((lane) => lane.verdict === 'SUCCESS' && (lane.exonerated > 0 || lane.findings.length > 0)).map((lane) => lane.platform));
     const red = Object.entries(statusResults || {}).filter(([os, result]) => result === 'failure' && (os === 'policy' || !cleared.has(os)));
     return red.map(([os]) => os);
 }

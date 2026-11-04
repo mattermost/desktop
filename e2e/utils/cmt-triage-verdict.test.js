@@ -152,12 +152,16 @@ describe('redStatusNotCleared', () => {
 });
 
 describe('unclearedStatuses', () => {
-    const lane = (platform, verdict) => ({platform, verdict, blocking: '0', exonerated: '1'});
+    const lane = (platform, verdict, extra = {}) => ({platform, verdict, blocking: '0', exonerated: '1', ...extra});
 
     it('names the policy status, and each OS status whose triage lane is not SUCCESS', () => {
         assert.deepEqual(unclearedStatuses({linux: 'failure', policy: 'failure'}, [lane('linux', 'SUCCESS')]), ['policy']);
         assert.deepEqual(unclearedStatuses({linux: 'success', macos: 'failure'}, []), ['macos']);
         assert.deepEqual(unclearedStatuses({linux: 'failure', macos: 'failure', windows: 'failure'}, [lane('windows', 'SUCCESS')]), ['linux', 'macos']);
+    });
+
+    it('retains a failed OS status when triage returned SUCCESS with no findings or exonerated failures', () => {
+        assert.deepEqual(unclearedStatuses({linux: 'failure'}, [lane('linux', 'SUCCESS', {exonerated: '0', findings: []})]), ['linux']);
     });
 
     it('names nothing when every red status was cleared', () => {
