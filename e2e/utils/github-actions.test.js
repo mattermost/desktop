@@ -300,6 +300,13 @@ describe('e2e-functional.yml status jobs', () => {
         assert.match(verdict, /pattern: e2e-triage-verdict-\*/);
         assert.match(verdict, /notifyCmtChannel/);
         assert.match(verdict, /triageLanes/);
+
+        // A red OS status triage did not clear counts as a failure even when the summary passed.
+        for (const [os, job] of [['linux', 'e2e-linux-status'], ['macos', 'e2e-macos-status'], ['windows', 'e2e-windows-status'], ['policy', 'e2e-policy-status']]) {
+            assert.match(verdict, new RegExp(`^ {6}- ${job}$`, 'm'), `master-e2e-verdict needs ${job}`);
+            assert.match(verdict, new RegExp(`"${os}": "\\$\\{\\{ needs\\.${job}\\.result \\}\\}"`));
+        }
+        assert.match(verdict, /const hasFailures = redStatusNotCleared\(statusResults, triageLanes\) \|\| /);
     });
 });
 

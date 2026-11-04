@@ -8,7 +8,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const {foldCmtVerdicts, foldMasterTriage, formatCmtVerdictMessage} = require('./cmt-triage-verdict');
+const {foldCmtVerdicts, foldMasterTriage, formatCmtVerdictMessage, redStatusNotCleared} = require('./cmt-triage-verdict');
 
 const repoRoot = path.join(__dirname, '../..');
 const read = (rel) => fs.readFileSync(path.join(repoRoot, rel), 'utf8');
@@ -110,6 +110,35 @@ describe('foldCmtVerdicts', () => {
     it('is yellow when triage was expected but the matrix produced no lanes', () => {
         const fold = foldCmtVerdicts({lanes: [], expectedLanes: [], expectTriage: true, stats: {passed: 0, failed: 5}});
         assert.equal(fold.state, 'yellow');
+    });
+});
+
+describe('redStatusNotCleared', () => {
+    const lane = (platform, verdict) => ({platform, verdict, blocking: '0', exonerated: '1'});
+
+    it('counts a red OS status that triage did not clear', () => {
+        // The summary can pass while e2e/macos is red (master run 41776677247).
+        assert.equal(redStatusNotCleared({linux: 'success', macos: 'failure', windows: 'success', policy: 'success'}, [lane('macos', 'FAILURE')]), true);
+        assert.equal(redStatusNotCleared({macos: 'failure'}, [lane('macos', 'ACTION_REQUIRED')]), true);
+        assert.equal(redStatusNotCleared({macos: 'failure'}, []), true, 'no triage verdict for the OS');
+    });
+
+    it('does not count a red OS status that triage cleared, or one that is not red', () => {
+        assert.equal(redStatusNotCleared({linux: 'success', macos: 'failure'}, [lane('macos', 'SUCCESS')]), false);
+        assert.equal(redStatusNotCleared({linux: 'success', macos: 'skipped', windows: 'cancelled', policy: ''}, []), false);
+        assert.equal(redStatusNotCleared({}, [lane('linux', 'FAILURE')]), false);
+    });
+
+    it('always counts a red policy status: triage never judges policy', () => {
+        assert.equal(redStatusNotCleared({policy: 'failure'}, [lane('linux', 'SUCCESS'), lane('macos', 'SUCCESS'), lane('windows', 'SUCCESS')]), true);
+    });
+
+    it('makes a failed run with no failing leg inconclusive, not cleared', () => {
+        // Per-job counts unavailable: no legs to match the blocking macOS lane to.
+        const lanes = [lane('macos', 'FAILURE')];
+        const overallFailed = redStatusNotCleared({macos: 'failure'}, lanes);
+        assert.equal(foldMasterTriage({lanes, legs: [], overallFailed}).verdict, 'inconclusive');
+        assert.equal(foldMasterTriage({lanes, legs: [], overallFailed: false}).verdict, 'cleared', 'what it read before');
     });
 });
 

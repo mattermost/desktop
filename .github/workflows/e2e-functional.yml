@@ -679,6 +679,11 @@ jobs:
       - e2e-policy-windows
       - tsio-summary
       - tsio-triage
+      # Read for hasFailures: an OS status can be red while the summary passed.
+      - e2e-linux-status
+      - e2e-macos-status
+      - e2e-windows-status
+      - e2e-policy-status
     if: >-
       always() && !cancelled()
       && needs.prepare-matrix.outputs.tsio-composite-identity != ''
@@ -718,12 +723,14 @@ jobs:
           STATS: ${{ needs.tsio-summary.outputs.stats }}
           UPSTREAM_JOBS_SUCCEEDED: ${{ (needs.e2e-linux.result == 'success' || needs.e2e-linux.result == 'skipped') && (needs.e2e-macos.result == 'success' || needs.e2e-macos.result == 'skipped') && (needs.e2e-windows.result == 'success' || needs.e2e-windows.result == 'skipped') && (needs.e2e-policy-macos.result == 'success' || needs.e2e-policy-macos.result == 'skipped') && (needs.e2e-policy-windows.result == 'success' || needs.e2e-policy-windows.result == 'skipped') }}
           MATTERMOST_MASTER_HEALTH_WEBHOOK_URL: ${{ secrets.MM_E2E_MASTER_HEALTH_WEBHOOK_URL }}
+          STATUS_RESULTS: '{"linux": "${{ needs.e2e-linux-status.result }}", "macos": "${{ needs.e2e-macos-status.result }}", "windows": "${{ needs.e2e-windows-status.result }}", "policy": "${{ needs.e2e-policy-status.result }}"}'
           TSIO_BASE_URL: https://test-io.test.mattermost.com
         with:
           script: |
             const fs = require('fs');
             const path = require('path');
             const {notifyCmtChannel} = require('./e2e/utils/cmt-channel-notify.js');
+            const {redStatusNotCleared} = require('./e2e/utils/cmt-triage-verdict.js');
             const {resolveMasterMergeContext} = require('./e2e/utils/tsio-report-status.js');
 
             const compositeIdentity = JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY);
@@ -747,7 +754,13 @@ jobs:
             }
 
             const mergeContext = await resolveMasterMergeContext({github, context, compositeIdentity, core});
-            const hasFailures = (stats.failed || 0) > 0 || (detail.reports || []).some((report) => report.status === 'failed');
+            let statusResults = {};
+            try {
+              statusResults = JSON.parse(process.env.STATUS_RESULTS || '{}');
+            } catch {
+              core.warning('Could not parse the status job results; the alert reads TSIO alone');
+            }
+            const hasFailures = redStatusNotCleared(statusResults, triageLanes) || (stats.failed || 0) > 0 || (detail.reports || []).some((report) => report.status === 'failed');
             await notifyCmtChannel({
               core,
               baseUrl: process.env.TSIO_BASE_URL,

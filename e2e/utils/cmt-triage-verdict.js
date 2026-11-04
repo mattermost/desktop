@@ -299,6 +299,20 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
 }
 
 /**
+ * Whether a status job is red for a reason triage did not clear: an OS status whose triage lane is not SUCCESS, or the
+ * policy status (triage never judges policy legs). The summary judges the whole group, so it can pass while one OS
+ * status is red; with no failing leg to match then, the fold would read the run as cleared and post nothing.
+ *
+ * @param {Record<string, string>} statusResults - each status job's result ('success', 'failure', ...) by OS: linux, macos, windows, policy
+ * @param {Array<{platform: string, verdict?: string}>} lanes - verdict records from the per-OS triage lanes
+ * @returns {boolean}
+ */
+function redStatusNotCleared(statusResults = {}, lanes = []) {
+    const cleared = new Set((lanes || []).map(normalizeLane).filter((lane) => lane.verdict === 'SUCCESS').map((lane) => lane.platform));
+    return Object.entries(statusResults || {}).some(([os, result]) => result === 'failure' && (os === 'policy' || !cleared.has(os)));
+}
+
+/**
  * Fold per-OS triage lanes into the post-merge (desktop-master) verdict.
  * Master lanes are per OS (one report per OS), so a lane's verdict covers
  * every leg of that OS. Policy legs are never judged by triage, and missing
@@ -606,6 +620,7 @@ module.exports = {
     normalizeVerdict,
     foldCmtVerdicts,
     foldMasterTriage,
+    redStatusNotCleared,
     formatMasterTestLines,
     formatCmtVerdictMessage,
     displayTotals,
