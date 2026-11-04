@@ -682,15 +682,22 @@ describe('cmt-channel-notify', () => {
                 const text = masterFailure({triageLanes: lanes('FAILURE', {blocking: '1', findingsRecorded: true, findings: [bookmark, callLogs]})});
                 assert.match(text, /^🔎 \*\*Needs a look\*\* \(1\)$/m);
                 assert.match(text, /^• `MM-T5611` Open a bookmark URL\/link — the cause is not clear · 🐧 Linux$/m);
-                assert.match(text, /^🔁 \*\*Not product bugs\*\* \(1\): `MM-T5590` \/call logs$/m);
+                assert.match(text, /^🔁 \*\*Not product bugs\*\* \(1\)$/m);
+                assert.match(text, /^• `MM-T5590` \/call logs — failed by chance or because of the test machine; it passes on retry or on other runs · 🐧 Linux$/m);
             });
 
             it('names the tests on an alert that needs investigation too', () => {
-                const text = masterFailure({triageLanes: [
-                    {platform: 'linux', verdict: 'FAILURE', blocking: '1', findingsRecorded: true, findings: [bookmark]},
-                    {platform: 'linux', verdict: 'ACTION_REQUIRED'},
-                ]});
+                const text = masterFailure({triageLanes: lanes('ACTION_REQUIRED', {findingsRecorded: true, findings: [bookmark]})});
+                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — needs investigation on `master`\*\*/);
                 assert.match(text, /^• `MM-T5611` Open a bookmark URL\/link — the cause is not clear · 🐧 Linux$/m);
+            });
+
+            it('names the first three cleared tests and counts the rest', () => {
+                const flaky = (n) => ({...callLogs, title: `MM-T90${n} flaky ${n}`, full_title: `specs/calls/calls.test.ts > Calls > MM-T90${n} flaky ${n}`});
+                const text = masterFailure({triageLanes: lanes('FAILURE', {blocking: '1', findingsRecorded: true, findings: [bookmark, ...[1, 2, 3, 4, 5].map(flaky)]})});
+                assert.match(text, /^🔁 \*\*Not product bugs\*\* \(5\)$/m);
+                assert.equal((text.match(/^• `MM-T90\d`/gm) || []).length, 3);
+                assert.match(text, /^…and 2 more in the run$/m);
             });
 
             it('names no test when the lanes recorded none', () => {

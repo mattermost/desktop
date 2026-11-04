@@ -482,18 +482,19 @@ function formatMasterTestLines(lanes) {
     }
     const names = testNames(tests);
     const where = (t) => t.platforms.map((p) => `${PLATFORM_EMOJI[p] || PLATFORM_EMOJI.unknown} ${PLATFORM_LABEL[p] || PLATFORM_LABEL.unknown}`).join(', ');
-    const look = tests.filter((t) => t.blocking);
-    const cleared = tests.filter((t) => !t.blocking);
     const lines = [];
-    if (look.length) {
-        lines.push(`🔎 **Needs a look** (${look.length})`, ...look.slice(0, 3).map((t) => `• ${names.get(t)} — ${reasonFor(t)} · ${where(t)}`));
-        if (look.length > 3) {
-            lines.push(`…and ${look.length - 3} more in the run`);
+
+    // Each section: its first three tests with why and on which OS, then how many more.
+    const section = (title, list) => {
+        if (list.length) {
+            lines.push(`${title} (${list.length})`, ...list.slice(0, 3).map((t) => `• ${names.get(t)} — ${reasonFor(t)} · ${where(t)}`));
+            if (list.length > 3) {
+                lines.push(`…and ${list.length - 3} more in the run`);
+            }
         }
-    }
-    if (cleared.length) {
-        lines.push(`🔁 **Not product bugs** (${cleared.length}): ${listOf(cleared, (t) => names.get(t))}`);
-    }
+    };
+    section('🔎 **Needs a look**', tests.filter((t) => t.blocking));
+    section('🔁 **Not product bugs**', tests.filter((t) => !t.blocking));
     return lines;
 }
 
