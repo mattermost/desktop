@@ -118,7 +118,7 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
             callback(false);
             return;
         }
-        const errorID = `${view?.serverId}:${parsedURL.origin}:${error}`;
+        const errorID = `${view?.serverId}:${parsedURL.origin}:${error}:${certificate.fingerprint}`;
 
         const server = view && ServerManager.getServer(view.serverId);
         if (server) {
@@ -136,7 +136,11 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
             if (isTrustedPopup) {
                 event.preventDefault();
             }
-            certificateErrorCallbacks.set(errorID, callback);
+            const previousCallback = certificateErrorCallbacks.get(errorID);
+            certificateErrorCallbacks.set(errorID, (isTrusted: boolean) => {
+                previousCallback?.(isTrusted);
+                callback(isTrusted);
+            });
             return;
         }
         const extraDetail = CertificateStore.isExisting(parsedURL) ? localizeMessage('main.app.app.handleAppCertificateError.dialog.extraDetail', 'Certificate is different from previous one.\n\n') : '';
