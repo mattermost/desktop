@@ -555,10 +555,17 @@ jobs:
       - e2e-windows-status
     # prepare-matrix is skipped when instance_details is empty and can finish
     # without an identity when preparation fails, so guard on the identity itself.
+    # The summary judges the whole group, so it can pass while one OS status is red
+    # (master run 41776677247: summary 0 failed, e2e/macos 1 failed). Any red status
+    # job brings triage in too, or that check stays red without a verdict.
     if: >-
       always()
       && needs.prepare-matrix.outputs.tsio-composite-identity != ''
-      && needs.tsio-summary.result != 'success'
+      && (needs.tsio-summary.result != 'success'
+        || needs.e2e-linux-status.result == 'failure'
+        || needs.e2e-macos-status.result == 'failure'
+        || needs.e2e-windows-status.result == 'failure'
+        || needs.e2e-policy-status.result == 'failure')
     permissions:
       contents: read
       statuses: write

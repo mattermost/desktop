@@ -228,6 +228,15 @@ describe('e2e-functional.yml status jobs', () => {
         }
     });
 
+    it('runs triage when any status is red, even if the summary passed', () => {
+        // Master run 41776677247: the summary passed while e2e/macos was red, and triage was skipped.
+        const block = jobLines(yml, 'tsio-triage').join('\n');
+        assert.match(block, /needs\.tsio-summary\.result != 'success'/);
+        for (const job of ['e2e-linux-status', 'e2e-macos-status', 'e2e-windows-status', 'e2e-policy-status']) {
+            assert.match(block, new RegExp(`\\|\\| needs\\.${job}\\.result == 'failure'`));
+        }
+    });
+
     it('checks out cmt-triage-verdict.js wherever cmt-channel-notify.js is loaded', () => {
         // cmt-channel-notify.js requires ./cmt-triage-verdict; a sparse
         // checkout missing it crashes the status job at require time
