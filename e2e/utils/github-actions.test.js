@@ -307,7 +307,9 @@ describe('e2e-functional.yml status jobs', () => {
             assert.match(verdict, new RegExp(`"${os}": "\\$\\{\\{ needs\\.${job}\\.result \\}\\}"`));
         }
         assert.match(verdict, /const hasFailures = redStatusNotCleared\(statusResults, triageLanes\) \|\| /);
-        assert.match(verdict, /statusResults,/);
+
+        // The status results reach the alert itself, not only hasFailures: the notify call passes them.
+        assert.match(verdict, /triageLanes,\n\s+statusResults,\n\s+\}\);/);
     });
 });
 
