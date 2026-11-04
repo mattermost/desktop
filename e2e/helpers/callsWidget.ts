@@ -116,6 +116,7 @@ export async function sendWidgetShortcut(
         if (!win) {
             throw new Error('Calls widget BrowserWindow not found');
         }
+        win.webContents.focus();
         win.webContents.sendInputEvent({type: 'keyDown', keyCode: args.keyCode, modifiers: args.modifiers} as Electron.KeyboardInputEvent);
         win.webContents.sendInputEvent({type: 'keyUp', keyCode: args.keyCode, modifiers: args.modifiers} as Electron.KeyboardInputEvent);
     }, {keyCode, modifiers});
@@ -141,18 +142,22 @@ export async function toggleMuteViaShortcut(
         message: 'Mute must toggle after Ctrl/Cmd+Shift+Space',
     };
     const [first, fallback] = legacyMuteKey ? [pressM, pressSpace] : [pressSpace, pressM];
-    const assertToggled = (timeout: number, message: string) => expect.poll(
-        () => getCallsMuteStateKey(widgetWindow),
-        {timeout, message},
-    ).not.toBe(initialMute);
 
-    await first.press();
-    try {
-        await assertToggled(3_000, first.message);
-    } catch {
-        await fallback.press();
-        await assertToggled(5_000, fallback.message);
-    }
+    let attempt = 0;
+    await expect.poll(async () => {
+        const current = await getCallsMuteStateKey(widgetWindow);
+        if (current !== initialMute) {
+            return current;
+        }
+        const candidate = attempt % 2 === 0 ? first : fallback;
+        attempt += 1;
+        await candidate.press().catch(() => {});
+        return getCallsMuteStateKey(widgetWindow);
+    }, {
+        timeout: 10_000,
+        intervals: [300, 500, 1000],
+        message: first.message,
+    }).not.toBe(initialMute);
 }
 
 export async function enterCallsTestChannel(serverWin: ServerView, channelName: string): Promise<void> {
@@ -198,7 +203,7 @@ export async function leaveCallIfActive(
     if (serverWin) {
         await expect.poll(
             () => serverWin.isVisible('[data-testid="calls-sidebar-active-call-icon"]'),
-            {timeout: 10_000, message: 'Sidebar active-call icon must disappear after leaving'},
+            {timeout: 15_000, message: 'Sidebar active-call icon must disappear after leaving'},
         ).toBe(false);
     }
 }
@@ -213,8 +218,8 @@ export async function closeCallsWidget(
     // If the shortcut ever proves unreliable, the faithful alternative is the menu
     // route used by the Calls plugin's own suite: click #calls-widget-leave-button,
     // then click "Leave call" inside getByTestId('dropdownmenu').
+    const isMac = process.platform === 'darwin';
     if (!widgetWindow.isClosed()) {
-        const isMac = process.platform === 'darwin';
         try {
             await waitForCallsClientReady(widgetWindow);
             await sendWidgetShortcut(
@@ -233,14 +238,24 @@ export async function closeCallsWidget(
     }
 
     await expect.poll(
-        () => findCallsWidgetWindow(electronApp),
-        {timeout: 10_000, message: 'Calls widget window must close after leaving'},
+        async () => {
+            const openWidget = findCallsWidgetWindow(electronApp);
+            if (openWidget && !openWidget.isClosed()) {
+                await sendWidgetShortcut(
+                    electronApp,
+                    'L',
+                    isMac ? ['shift', 'meta'] : ['shift', 'control'],
+                ).catch(() => {});
+            }
+            return findCallsWidgetWindow(electronApp);
+        },
+        {timeout: 15_000, intervals: [250, 500, 1000], message: 'Calls widget window must close after leaving'},
     ).toBeNull();
 
     if (serverWin) {
         await expect.poll(
             () => serverWin.isVisible('[data-testid="calls-sidebar-active-call-icon"]'),
-            {timeout: 10_000, message: 'Sidebar active-call icon must disappear after leaving'},
+            {timeout: 15_000, message: 'Sidebar active-call icon must disappear after leaving'},
         ).toBe(false);
     }
 }

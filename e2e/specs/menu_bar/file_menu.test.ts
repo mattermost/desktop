@@ -19,14 +19,7 @@ async function openPreferencesFromAppMenu(electronApp: Awaited<ReturnType<typeof
 }
 
 async function waitForSettingsWindow(electronApp: Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>) {
-    let settingsWindow = electronApp.windows().find((window) => window.url().includes('settings'));
-    if (!settingsWindow) {
-        settingsWindow = await electronApp.waitForEvent('window', {
-            predicate: (window) => window.url().includes('settings'),
-            timeout: 30_000,
-        });
-    }
-
+    const settingsWindow = await waitForWindow(electronApp, 'settings', 30_000);
     await settingsWindow.waitForLoadState();
     await settingsWindow.bringToFront();
     await settingsWindow.waitForSelector('.SettingsModal', {state: 'visible', timeout: 30_000});
@@ -76,7 +69,8 @@ test.describe('file_menu/dropdown', () => {
         expect(signInToAnotherServerWindow).toBeDefined();
     });
 
-    test('MM-T804 Preferences in Menu Bar open the Settings page', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    test('MM-T804 Preferences in Menu Bar open the Settings page', {tag: ['@P2', '@win32']}, async ({electronApp, appReady: _appReady}) => {
         // Reuse the existing direct-invocation helper instead of keyboard navigation.
         await openPreferencesFromAppMenu(electronApp);
         const settingsWindow = await waitForSettingsWindow(electronApp);

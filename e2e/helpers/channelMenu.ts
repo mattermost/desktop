@@ -55,30 +55,48 @@ export async function openSidebarChannelMenu(win: ServerView, channelItemSelecto
 
     const menuButtonSelector = SIDEBAR_CHANNEL_MENU_BUTTON(channelItemSelector);
 
-    const hoverPoint = await win.runInRenderer(`
-        const el = document.querySelector(${JSON.stringify(channelItemSelector)});
-        if (!el) {
-            return null;
+    const hoverChannelItem = async () => {
+        const hoverPoint = await win.runInRenderer(`
+            const el = document.querySelector(${JSON.stringify(channelItemSelector)});
+            if (!el) {
+                return null;
+            }
+            el.scrollIntoView({block: 'center', inline: 'center'});
+            el.dispatchEvent(new MouseEvent('mouseenter', {bubbles: true}));
+            el.dispatchEvent(new MouseEvent('mouseover', {bubbles: true}));
+            const rect = el.getBoundingClientRect();
+            return {
+                x: Math.round(rect.right - 8),
+                y: Math.round(rect.top + (rect.height / 2)),
+            };
+        `, true);
+        if (!hoverPoint) {
+            return false;
         }
-        el.scrollIntoView({block: 'center', inline: 'center'});
-        const rect = el.getBoundingClientRect();
-        return {
-            x: Math.round(rect.right - 8),
-            y: Math.round(rect.top + (rect.height / 2)),
-        };
-    `, true);
-    expect(hoverPoint, `Channel sidebar item must exist: ${channelItemSelector}`).toBeTruthy();
 
-    await win.app.evaluate(({webContents}, payload) => {
-        const wc = webContents.fromId(payload.id);
-        if (!wc || wc.isDestroyed()) {
-            throw new Error(`webContents ${payload.id} is not available`);
+        await win.app.evaluate(({webContents}, payload) => {
+            const wc = webContents.fromId(payload.id);
+            if (!wc || wc.isDestroyed()) {
+                throw new Error(`webContents ${payload.id} is not available`);
+            }
+            wc.focus();
+            wc.sendInputEvent({type: 'mouseMove', x: payload.x, y: payload.y});
+        }, {id: win.webContentsId, ...hoverPoint});
+        return true;
+    };
+
+    await expect.poll(async () => {
+        if (await win.isVisible(menuButtonSelector)) {
+            return true;
         }
-        wc.focus();
-        wc.sendInputEvent({type: 'mouseMove', x: payload.x, y: payload.y});
-    }, {id: win.webContentsId, ...hoverPoint!});
+        await hoverChannelItem();
+        return win.isVisible(menuButtonSelector);
+    }, {
+        timeout: 15_000,
+        intervals: [200, 400, 800],
+        message: `Sidebar channel menu button must become visible for ${channelItemSelector}`,
+    }).toBe(true);
 
-    await win.waitForSelector(menuButtonSelector, {state: 'visible', timeout: 15_000});
     await win.click(menuButtonSelector);
     await waitForCopyLinkInMenu(win);
 }

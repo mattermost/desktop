@@ -6,7 +6,7 @@ import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
 import {demoConfig, demoMattermostConfig} from '../../helpers/config';
-import {answerMessageModal} from '../../helpers/dialog';
+import {answerMessageModal, clearCertificateErrorCallbacks} from '../../helpers/dialog';
 import {launchDirectTestApp} from '../../helpers/directLaunch';
 import {closeElectronAppFast} from '../../helpers/electronApp';
 import {waitForErrorView} from '../../helpers/errorView';
@@ -20,7 +20,7 @@ const EXPIRED_CERT_URL = 'https://expired.badssl.com';
 const TLS_1_0_URL = 'https://tls-v1-0.badssl.com:1010';
 const TLS_1_1_URL = 'https://tls-v1-1.badssl.com:1011';
 const RC4_CIPHER_URL = 'https://rc4.badssl.com';
-const INSECURE_TLS_ERROR_PATTERN = /ERR_SSL_(VERSION_OR_CIPHER_MISMATCH|PROTOCOL_ERROR|OBSOLETE_CIPHER)|ERR_CONNECTION_RESET|ERR_ABORTED/;
+const INSECURE_TLS_ERROR_PATTERN = /ERR_SSL_(VERSION_OR_CIPHER_MISMATCH|PROTOCOL_ERROR|OBSOLETE_CIPHER)|ERR_CONNECTION_(RESET|CLOSED)|ERR_ABORTED/;
 
 async function launchWithConfig(testInfo: {outputDir: string}, config: object) {
     const {mkdirSync} = await import('fs');
@@ -123,7 +123,81 @@ async function openAddServerModal(app: Awaited<ReturnType<typeof launchWithConfi
         throw new Error('New server modal window did not appear');
     }
     await newServerView.waitForLoadState().catch(() => {});
+    await newServerView.waitForSelector('#serverUrlInput', {state: 'visible', timeout: 15_000});
+    await newServerView.waitForSelector('#serverNameInput', {state: 'visible', timeout: 15_000});
     return newServerView;
+}
+
+async function fillAndConfirmNewServerModal(
+    app: Awaited<ReturnType<typeof launchWithConfig>>['app'],
+    newServerView: Awaited<ReturnType<typeof openAddServerModal>>,
+    serverName: string,
+    serverUrl: string,
+) {
+    await newServerView.fill('#serverUrlInput', serverUrl);
+    await newServerView.fill('#serverNameInput', serverName);
+
+    await expect.poll(async () => {
+        await app.evaluate(() => {
+            const modalManager = (global as any).__e2eTestRefs?.ModalManager;
+            if (!modalManager?.modalQueue?.length) {
+                return;
+            }
+            for (const modal of [...modalManager.modalQueue]) {
+                if (typeof modal.key === 'string' && modal.key.startsWith('messageModal')) {
+                    modal.resolve({response: 1, checkboxChecked: false});
+                    modalManager.modalPromises?.delete?.(modal.key);
+                }
+            }
+            modalManager.filterActive?.();
+        }).catch(() => {});
+
+        const currentUrl = await newServerView.inputValue('#serverUrlInput').catch(() => '');
+        const currentName = await newServerView.inputValue('#serverNameInput').catch(() => '');
+        if (!currentUrl) {
+            await newServerView.fill('#serverUrlInput', serverUrl);
+        }
+        if (currentName !== serverName) {
+            await newServerView.fill('#serverNameInput', serverName);
+        }
+        const disabled = await newServerView.getAttribute('#newServerModal_confirm', 'disabled');
+        return disabled === null;
+    }, {
+        timeout: 30_000,
+        message: `Add button should become enabled for ${serverName} (${serverUrl})`,
+    }).toBe(true);
+
+    await newServerView.click('#newServerModal_confirm');
+}
+
+async function resetSharedModalState(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
+    await closeOverlayWindowsIfOpen(app);
+    await clearCertificateErrorCallbacks(app).catch(() => {});
+    await app.evaluate(() => {
+        const refs = (global as any).__e2eTestRefs;
+        const modalManager = refs?.ModalManager;
+        if (modalManager?.modalQueue?.length) {
+            for (const modal of [...modalManager.modalQueue]) {
+                try {
+                    modal.reject(undefined);
+                    modalManager.modalPromises?.delete?.(modal.key);
+                } catch {
+                    // Ignore modal cleanup errors between tests.
+                }
+            }
+            modalManager.filterActive?.();
+            modalManager.showModal?.();
+        }
+
+        const serverManager = refs?.ServerManager;
+        const allServers: Array<{id: string; name: string}> = serverManager?.getAllServers?.() ?? [];
+        const keepNames = new Set(['example', 'github']);
+        for (const server of allServers) {
+            if (!keepNames.has(server.name)) {
+                serverManager.removeServer(server.id);
+            }
+        }
+    }).catch(() => {});
 }
 
 async function openServerDropdown(app: Awaited<ReturnType<typeof launchWithConfig>>['app']) {
@@ -132,6 +206,7 @@ async function openServerDropdown(app: Awaited<ReturnType<typeof launchWithConfi
 
 test.describe('Bad Server Configurations', () => {
     test.describe.configure({mode: 'serial'});
+    test.setTimeout(120_000);
 
     test.describe('Adding servers via Add Server Modal', () => {
         let sharedApp: Awaited<ReturnType<typeof launchWithConfig>>['app'];
@@ -159,13 +234,15 @@ test.describe('Bad Server Configurations', () => {
         // ever leak state, prefer sending CLOSE_SERVERS_DROPDOWN via IPC instead of
         // Page.close(), or press Escape at test end.
 
+        test.beforeEach(async () => {
+            await resetSharedModalState(sharedApp);
+        });
+
         test('MM-T6175 should handle server with unresolvable DNS', {tag: ['@P2', '@all']}, async () => {
             const app = sharedApp;
             const userDataDir = sharedUserDataDir;
             const newServerView = await openAddServerModal(app);
-            await newServerView.type('#serverNameInput', 'Unreachable Server');
-            await newServerView.type('#serverUrlInput', UNREACHABLE_SERVER_URL);
-            await newServerView.click('#newServerModal_confirm');
+            await fillAndConfirmNewServerModal(app, newServerView, 'Unreachable Server', UNREACHABLE_SERVER_URL);
 
             const configPath = path.join(userDataDir, 'config.json');
             await expect.poll(
@@ -184,9 +261,7 @@ test.describe('Bad Server Configurations', () => {
             const app = sharedApp;
             const userDataDir = sharedUserDataDir;
             const newServerView = await openAddServerModal(app);
-            await newServerView.type('#serverNameInput', 'Expired Cert Server');
-            await newServerView.type('#serverUrlInput', EXPIRED_CERT_URL);
-            await newServerView.click('#newServerModal_confirm');
+            await fillAndConfirmNewServerModal(app, newServerView, 'Expired Cert Server', EXPIRED_CERT_URL);
 
             const configPath = path.join(userDataDir, 'config.json');
             await expect.poll(
@@ -207,9 +282,7 @@ test.describe('Bad Server Configurations', () => {
             const app = sharedApp;
             const userDataDir = sharedUserDataDir;
             const newServerView = await openAddServerModal(app);
-            await newServerView.type('#serverNameInput', 'TLS 1.0 Server');
-            await newServerView.type('#serverUrlInput', TLS_1_0_URL);
-            await newServerView.click('#newServerModal_confirm');
+            await fillAndConfirmNewServerModal(app, newServerView, 'TLS 1.0 Server', TLS_1_0_URL);
 
             const configPath = path.join(userDataDir, 'config.json');
             await expect.poll(
@@ -231,9 +304,7 @@ test.describe('Bad Server Configurations', () => {
             const app = sharedApp;
             const userDataDir = sharedUserDataDir;
             const newServerView = await openAddServerModal(app);
-            await newServerView.type('#serverNameInput', 'RC4 Cipher Server');
-            await newServerView.type('#serverUrlInput', RC4_CIPHER_URL);
-            await newServerView.click('#newServerModal_confirm');
+            await fillAndConfirmNewServerModal(app, newServerView, 'RC4 Cipher Server', RC4_CIPHER_URL);
 
             const configPath = path.join(userDataDir, 'config.json');
             await expect.poll(

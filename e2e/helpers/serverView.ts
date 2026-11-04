@@ -239,9 +239,24 @@ export class ServerLocator {
             `
             ${DOM_UTILS}
             const descriptor = ${JSON.stringify(this.descriptor)};
-            const element = __mmResolveOne(descriptor);
+            let element = __mmResolveOne(descriptor);
             if (!element) {
                 throw new Error('Element not found for click');
+            }
+
+            const isDisabledControl = (el) => (
+                (el instanceof HTMLButtonElement || el instanceof HTMLInputElement) && el.disabled
+            ) || el.getAttribute('aria-disabled') === 'true';
+
+            if (isDisabledControl(element)) {
+                const deadline = Date.now() + 5000;
+                while (Date.now() < deadline && element && isDisabledControl(element)) {
+                    await new Promise((resolve) => setTimeout(resolve, 50));
+                    element = __mmResolveOne(descriptor);
+                }
+                if (!element) {
+                    throw new Error('Element detached before becoming enabled for click');
+                }
             }
 
             element.scrollIntoView({block: 'center', inline: 'center'});
