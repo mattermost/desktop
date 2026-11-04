@@ -112,7 +112,8 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
     } else {
         // update the callback
         const view = WebContentsManager.getViewByWebContentsId(webContents.id);
-        if (!view && !WebContentsEventManager.isTrustedPopupWindow(webContents.id)) {
+        const isTrustedPopup = !view && WebContentsEventManager.isTrustedPopupWindow(webContents.id);
+        if (!view && !isTrustedPopup) {
             event.preventDefault();
             callback(false);
             return;
@@ -132,6 +133,9 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
         // if we are already showing that error, don't add more dialogs
         if (certificateErrorCallbacks.has(errorID)) {
             log.warn(`Ignoring already shown dialog for ${errorID}`);
+            if (isTrustedPopup) {
+                event.preventDefault();
+            }
             certificateErrorCallbacks.set(errorID, callback);
             return;
         }
@@ -143,6 +147,10 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
         const mainWindow = MainWindow.get();
         if (!mainWindow) {
             return;
+        }
+
+        if (isTrustedPopup) {
+            event.preventDefault();
         }
 
         try {

@@ -193,9 +193,13 @@ describe('main/app/app', () => {
             const popupWebContents = {id: 42, loadURL: jest.fn()};
             WebContentsManager.getViewByWebContentsId.mockReturnValue(undefined);
             WebContentsEventManager.isTrustedPopupWindow.mockReturnValue(true);
-            MessageModal.showMessageModal.mockResolvedValue({response: 0});
+            MessageModal.showMessageModal.mockImplementation(() => {
+                expect(event.preventDefault).toHaveBeenCalled();
+                return Promise.resolve({response: 0});
+            });
 
             await handleAppCertificateError(event, popupWebContents, testURL, 'error-1', certificate, callback);
+            expect(event.preventDefault).toHaveBeenCalled();
             expect(MessageModal.showMessageModal).toHaveBeenCalled();
             expect(callback).toHaveBeenCalledWith(true);
             expect(popupWebContents.loadURL).toHaveBeenCalledWith(testURL);
