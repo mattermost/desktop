@@ -277,6 +277,9 @@ describe('e2e-functional.yml status jobs', () => {
         // merge-multiple, where files sharing a name overwrite each other.
         assert.match(triage, /> "e2e-triage-verdict-\$\{PLATFORM\}\.json"/);
         assert.match(triage, /path: e2e-triage-verdict-\$\{\{ matrix\.platform \}\}\.json/);
+        // Each lane records its failed tests, so the master alert names them.
+        assert.match(triage, /findings-file: e2e-triage-findings\.json/);
+        assert.match(triage, /findingsRecorded: \$findingsRecorded/);
 
         // The verdict job judges every master run: notifyCmtChannel stays
         // silent on green, and missing/empty legs still alert even when the

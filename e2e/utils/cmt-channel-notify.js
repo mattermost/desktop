@@ -17,7 +17,7 @@
  * Playwright: failed+passed → flaky; all failed → failed once (not once per attempt).
  */
 
-const {foldMasterTriage} = require('./cmt-triage-verdict');
+const {foldMasterTriage, formatMasterTestLines} = require('./cmt-triage-verdict');
 
 const OS_ORDER = {linux: 0, macos: 1, windows: 2};
 const FETCH_TIMEOUT_MS = 15_000;
@@ -487,6 +487,7 @@ function formatMasterChannelMessage({
         if (triage.unknownLegs.length === 0 && !upstreamJobsSucceeded) {
             lines.push('A CI job failed outside tracked tests (install/build/teardown); triage cannot clear that.');
         }
+        lines.push(...formatMasterTestLines(triageLanes));
         lines.push(...formatSetupProblemLines(legs, triage.setupLegs));
         if (links) {
             lines.push(`➡️ ${links}`);
@@ -551,6 +552,9 @@ function formatMasterChannelMessage({
     }
     if (triage && triage.verdict === 'blocking' && triage.clearedLegs.length > 0) {
         lines.push(`AI triage cleared ${triage.clearedLegs.length} failing leg${triage.clearedLegs.length === 1 ? '' : 's'} (flaky / failed in master / Infra failure); the rest still block.`);
+    }
+    if (triage) {
+        lines.push(...formatMasterTestLines(triageLanes));
     }
     const missingOnly = missingLegs.filter((leg) => leg.status !== 'no-results');
     if (missingOnly.length > 0) {

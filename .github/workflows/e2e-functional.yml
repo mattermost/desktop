@@ -605,6 +605,8 @@ jobs:
           # A lane red only on infrastructure (a dead job, missing reports) asks for one
           # automatic re-run of the failed jobs; e2e-tests-rerun.yml carries it out.
           rerun-attempts: '1'
+          # Each failed test with triage's label, so the master alert can name it.
+          findings-file: e2e-triage-findings.json
 
       # master-e2e-verdict folds these per-OS verdicts into the post-merge
       # channel alert. Always record a file — an empty verdict is how the
@@ -617,12 +619,27 @@ jobs:
           BLOCKING: ${{ steps.triage.outputs.blocking }}
           EXONERATED: ${{ steps.triage.outputs.exonerated }}
         run: |
+          # Each failed test with triage's label, so the alert can name it (the same record CMT keeps).
+          # Schema 1 has no label or explanation, so it gets the label the toolkit would give it.
+          FINDINGS='[]'
+          RECORDED=false
+          if [ -f e2e-triage-findings.json ] && FROM_FILE=$(jq -c '
+              if .schema == 2 then [.findings[] | {title, full_title, file, label, blocking, explanation: .ai.explanation}]
+              elif .schema == 1 then [.findings[] | {title, full_title, file, blocking, explanation: null,
+                label: (if .blocking then (if .out_of_date then "out of date" elif .class == "OWNED_BY_PR" then "caused by PR" else "needs investigation" end)
+                        elif .class == "BROKEN_ON_TRUNK" then "broken on main" else "flaky" end)}]
+              else error("unknown findings schema") end' e2e-triage-findings.json 2>/dev/null); then
+            FINDINGS="${FROM_FILE}"
+            RECORDED=true
+          fi
           jq -n \
             --arg platform "${PLATFORM}" \
             --arg verdict "${VERDICT}" \
             --arg blocking "${BLOCKING}" \
             --arg exonerated "${EXONERATED}" \
-            '{platform: $platform, verdict: $verdict, blocking: $blocking, exonerated: $exonerated}' \
+            --argjson findings "${FINDINGS}" \
+            --argjson findingsRecorded "${RECORDED}" \
+            '{platform: $platform, verdict: $verdict, blocking: $blocking, exonerated: $exonerated, findings: $findings, findingsRecorded: $findingsRecorded}' \
             > "e2e-triage-verdict-${PLATFORM}.json"
 
       # The file name is per OS too: the verdict job downloads every lane into one folder with

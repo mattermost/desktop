@@ -662,6 +662,42 @@ describe('cmt-channel-notify', () => {
                 assert.match(text, /^:red_circle: \*\*Desktop Master E2E — failure on `master`\*\*/);
             });
 
+            // The 2026-11-02 master run after the Electron 45.2.1 upgrade: the alert named the leg, never the test.
+            const bookmark = {
+                title: 'MM-T5611 Open a bookmark URL/link',
+                full_title: 'specs/channel_bookmarks/bookmarks.test.ts > Channel bookmarks > MM-T5611 Open a bookmark URL/link',
+                file: 'e2e/specs/channel_bookmarks/bookmarks.test.ts',
+                label: 'needs investigation',
+                blocking: true,
+            };
+            const callLogs = {
+                title: 'MM-T5590 /call logs',
+                full_title: 'specs/calls/calls.test.ts > Calls > MM-T5590 /call logs',
+                file: 'e2e/specs/calls/calls.test.ts',
+                label: 'flaky',
+                blocking: false,
+            };
+
+            it('names each failed test triage left blocking, why, and on which OS', () => {
+                const text = masterFailure({triageLanes: lanes('FAILURE', {blocking: '1', findingsRecorded: true, findings: [bookmark, callLogs]})});
+                assert.match(text, /^🔎 \*\*Needs a look\*\* \(1\)$/m);
+                assert.match(text, /^• `MM-T5611` Open a bookmark URL\/link — the cause is not clear · 🐧 Linux$/m);
+                assert.match(text, /^🔁 \*\*Not product bugs\*\* \(1\): `MM-T5590` \/call logs$/m);
+            });
+
+            it('names the tests on an alert that needs investigation too', () => {
+                const text = masterFailure({triageLanes: [
+                    {platform: 'linux', verdict: 'FAILURE', blocking: '1', findingsRecorded: true, findings: [bookmark]},
+                    {platform: 'linux', verdict: 'ACTION_REQUIRED'},
+                ]});
+                assert.match(text, /^• `MM-T5611` Open a bookmark URL\/link — the cause is not clear · 🐧 Linux$/m);
+            });
+
+            it('names no test when the lanes recorded none', () => {
+                const text = masterFailure({triageLanes: lanes('FAILURE', {blocking: '1'})});
+                assert.doesNotMatch(text, /Needs a look|Not product bugs/);
+            });
+
             it('renders yellow when triage could not settle a leg', () => {
                 const text = masterFailure({triageLanes: lanes('ACTION_REQUIRED')});
                 assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — needs investigation on `master`\*\*/);

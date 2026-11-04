@@ -440,6 +440,64 @@ function reasonFor(t) {
 }
 
 /**
+ * Each failed test of a master run once, with the operating systems it failed on: still blocking first, then the most
+ * severe label.
+ *
+ * @param {Array} lanes - per-OS verdict records
+ * @returns {Array<{title: string, fullTitle: string, file: string, label: string, blocking: boolean, platforms: string[], servers: string[]}>}
+ */
+function groupMasterTests(lanes) {
+    const byTest = new Map();
+    for (const lane of (lanes || []).map(normalizeLane)) {
+        for (const f of lane.findings) {
+            const key = `${f.file}\n${f.fullTitle}`;
+            const seen = byTest.get(key);
+            if (!seen) {
+                byTest.set(key, {...f, platforms: [lane.platform], servers: []});
+                continue;
+            }
+            if (!seen.platforms.includes(lane.platform)) {
+                seen.platforms.push(lane.platform);
+            }
+            seen.blocking = seen.blocking || f.blocking;
+            if (labelRank(f.label) < labelRank(seen.label)) {
+                seen.label = f.label;
+            }
+        }
+    }
+    return [...byTest.values()].sort((a, b) => Number(b.blocking) - Number(a.blocking) || labelRank(a.label) - labelRank(b.label) || a.title.localeCompare(b.title));
+}
+
+/**
+ * The master alert's lines naming each failed test: what still needs a look, why and on which OS, then what triage
+ * cleared. Empty when the lanes recorded no tests.
+ *
+ * @param {Array} lanes - per-OS verdict records
+ * @returns {string[]}
+ */
+function formatMasterTestLines(lanes) {
+    const tests = groupMasterTests(lanes);
+    if (!tests.length) {
+        return [];
+    }
+    const names = testNames(tests);
+    const where = (t) => t.platforms.map((p) => `${PLATFORM_EMOJI[p] || PLATFORM_EMOJI.unknown} ${PLATFORM_LABEL[p] || PLATFORM_LABEL.unknown}`).join(', ');
+    const look = tests.filter((t) => t.blocking);
+    const cleared = tests.filter((t) => !t.blocking);
+    const lines = [];
+    if (look.length) {
+        lines.push(`🔎 **Needs a look** (${look.length})`, ...look.slice(0, 3).map((t) => `• ${names.get(t)} — ${reasonFor(t)} · ${where(t)}`));
+        if (look.length > 3) {
+            lines.push(`…and ${look.length - 3} more in the run`);
+        }
+    }
+    if (cleared.length) {
+        lines.push(`🔁 **Not product bugs** (${cleared.length}): ${listOf(cleared, (t) => names.get(t))}`);
+    }
+    return lines;
+}
+
+/**
  * The channel message: for each failure, whether it is a product bug, a problem with the test, flaky, or a
  * problem with the test setup, in plain words. The details are in the run.
  *
@@ -547,6 +605,7 @@ module.exports = {
     normalizeVerdict,
     foldCmtVerdicts,
     foldMasterTriage,
+    formatMasterTestLines,
     formatCmtVerdictMessage,
     displayTotals,
 };
