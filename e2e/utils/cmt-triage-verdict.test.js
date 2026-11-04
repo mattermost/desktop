@@ -162,6 +162,13 @@ describe('unclearedStatuses', () => {
 
     it('retains a failed OS status when triage returned SUCCESS with no findings or exonerated failures', () => {
         assert.deepEqual(unclearedStatuses({linux: 'failure'}, [lane('linux', 'SUCCESS', {exonerated: '0', findings: []})]), ['linux']);
+        assert.deepEqual(unclearedStatuses({macos: 'failure'}, [{platform: 'macos', verdict: 'SUCCESS'}]), ['macos'], 'a record with no counts');
+        assert.equal(redStatusNotCleared({linux: 'failure'}, [lane('linux', 'SUCCESS', {exonerated: '0', findings: [], description: ''})]), true);
+    });
+
+    it('does not name an OS status red only for tests that passed on a retry, which triage cleared', () => {
+        const flakyOnly = lane('macos', 'SUCCESS', {exonerated: '0', findings: [], description: '(2 flaky, passed on retry) 410 passed, 2 flaky'});
+        assert.deepEqual(unclearedStatuses({macos: 'failure'}, [flakyOnly]), []);
     });
 
     it('names nothing when every red status was cleared', () => {

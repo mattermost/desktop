@@ -298,19 +298,29 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
     };
 }
 
+// The toolkit's status text for a lane red only for tests that passed on a retry (e2e-test-triage, triage.ts).
+const FLAKY_ONLY = /^\(\d+ flaky, passed on retry\)/;
+
 /**
- * The status jobs that are red for a reason triage did not clear: an OS status whose triage lane did not clear at least
- * one test failure (verdict === 'SUCCESS' with exonerated > 0 or findings.length > 0), or the policy status (triage
- * never judges policy legs). A green OS lane returns SUCCESS with 0 exonerated and no findings when its status job
- * failed outside the tests; keeping it here prevents suppressing the master alert.
+ * Whether a triage lane cleared its OS status: SUCCESS, and it judged something there — test failures it cleared, or a
+ * status red only for tests that passed on a retry (no failure to clear, so no findings). A status red outside the tests
+ * (no test failed, a job died) gets SUCCESS with nothing judged: triage leaves that status as it is.
+ */
+function laneClearsStatus(lane) {
+    return lane.verdict === 'SUCCESS' && (lane.exonerated > 0 || lane.findings.length > 0 || FLAKY_ONLY.test(lane.description));
+}
+
+/**
+ * The status jobs that are red for a reason triage did not clear: an OS status whose triage lane did not clear it (see
+ * laneClearsStatus), or the policy status (triage never judges policy legs). Keeping a status triage did not judge
+ * here keeps the master alert from being suppressed.
  *
  * @param {Record<string, string>} statusResults - each status job's result ('success', 'failure', ...) by OS: linux, macos, windows, policy
- * @param {Array<{platform: string, verdict?: string, exonerated?: number|string, findings?: Array}>} lanes - verdict records from the per-OS triage lanes
+ * @param {Array<{platform: string, verdict?: string, exonerated?: number|string, findings?: Array, description?: string}>} lanes - verdict records from the per-OS triage lanes
  * @returns {string[]} the uncleared status keys, in statusResults order
  */
 function unclearedStatuses(statusResults = {}, lanes = []) {
-    const normalized = (lanes || []).map(normalizeLane);
-    const cleared = new Set(normalized.filter((lane) => lane.verdict === 'SUCCESS' && (lane.exonerated > 0 || lane.findings.length > 0)).map((lane) => lane.platform));
+    const cleared = new Set((lanes || []).map(normalizeLane).filter(laneClearsStatus).map((lane) => lane.platform));
     const red = Object.entries(statusResults || {}).filter(([os, result]) => result === 'failure' && (os === 'policy' || !cleared.has(os)));
     return red.map(([os]) => os);
 }

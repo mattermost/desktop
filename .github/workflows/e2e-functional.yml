@@ -625,6 +625,8 @@ jobs:
           VERDICT: ${{ steps.triage.outputs.verdict }}
           BLOCKING: ${{ steps.triage.outputs.blocking }}
           EXONERATED: ${{ steps.triage.outputs.exonerated }}
+          # Tells a status red only for tests that passed on a retry (cleared) from one red outside the tests (not judged).
+          DESCRIPTION: ${{ steps.triage.outputs.description }}
         run: |
           # Each failed test with triage's label, so the alert can name it (the same record CMT keeps).
           FINDINGS='[]'
@@ -640,9 +642,10 @@ jobs:
             --arg verdict "${VERDICT}" \
             --arg blocking "${BLOCKING}" \
             --arg exonerated "${EXONERATED}" \
+            --arg description "${DESCRIPTION}" \
             --argjson findings "${FINDINGS}" \
             --argjson findingsRecorded "${RECORDED}" \
-            '{platform: $platform, verdict: $verdict, blocking: $blocking, exonerated: $exonerated, findings: $findings, findingsRecorded: $findingsRecorded}' \
+            '{platform: $platform, verdict: $verdict, blocking: $blocking, exonerated: $exonerated, description: $description, findings: $findings, findingsRecorded: $findingsRecorded}' \
             > "e2e-triage-verdict-${PLATFORM}.json"
 
       # The file name is per OS too: the verdict job downloads every lane into one folder with
