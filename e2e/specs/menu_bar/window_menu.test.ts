@@ -228,17 +228,14 @@ async function resetWindowMenuState() {
 async function createExtraTabs() {
     const currentMainWindow = mainWindow;
     for (const targetCount of [2, 3]) {
+        await currentMainWindow.click('#newTabButton');
         await expect.poll(async () => {
-            const currentCount = await currentMainWindow.locator('.TabBar li.serverTabItem').count();
-            if (currentCount < targetCount) {
-                await currentMainWindow.click('#newTabButton').catch(() => {});
-            }
             return currentMainWindow.locator('.TabBar li.serverTabItem').count();
         }, {
             timeout: 15_000,
             intervals: [250, 500, 1000],
             message: `TabBar must render ${targetCount} tabs`,
-        }).toBeGreaterThanOrEqual(targetCount);
+        }).toBe(targetCount);
     }
 
     const serverName = windowMenuConfig.servers[0].name;

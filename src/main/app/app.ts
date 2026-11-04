@@ -7,6 +7,7 @@ import {app} from 'electron';
 import MainWindow from 'app/mainWindow/mainWindow';
 import MessageModal from 'app/mainWindow/modals/messageModal';
 import Tray from 'app/system/tray/tray';
+import WebContentsEventManager from 'app/views/webContentEvents';
 import WebContentsManager from 'app/views/webContentsManager';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -111,12 +112,12 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
     } else {
         // update the callback
         const view = WebContentsManager.getViewByWebContentsId(webContents.id);
-        if (!view) {
+        if (!view && !WebContentsEventManager.isTrustedPopupWindow(webContents.id)) {
             event.preventDefault();
             callback(false);
             return;
         }
-        const errorID = `${view.serverId}:${parsedURL.origin}:${error}`;
+        const errorID = `${view?.serverId}:${parsedURL.origin}:${error}`;
 
         const server = view && ServerManager.getServer(view.serverId);
         if (server) {

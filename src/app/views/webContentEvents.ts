@@ -62,7 +62,7 @@ export class WebContentsEventManager {
         return ViewManager.getViewLog(view.id, 'WebContentsEventManager');
     };
 
-    private isTrustedPopupWindow = (webContentsId: number) => {
+    isTrustedPopupWindow = (webContentsId: number) => {
         if (!this.popupWindow) {
             return false;
         }
