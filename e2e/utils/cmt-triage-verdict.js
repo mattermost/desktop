@@ -326,9 +326,10 @@ function redStatusNotCleared(statusResults = {}, lanes = []) {
  * @param {boolean} [params.upstreamJobsSucceeded]
  * @param {boolean} [params.overallFailed]
  * @param {boolean} [params.noLegs] - true when the run reported no legs at all (never "cleared")
+ * @param {Record<string, string>} [params.statusResults] - per-OS and policy status job results
  * @returns {{verdict: 'cleared'|'blocking'|'inconclusive', clearedLegs: Array, blockingLegs: Array, unknownLegs: Array}}
  */
-function foldMasterTriage({lanes = [], legs = [], missingLegs = [], upstreamJobsSucceeded = true, overallFailed = false, noLegs = false}) {
+function foldMasterTriage({lanes = [], legs = [], missingLegs = [], upstreamJobsSucceeded = true, overallFailed = false, noLegs = false, statusResults = {}}) {
     const laneByOs = new Map();
     for (const lane of lanes || []) {
         const normalized = normalizeLane(lane);
@@ -372,12 +373,14 @@ function foldMasterTriage({lanes = [], legs = [], missingLegs = [], upstreamJobs
         }
     }
 
+    const redStatus = redStatusNotCleared(statusResults, lanes);
     let verdict = 'cleared';
     if (blockingLegs.length > 0) {
         verdict = 'blocking';
-    } else if (unknownLegs.length > 0 || noLegs || (overallFailed && !upstreamJobsSucceeded) || (overallFailed && clearedLegs.length === 0)) {
+    } else if (unknownLegs.length > 0 || noLegs || redStatus || (overallFailed && !upstreamJobsSucceeded) || (overallFailed && clearedLegs.length === 0)) {
         // A failed run is cleared only on positive evidence: triage must
-        // have cleared at least one failing leg.
+        // have cleared at least one failing leg, and no status job can still
+        // be red for a reason triage did not clear.
         verdict = 'inconclusive';
     } else if (setupLegs.length > 0) {
         verdict = 'setup';

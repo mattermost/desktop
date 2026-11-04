@@ -657,6 +657,11 @@ describe('cmt-channel-notify', () => {
                 assert.match(text, /^:green_circle: \*\*Desktop Master E2E — flaky, no bug found\*\*/);
             });
 
+            it('renders yellow when a policy status job failed with no policy leg, even if triage cleared the OS leg', () => {
+                const text = masterFailure({triageLanes: lanes('SUCCESS'), statusResults: {linux: 'failure', policy: 'failure'}});
+                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — needs investigation on `master`\*\*/);
+            });
+
             it('stays red when triage leaves blocking failures', () => {
                 const text = masterFailure({triageLanes: lanes('FAILURE', {blocking: '1'})});
                 assert.match(text, /^:red_circle: \*\*Desktop Master E2E — failure on `master`\*\*/);

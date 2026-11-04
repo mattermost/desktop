@@ -17,7 +17,7 @@
  * Playwright: failed+passed → flaky; all failed → failed once (not once per attempt).
  */
 
-const {foldMasterTriage, formatMasterTestLines} = require('./cmt-triage-verdict');
+const {foldMasterTriage, formatMasterTestLines, redStatusNotCleared} = require('./cmt-triage-verdict');
 
 const OS_ORDER = {linux: 0, macos: 1, windows: 2};
 const FETCH_TIMEOUT_MS = 15_000;
@@ -434,13 +434,15 @@ function formatMasterChannelMessage({
     headCommit,
     perJobCountsAvailable = true,
     triageLanes,
+    statusResults,
 }) {
+    const redStatus = redStatusNotCleared(statusResults, triageLanes);
     const {legs, passed, failed, skipped, overallFailed, missingLegs, noLegsReported} = summarizeOutcome({
-        detail, perJobCounts, upstreamJobsSucceeded, hasFailures, baseUrl, perJobCountsAvailable,
+        detail, perJobCounts, upstreamJobsSucceeded, hasFailures: hasFailures || redStatus, baseUrl, perJobCountsAvailable,
     });
     const setupLegs = perJobCountsAvailable ? legs.filter((leg) => leg.status === 'no-results') : [];
     const triage = triageLanes ? foldMasterTriage({
-        lanes: triageLanes, legs, missingLegs, upstreamJobsSucceeded, overallFailed, noLegs: noLegsReported,
+        lanes: triageLanes, legs, missingLegs, upstreamJobsSucceeded, overallFailed, noLegs: noLegsReported, statusResults,
     }) : null;
     const branch = (compositeIdentity?.branch || 'master').replace(/^refs\/(heads|tags)\//, '');
     const shortSha = (compositeIdentity?.commit_sha || '').slice(0, 7);
@@ -688,10 +690,11 @@ function formatCmtChannelMessage({
     headCommit,
     perJobCountsAvailable = true,
     triageLanes,
+    statusResults,
 }) {
     if (compositeIdentity?.name === 'desktop-master') {
         return formatMasterChannelMessage({
-            compositeIdentity, detail, reportUrl, baseUrl, perJobCounts, upstreamJobsSucceeded, hasFailures, mergedPr, headCommit, perJobCountsAvailable, triageLanes,
+            compositeIdentity, detail, reportUrl, baseUrl, perJobCounts, upstreamJobsSucceeded, hasFailures, mergedPr, headCommit, perJobCountsAvailable, triageLanes, statusResults,
         });
     }
 
@@ -963,6 +966,7 @@ async function notifyCmtChannel({
     mergedPr,
     headCommit,
     triageLanes,
+    statusResults,
 }) {
     try {
         const resolvedWebhook = webhookUrl || resolveWebhookUrl(compositeIdentity?.name);
@@ -975,8 +979,9 @@ async function notifyCmtChannel({
             core.warning(`Could not load per-leg TSIO counts: ${error.message}`);
         }
 
+        const effectiveHasFailures = hasFailures || redStatusNotCleared(statusResults, triageLanes);
         const outcome = summarizeOutcome({
-            detail, perJobCounts, upstreamJobsSucceeded, hasFailures, baseUrl, perJobCountsAvailable,
+            detail, perJobCounts, upstreamJobsSucceeded, hasFailures: effectiveHasFailures, baseUrl, perJobCountsAvailable,
         });
         let triageVerdict;
         if (compositeIdentity?.name === 'desktop-master' && triageLanes) {
@@ -987,6 +992,7 @@ async function notifyCmtChannel({
                 upstreamJobsSucceeded,
                 overallFailed: outcome.overallFailed,
                 noLegs: outcome.noLegsReported,
+                statusResults,
             }).verdict;
         }
         if (!shouldPostToChannel(compositeIdentity, outcome, triageVerdict)) {
@@ -1005,11 +1011,12 @@ async function notifyCmtChannel({
             baseUrl,
             perJobCounts,
             upstreamJobsSucceeded,
-            hasFailures,
+            hasFailures: effectiveHasFailures,
             mergedPr,
             headCommit,
             perJobCountsAvailable,
             triageLanes,
+            statusResults,
         });
 
         await postMattermostWebhook({core, webhookUrl: resolvedWebhook, text});

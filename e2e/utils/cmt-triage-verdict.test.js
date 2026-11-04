@@ -140,6 +140,15 @@ describe('redStatusNotCleared', () => {
         assert.equal(foldMasterTriage({lanes, legs: [], overallFailed}).verdict, 'inconclusive');
         assert.equal(foldMasterTriage({lanes, legs: [], overallFailed: false}).verdict, 'cleared', 'what it read before');
     });
+
+    it('keeps a red policy status inconclusive even when another OS cleared its failing leg', () => {
+        // Policy report missing (no policy leg in legs), while Linux had a failure that triage cleared.
+        const lanes = [lane('linux', 'SUCCESS')];
+        const legs = [{os: 'linux', kind: 'e2e', serverVersion: 'master', status: 'failed', failed: 1}];
+        const statusResults = {linux: 'failure', policy: 'failure'};
+        assert.equal(foldMasterTriage({lanes, legs, overallFailed: true, statusResults}).verdict, 'inconclusive');
+        assert.equal(foldMasterTriage({lanes, legs, overallFailed: true, statusResults: {linux: 'failure', policy: 'success'}}).verdict, 'cleared');
+    });
 });
 
 describe('foldMasterTriage', () => {

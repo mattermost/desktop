@@ -307,6 +307,7 @@ describe('e2e-functional.yml status jobs', () => {
             assert.match(verdict, new RegExp(`"${os}": "\\$\\{\\{ needs\\.${job}\\.result \\}\\}"`));
         }
         assert.match(verdict, /const hasFailures = redStatusNotCleared\(statusResults, triageLanes\) \|\| /);
+        assert.match(verdict, /statusResults,/);
     });
 });
 

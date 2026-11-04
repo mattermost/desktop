@@ -773,6 +773,7 @@ jobs:
               mergedPr: mergeContext.mergedPr,
               headCommit: mergeContext.headCommit,
               triageLanes,
+              statusResults,
             });
 
   remove-e2e-label:
