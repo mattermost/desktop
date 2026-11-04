@@ -218,6 +218,7 @@ describe('main/app/app', () => {
         it('should not show additional dialogs if certificate error has already been logged', () => {
             certificateErrorCallbacks.set(errorID, callback);
             handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
+            expect(event.preventDefault).toHaveBeenCalled();
             expect(MessageModal.showMessageModal).not.toHaveBeenCalled();
         });
 

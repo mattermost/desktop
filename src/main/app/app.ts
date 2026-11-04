@@ -133,9 +133,7 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
         // if we are already showing that error, don't add more dialogs
         if (certificateErrorCallbacks.has(errorID)) {
             log.warn(`Ignoring already shown dialog for ${errorID}`);
-            if (isTrustedPopup) {
-                event.preventDefault();
-            }
+            event.preventDefault();
             const previousCallback = certificateErrorCallbacks.get(errorID);
             certificateErrorCallbacks.set(errorID, (isTrusted: boolean) => {
                 previousCallback?.(isTrusted);
