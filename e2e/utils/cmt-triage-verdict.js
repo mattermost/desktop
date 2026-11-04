@@ -309,9 +309,8 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
  */
 function unclearedStatuses(statusResults = {}, lanes = []) {
     const cleared = new Set((lanes || []).map(normalizeLane).filter((lane) => lane.verdict === 'SUCCESS').map((lane) => lane.platform));
-    return Object.entries(statusResults || {})
-        .filter(([os, result]) => result === 'failure' && (os === 'policy' || !cleared.has(os)))
-        .map(([os]) => os);
+    const red = Object.entries(statusResults || {}).filter(([os, result]) => result === 'failure' && (os === 'policy' || !cleared.has(os)));
+    return red.map(([os]) => os);
 }
 
 /** Whether any status job is red and not cleared by triage; see unclearedStatuses. */
