@@ -83,7 +83,7 @@ class TabBar extends React.PureComponent<Props, State> {
             return channelName;
         }
 
-        return teamName || serverName;
+        return teamName ?? serverName;
     };
 
     render() {

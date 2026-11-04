@@ -416,14 +416,6 @@ describe('ViewManager', () => {
             expect(result).toBe('Test Server');
         });
 
-        it('should fall back to serverName when channelName and teamName are empty strings', () => {
-            const view = viewManager.createView(mockServer, ViewType.TAB);
-            viewManager.updateViewTitle(view.id, '', '');
-
-            const result = viewManager.getViewTitle(view.id);
-            expect(result).toBe('Test Server');
-        });
-
         it('should return channelName when channelName and teamName are set but no duplicates exist', () => {
             const view = viewManager.createView(mockServer, ViewType.TAB);
             viewManager.updateViewTitle(view.id, 'Test Channel', 'Test Team');

@@ -93,11 +93,9 @@ class MainPage extends React.PureComponent<Props, State> {
     }
 
     updateTabStatus(tabViewName: string, newStatusValue: TabViewStatus) {
-        this.setState((prevState) => {
-            const status = new Map(prevState.tabViewStatus);
-            status.set(tabViewName, newStatusValue);
-            return {tabViewStatus: status};
-        });
+        const status = new Map(this.state.tabViewStatus);
+        status.set(tabViewName, newStatusValue);
+        this.setState({tabViewStatus: status});
     }
 
     async requestDownloadsLength() {
@@ -113,31 +111,22 @@ class MainPage extends React.PureComponent<Props, State> {
 
     getServersAndTabs = async () => {
         const servers = await window.desktop.getOrderedServers();
-        const tabs = new Map<string, UniqueView[]>();
+        const tabs = new Map();
+        const tabViewStatus = new Map(this.state.tabViewStatus);
         await Promise.all(
             servers.map((srv) => window.desktop.getOrderedTabsForServer(srv.id!).
-                then((serverTabs) => ({id: srv.id!, tabs: serverTabs}))),
+                then((tabs) => ({id: srv.id, tabs}))),
         ).then((serverTabs) => {
             serverTabs.forEach((serverTab) => {
                 tabs.set(serverTab.id, serverTab.tabs);
-            });
-        });
-        this.setState((prevState) => {
-            const tabViewStatus = new Map(prevState.tabViewStatus);
-            tabs.forEach((serverTabs) => {
-                serverTabs.forEach((tab) => {
+                serverTab.tabs.forEach((tab) => {
                     if (!tabViewStatus.has(tab.id!)) {
                         tabViewStatus.set(tab.id!, {status: Status.LOADING});
                     }
                 });
             });
-            return {
-                servers,
-                tabs,
-                tabViewStatus,
-                currentServer: servers.find((srv) => srv.id === prevState.activeServerId),
-            };
         });
+        this.setState({servers, tabs, tabViewStatus, currentServer: servers.find((srv) => srv.id === this.state.activeServerId)});
         return Boolean(servers.length);
     };
 

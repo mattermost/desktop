@@ -5,7 +5,6 @@ import {app} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import MessageModal from 'app/mainWindow/modals/messageModal';
-import WebContentsEventManager from 'app/views/webContentEvents';
 import WebContentsManager from 'app/views/webContentsManager';
 import ServerManager from 'common/servers/serverManager';
 import {handleAppActivate, handleAppWillFinishLaunching, handleAppCertificateError, certificateErrorCallbacks} from 'main/app/app';
@@ -51,12 +50,6 @@ jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
     show: jest.fn(),
     on: jest.fn(),
-}));
-jest.mock('app/views/webContentEvents', () => ({
-    __esModule: true,
-    default: {
-        isTrustedPopupWindow: jest.fn(),
-    },
 }));
 jest.mock('app/views/webContentsManager', () => ({
     getViewByWebContentsId: jest.fn(),
@@ -143,8 +136,7 @@ describe('main/app/app', () => {
         const webContents = {loadURL: jest.fn()};
         const mainWindow = {};
         const promise = Promise.resolve({});
-        const certificate = {fingerprint: 'sha256/test-fingerprint-1'};
-        const errorID = `server-1:${testURL}:error-1:${certificate.fingerprint}`;
+        const certificate = {};
         const view = {
             serverId: 'server-1',
             server: {
@@ -180,32 +172,6 @@ describe('main/app/app', () => {
             expect(callback).toHaveBeenCalledWith(true);
         });
 
-        it('should ignore and untrust when webContents does not belong to a registered server view or trusted popup', async () => {
-            WebContentsManager.getViewByWebContentsId.mockReturnValue(undefined);
-            WebContentsEventManager.isTrustedPopupWindow.mockReturnValue(false);
-
-            await handleAppCertificateError(event, {id: 99, loadURL: jest.fn()}, testURL, 'error-1', certificate, callback);
-            expect(event.preventDefault).toHaveBeenCalled();
-            expect(callback).toHaveBeenCalledWith(false);
-            expect(MessageModal.showMessageModal).not.toHaveBeenCalled();
-        });
-
-        it('should prompt and load URL via webContents when webContents is a trusted plugin popup', async () => {
-            const popupWebContents = {id: 42, loadURL: jest.fn()};
-            WebContentsManager.getViewByWebContentsId.mockReturnValue(undefined);
-            WebContentsEventManager.isTrustedPopupWindow.mockReturnValue(true);
-            MessageModal.showMessageModal.mockImplementation(() => {
-                expect(event.preventDefault).toHaveBeenCalled();
-                return Promise.resolve({response: 0});
-            });
-
-            await handleAppCertificateError(event, popupWebContents, testURL, 'error-1', certificate, callback);
-            expect(event.preventDefault).toHaveBeenCalled();
-            expect(MessageModal.showMessageModal).toHaveBeenCalled();
-            expect(callback).toHaveBeenCalledWith(true);
-            expect(popupWebContents.loadURL).toHaveBeenCalledWith(testURL);
-        });
-
         it('should ignore and untrust when the origin of the certificate does not match the server URL', async () => {
             // Mock the server lookup to return a server with a different origin
             const mockServer = {url: 'http://server-1.com'};
@@ -216,45 +182,27 @@ describe('main/app/app', () => {
         });
 
         it('should not show additional dialogs if certificate error has already been logged', () => {
-            certificateErrorCallbacks.set(errorID, callback);
+            certificateErrorCallbacks.set('server-1:http://server-1.com:error-1', callback);
             handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
-            expect(event.preventDefault).toHaveBeenCalled();
             expect(MessageModal.showMessageModal).not.toHaveBeenCalled();
         });
 
         it('should show a separate dialog for the same certificate error from a different server', () => {
-            certificateErrorCallbacks.set(`server-2:${testURL}:error-1:${certificate.fingerprint}`, callback);
+            certificateErrorCallbacks.set('server-2:http://server-1.com:error-1', callback);
             handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
             expect(MessageModal.showMessageModal).toHaveBeenCalled();
-        });
-
-        it('should show a separate dialog and invoke only the reviewed callback when certificates differ on a popup', async () => {
-            const popupWebContents = {id: 42, loadURL: jest.fn()};
-            const otherCertificate = {fingerprint: 'sha256/test-fingerprint-2'};
-            const firstCallback = jest.fn();
-            const secondCallback = jest.fn();
-            WebContentsManager.getViewByWebContentsId.mockReturnValue(undefined);
-            WebContentsEventManager.isTrustedPopupWindow.mockReturnValue(true);
-            certificateErrorCallbacks.set(`undefined:${testURL}:error-1:${certificate.fingerprint}`, firstCallback);
-            MessageModal.showMessageModal.mockResolvedValue({response: 0});
-
-            await handleAppCertificateError(event, popupWebContents, testURL, 'error-1', otherCertificate, secondCallback);
-            expect(MessageModal.showMessageModal).toHaveBeenCalled();
-            expect(secondCallback).toHaveBeenCalledWith(true);
-            expect(firstCallback).not.toHaveBeenCalled();
-            expect(certificateErrorCallbacks.has(`undefined:${testURL}:error-1:${certificate.fingerprint}`)).toBe(true);
         });
 
         it('should set callback if one is not already set', () => {
             handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
-            expect(certificateErrorCallbacks.has(errorID)).toBe(true);
+            expect(certificateErrorCallbacks.has('server-1:http://server-1.com:error-1')).toBe(true);
         });
 
         it('should remove callback and not add certificate if user selects Cancel', async () => {
             MessageModal.showMessageModal.mockResolvedValue({response: 1});
             await handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
             expect(callback).toHaveBeenCalledWith(false);
-            expect(certificateErrorCallbacks.has(errorID)).toBe(false);
+            expect(certificateErrorCallbacks.has('server-1:http://server-1.com:error-1')).toBe(false);
             expect(CertificateStore.add).not.toHaveBeenCalled();
         });
 
@@ -262,7 +210,7 @@ describe('main/app/app', () => {
             MessageModal.showMessageModal.mockResolvedValue({response: 0});
             await handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
             expect(callback).toHaveBeenCalledWith(true);
-            expect(certificateErrorCallbacks.has(errorID)).toBe(false);
+            expect(certificateErrorCallbacks.has('server-1:http://server-1.com:error-1')).toBe(false);
             expect(CertificateStore.add).toHaveBeenCalledWith(new URL('http://server-1.com'), certificate);
             expect(CertificateStore.save).toHaveBeenCalled();
         });
@@ -278,7 +226,7 @@ describe('main/app/app', () => {
             MessageModal.showMessageModal.mockResolvedValueOnce({response: 0}).mockResolvedValueOnce({response: 1, checkboxChecked: true});
             await handleAppCertificateError(event, webContents, testURL, 'error-1', certificate, callback);
             expect(callback).toHaveBeenCalledWith(false);
-            expect(certificateErrorCallbacks.has(errorID)).toBe(false);
+            expect(certificateErrorCallbacks.has('server-1:http://server-1.com:error-1')).toBe(false);
             expect(CertificateStore.add).toHaveBeenCalledWith(new URL('http://server-1.com'), certificate, true);
             expect(CertificateStore.save).toHaveBeenCalled();
         });

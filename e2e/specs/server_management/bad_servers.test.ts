@@ -129,6 +129,7 @@ async function openAddServerModal(app: Awaited<ReturnType<typeof launchWithConfi
 }
 
 async function fillAndConfirmNewServerModal(
+    app: Awaited<ReturnType<typeof launchWithConfig>>['app'],
     newServerView: Awaited<ReturnType<typeof openAddServerModal>>,
     serverName: string,
     serverUrl: string,
@@ -137,6 +138,20 @@ async function fillAndConfirmNewServerModal(
     await newServerView.fill('#serverNameInput', serverName);
 
     await expect.poll(async () => {
+        await app.evaluate(() => {
+            const modalManager = (global as any).__e2eTestRefs?.ModalManager;
+            if (!modalManager?.modalQueue?.length) {
+                return;
+            }
+            for (const modal of [...modalManager.modalQueue]) {
+                if (typeof modal.key === 'string' && modal.key.startsWith('messageModal')) {
+                    modal.resolve({response: 1, checkboxChecked: false});
+                    modalManager.modalPromises?.delete?.(modal.key);
+                }
+            }
+            modalManager.filterActive?.();
+        }).catch(() => {});
+
         const currentUrl = await newServerView.inputValue('#serverUrlInput').catch(() => '');
         const currentName = await newServerView.inputValue('#serverNameInput').catch(() => '');
         if (!currentUrl) {
@@ -227,7 +242,7 @@ test.describe('Bad Server Configurations', () => {
             const app = sharedApp;
             const userDataDir = sharedUserDataDir;
             const newServerView = await openAddServerModal(app);
-            await fillAndConfirmNewServerModal(newServerView, 'Unreachable Server', UNREACHABLE_SERVER_URL);
+            await fillAndConfirmNewServerModal(app, newServerView, 'Unreachable Server', UNREACHABLE_SERVER_URL);
 
             const configPath = path.join(userDataDir, 'config.json');
             await expect.poll(
@@ -246,7 +261,7 @@ test.describe('Bad Server Configurations', () => {
             const app = sharedApp;
             const userDataDir = sharedUserDataDir;
             const newServerView = await openAddServerModal(app);
-            await fillAndConfirmNewServerModal(newServerView, 'Expired Cert Server', EXPIRED_CERT_URL);
+            await fillAndConfirmNewServerModal(app, newServerView, 'Expired Cert Server', EXPIRED_CERT_URL);
 
             const configPath = path.join(userDataDir, 'config.json');
             await expect.poll(
@@ -267,7 +282,7 @@ test.describe('Bad Server Configurations', () => {
             const app = sharedApp;
             const userDataDir = sharedUserDataDir;
             const newServerView = await openAddServerModal(app);
-            await fillAndConfirmNewServerModal(newServerView, 'TLS 1.0 Server', TLS_1_0_URL);
+            await fillAndConfirmNewServerModal(app, newServerView, 'TLS 1.0 Server', TLS_1_0_URL);
 
             const configPath = path.join(userDataDir, 'config.json');
             await expect.poll(
@@ -289,7 +304,7 @@ test.describe('Bad Server Configurations', () => {
             const app = sharedApp;
             const userDataDir = sharedUserDataDir;
             const newServerView = await openAddServerModal(app);
-            await fillAndConfirmNewServerModal(newServerView, 'RC4 Cipher Server', RC4_CIPHER_URL);
+            await fillAndConfirmNewServerModal(app, newServerView, 'RC4 Cipher Server', RC4_CIPHER_URL);
 
             const configPath = path.join(userDataDir, 'config.json');
             await expect.poll(

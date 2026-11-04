@@ -44,6 +44,7 @@ test.describe('Settings', () => {
                     let config0 = JSON.parse(fs.readFileSync(configFilePath, 'utf-8'));
                     expect(config0.showTrayIcon).toBe(true);
 
+                    await settingsWindow.waitForSelector('.SettingsModal__saving', {state: 'detached'});
                     await settingsWindow.click('#CheckSetting_showTrayIcon button');
                     await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
                     await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
@@ -149,6 +150,7 @@ test.describe('Settings', () => {
                 const config0 = JSON.parse(fs.readFileSync(configFilePath, 'utf-8'));
                 expect(config0.enableHardwareAcceleration).toBe(false);
 
+                await settingsWindow.waitForSelector('.SettingsModal__saving', {state: 'detached'});
                 await settingsWindow.click(ID_INPUT_ENABLE_HARDWARE_ACCELERATION);
                 await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
                 await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');
@@ -174,6 +176,7 @@ test.describe('Settings', () => {
                 const config0 = JSON.parse(fs.readFileSync(configFilePath, 'utf-8'));
                 expect(config0.autoCheckForUpdates).toBe(false);
 
+                await settingsWindow.waitForSelector('.SettingsModal__saving', {state: 'detached'});
                 await settingsWindow.click(ID_INPUT_ENABLE_AUTO_UPDATES);
                 await settingsWindow.waitForSelector('.SettingsModal__saving :text("Saving...")');
                 await settingsWindow.waitForSelector('.SettingsModal__saving :text("Changes saved")');

@@ -81,6 +81,9 @@ class NewServerModal extends React.PureComponent<Props, State> {
     }
 
     initializeOnShow = async () => {
+        const cameraDisabled = window.process.platform === 'win32' && await window.desktop.getMediaAccessStatus('camera') !== 'granted';
+        const microphoneDisabled = window.process.platform === 'win32' && await window.desktop.getMediaAccessStatus('microphone') !== 'granted';
+
         this.setState({
             serverName: this.props.server ? this.props.server.name : '',
             serverUrl: this.props.server ? this.props.server.url : '',
@@ -89,23 +92,12 @@ class NewServerModal extends React.PureComponent<Props, State> {
             validationStarted: false,
             validationResult: undefined,
             permissions: this.props.permissions ?? {},
-            cameraDisabled: false,
-            microphoneDisabled: false,
+            cameraDisabled,
+            microphoneDisabled,
         });
 
         if (this.props.editMode && this.props.server) {
             this.validateServerURL(this.props.server.url);
-        }
-
-        if (window.process.platform === 'win32') {
-            const cameraDisabled = await window.desktop.getMediaAccessStatus('camera') !== 'granted';
-            const microphoneDisabled = await window.desktop.getMediaAccessStatus('microphone') !== 'granted';
-            if (this.mounted) {
-                this.setState({
-                    cameraDisabled,
-                    microphoneDisabled,
-                });
-            }
         }
     };
 

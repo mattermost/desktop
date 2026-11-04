@@ -7,7 +7,6 @@ import {app} from 'electron';
 import MainWindow from 'app/mainWindow/mainWindow';
 import MessageModal from 'app/mainWindow/modals/messageModal';
 import Tray from 'app/system/tray/tray';
-import WebContentsEventManager from 'app/views/webContentEvents';
 import WebContentsManager from 'app/views/webContentsManager';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -110,15 +109,9 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
         event.preventDefault();
         callback(true);
     } else {
-        // update the callback
+    // update the callback
         const view = WebContentsManager.getViewByWebContentsId(webContents.id);
-        const isTrustedPopup = !view && WebContentsEventManager.isTrustedPopupWindow(webContents.id);
-        if (!view && !isTrustedPopup) {
-            event.preventDefault();
-            callback(false);
-            return;
-        }
-        const errorID = `${view?.serverId}:${parsedURL.origin}:${error}:${certificate.fingerprint}`;
+        const errorID = `${view?.serverId}:${parsedURL.origin}:${error}`;
 
         const server = view && ServerManager.getServer(view.serverId);
         if (server) {
@@ -133,12 +126,7 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
         // if we are already showing that error, don't add more dialogs
         if (certificateErrorCallbacks.has(errorID)) {
             log.warn(`Ignoring already shown dialog for ${errorID}`);
-            event.preventDefault();
-            const previousCallback = certificateErrorCallbacks.get(errorID);
-            certificateErrorCallbacks.set(errorID, (isTrusted: boolean) => {
-                previousCallback?.(isTrusted);
-                callback(isTrusted);
-            });
+            certificateErrorCallbacks.set(errorID, callback);
             return;
         }
         const extraDetail = CertificateStore.isExisting(parsedURL) ? localizeMessage('main.app.app.handleAppCertificateError.dialog.extraDetail', 'Certificate is different from previous one.\n\n') : '';
@@ -149,10 +137,6 @@ export async function handleAppCertificateError(event: Event, webContents: WebCo
         const mainWindow = MainWindow.get();
         if (!mainWindow) {
             return;
-        }
-
-        if (isTrustedPopup) {
-            event.preventDefault();
         }
 
         try {
