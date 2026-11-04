@@ -299,17 +299,24 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
 }
 
 /**
- * Whether a status job is red for a reason triage did not clear: an OS status whose triage lane is not SUCCESS, or the
+ * The status jobs that are red for a reason triage did not clear: an OS status whose triage lane is not SUCCESS, or the
  * policy status (triage never judges policy legs). The summary judges the whole group, so it can pass while one OS
  * status is red; with no failing leg to match then, the fold would read the run as cleared and post nothing.
  *
  * @param {Record<string, string>} statusResults - each status job's result ('success', 'failure', ...) by OS: linux, macos, windows, policy
  * @param {Array<{platform: string, verdict?: string}>} lanes - verdict records from the per-OS triage lanes
- * @returns {boolean}
+ * @returns {string[]} the uncleared status keys, in statusResults order
  */
-function redStatusNotCleared(statusResults = {}, lanes = []) {
+function unclearedStatuses(statusResults = {}, lanes = []) {
     const cleared = new Set((lanes || []).map(normalizeLane).filter((lane) => lane.verdict === 'SUCCESS').map((lane) => lane.platform));
-    return Object.entries(statusResults || {}).some(([os, result]) => result === 'failure' && (os === 'policy' || !cleared.has(os)));
+    return Object.entries(statusResults || {})
+        .filter(([os, result]) => result === 'failure' && (os === 'policy' || !cleared.has(os)))
+        .map(([os]) => os);
+}
+
+/** Whether any status job is red and not cleared by triage; see unclearedStatuses. */
+function redStatusNotCleared(statusResults = {}, lanes = []) {
+    return unclearedStatuses(statusResults, lanes).length > 0;
 }
 
 /**
@@ -442,7 +449,8 @@ const TEST_PROBLEM = new Set(['test bug', 'server compat', 'out of date', 'fixed
 
 // Why a test failed, in plain words.
 function reasonFor(t) {
-    const servers = `server ${andList(t.servers)}`;
+    // Master verdicts carry no server version, so the reason names none.
+    const servers = t.servers.length ? `server ${andList(t.servers)}` : 'this server version';
     const reasons = {
         'app bug': 'the app does not do what the test expects',
         'caused by PR': 'caused by this change',
@@ -627,4 +635,5 @@ module.exports = {
     formatMasterTestLines,
     formatCmtVerdictMessage,
     displayTotals,
+    unclearedStatuses,
 };

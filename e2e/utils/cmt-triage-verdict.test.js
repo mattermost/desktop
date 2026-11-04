@@ -8,7 +8,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const {foldCmtVerdicts, foldMasterTriage, formatCmtVerdictMessage, redStatusNotCleared} = require('./cmt-triage-verdict');
+const {foldCmtVerdicts, foldMasterTriage, formatCmtVerdictMessage, redStatusNotCleared, unclearedStatuses} = require('./cmt-triage-verdict');
 
 const repoRoot = path.join(__dirname, '../..');
 const read = (rel) => fs.readFileSync(path.join(repoRoot, rel), 'utf8');
@@ -148,6 +148,21 @@ describe('redStatusNotCleared', () => {
         const statusResults = {linux: 'failure', policy: 'failure'};
         assert.equal(foldMasterTriage({lanes, legs, overallFailed: true, statusResults}).verdict, 'inconclusive');
         assert.equal(foldMasterTriage({lanes, legs, overallFailed: true, statusResults: {linux: 'failure', policy: 'success'}}).verdict, 'cleared');
+    });
+});
+
+describe('unclearedStatuses', () => {
+    const lane = (platform, verdict) => ({platform, verdict, blocking: '0', exonerated: '1'});
+
+    it('names the policy status, and each OS status whose triage lane is not SUCCESS', () => {
+        assert.deepEqual(unclearedStatuses({linux: 'failure', policy: 'failure'}, [lane('linux', 'SUCCESS')]), ['policy']);
+        assert.deepEqual(unclearedStatuses({linux: 'success', macos: 'failure'}, []), ['macos']);
+        assert.deepEqual(unclearedStatuses({linux: 'failure', macos: 'failure', windows: 'failure'}, [lane('windows', 'SUCCESS')]), ['linux', 'macos']);
+    });
+
+    it('names nothing when every red status was cleared', () => {
+        assert.deepEqual(unclearedStatuses({linux: 'failure', macos: 'success'}, [lane('linux', 'SUCCESS')]), []);
+        assert.deepEqual(unclearedStatuses({}, []), []);
     });
 });
 

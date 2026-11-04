@@ -17,7 +17,7 @@
  * Playwright: failed+passed → flaky; all failed → failed once (not once per attempt).
  */
 
-const {foldMasterTriage, formatMasterTestLines, redStatusNotCleared} = require('./cmt-triage-verdict');
+const {foldMasterTriage, formatMasterTestLines, redStatusNotCleared, unclearedStatuses} = require('./cmt-triage-verdict');
 
 const OS_ORDER = {linux: 0, macos: 1, windows: 2};
 const FETCH_TIMEOUT_MS = 15_000;
@@ -471,6 +471,10 @@ function formatMasterChannelMessage({
             formatMasterAttribution({compositeIdentity, mergedPr, headCommit, shortSha}),
             `**${failed} failed** · ${passed} passed · ${skipped} skipped`,
         ];
+        const uncleared = unclearedStatuses(statusResults, triageLanes);
+        if (uncleared.length > 0) {
+            lines.push(`Status not cleared by triage: ${uncleared.join(', ')}`);
+        }
 
         // A leg with failures triage did not settle, and a leg whose results never arrived (nothing to judge), are
         // named for what they are.
@@ -554,6 +558,10 @@ function formatMasterChannelMessage({
     }
     if (triage && triage.verdict === 'blocking' && triage.clearedLegs.length > 0) {
         lines.push(`AI triage cleared ${triage.clearedLegs.length} failing leg${triage.clearedLegs.length === 1 ? '' : 's'} (flaky / failed in master / Infra failure); the rest still block.`);
+    }
+    const unclearedRed = unclearedStatuses(statusResults, triageLanes);
+    if (unclearedRed.length > 0) {
+        lines.push(`Status not cleared by triage: ${unclearedRed.join(', ')}`);
     }
     if (triage) {
         lines.push(...formatMasterTestLines(triageLanes));

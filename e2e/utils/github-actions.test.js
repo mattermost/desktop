@@ -374,7 +374,7 @@ describe('CMT posts only e2e/compatibility-matrix-testing', () => {
         const triage = jobLines(cmt, 'cmt-triage').join('\n');
         assert.match(triage, /findings-file: e2e-triage-findings\.json/);
         assert.match(triage, /if \.schema == 2 then \[\.findings\[\] \| \{title, full_title, file, label, blocking, explanation: \.ai\.explanation\}\]/);
-        assert.match(triage, /elif \.schema == 1 then \[\.findings\[\] \| \{title, full_title, file, blocking, explanation: null,/);
+        assert.doesNotMatch(triage, /schema == 1/, 'the toolkit only writes schema 2');
         assert.match(triage, /--argjson findingsRecorded "\$\{RECORDED\}"/);
         assert.match(triage, /--argjson findings "\$\{FINDINGS\}"/);
         const action = read('.github/actions/e2e-triage/action.yml');

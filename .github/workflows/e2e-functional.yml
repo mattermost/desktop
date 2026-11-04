@@ -627,14 +627,10 @@ jobs:
           EXONERATED: ${{ steps.triage.outputs.exonerated }}
         run: |
           # Each failed test with triage's label, so the alert can name it (the same record CMT keeps).
-          # Schema 1 has no label or explanation, so it gets the label the toolkit would give it.
           FINDINGS='[]'
           RECORDED=false
           if [ -f e2e-triage-findings.json ] && FROM_FILE=$(jq -c '
               if .schema == 2 then [.findings[] | {title, full_title, file, label, blocking, explanation: .ai.explanation}]
-              elif .schema == 1 then [.findings[] | {title, full_title, file, blocking, explanation: null,
-                label: (if .blocking then (if .out_of_date then "out of date" elif .class == "OWNED_BY_PR" then "caused by PR" else "needs investigation" end)
-                        elif .class == "BROKEN_ON_TRUNK" then "broken on main" else "flaky" end)}]
               else error("unknown findings schema") end' e2e-triage-findings.json 2>/dev/null); then
             FINDINGS="${FROM_FILE}"
             RECORDED=true
