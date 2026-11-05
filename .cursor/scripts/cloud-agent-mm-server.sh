@@ -154,7 +154,8 @@ start() {
     docker logs --tail 80 "$APP" >&2 || true
     exit 1
   fi
-  log "Server is up: $(api GET /system/ping | jq -r '"version \(.version // "?")"' 2>/dev/null || echo ready) at ${URL}."
+  # /system/ping carries no version on current servers; the unauthenticated client config does.
+  log "Server is up: version $(api GET '/config/client?format=old' | jq -r '.Version // "?"' 2>/dev/null || echo '?') at ${URL}."
 }
 
 login() {
