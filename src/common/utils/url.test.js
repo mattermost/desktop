@@ -116,6 +116,47 @@ describe('common/utils/url', () => {
             const testURL = 'http://localhost:8065';
             expect(isValidURL(testURL)).toBe(true);
         });
+
+        // Checks the hostname after the url is parsed. A percent-encoded comma or asterisk is decoded first.
+        // A host that is one mark, or has that mark in the middle or at the end, is left out.
+        // A value with no scheme, an empty url, and a url that is only a scheme are left out.
+        // An underscore host, an IPv6 host, a host of letters and dots, and a trailing dot stay accepted.
+        it.each([
+            ['https://a,b.example', false],
+            ['https://a;b.example', false],
+            ['https://a*.example', false],
+            ['https://.example.com', false],
+            ['https://a%2A.example', false],
+            ['https://a%2C.example', false],
+            ['https://a%3B.example', false],
+            ['https://%2Eexample.com', false],
+            ['https://*', false],
+            ['https://,', false],
+            ['https://;', false],
+            ['https://.', false],
+            ['https://example.com,', false],
+            ['https://example.com;', false],
+            ['https://example.com*', false],
+            ['https://ex*ample.com', false],
+            ['https://example.com ', false],
+            ['https://*,*.example', false],
+            ['*,*.example', false],
+            ['a,b.example', false],
+            ['https://', false],
+            ['', false],
+            ['https://a\uFF0Ab.example', false],
+            ['https://a\uFF0Cb.example', false],
+            ['https://a\uFF1Bb.example', false],
+            ['https://\u3002example.com', false],
+            ['https://A,B.EXAMPLE', false],
+            ['https://user:pass@a,b.example', false],
+            ['https://internal_host.example', true],
+            ['https://[2001:db8::1]/', true],
+            ['https://good.example', true],
+            ['https://example.com.', true],
+        ])('should treat %s as a server url: %s', (url, expected) => {
+            expect(isValidURL(url)).toBe(expected);
+        });
     });
     describe('isValidURI', () => {
         it('should be true for a deeplink url', () => {
