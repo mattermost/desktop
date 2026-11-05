@@ -8,7 +8,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const {foldCmtVerdicts, foldMasterTriage, formatCmtVerdictMessage} = require('./cmt-triage-verdict');
+const {foldCmtVerdicts, foldMasterTriage, formatCmtVerdictMessage, redStatusNotCleared, unclearedStatuses} = require('./cmt-triage-verdict');
 
 const repoRoot = path.join(__dirname, '../..');
 const read = (rel) => fs.readFileSync(path.join(repoRoot, rel), 'utf8');
@@ -110,6 +110,70 @@ describe('foldCmtVerdicts', () => {
     it('is yellow when triage was expected but the matrix produced no lanes', () => {
         const fold = foldCmtVerdicts({lanes: [], expectedLanes: [], expectTriage: true, stats: {passed: 0, failed: 5}});
         assert.equal(fold.state, 'yellow');
+    });
+});
+
+describe('redStatusNotCleared', () => {
+    const lane = (platform, verdict) => ({platform, verdict, blocking: '0', exonerated: '1'});
+
+    it('counts a red OS status that triage did not clear', () => {
+        // The summary can pass while e2e/macos is red (master run 41776677247).
+        assert.equal(redStatusNotCleared({linux: 'success', macos: 'failure', windows: 'success', policy: 'success'}, [lane('macos', 'FAILURE')]), true);
+        assert.equal(redStatusNotCleared({macos: 'failure'}, [lane('macos', 'ACTION_REQUIRED')]), true);
+        assert.equal(redStatusNotCleared({macos: 'failure'}, []), true, 'no triage verdict for the OS');
+    });
+
+    it('does not count a red OS status that triage cleared, or one that is not red', () => {
+        assert.equal(redStatusNotCleared({linux: 'success', macos: 'failure'}, [lane('macos', 'SUCCESS')]), false);
+        assert.equal(redStatusNotCleared({linux: 'success', macos: 'skipped', windows: 'cancelled', policy: ''}, []), false);
+        assert.equal(redStatusNotCleared({}, [lane('linux', 'FAILURE')]), false);
+    });
+
+    it('always counts a red policy status: triage never judges policy', () => {
+        assert.equal(redStatusNotCleared({policy: 'failure'}, [lane('linux', 'SUCCESS'), lane('macos', 'SUCCESS'), lane('windows', 'SUCCESS')]), true);
+    });
+
+    it('makes a failed run with no failing leg inconclusive, not cleared', () => {
+        // Per-job counts unavailable: no legs to match the blocking macOS lane to.
+        const lanes = [lane('macos', 'FAILURE')];
+        const overallFailed = redStatusNotCleared({macos: 'failure'}, lanes);
+        assert.equal(foldMasterTriage({lanes, legs: [], overallFailed}).verdict, 'inconclusive');
+        assert.equal(foldMasterTriage({lanes, legs: [], overallFailed: false}).verdict, 'cleared', 'what it read before');
+    });
+
+    it('keeps a red policy status inconclusive even when another OS cleared its failing leg', () => {
+        // Policy report missing (no policy leg in legs), while Linux had a failure that triage cleared.
+        const lanes = [lane('linux', 'SUCCESS')];
+        const legs = [{os: 'linux', kind: 'e2e', serverVersion: 'master', status: 'failed', failed: 1}];
+        const statusResults = {linux: 'failure', policy: 'failure'};
+        assert.equal(foldMasterTriage({lanes, legs, overallFailed: true, statusResults}).verdict, 'inconclusive');
+        assert.equal(foldMasterTriage({lanes, legs, overallFailed: true, statusResults: {linux: 'failure', policy: 'success'}}).verdict, 'cleared');
+    });
+});
+
+describe('unclearedStatuses', () => {
+    const lane = (platform, verdict, extra = {}) => ({platform, verdict, blocking: '0', exonerated: '1', ...extra});
+
+    it('names the policy status, and each OS status whose triage lane is not SUCCESS', () => {
+        assert.deepEqual(unclearedStatuses({linux: 'failure', policy: 'failure'}, [lane('linux', 'SUCCESS')]), ['policy']);
+        assert.deepEqual(unclearedStatuses({linux: 'success', macos: 'failure'}, []), ['macos']);
+        assert.deepEqual(unclearedStatuses({linux: 'failure', macos: 'failure', windows: 'failure'}, [lane('windows', 'SUCCESS')]), ['linux', 'macos']);
+    });
+
+    it('retains a failed OS status when triage returned SUCCESS with no findings or exonerated failures', () => {
+        assert.deepEqual(unclearedStatuses({linux: 'failure'}, [lane('linux', 'SUCCESS', {exonerated: '0', findings: []})]), ['linux']);
+        assert.deepEqual(unclearedStatuses({macos: 'failure'}, [{platform: 'macos', verdict: 'SUCCESS'}]), ['macos'], 'a record with no counts');
+        assert.equal(redStatusNotCleared({linux: 'failure'}, [lane('linux', 'SUCCESS', {exonerated: '0', findings: [], description: ''})]), true);
+    });
+
+    it('does not name an OS status red only for tests that passed on a retry, which triage cleared', () => {
+        const flakyOnly = lane('macos', 'SUCCESS', {exonerated: '0', findings: [], description: '(2 flaky, passed on retry) 410 passed, 2 flaky'});
+        assert.deepEqual(unclearedStatuses({macos: 'failure'}, [flakyOnly]), []);
+    });
+
+    it('names nothing when every red status was cleared', () => {
+        assert.deepEqual(unclearedStatuses({linux: 'failure', macos: 'success'}, [lane('linux', 'SUCCESS')]), []);
+        assert.deepEqual(unclearedStatuses({}, []), []);
     });
 });
 

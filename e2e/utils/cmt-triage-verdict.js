@@ -298,6 +298,38 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
     };
 }
 
+// The toolkit's status text for a lane red only for tests that passed on a retry (e2e-test-triage, triage.ts).
+const FLAKY_ONLY = /^\(\d+ flaky, passed on retry\)/;
+
+/**
+ * Whether a triage lane cleared its OS status: SUCCESS, and it judged something there — test failures it cleared, or a
+ * status red only for tests that passed on a retry (no failure to clear, so no findings). A status red outside the tests
+ * (no test failed, a job died) gets SUCCESS with nothing judged: triage leaves that status as it is.
+ */
+function laneClearsStatus(lane) {
+    return lane.verdict === 'SUCCESS' && (lane.exonerated > 0 || lane.findings.length > 0 || FLAKY_ONLY.test(lane.description));
+}
+
+/**
+ * The status jobs that are red for a reason triage did not clear: an OS status whose triage lane did not clear it (see
+ * laneClearsStatus), or the policy status (triage never judges policy legs). Keeping a status triage did not judge
+ * here keeps the master alert from being suppressed.
+ *
+ * @param {Record<string, string>} statusResults - each status job's result ('success', 'failure', ...) by OS: linux, macos, windows, policy
+ * @param {Array<{platform: string, verdict?: string, exonerated?: number|string, findings?: Array, description?: string}>} lanes - verdict records from the per-OS triage lanes
+ * @returns {string[]} the uncleared status keys, in statusResults order
+ */
+function unclearedStatuses(statusResults = {}, lanes = []) {
+    const cleared = new Set((lanes || []).map(normalizeLane).filter(laneClearsStatus).map((lane) => lane.platform));
+    const red = Object.entries(statusResults || {}).filter(([os, result]) => result === 'failure' && (os === 'policy' || !cleared.has(os)));
+    return red.map(([os]) => os);
+}
+
+/** Whether any status job is red and not cleared by triage; see unclearedStatuses. */
+function redStatusNotCleared(statusResults = {}, lanes = []) {
+    return unclearedStatuses(statusResults, lanes).length > 0;
+}
+
 /**
  * Fold per-OS triage lanes into the post-merge (desktop-master) verdict.
  * Master lanes are per OS (one report per OS), so a lane's verdict covers
@@ -312,9 +344,10 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
  * @param {boolean} [params.upstreamJobsSucceeded]
  * @param {boolean} [params.overallFailed]
  * @param {boolean} [params.noLegs] - true when the run reported no legs at all (never "cleared")
+ * @param {Record<string, string>} [params.statusResults] - per-OS and policy status job results
  * @returns {{verdict: 'cleared'|'blocking'|'inconclusive', clearedLegs: Array, blockingLegs: Array, unknownLegs: Array}}
  */
-function foldMasterTriage({lanes = [], legs = [], missingLegs = [], upstreamJobsSucceeded = true, overallFailed = false, noLegs = false}) {
+function foldMasterTriage({lanes = [], legs = [], missingLegs = [], upstreamJobsSucceeded = true, overallFailed = false, noLegs = false, statusResults = {}}) {
     const laneByOs = new Map();
     for (const lane of lanes || []) {
         const normalized = normalizeLane(lane);
@@ -358,12 +391,14 @@ function foldMasterTriage({lanes = [], legs = [], missingLegs = [], upstreamJobs
         }
     }
 
+    const redStatus = redStatusNotCleared(statusResults, lanes);
     let verdict = 'cleared';
     if (blockingLegs.length > 0) {
         verdict = 'blocking';
-    } else if (unknownLegs.length > 0 || noLegs || (overallFailed && !upstreamJobsSucceeded) || (overallFailed && clearedLegs.length === 0)) {
+    } else if (unknownLegs.length > 0 || noLegs || redStatus || (overallFailed && !upstreamJobsSucceeded) || (overallFailed && clearedLegs.length === 0)) {
         // A failed run is cleared only on positive evidence: triage must
-        // have cleared at least one failing leg.
+        // have cleared at least one failing leg, and no status job can still
+        // be red for a reason triage did not clear.
         verdict = 'inconclusive';
     } else if (setupLegs.length > 0) {
         verdict = 'setup';
@@ -425,7 +460,8 @@ const TEST_PROBLEM = new Set(['test bug', 'server compat', 'out of date', 'fixed
 
 // Why a test failed, in plain words.
 function reasonFor(t) {
-    const servers = `server ${andList(t.servers)}`;
+    // Master verdicts carry no server version, so the reason names none.
+    const servers = t.servers.length ? `server ${andList(t.servers)}` : 'this server version';
     const reasons = {
         'app bug': 'the app does not do what the test expects',
         'caused by PR': 'caused by this change',
@@ -437,6 +473,65 @@ function reasonFor(t) {
         'broken on main': 'it fails on master too',
     };
     return reasons[t.label] || 'the cause is not clear';
+}
+
+/**
+ * Each failed test of a master run once, with the operating systems it failed on: still blocking first, then the most
+ * severe label.
+ *
+ * @param {Array} lanes - per-OS verdict records
+ * @returns {Array<{title: string, fullTitle: string, file: string, label: string, blocking: boolean, platforms: string[], servers: string[]}>}
+ */
+function groupMasterTests(lanes) {
+    const byTest = new Map();
+    for (const lane of (lanes || []).map(normalizeLane)) {
+        for (const f of lane.findings) {
+            const key = `${f.file}\n${f.fullTitle}`;
+            const seen = byTest.get(key);
+            if (!seen) {
+                byTest.set(key, {...f, platforms: [lane.platform], servers: []});
+                continue;
+            }
+            if (!seen.platforms.includes(lane.platform)) {
+                seen.platforms.push(lane.platform);
+            }
+            seen.blocking = seen.blocking || f.blocking;
+            if (labelRank(f.label) < labelRank(seen.label)) {
+                seen.label = f.label;
+            }
+        }
+    }
+    return [...byTest.values()].sort((a, b) => Number(b.blocking) - Number(a.blocking) || labelRank(a.label) - labelRank(b.label) || a.title.localeCompare(b.title));
+}
+
+/**
+ * The master alert's lines naming each failed test: what still needs a look, why and on which OS, then what triage
+ * cleared. Empty when the lanes recorded no tests.
+ *
+ * @param {Array} lanes - per-OS verdict records
+ * @returns {string[]}
+ */
+function formatMasterTestLines(lanes) {
+    const tests = groupMasterTests(lanes);
+    if (!tests.length) {
+        return [];
+    }
+    const names = testNames(tests);
+    const where = (t) => t.platforms.map((p) => `${PLATFORM_EMOJI[p] || PLATFORM_EMOJI.unknown} ${PLATFORM_LABEL[p] || PLATFORM_LABEL.unknown}`).join(', ');
+    const lines = [];
+
+    // Each section: its first three tests with why and on which OS, then how many more.
+    const section = (title, list) => {
+        if (list.length) {
+            lines.push(`${title} (${list.length})`, ...list.slice(0, 3).map((t) => `• ${names.get(t)} — ${reasonFor(t)} · ${where(t)}`));
+            if (list.length > 3) {
+                lines.push(`…and ${list.length - 3} more in the run`);
+            }
+        }
+    };
+    section('🔎 **Needs a look**', tests.filter((t) => t.blocking));
+    section('🔁 **Not product bugs**', tests.filter((t) => !t.blocking));
+    return lines;
 }
 
 /**
@@ -547,6 +642,9 @@ module.exports = {
     normalizeVerdict,
     foldCmtVerdicts,
     foldMasterTriage,
+    redStatusNotCleared,
+    formatMasterTestLines,
     formatCmtVerdictMessage,
     displayTotals,
+    unclearedStatuses,
 };

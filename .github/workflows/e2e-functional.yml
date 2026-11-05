@@ -555,10 +555,17 @@ jobs:
       - e2e-windows-status
     # prepare-matrix is skipped when instance_details is empty and can finish
     # without an identity when preparation fails, so guard on the identity itself.
+    # The summary judges the whole group, so it can pass while one OS status is red
+    # (master run 41776677247: summary 0 failed, e2e/macos 1 failed). Any red status
+    # job brings triage in too, or that check stays red without a verdict.
     if: >-
       always()
       && needs.prepare-matrix.outputs.tsio-composite-identity != ''
-      && needs.tsio-summary.result != 'success'
+      && (needs.tsio-summary.result != 'success'
+        || needs.e2e-linux-status.result == 'failure'
+        || needs.e2e-macos-status.result == 'failure'
+        || needs.e2e-windows-status.result == 'failure'
+        || needs.e2e-policy-status.result == 'failure')
     permissions:
       contents: read
       statuses: write
@@ -605,6 +612,8 @@ jobs:
           # A lane red only on infrastructure (a dead job, missing reports) asks for one
           # automatic re-run of the failed jobs; e2e-tests-rerun.yml carries it out.
           rerun-attempts: '1'
+          # Each failed test with triage's label, so the master alert can name it.
+          findings-file: e2e-triage-findings.json
 
       # master-e2e-verdict folds these per-OS verdicts into the post-merge
       # channel alert. Always record a file — an empty verdict is how the
@@ -616,13 +625,27 @@ jobs:
           VERDICT: ${{ steps.triage.outputs.verdict }}
           BLOCKING: ${{ steps.triage.outputs.blocking }}
           EXONERATED: ${{ steps.triage.outputs.exonerated }}
+          # Tells a status red only for tests that passed on a retry (cleared) from one red outside the tests (not judged).
+          DESCRIPTION: ${{ steps.triage.outputs.description }}
         run: |
+          # Each failed test with triage's label, so the alert can name it (the same record CMT keeps).
+          FINDINGS='[]'
+          RECORDED=false
+          if [ -f e2e-triage-findings.json ] && FROM_FILE=$(jq -c '
+              if .schema == 2 then [.findings[] | {title, full_title, file, label, blocking, explanation: .ai.explanation}]
+              else error("unknown findings schema") end' e2e-triage-findings.json 2>/dev/null); then
+            FINDINGS="${FROM_FILE}"
+            RECORDED=true
+          fi
           jq -n \
             --arg platform "${PLATFORM}" \
             --arg verdict "${VERDICT}" \
             --arg blocking "${BLOCKING}" \
             --arg exonerated "${EXONERATED}" \
-            '{platform: $platform, verdict: $verdict, blocking: $blocking, exonerated: $exonerated}' \
+            --arg description "${DESCRIPTION}" \
+            --argjson findings "${FINDINGS}" \
+            --argjson findingsRecorded "${RECORDED}" \
+            '{platform: $platform, verdict: $verdict, blocking: $blocking, exonerated: $exonerated, description: $description, findings: $findings, findingsRecorded: $findingsRecorded}' \
             > "e2e-triage-verdict-${PLATFORM}.json"
 
       # The file name is per OS too: the verdict job downloads every lane into one folder with
@@ -655,6 +678,11 @@ jobs:
       - e2e-policy-windows
       - tsio-summary
       - tsio-triage
+      # Read for hasFailures: an OS status can be red while the summary passed.
+      - e2e-linux-status
+      - e2e-macos-status
+      - e2e-windows-status
+      - e2e-policy-status
     if: >-
       always() && !cancelled()
       && needs.prepare-matrix.outputs.tsio-composite-identity != ''
@@ -694,12 +722,14 @@ jobs:
           STATS: ${{ needs.tsio-summary.outputs.stats }}
           UPSTREAM_JOBS_SUCCEEDED: ${{ (needs.e2e-linux.result == 'success' || needs.e2e-linux.result == 'skipped') && (needs.e2e-macos.result == 'success' || needs.e2e-macos.result == 'skipped') && (needs.e2e-windows.result == 'success' || needs.e2e-windows.result == 'skipped') && (needs.e2e-policy-macos.result == 'success' || needs.e2e-policy-macos.result == 'skipped') && (needs.e2e-policy-windows.result == 'success' || needs.e2e-policy-windows.result == 'skipped') }}
           MATTERMOST_MASTER_HEALTH_WEBHOOK_URL: ${{ secrets.MM_E2E_MASTER_HEALTH_WEBHOOK_URL }}
+          STATUS_RESULTS: '{"linux": "${{ needs.e2e-linux-status.result }}", "macos": "${{ needs.e2e-macos-status.result }}", "windows": "${{ needs.e2e-windows-status.result }}", "policy": "${{ needs.e2e-policy-status.result }}"}'
           TSIO_BASE_URL: https://test-io.test.mattermost.com
         with:
           script: |
             const fs = require('fs');
             const path = require('path');
             const {notifyCmtChannel} = require('./e2e/utils/cmt-channel-notify.js');
+            const {redStatusNotCleared} = require('./e2e/utils/cmt-triage-verdict.js');
             const {resolveMasterMergeContext} = require('./e2e/utils/tsio-report-status.js');
 
             const compositeIdentity = JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY);
@@ -723,7 +753,13 @@ jobs:
             }
 
             const mergeContext = await resolveMasterMergeContext({github, context, compositeIdentity, core});
-            const hasFailures = (stats.failed || 0) > 0 || (detail.reports || []).some((report) => report.status === 'failed');
+            let statusResults = {};
+            try {
+              statusResults = JSON.parse(process.env.STATUS_RESULTS || '{}');
+            } catch {
+              core.warning('Could not parse the status job results; the alert reads TSIO alone');
+            }
+            const hasFailures = redStatusNotCleared(statusResults, triageLanes) || (stats.failed || 0) > 0 || (detail.reports || []).some((report) => report.status === 'failed');
             await notifyCmtChannel({
               core,
               baseUrl: process.env.TSIO_BASE_URL,
@@ -736,6 +772,7 @@ jobs:
               mergedPr: mergeContext.mergedPr,
               headCommit: mergeContext.headCommit,
               triageLanes,
+              statusResults,
             });
 
   remove-e2e-label:

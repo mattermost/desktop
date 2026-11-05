@@ -17,7 +17,7 @@
  * Playwright: failed+passed → flaky; all failed → failed once (not once per attempt).
  */
 
-const {foldMasterTriage} = require('./cmt-triage-verdict');
+const {foldMasterTriage, formatMasterTestLines, redStatusNotCleared, unclearedStatuses} = require('./cmt-triage-verdict');
 
 const OS_ORDER = {linux: 0, macos: 1, windows: 2};
 const FETCH_TIMEOUT_MS = 15_000;
@@ -434,13 +434,15 @@ function formatMasterChannelMessage({
     headCommit,
     perJobCountsAvailable = true,
     triageLanes,
+    statusResults,
 }) {
+    const redStatus = redStatusNotCleared(statusResults, triageLanes);
     const {legs, passed, failed, skipped, overallFailed, missingLegs, noLegsReported} = summarizeOutcome({
-        detail, perJobCounts, upstreamJobsSucceeded, hasFailures, baseUrl, perJobCountsAvailable,
+        detail, perJobCounts, upstreamJobsSucceeded, hasFailures: hasFailures || redStatus, baseUrl, perJobCountsAvailable,
     });
     const setupLegs = perJobCountsAvailable ? legs.filter((leg) => leg.status === 'no-results') : [];
     const triage = triageLanes ? foldMasterTriage({
-        lanes: triageLanes, legs, missingLegs, upstreamJobsSucceeded, overallFailed, noLegs: noLegsReported,
+        lanes: triageLanes, legs, missingLegs, upstreamJobsSucceeded, overallFailed, noLegs: noLegsReported, statusResults,
     }) : null;
     const branch = (compositeIdentity?.branch || 'master').replace(/^refs\/(heads|tags)\//, '');
     const shortSha = (compositeIdentity?.commit_sha || '').slice(0, 7);
@@ -469,6 +471,10 @@ function formatMasterChannelMessage({
             formatMasterAttribution({compositeIdentity, mergedPr, headCommit, shortSha}),
             `**${failed} failed** · ${passed} passed · ${skipped} skipped`,
         ];
+        const uncleared = unclearedStatuses(statusResults, triageLanes);
+        if (uncleared.length > 0) {
+            lines.push(`Status not cleared by triage: ${uncleared.join(', ')}`);
+        }
 
         // A leg with failures triage did not settle, and a leg whose results never arrived (nothing to judge), are
         // named for what they are.
@@ -487,6 +493,7 @@ function formatMasterChannelMessage({
         if (triage.unknownLegs.length === 0 && !upstreamJobsSucceeded) {
             lines.push('A CI job failed outside tracked tests (install/build/teardown); triage cannot clear that.');
         }
+        lines.push(...formatMasterTestLines(triageLanes));
         lines.push(...formatSetupProblemLines(legs, triage.setupLegs));
         if (links) {
             lines.push(`➡️ ${links}`);
@@ -551,6 +558,13 @@ function formatMasterChannelMessage({
     }
     if (triage && triage.verdict === 'blocking' && triage.clearedLegs.length > 0) {
         lines.push(`AI triage cleared ${triage.clearedLegs.length} failing leg${triage.clearedLegs.length === 1 ? '' : 's'} (flaky / failed in master / Infra failure); the rest still block.`);
+    }
+    const unclearedRed = unclearedStatuses(statusResults, triageLanes);
+    if (unclearedRed.length > 0) {
+        lines.push(`Status not cleared by triage: ${unclearedRed.join(', ')}`);
+    }
+    if (triage) {
+        lines.push(...formatMasterTestLines(triageLanes));
     }
     const missingOnly = missingLegs.filter((leg) => leg.status !== 'no-results');
     if (missingOnly.length > 0) {
@@ -684,10 +698,11 @@ function formatCmtChannelMessage({
     headCommit,
     perJobCountsAvailable = true,
     triageLanes,
+    statusResults,
 }) {
     if (compositeIdentity?.name === 'desktop-master') {
         return formatMasterChannelMessage({
-            compositeIdentity, detail, reportUrl, baseUrl, perJobCounts, upstreamJobsSucceeded, hasFailures, mergedPr, headCommit, perJobCountsAvailable, triageLanes,
+            compositeIdentity, detail, reportUrl, baseUrl, perJobCounts, upstreamJobsSucceeded, hasFailures, mergedPr, headCommit, perJobCountsAvailable, triageLanes, statusResults,
         });
     }
 
@@ -959,6 +974,7 @@ async function notifyCmtChannel({
     mergedPr,
     headCommit,
     triageLanes,
+    statusResults,
 }) {
     try {
         const resolvedWebhook = webhookUrl || resolveWebhookUrl(compositeIdentity?.name);
@@ -971,8 +987,9 @@ async function notifyCmtChannel({
             core.warning(`Could not load per-leg TSIO counts: ${error.message}`);
         }
 
+        const effectiveHasFailures = hasFailures || redStatusNotCleared(statusResults, triageLanes);
         const outcome = summarizeOutcome({
-            detail, perJobCounts, upstreamJobsSucceeded, hasFailures, baseUrl, perJobCountsAvailable,
+            detail, perJobCounts, upstreamJobsSucceeded, hasFailures: effectiveHasFailures, baseUrl, perJobCountsAvailable,
         });
         let triageVerdict;
         if (compositeIdentity?.name === 'desktop-master' && triageLanes) {
@@ -983,6 +1000,7 @@ async function notifyCmtChannel({
                 upstreamJobsSucceeded,
                 overallFailed: outcome.overallFailed,
                 noLegs: outcome.noLegsReported,
+                statusResults,
             }).verdict;
         }
         if (!shouldPostToChannel(compositeIdentity, outcome, triageVerdict)) {
@@ -1001,11 +1019,12 @@ async function notifyCmtChannel({
             baseUrl,
             perJobCounts,
             upstreamJobsSucceeded,
-            hasFailures,
+            hasFailures: effectiveHasFailures,
             mergedPr,
             headCommit,
             perJobCountsAvailable,
             triageLanes,
+            statusResults,
         });
 
         await postMattermostWebhook({core, webhookUrl: resolvedWebhook, text});

@@ -657,9 +657,86 @@ describe('cmt-channel-notify', () => {
                 assert.match(text, /^:green_circle: \*\*Desktop Master E2E — flaky, no bug found\*\*/);
             });
 
+            it('renders yellow when a policy status job failed with no policy leg, even if triage cleared the OS leg', () => {
+                const text = masterFailure({triageLanes: lanes('SUCCESS'), statusResults: {linux: 'failure', policy: 'failure'}});
+                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — needs investigation on `master`\*\*/);
+            });
+
+            it('names the status job triage did not clear: policy, or the OS status whose lane is not SUCCESS', () => {
+                const policy = masterFailure({triageLanes: lanes('SUCCESS'), statusResults: {linux: 'failure', policy: 'failure'}});
+                assert.match(policy, /^Status not cleared by triage: policy$/m);
+                assert.doesNotMatch(policy, /Status not cleared by triage: linux/);
+
+                const macos = masterFailure({triageLanes: lanes('SUCCESS'), statusResults: {linux: 'success', macos: 'failure'}});
+                assert.match(macos, /^Status not cleared by triage: macos$/m);
+                assert.doesNotMatch(macos, /policy/);
+            });
+
             it('stays red when triage leaves blocking failures', () => {
                 const text = masterFailure({triageLanes: lanes('FAILURE', {blocking: '1'})});
                 assert.match(text, /^:red_circle: \*\*Desktop Master E2E — failure on `master`\*\*/);
+            });
+
+            it('names an uncleared status in the red alert too', () => {
+                const text = masterFailure({triageLanes: lanes('FAILURE', {blocking: '1'}), statusResults: {linux: 'failure', policy: 'failure'}});
+                assert.match(text, /^:red_circle: /);
+                assert.match(text, /^Status not cleared by triage: linux, policy$/m);
+            });
+
+            // The 2026-11-02 master run after the Electron 45.2.1 upgrade: the alert named the leg, never the test.
+            const bookmark = {
+                title: 'MM-T5611 Open a bookmark URL/link',
+                full_title: 'specs/channel_bookmarks/bookmarks.test.ts > Channel bookmarks > MM-T5611 Open a bookmark URL/link',
+                file: 'e2e/specs/channel_bookmarks/bookmarks.test.ts',
+                label: 'needs investigation',
+                blocking: true,
+            };
+            const callLogs = {
+                title: 'MM-T5590 /call logs',
+                full_title: 'specs/calls/calls.test.ts > Calls > MM-T5590 /call logs',
+                file: 'e2e/specs/calls/calls.test.ts',
+                label: 'flaky',
+                blocking: false,
+            };
+
+            it('names each failed test triage left blocking, why, and on which OS', () => {
+                const text = masterFailure({triageLanes: lanes('FAILURE', {blocking: '1', findingsRecorded: true, findings: [bookmark, callLogs]})});
+                assert.match(text, /^🔎 \*\*Needs a look\*\* \(1\)$/m);
+                assert.match(text, /^• `MM-T5611` Open a bookmark URL\/link — the cause is not clear · 🐧 Linux$/m);
+                assert.match(text, /^🔁 \*\*Not product bugs\*\* \(1\)$/m);
+                assert.match(text, /^• `MM-T5590` \/call logs — failed by chance or because of the test machine; it passes on retry or on other runs · 🐧 Linux$/m);
+            });
+
+            it('names the tests on an alert that needs investigation too', () => {
+                const text = masterFailure({triageLanes: lanes('ACTION_REQUIRED', {findingsRecorded: true, findings: [bookmark]})});
+                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — needs investigation on `master`\*\*/);
+                assert.match(text, /^• `MM-T5611` Open a bookmark URL\/link — the cause is not clear · 🐧 Linux$/m);
+            });
+
+            it('names the first three cleared tests and counts the rest', () => {
+                const flaky = (n) => ({...callLogs, title: `MM-T90${n} flaky ${n}`, full_title: `specs/calls/calls.test.ts > Calls > MM-T90${n} flaky ${n}`});
+                const text = masterFailure({triageLanes: lanes('FAILURE', {blocking: '1', findingsRecorded: true, findings: [bookmark, ...[1, 2, 3, 4, 5].map(flaky)]})});
+                assert.match(text, /^🔁 \*\*Not product bugs\*\* \(5\)$/m);
+                assert.equal((text.match(/^• `MM-T90\d`/gm) || []).length, 3);
+                assert.match(text, /^…and 2 more in the run$/m);
+            });
+
+            it('says "this server version" for a master server compat finding, since master verdicts name no server', () => {
+                const compat = {
+                    title: 'MM-T5890 Opening channels in new windows',
+                    full_title: 'specs/multi_window/multi_window.test.ts > MM-T5890 Opening channels in new windows',
+                    file: 'e2e/specs/multi_window/multi_window.test.ts',
+                    label: 'server compat',
+                    blocking: false,
+                };
+                const text = masterFailure({triageLanes: lanes('FAILURE', {blocking: '1', findingsRecorded: true, findings: [bookmark, compat]})});
+                assert.match(text, /^• `MM-T5890` Opening channels in new windows — the test does not handle this server version · 🐧 Linux$/m);
+                assert.doesNotMatch(text, /handle server ·/);
+            });
+
+            it('names no test when the lanes recorded none', () => {
+                const text = masterFailure({triageLanes: lanes('FAILURE', {blocking: '1'})});
+                assert.doesNotMatch(text, /Needs a look|Not product bugs/);
             });
 
             it('renders yellow when triage could not settle a leg', () => {

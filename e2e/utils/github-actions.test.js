@@ -228,6 +228,15 @@ describe('e2e-functional.yml status jobs', () => {
         }
     });
 
+    it('runs triage when any status is red, even if the summary passed', () => {
+        // Master run 41776677247: the summary passed while e2e/macos was red, and triage was skipped.
+        const block = jobLines(yml, 'tsio-triage').join('\n');
+        assert.match(block, /needs\.tsio-summary\.result != 'success'/);
+        for (const job of ['e2e-linux-status', 'e2e-macos-status', 'e2e-windows-status', 'e2e-policy-status']) {
+            assert.match(block, new RegExp(`\\|\\| needs\\.${job}\\.result == 'failure'`));
+        }
+    });
+
     it('checks out cmt-triage-verdict.js wherever cmt-channel-notify.js is loaded', () => {
         // cmt-channel-notify.js requires ./cmt-triage-verdict; a sparse
         // checkout missing it crashes the status job at require time
@@ -278,6 +287,10 @@ describe('e2e-functional.yml status jobs', () => {
         assert.match(triage, /> "e2e-triage-verdict-\$\{PLATFORM\}\.json"/);
         assert.match(triage, /path: e2e-triage-verdict-\$\{\{ matrix\.platform \}\}\.json/);
 
+        // Each lane records its failed tests, so the master alert names them.
+        assert.match(triage, /findings-file: e2e-triage-findings\.json/);
+        assert.match(triage, /findingsRecorded: \$findingsRecorded/);
+
         // The verdict job judges every master run: notifyCmtChannel stays
         // silent on green, and missing/empty legs still alert even when the
         // summary itself succeeded.
@@ -287,6 +300,16 @@ describe('e2e-functional.yml status jobs', () => {
         assert.match(verdict, /pattern: e2e-triage-verdict-\*/);
         assert.match(verdict, /notifyCmtChannel/);
         assert.match(verdict, /triageLanes/);
+
+        // A red OS status triage did not clear counts as a failure even when the summary passed.
+        for (const [os, job] of [['linux', 'e2e-linux-status'], ['macos', 'e2e-macos-status'], ['windows', 'e2e-windows-status'], ['policy', 'e2e-policy-status']]) {
+            assert.match(verdict, new RegExp(`^ {6}- ${job}$`, 'm'), `master-e2e-verdict needs ${job}`);
+            assert.match(verdict, new RegExp(`"${os}": "\\$\\{\\{ needs\\.${job}\\.result \\}\\}"`));
+        }
+        assert.match(verdict, /const hasFailures = redStatusNotCleared\(statusResults, triageLanes\) \|\| /);
+
+        // The status results reach the alert itself, not only hasFailures: the notify call passes them.
+        assert.match(verdict, /triageLanes,\n\s+statusResults,\n\s+\}\);/);
     });
 });
 
@@ -351,7 +374,7 @@ describe('CMT posts only e2e/compatibility-matrix-testing', () => {
         const triage = jobLines(cmt, 'cmt-triage').join('\n');
         assert.match(triage, /findings-file: e2e-triage-findings\.json/);
         assert.match(triage, /if \.schema == 2 then \[\.findings\[\] \| \{title, full_title, file, label, blocking, explanation: \.ai\.explanation\}\]/);
-        assert.match(triage, /elif \.schema == 1 then \[\.findings\[\] \| \{title, full_title, file, blocking, explanation: null,/);
+        assert.doesNotMatch(triage, /schema == 1/, 'the toolkit only writes schema 2');
         assert.match(triage, /--argjson findingsRecorded "\$\{RECORDED\}"/);
         assert.match(triage, /--argjson findings "\$\{FINDINGS\}"/);
         const action = read('.github/actions/e2e-triage/action.yml');
