@@ -109,15 +109,20 @@ wait_for() {
 db_ready() { docker exec "$DB" pg_isready -h 127.0.0.1 -U mmuser -d mattermost_test >/dev/null 2>&1; }
 
 down() {
-  docker rm -f "$APP" "$DB" >/dev/null 2>&1 || true
+  docker rm -fv "$APP" "$DB" >/dev/null 2>&1 || true
   docker network rm "$NETWORK" >/dev/null 2>&1 || true
   rm -f "$ENV_FILE"
   log "Removed ${APP}, ${DB} and network ${NETWORK}."
 }
 
 start() {
-  local img=$1
-  if [ "$(docker inspect -f '{{.Config.Image}} {{.State.Running}}' "$APP" 2>/dev/null)" = "${img} true" ] && server_ready; then
+  local img=$1 current_license requested_license
+  # Compare JSON strings to preserve whitespace without putting license values in command arguments.
+  requested_license=$(printf '%s' "${MM_LICENSE:-}" | jq -Rs .)
+  if [ "$(docker inspect -f '{{.Config.Image}} {{.State.Running}}' "$APP" 2>/dev/null)" = "${img} true" ] &&
+    current_license=$(docker inspect -f '{{json .Config.Env}}' "$APP" 2>/dev/null |
+      jq -c 'map(select(startswith("MM_LICENSE=")) | ltrimstr("MM_LICENSE=")) | last // ""') &&
+    [ "$current_license" = "$requested_license" ] && server_ready; then
     log "Reusing running ${APP} (${img})."
     return 0
   fi
