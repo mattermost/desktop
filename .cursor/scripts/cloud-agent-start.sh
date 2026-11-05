@@ -166,10 +166,18 @@ PY
     fi
 }
 
+# Docker runs the Mattermost server image for E2E runs (.cursor/scripts/cloud-agent-mm-server.sh). Not fatal:
+# GUI sessions against the cloud test server don't need it.
+ensure_docker() {
+    bash "$(dirname "${BASH_SOURCE[0]}")/cloud-agent-docker.sh" ||
+        log "Docker is not available; cloud-agent-mm-server.sh will not work in this VM."
+}
+
 ensure_dbus
 ensure_xvfb
 ensure_window_manager
 ensure_shm
 configure_cloud_server
+ensure_docker
 
 log "Headless display environment configured (DISPLAY=${DISPLAY})."
