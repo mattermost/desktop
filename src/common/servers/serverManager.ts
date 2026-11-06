@@ -19,7 +19,7 @@ import {
 import Config from 'common/config';
 import {Logger} from 'common/log';
 import {MattermostServer} from 'common/servers/MattermostServer';
-import {getFormattedPathName, isInternalURL, parseURL} from 'common/utils/url';
+import {getFormattedPathName, isInternalURL, isValidURL, parseURL} from 'common/utils/url';
 
 import type {ConfigServer, Server} from 'types/config';
 import type {RemoteInfo} from 'types/server';
@@ -177,7 +177,7 @@ export class ServerManager extends EventEmitter {
 
         this.remoteInfo.set(serverId, remoteInfo);
 
-        const siteURL = remoteInfo.siteURL ? parseURL(remoteInfo.siteURL) : undefined;
+        const siteURL = remoteInfo.siteURL && isValidURL(remoteInfo.siteURL) ? parseURL(remoteInfo.siteURL) : undefined;
         if (siteURL && server.url.toString() !== siteURL.toString() && isSiteURLValidated) {
             server.updateURL(siteURL);
             this.servers.set(serverId, server);

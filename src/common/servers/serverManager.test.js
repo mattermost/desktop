@@ -24,6 +24,7 @@ jest.mock('common/config', () => {
 jest.mock('common/utils/url', () => ({
     parseURL: jest.fn(),
     isInternalURL: jest.fn(),
+    isValidURL: jest.requireActual('common/utils/url').isValidURL,
     getFormattedPathName: (pathname) => (pathname.endsWith('/') ? pathname : `${pathname}/`),
 }));
 jest.mock('common/utils/util', () => ({
@@ -95,6 +96,48 @@ describe('common/servers/serverManager', () => {
                 hasPlaybooks: true,
                 hasFocalboard: true,
             }, true)).not.toThrow();
+
+            expect(serverManager.servers.get('server-1').url.toString()).toBe('http://server-1.com/');
+            expect(serverManager.persistServers).not.toHaveBeenCalled();
+        });
+
+        // Checks that a remote site url is not written over the saved server url.
+        it.each([
+            {label: 'a comma', siteURL: 'https://a,b.example'},
+            {label: 'a semicolon', siteURL: 'https://a;b.example'},
+            {label: 'an asterisk', siteURL: 'https://a*.example'},
+            {label: 'a leading dot', siteURL: 'https://.example.com'},
+            {label: 'a percent-encoded asterisk', siteURL: 'https://a%2A.example'},
+            {label: 'a percent-encoded comma', siteURL: 'https://a%2C.example'},
+            {label: 'a percent-encoded semicolon', siteURL: 'https://a%3B.example'},
+            {label: 'a percent-encoded leading dot', siteURL: 'https://%2Eexample.com'},
+            {label: 'only an asterisk', siteURL: 'https://*'},
+            {label: 'only a comma', siteURL: 'https://,'},
+            {label: 'only a semicolon', siteURL: 'https://;'},
+            {label: 'only a dot', siteURL: 'https://.'},
+            {label: 'a comma at the end', siteURL: 'https://example.com,'},
+            {label: 'a semicolon at the end', siteURL: 'https://example.com;'},
+            {label: 'an asterisk at the end', siteURL: 'https://example.com*'},
+            {label: 'an asterisk in the middle', siteURL: 'https://ex*ample.com'},
+            {label: 'whitespace at the end', siteURL: 'https://example.com '},
+            {label: 'a comma and an asterisk', siteURL: 'https://*,*.example'},
+            {label: 'a value without a scheme', siteURL: '*,*.example'},
+            {label: 'another value without a scheme', siteURL: 'a,b.example'},
+            {label: 'a fullwidth asterisk', siteURL: 'https://a\uFF0Ab.example'},
+            {label: 'a fullwidth comma', siteURL: 'https://a\uFF0Cb.example'},
+            {label: 'a fullwidth semicolon', siteURL: 'https://a\uFF1Bb.example'},
+            {label: 'a fullwidth dot at the start', siteURL: 'https://\u3002example.com'},
+            {label: 'uppercase letters', siteURL: 'https://A,B.EXAMPLE'},
+            {label: 'a userinfo prefix', siteURL: 'https://user:pass@a,b.example'},
+            {label: 'only the scheme', siteURL: 'https://'},
+            {label: 'an empty url', siteURL: ''},
+        ])('should leave the saved server url unchanged for a site url with $label', ({siteURL}) => {
+            serverManager.updateRemoteInfo('server-1', {
+                siteURL,
+                serverVersion: '6.0.0',
+                hasPlaybooks: false,
+                hasFocalboard: false,
+            }, true);
 
             expect(serverManager.servers.get('server-1').url.toString()).toBe('http://server-1.com/');
             expect(serverManager.persistServers).not.toHaveBeenCalled();
