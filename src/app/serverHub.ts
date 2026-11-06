@@ -31,7 +31,7 @@ import {Logger} from 'common/log';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {URLValidationStatus} from 'common/utils/constants';
-import {isMagicLinkUrl, isValidURI, isValidURL, parseURL} from 'common/utils/url';
+import {isMagicLinkUrl, isServerHostname, isValidURI, isValidURL, parseURL} from 'common/utils/url';
 import PermissionsManager from 'main/security/permissionsManager';
 import {ServerInfo} from 'main/server/serverInfo';
 import {getLocalPreload} from 'main/utils';
@@ -110,6 +110,10 @@ export class ServerHub {
         );
 
         modalPromise.then(async (data) => {
+            if (!data?.url || !isValidURL(data.url)) {
+                return;
+            }
+
             let initialLoadURL;
             if (prefillURL) {
                 const parsedServerURL = parseURL(data.url);
@@ -154,6 +158,9 @@ export class ServerHub {
 
         modalPromise.then(async (data) => {
             if (!server.isPredefined) {
+                if (!data.server?.url || !isValidURL(data.server.url)) {
+                    return;
+                }
                 ServerManager.editServer(id, data.server);
             }
             PermissionsManager.setForServer(server, data.permissions);
@@ -221,6 +228,12 @@ export class ServerHub {
 
         let httpUrl = url;
         if (!isValidURL(url)) {
+            const parsed = parseURL(url);
+            if (parsed?.hostname && !isServerHostname(parsed.hostname)) {
+                log.debug('handleServerURLValidation: URL is invalid');
+                return {status: URLValidationStatus.Invalid};
+            }
+
             // If it already includes the protocol, force it to HTTPS
             if (isValidURI(url) && !url.toLowerCase().startsWith('http')) {
                 log.debug('handleServerURLValidation: URL is valid host but does not start with http');
@@ -399,7 +412,7 @@ export class ServerHub {
         }
 
         // If the URL doesn't match the Site URL, set the URL to the correct one
-        const parsedSiteURL = remoteInfo.siteURL ? parseURL(remoteInfo.siteURL) : undefined;
+        const parsedSiteURL = remoteInfo.siteURL && isValidURL(remoteInfo.siteURL) ? parseURL(remoteInfo.siteURL) : undefined;
         if (parsedSiteURL && remoteURL.toString() !== parsedSiteURL.toString()) {
             log.verbose('handleServerURLValidation: Remote URL does not match Site URL, checking Site URL');
 
@@ -482,6 +495,10 @@ export class ServerHub {
     private handleAddServer = async (event: IpcMainEvent, server: Server) => {
         log.debug('handleAddServer');
 
+        if (!server?.url || !isValidURL(server.url)) {
+            return;
+        }
+
         ServerManager.addServer(server);
     };
 
@@ -493,6 +510,9 @@ export class ServerHub {
         }
 
         if (!server.isPredefined) {
+            if (!isValidURL(server.url)) {
+                return;
+            }
             ServerManager.editServer(server.id, server);
         }
         if (permissions) {
@@ -522,7 +542,7 @@ export class ServerHub {
     private updateAuthServerAllowlist = () => {
         const hostnames = ServerManager.getAllServers().
             map((server) => server.url.hostname).
-            filter(Boolean);
+            filter((hostname) => isServerHostname(hostname));
         session.defaultSession.allowNTLMCredentialsForDomains(hostnames.join(','));
     };
 

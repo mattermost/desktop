@@ -273,6 +273,87 @@ describe('common/Validator', () => {
         });
     });
 
+    describe('server urls in config', () => {
+        const plainURL = 'http://server-1.com';
+        const keptURLs = [
+            plainURL,
+            'https://server.example.com',
+            'https://internal_host.example',
+            'https://[2001:db8::1]/',
+            'https://good.example',
+            'https://example.com.',
+        ];
+        const mixedURLs = [
+            plainURL,
+            'https://a,b.example',
+            'https://a;b.example',
+            'https://a*.example',
+            'https://.example.com',
+            'https://a%2A.example',
+            'https://a%2C.example',
+            'https://a%3B.example',
+            'https://%2Eexample.com',
+            'https://*',
+            'https://,',
+            'https://;',
+            'https://.',
+            'https://example.com,',
+            'https://example.com;',
+            'https://example.com*',
+            'https://ex*ample.com',
+            'https://example.com ',
+            'https://*,*.example',
+            '*,*.example',
+            'a,b.example',
+            'https://',
+            '',
+            'https://a\uFF0Ab.example',
+            'https://a\uFF0Cb.example',
+            'https://a\uFF1Bb.example',
+            'https://\u3002example.com',
+            'https://A,B.EXAMPLE',
+            'https://user:pass@a,b.example',
+        ];
+        const validators = {
+            1: Validator.validateV1ConfigData,
+            2: Validator.validateV2ConfigData,
+            3: Validator.validateV3ConfigData,
+            4: Validator.validateV4ConfigData,
+        };
+
+        const configFor = (version, urls) => {
+            const servers = urls.map((url, index) => ({name: `server-${index}`, url}));
+            if (version === 4) {
+                return {version, servers};
+            }
+            if (version === 3) {
+                return {
+                    version,
+                    teams: servers.map((server) => ({
+                        ...server,
+                        tabs: [{name: 'channels', isOpen: true}],
+                    })),
+                };
+            }
+            return {version, teams: servers};
+        };
+
+        const urlsFrom = (result, version) => {
+            const servers = version === 4 ? result.servers : result.teams;
+            return servers.map((server) => server.url);
+        };
+
+        // Checks that each config version keeps a plain https url, an underscore host, and an IPv6 host,
+        // and leaves out a hostname containing a comma, semicolon, asterisk, or a leading dot.
+        it.each([1, 2, 3, 4].flatMap((version) => [
+            {version, kind: 'ordinary server urls', urls: keptURLs, expected: keptURLs},
+            {version, kind: 'only ordinary server urls from a mixed list', urls: mixedURLs, expected: [plainURL]},
+        ]))('should keep $kind when loading config v$version', ({version, urls, expected}) => {
+            const result = validators[version](configFor(version, urls));
+            expect(result && urlsFrom(result, version)).toEqual(expected);
+        });
+    });
+
     describe('validateAllowedProtocols', () => {
         const allowedProtocols = [
             'spotify:',
