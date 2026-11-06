@@ -1,0 +1,112 @@
+---
+# E2E autofix on master. After each master run of "Electron Playwright Tests" (dispatched by
+# Matterwick with run_type MASTER, reported to TSIO as group desktop-master), the toolkit's
+# e2e-test-watch action picks the specs that keep failing on master, and this workflow sends one
+# request per fix to the "Desktop E2E Autofix" Cursor automation. Its instructions live in the
+# automation, not in this repository.
+#
+# Linux reports only (report_name e2e-on-ubuntu-latest): the Cloud Agent VM is Linux, so a failure
+# seen only on macOS or Windows can't be reproduced there.
+#
+# Without the webhook secrets it only writes the job summary. Set the variable E2E_ENABLE_AUTOFIX
+# to "false" to turn it off.
+name: E2E autofix on master
+on:
+  workflow_run:
+    workflows: ["Electron Playwright Tests"]
+    types: [completed]
+
+permissions: {}
+
+concurrency:
+  group: e2e-autofix-on-master
+  cancel-in-progress: false
+
+env:
+  TRUNK: master
+  SERVER_IMAGE_REPO: mattermost/mattermost-enterprise-edition
+
+jobs:
+  autofix:
+    # PR runs of the same workflow run on their PR branch; they report as desktop-pr, which the
+    # watch doesn't read, so this is a cheap first filter only.
+    if: >-
+      github.event.workflow_run.head_branch == 'master' &&
+      github.event.workflow_run.conclusion != 'cancelled' && vars.E2E_ENABLE_AUTOFIX != 'false'
+    runs-on: ubuntu-24.04
+    # Runs queue behind each other (concurrency); a hung one must not hold the queue.
+    timeout-minutes: 30
+    # A workflow_run job gets read-only caches by default, so the record step could not save the
+    # ledger of sent requests and the next run would send them again. Safe only while this job
+    # checks out and runs no pull-request code.
+    cache-mode: write
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
+    steps:
+      - name: e2e/autofix-plan
+        id: plan
+        uses: mattermost/mattermost-test-automation-toolkit/actions/e2e-test-watch@84a301cff09cb1212f7425c7fd771de8c950f70d # main 2026-11-05
+        with:
+          repository: ${{ github.repository }}
+          gh-run-id: ${{ github.event.workflow_run.id }}
+          gh-run-attempt: ${{ github.event.workflow_run.run_attempt }}
+          branch: ${{ env.TRUNK }}
+          suites: >-
+            [{"name": "desktop-master", "test_root": "e2e/specs", "report_name": "e2e-on-ubuntu-latest"}]
+          github-token: ${{ github.token }}
+          # The agent adds this label and finds its own PRs by it.
+          label: e2e-autofix
+          max-broken-per-run: 5
+          max-flaky-per-day: 3
+          cause-hold-hours: 4
+
+      # Each request gets `base` (the master commit to branch from and build) and the server the
+      # failing run tested: its version is in the Linux job names (e2e-on-ubuntu-<runner>-<version>[-N-of-M]).
+      # Request data reaches the script only through files and stdin.
+      - name: e2e/autofix-send
+        id: send
+        if: steps.plan.outputs.count != '0'
+        env:
+          REQUESTS_FILE: ${{ steps.plan.outputs.requests-file }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          GH_TOKEN: ${{ github.token }}
+          WEBHOOK_URL: ${{ secrets.CURSOR_DESKTOP_E2E_AUTOFIX_WEBHOOK_URL }}
+          WEBHOOK_KEY: ${{ secrets.CURSOR_DESKTOP_E2E_AUTOFIX_WEBHOOK_KEY }}
+        run: |
+          results='[]'
+          # Reported even if the step fails part way, so what was sent is not sent again.
+          report() { echo "results=$results" >> "$GITHUB_OUTPUT"; }
+          trap report EXIT
+          if [ -z "$WEBHOOK_URL" ] || [ -z "$WEBHOOK_KEY" ]; then
+            echo "No webhook configured: the requests are only in the job summary."
+            exit 0
+          fi
+
+          version=$(gh api "repos/$REPOSITORY/actions/runs/$RUN_ID/jobs?per_page=100" --paginate \
+            --jq '.jobs[].name | capture("(^|/ )e2e-on-ubuntu-[^-]+-(?<v>.+?)(-[0-9]+-of-[0-9]+)?$")? | .v' \
+            | sort -u | head -n 1) || version=""
+          [[ "$version" =~ ^[0-9A-Za-z._-]+$ ]] || version=""
+          echo "server version: ${version:-unknown}"
+          base=$(gh api "repos/$REPOSITORY/commits/$TRUNK" --jq '.sha')
+
+          while IFS= read -r request; do
+            id=$(jq -r '.id' <<<"$request")
+            payload=$(jq -c --arg base "$base" --arg version "$version" --arg repo "$SERVER_IMAGE_REPO" \
+              '.payload + {base: {commit: $base}}
+                 + (if $version != "" then {server_version: $version, server_image: "\($repo):\($version)"} else {} end)' <<<"$request")
+            status=$(printf '%s' "$payload" | curl -sS -o /dev/null -w '%{http_code}' --max-time 30 \
+              -X POST "$WEBHOOK_URL" -H "Authorization: Bearer $WEBHOOK_KEY" -H 'Content-Type: application/json' \
+              --data-binary @-) || true
+            echo "$id: HTTP ${status:-000}"
+            results=$(jq -c --arg id "$id" --arg status "${status:-0}" '. + [{id: $id, status: ($status | tonumber)}]' <<<"$results")
+          done < <(jq -c '.[]' "$REQUESTS_FILE")
+
+      # Runs on every trunk run, even one that sent nothing, to keep the record of sent requests alive.
+      - name: e2e/autofix-record
+        if: always() && steps.plan.outcome == 'success'
+        uses: mattermost/mattermost-test-automation-toolkit/actions/e2e-test-watch/record@84a301cff09cb1212f7425c7fd771de8c950f70d # main 2026-11-05
+        with:
+          results: ${{ steps.send.outputs.results || '[]' }}
