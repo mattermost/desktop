@@ -125,6 +125,7 @@ describe('TabManager', () => {
         focus: jest.fn(),
         setBounds: jest.fn(),
         reload: jest.fn(),
+        closeFindBar: jest.fn(),
         currentURL: 'https://test.com',
         serverId: 'test-server-id',
         isErrored: jest.fn(() => false),
@@ -333,6 +334,7 @@ describe('TabManager', () => {
                     },
                     setBounds: jest.fn(),
                 })),
+                closeFindBar: jest.fn(),
                 needsLoadingScreen: jest.fn(() => false),
             };
             ServerManager.getCurrentServerId.mockReturnValue('test-server');
@@ -371,6 +373,7 @@ describe('TabManager', () => {
                 needsLoadingScreen: jest.fn(() => false),
                 getWebContentsView: jest.fn(() => mockWebContentsView),
                 focus: jest.fn(),
+                closeFindBar: jest.fn(),
             };
             WebContentsManager.getView.mockReturnValue(mockView);
             tabManager.activeTabs.set('test-server', 'other-view');
@@ -389,6 +392,7 @@ describe('TabManager', () => {
                 isErrored: jest.fn(() => true),
                 getWebContentsView: jest.fn(),
                 focus: jest.fn(),
+                closeFindBar: jest.fn(),
             };
             WebContentsManager.getView.mockReturnValue(mockView);
 
@@ -410,6 +414,7 @@ describe('TabManager', () => {
                 needsLoadingScreen: jest.fn(() => true),
                 getWebContentsView: jest.fn(() => mockWebContentsView),
                 focus: jest.fn(),
+                closeFindBar: jest.fn(),
             };
             WebContentsManager.getView.mockReturnValue(mockView);
             MainWindow.get.mockReturnValue(mockMainWindow);
@@ -771,6 +776,7 @@ describe('TabManager', () => {
             const mockView = {
                 id: 'test-view',
                 getWebContentsView: jest.fn(() => ({})),
+                closeFindBar: jest.fn(),
             };
             WebContentsManager.getView.mockReturnValue(mockView);
             MainWindow.get.mockReturnValue(mockMainWindow);
@@ -778,6 +784,7 @@ describe('TabManager', () => {
 
             tabManager.removeCurrentVisibleTab();
 
+            expect(mockView.closeFindBar).toHaveBeenCalled();
             expect(mockMainWindow.contentView.removeChildView).toHaveBeenCalledWith(mockView.getWebContentsView());
             expect(tabManager.currentVisibleTab).toBeUndefined();
         });
@@ -885,6 +892,7 @@ describe('TabManager', () => {
                 isErrored: jest.fn(() => false),
                 focus: jest.fn(),
                 setBounds: jest.fn(),
+                closeFindBar: jest.fn(),
                 needsLoadingScreen: jest.fn(() => false),
             };
 
@@ -966,6 +974,7 @@ describe('TabManager', () => {
                 id: 'test-tab-id',
                 isErrored: jest.fn(() => false),
                 focus: jest.fn(),
+                closeFindBar: jest.fn(),
                 needsLoadingScreen: jest.fn(() => false),
                 getWebContentsView: jest.fn(() => ({
                     webContents: {
@@ -1048,6 +1057,7 @@ describe('TabManager', () => {
                 })),
                 focus: jest.fn(),
                 setBounds: jest.fn(),
+                closeFindBar: jest.fn(),
                 needsLoadingScreen: jest.fn(() => false),
             };
 
@@ -1157,6 +1167,7 @@ describe('TabManager', () => {
                 })),
                 focus: jest.fn(),
                 setBounds: jest.fn(),
+                closeFindBar: jest.fn(),
                 needsLoadingScreen: jest.fn(() => false),
             };
 
@@ -1198,6 +1209,7 @@ describe('TabManager', () => {
                 })),
                 focus: jest.fn(),
                 setBounds: jest.fn(),
+                closeFindBar: jest.fn(),
                 needsLoadingScreen: jest.fn(() => false),
             };
 

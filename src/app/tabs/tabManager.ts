@@ -413,6 +413,7 @@ export class TabManager extends EventEmitter {
         if (this.currentVisibleTab) {
             const view = WebContentsManager.getView(this.currentVisibleTab);
             if (view) {
+                view.closeFindBar();
                 mainWindow.contentView.removeChildView(view.getWebContentsView());
             }
             this.currentVisibleTab = undefined;
