@@ -5,6 +5,12 @@ inputs:
   os:
     description: 'Operating system (Linux, macOS, Windows)'
     required: true
+  packages:
+    description: >-
+      Linux only. "build" (the default) also installs the toolchain and headers that npm ci needs to
+      build native modules. "runtime" installs only what a test shard needs to run the app, for jobs
+      that restore node_modules, native modules included, from the install job's cache.
+    default: build
 
 runs:
   using: "composite"
@@ -12,12 +18,19 @@ runs:
     - name: Install Linux Dependencies
       if: inputs.os == 'Linux'
       shell: bash
+      env:
+        PACKAGES: ${{ inputs.packages }}
       run: |
         # Install yq binary. The old Wine repository key is unused.
         wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
 
+        # A stalled mirror must not hold the job until its timeout-minutes: give up on a download
+        # after 30s so apt moves on to the runner's next mirror, and bound each command. A job that
+        # fails here ends "failure", which e2e-tests-rerun.yml re-runs when triage asks.
+        apt_options=(-o Acquire::Retries=5 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30)
+
         # Update package lists
-        sudo apt-get update || true
+        sudo timeout 300 apt-get "${apt_options[@]}" update || true
 
         # 22.04 still ships libgtk-3-0. 24.04 and newer only have libgtk-3-0t64.
         . /etc/os-release
@@ -26,40 +39,54 @@ runs:
           gtk_package=libgtk-3-0
         fi
 
-        # Install required packages
-        sudo apt-get install -y \
-          build-essential \
-          clang \
-          libdbus-1-dev \
-          libgtk-3-dev \
-          libnotify-dev \
-          libasound2-dev \
-          libcap-dev \
-          libcups2-dev \
-          libxtst-dev \
-          libxss1 \
-          libnss3-dev \
-          curl \
-          gperf \
-          bison \
-          python3-dbusmock \
-          ca-certificates \
-          libpng++-dev \
-          gcc-12-aarch64-linux-gnu \
-          g++-12-aarch64-linux-gnu \
-          jq \
-          icnsutils \
-          graphicsmagick \
-          tzdata \
-          xsel \
-          xvfb \
-          x11-utils \
-          "${gtk_package}" \
-          libnss3 \
-          libasound2t64 \
-          dbus \
-          dbus-x11 \
+        # What the app and the specs need at run time: xvfb-run, dbus-launch, xsel for the clipboard,
+        # and Electron's shared libraries. The runner image already has most of them.
+        runtime_packages=(
+          libxss1
+          curl
+          ca-certificates
+          jq
+          tzdata
+          xsel
+          xvfb
+          x11-utils
+          "${gtk_package}"
+          libnss3
+          libnotify4
+          libasound2t64
+          dbus
+          dbus-x11
           libxtst6
+        )
+        # What npm ci needs to build native modules and package the app (about 100 MB).
+        build_packages=(
+          build-essential
+          clang
+          libdbus-1-dev
+          libgtk-3-dev
+          libnotify-dev
+          libasound2-dev
+          libcap-dev
+          libcups2-dev
+          libxtst-dev
+          libnss3-dev
+          gperf
+          bison
+          python3-dbusmock
+          libpng++-dev
+          gcc-12-aarch64-linux-gnu
+          g++-12-aarch64-linux-gnu
+          icnsutils
+          graphicsmagick
+        )
+        case "${PACKAGES}" in
+          runtime) packages=("${runtime_packages[@]}") ;;
+          build) packages=("${build_packages[@]}" "${runtime_packages[@]}") ;;
+          *) echo "::error::packages must be build or runtime, not '${PACKAGES}'"; exit 1 ;;
+        esac
+
+        # Install required packages
+        sudo timeout 900 apt-get "${apt_options[@]}" install -y "${packages[@]}"
 
     - name: Install macOS Dependencies
       if: inputs.os == 'macOS'
