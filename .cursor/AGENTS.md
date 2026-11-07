@@ -39,6 +39,7 @@ Findings come from a manual session against Desktop App 43.3.0 on Xvfb `:99`, us
 | `xfwm4 --compositor=off` | `cloud-agent-start.sh` | Started if not already running, so windows get frames and focus. |
 | `/dev/shm` remount at 2G | `cloud-agent-start.sh` | The 64M default causes `ERR_INSUFFICIENT_RESOURCES` once a real server loads. |
 | Cloud test server added to the app config | `cloud-agent-start.sh` | Only when `DESKTOP_MATTERMOST_URL` is set. See "Cloud test server". |
+| Docker daemon | `cloud-agent-start.sh` → `cloud-agent-docker.sh` | Not fatal if it fails; only the local server needs it. See "Local server from a Docker image". |
 
 Set `CLOUD_AGENT_SKIP_E2E_DEPS=true` to skip `npm --prefix e2e ci`.
 
@@ -87,6 +88,25 @@ cd e2e && env MM_TEST_SERVER_URL="$DESKTOP_MATTERMOST_URL" MM_TEST_USER_NAME="$D
 ```
 
 Each spec launches its own Electron with an isolated `userDataDir`, so it does not touch `~/.config/Electron` or a manually started app. It does use the same `e2e/dist/` build, so don't rebuild while a manual session is running from it. Specs that assume the `sysadmin` / `main` team fixtures from `e2e/AGENTS.md` may not match this server.
+
+## Local server from a Docker image
+
+For E2E runs that need a server of a given version (for example the version a master run failed against), run one in this VM from `mattermost/mattermost-enterprise-edition:<version>`, with PostgreSQL. No Mattermost source is needed:
+
+```bash
+MM_SERVER_VERSION=12.1.0-rc3 bash .cursor/scripts/cloud-agent-mm-server.sh up   # or MM_SERVER_IMAGE=<image>
+source ~/.cloud-agent-mm-server-env
+bash .cursor/scripts/cloud-agent-mm-server.sh status
+```
+
+`up` serves `http://localhost:8065` with the settings Matterwick gives CI servers, and seeds `sysadmin` (system admin; `MM_TEST_USER_NAME` / `MM_TEST_PASSWORD`), `user-1` and team `ad-1`. It passes the `MM_LICENSE` secret to the server when set; CI's servers are licensed, so license-gated specs skip without it. Running `up` again reuses a running server of the same image; `down` removes it and its data. These credentials belong to a throwaway local server, but keep them out of PRs and screenshots anyway.
+
+Run specs against it as CI does on Linux (`e2e-functional-template.yml`):
+
+```bash
+cd e2e && eval "$(dbus-launch --sh-syntax)" && export NO_AT_BRIDGE=1 CI=1
+xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' npx playwright test --project=linux <spec>
+```
 
 ## Typing into the server view
 

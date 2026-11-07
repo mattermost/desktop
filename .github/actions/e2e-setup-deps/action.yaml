@@ -90,12 +90,14 @@ runs:
         python-version: "3.13"
 
     # Windows restore shards already have natives in the v9 cache.
-    # Linux restore still needs xvfb; macOS restore still needs nss.
+    # Linux restore still needs xvfb and Electron's runtime libraries, not the build toolchain;
+    # macOS restore still needs nss.
     - name: e2e/install-os-dependencies
       if: ${{ (runner.os != 'Windows' || inputs.mode != 'restore') && (inputs.mode != 'install' || steps.cache-node-modules.outputs.cache-hit != 'true') }}
       uses: ./.github/actions/install-os-dependencies
       with:
         os: ${{ inputs.os }}
+        packages: ${{ inputs.mode == 'restore' && 'runtime' || 'build' }}
 
     - name: e2e/require-node-modules
       if: ${{ inputs.mode == 'restore' && steps.cache-node-modules.outputs.cache-hit != 'true' }}

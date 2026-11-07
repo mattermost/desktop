@@ -2,6 +2,7 @@
 # infrastructure (a dead job, missing reports), never on a test. Triage decides and leaves a marker
 # artifact in the run (rerun-attempts on the tsio-triage job in e2e-functional.yml); the toolkit's
 # e2e-test-rerun action reads it and re-runs the failed jobs once, so the new attempt is triaged again.
+# A run without the marker is never re-run, so a run a person cancelled stays cancelled.
 # It checks out and runs no code from the run it re-runs.
 name: E2E re-run on infrastructure failure
 on:
@@ -13,13 +14,41 @@ permissions: {}
 
 jobs:
   rerun:
-    if: github.event.workflow_run.conclusion == 'failure'
+    # A job that runs past its timeout-minutes ends "cancelled", and so does its run, so a shard that
+    # died in setup leaves the run cancelled, not failed.
+    if: contains(fromJSON('["failure", "cancelled"]'), github.event.workflow_run.conclusion)
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       actions: write
+      contents: read
     steps:
+      # A PR run is also cancelled when a newer push replaces it (cancel-in-progress). Re-running it
+      # would rejoin its concurrency group and cancel the newer run, so a cancelled run is re-run only
+      # while its commit is still its branch's head.
+      - name: e2e/rerun-is-current
+        id: current
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ "$CONCLUSION" != cancelled ] || [ "$BRANCH" = "$DEFAULT_BRANCH" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          tip=$(gh api "repos/$REPOSITORY/commits/$BRANCH" --jq .sha 2>/dev/null) || tip=""
+          if [ "$tip" = "$HEAD_SHA" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "current=false" >> "$GITHUB_OUTPUT"
+            echo "Not re-running: $BRANCH is at ${tip:-an unknown commit}, past this run's $HEAD_SHA." >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: e2e/rerun
+        if: steps.current.outputs.current == 'true'
         uses: mattermost/mattermost-test-automation-toolkit/actions/e2e-test-rerun@main # actions/e2e-test-rerun
         with:
           github-token: ${{ github.token }}
