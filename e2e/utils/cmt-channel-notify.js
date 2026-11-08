@@ -467,7 +467,8 @@ function formatMasterChannelMessage({
 
     if (triage && triage.verdict === 'inconclusive') {
         const lines = [
-            `:yellow_circle: **Desktop Master E2E — failures held on \`${branch}\`**`,
+            // With no failed test the run is inconclusive only for missing results, which nothing yet names as a failure.
+            `:yellow_circle: **Desktop Master E2E — ${Number(failed) > 0 ? 'failures held' : 'results incomplete'} on \`${branch}\`**`,
             formatMasterAttribution({compositeIdentity, mergedPr, headCommit, shortSha}),
             `**${failed} failed** · ${passed} passed · ${skipped} skipped`,
         ];

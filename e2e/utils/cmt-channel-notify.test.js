@@ -657,6 +657,11 @@ describe('cmt-channel-notify', () => {
                 assert.match(text, /^:green_circle: \*\*Desktop Master E2E — flaky, no bug found\*\*/);
             });
 
+            it('says results are incomplete, not failures held, when an inconclusive run has no failed test', () => {
+                const text = masterFailure({triageLanes: lanes('SUCCESS'), statusResults: {linux: 'failure', policy: 'failure'}, detail: {status: 'completed', test_stats: {passed: 752, failed: 0, skipped: 42, total: 794}, reports: []}});
+                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — results incomplete on `master`\*\*/);
+            });
+
             it('renders yellow when a policy status job failed with no policy leg, even if triage cleared the OS leg', () => {
                 const text = masterFailure({triageLanes: lanes('SUCCESS'), statusResults: {linux: 'failure', policy: 'failure'}});
                 assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — failures held on `master`\*\*/);
