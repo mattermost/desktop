@@ -467,7 +467,7 @@ function formatMasterChannelMessage({
 
     if (triage && triage.verdict === 'inconclusive') {
         const lines = [
-            `:yellow_circle: **Desktop Master E2E — needs investigation on \`${branch}\`**`,
+            `:yellow_circle: **Desktop Master E2E — failures held on \`${branch}\`**`,
             formatMasterAttribution({compositeIdentity, mergedPr, headCommit, shortSha}),
             `**${failed} failed** · ${passed} passed · ${skipped} skipped`,
         ];

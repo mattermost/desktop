@@ -44,11 +44,12 @@ function normalizeVerdict(value) {
 }
 
 // The toolkit's per-test labels, most severe first: a test failing in several lanes takes the most severe one.
-const LABEL_ORDER = ['app bug', 'caused by PR', 'needs investigation', 'out of date', 'fixed on main', 'server compat', 'test bug', 'broken on main', 'flaky'];
+// "needs investigation" and "out of date" are what triage wrote before "machine failure" and "fixed on main".
+const LABEL_ORDER = ['app bug', 'caused by PR', 'broken on branch', 'machine failure', 'needs investigation', 'out of date', 'fixed on main', 'server compat', 'test bug', 'broken on main', 'flaky'];
 
 function labelRank(label) {
     const i = LABEL_ORDER.indexOf(label);
-    return i === -1 ? LABEL_ORDER.indexOf('needs investigation') : i;
+    return i === -1 ? LABEL_ORDER.indexOf('machine failure') : i;
 }
 
 // Windows reports name a spec with backslashes; one test is one test on every OS.
@@ -230,7 +231,7 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
             });
             result.blockingCount += record.blocking;
         } else {
-            result.unknownLegs.push({...leg, reason: 'triage needs investigation', incomplete: INCOMPLETE.test(record.description)});
+            result.unknownLegs.push({...leg, reason: 'triage gave no verdict', incomplete: INCOMPLETE.test(record.description)});
         }
     }
     result.tests = groupTests(recorded);
@@ -247,7 +248,7 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
         if (productBugs) {
             summary = `${count(productBugs, 'product bug', 'product bugs')} found`;
         } else if (held.length) {
-            summary = `No product bugs found; ${count(held.length, 'failure needs', 'failures need')} a look`;
+            summary = `No product bugs found; ${count(held.length, 'failure', 'failures')} held`;
         } else if (!unnamed && incompleteLegs) {
             // Partial results can hide a failure: nothing is claimed until a re-run.
             summary = 'Test results did not fully upload, re-run';
@@ -529,7 +530,7 @@ function formatMasterTestLines(lanes) {
             }
         }
     };
-    section('🔎 **Needs a look**', tests.filter((t) => t.blocking));
+    section('🔎 **Held**', tests.filter((t) => t.blocking));
     section('🔁 **Not product bugs**', tests.filter((t) => !t.blocking));
     return lines;
 }
@@ -583,7 +584,7 @@ function formatCmtVerdictMessage({fold, compositeIdentity, stats = {}, reportUrl
         if (productBugs.length) {
             red = `${count(productBugs.length, 'product bug', 'product bugs')} found`;
         } else if (needsLook.length) {
-            red = `no product bugs found · ${count(needsLook.length, 'failure needs', 'failures need')} a look`;
+            red = `no product bugs found · ${count(needsLook.length, 'failure', 'failures')} held`;
         } else if (incomplete.length && !redUnnamed.length) {
             red = 'test results did not fully upload, re-run to see if anything failed';
         }
@@ -604,7 +605,7 @@ function formatCmtVerdictMessage({fold, compositeIdentity, stats = {}, reportUrl
         }
     };
     section('🐞 **Product bugs**', productBugs);
-    section('🔎 **Needs a look**', needsLook, (t) => line(t, t.label === 'needs investigation' || PRODUCT.has(t.label) ? reasonFor(t) : `${reasonFor(t)}, but that may not be the cause`));
+    section('🔎 **Held**', needsLook, (t) => line(t, t.label === 'needs investigation' || t.label === 'machine failure' || PRODUCT.has(t.label) ? reasonFor(t) : `${reasonFor(t)}, but that may not be the cause`));
     section('🧪 **Problems with the test, not product bugs**', testProblems);
     if (flaky.length) {
         lines.push(`🔁 **Flaky, not product bugs** (${flaky.length}): ${listOf(flaky, (t) => names.get(t))} — ${reasonFor(flaky[0])}`);

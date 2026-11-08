@@ -659,7 +659,7 @@ describe('cmt-channel-notify', () => {
 
             it('renders yellow when a policy status job failed with no policy leg, even if triage cleared the OS leg', () => {
                 const text = masterFailure({triageLanes: lanes('SUCCESS'), statusResults: {linux: 'failure', policy: 'failure'}});
-                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — needs investigation on `master`\*\*/);
+                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — failures held on `master`\*\*/);
             });
 
             it('names the status job triage did not clear: policy, or the OS status whose lane is not SUCCESS', () => {
@@ -701,7 +701,7 @@ describe('cmt-channel-notify', () => {
 
             it('names each failed test triage left blocking, why, and on which OS', () => {
                 const text = masterFailure({triageLanes: lanes('FAILURE', {blocking: '1', findingsRecorded: true, findings: [bookmark, callLogs]})});
-                assert.match(text, /^🔎 \*\*Needs a look\*\* \(1\)$/m);
+                assert.match(text, /^🔎 \*\*Held\*\* \(1\)$/m);
                 assert.match(text, /^• `MM-T5611` Open a bookmark URL\/link — the cause is not clear · 🐧 Linux$/m);
                 assert.match(text, /^🔁 \*\*Not product bugs\*\* \(1\)$/m);
                 assert.match(text, /^• `MM-T5590` \/call logs — failed by chance or because of the test machine; it passes on retry or on other runs · 🐧 Linux$/m);
@@ -709,7 +709,7 @@ describe('cmt-channel-notify', () => {
 
             it('names the tests on an alert that needs investigation too', () => {
                 const text = masterFailure({triageLanes: lanes('ACTION_REQUIRED', {findingsRecorded: true, findings: [bookmark]})});
-                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — needs investigation on `master`\*\*/);
+                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — failures held on `master`\*\*/);
                 assert.match(text, /^• `MM-T5611` Open a bookmark URL\/link — the cause is not clear · 🐧 Linux$/m);
             });
 
@@ -741,7 +741,7 @@ describe('cmt-channel-notify', () => {
 
             it('renders yellow when triage could not settle a leg', () => {
                 const text = masterFailure({triageLanes: lanes('ACTION_REQUIRED')});
-                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — needs investigation on `master`\*\*/);
+                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — failures held on `master`\*\*/);
                 assert.match(text, /AI triage could not settle: 🐧 Linux \/ Server `12\.1\.0-rc1` — not counted as flaky or as a bug/);
                 assert.ok(!(/exonerated|broken on trunk/).test(text), 'uses the existing triage wording, no new jargon');
             });
