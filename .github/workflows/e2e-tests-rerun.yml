@@ -13,15 +13,49 @@ permissions: {}
 
 jobs:
   rerun:
-    # A job past its timeout (a setup step that hung) ends the run "cancelled", not "failure". The action re-runs only on
-    # triage's marker, so a run cancelled for a newer push (triage never ran) is left alone.
+    # A job past its timeout (a setup step that hung) ends the run "cancelled", not "failure".
     if: contains(fromJSON('["failure", "cancelled"]'), github.event.workflow_run.conclusion)
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       actions: write
+      pull-requests: read
     steps:
+      # A lane can leave its marker before a newer push cancels the run. Re-running that stale run would cancel the
+      # newer one through e2e-functional.yml's per-PR concurrency group. Matterwick dispatches a PR run on the PR's head
+      # branch, so head_branch / head_sha name the PR and the commit tested. Master and release runs are keyed by SHA
+      # and never cancelled for a newer merge.
+      - name: e2e/check-superseded
+        id: superseded
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            const {owner, repo} = context.repo;
+            const branch = run.head_branch || '';
+            if (!branch || /^(master|main|release-)/.test(branch)) {
+              core.setOutput('superseded', 'false');
+              return;
+            }
+            const {data: {workflow_runs: runs}} = await github.rest.actions.listWorkflowRuns({
+              owner, repo, workflow_id: run.workflow_id, branch, per_page: 20,
+            });
+            const newer = runs.find((r) => r.run_number > run.run_number);
+            const {data: prs} = await github.rest.pulls.list({owner, repo, state: 'open', head: `${owner}:${branch}`, per_page: 1});
+            const prHead = prs[0]?.head?.sha;
+            let reason = '';
+            if (newer) {
+              reason = `a newer run of this workflow on ${branch} exists: ${newer.html_url}`;
+            } else if (prHead && prHead !== run.head_sha) {
+              reason = `PR #${prs[0].number} is now at ${prHead.slice(0, 7)}; this run tested ${run.head_sha.slice(0, 7)}`;
+            }
+            if (reason) {
+              core.notice(`Not re-running ${run.html_url}: ${reason}.`);
+            }
+            core.setOutput('superseded', reason ? 'true' : 'false');
+
       - name: e2e/rerun
+        if: steps.superseded.outputs.superseded == 'false'
         uses: mattermost/mattermost-test-automation-toolkit/actions/e2e-test-rerun@main # actions/e2e-test-rerun
         with:
           github-token: ${{ github.token }}
