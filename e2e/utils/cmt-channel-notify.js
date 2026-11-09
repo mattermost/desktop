@@ -61,6 +61,7 @@ function osFromRunnerToken(token) {
     return 'unknown';
 }
 
+/** Parses an E2E or policy job name into its OS, server version, runner, kind and optional shard; null for any other name. */
 function parseCmtJobName(jobName) {
     if (!jobName || typeof jobName !== 'string') {
         return null;
@@ -153,6 +154,7 @@ function buildIndividualReportUrl(baseUrl, reportId) {
 // mattermost-test-system-io#126 could mark a report complete a few seconds before its tests were stored.
 const EMPTY_REPORT_SETTLE_MS = 2 * 60 * 1000;
 
+/** Every test a per-job count saw: passed, failed, skipped and flaky. */
 const testTotal = (c) => (c.passed || 0) + (c.failed || 0) + (c.skipped || 0) + (c.flaky || 0);
 
 /**
@@ -316,6 +318,7 @@ function formatLegResultText(leg) {
     return `❌ ${leg.passed}/${executed}`;
 }
 
+/** The run's GitHub Actions URL, or '' without a run id. */
 function buildWorkflowRunUrl(compositeIdentity) {
     const repo = compositeIdentity?.repository || 'mattermost/desktop';
     if (!compositeIdentity?.gh_run_id) {
@@ -324,6 +327,7 @@ function buildWorkflowRunUrl(compositeIdentity) {
     return `https://github.com/${repo}/actions/runs/${compositeIdentity.gh_run_id}`;
 }
 
+/** One line of untrusted text for Markdown: whitespace collapsed, cut to maxLength, Markdown escaped and @mentions defused. */
 function sanitizeInlineText(text, maxLength = 80) {
     const clean = String(text || '').replace(/\s+/g, ' ').trim();
     const truncated = clean.length > maxLength ? `${clean.slice(0, maxLength - 1)}…` : clean;
@@ -335,13 +339,16 @@ function sanitizeInlineText(text, maxLength = 80) {
         replace(/@(?=\w)/g, '@\u200b');
 }
 
-// Author is untrusted (GitHub login, or a raw git author name for the commit
-// fallback) — render it as text, never as a live @mention (@channel/@here).
+/**
+ * Author is untrusted (GitHub login, or a raw git author name for the commit
+ * fallback) — render it as text, never as a live @mention (@channel/@here).
+ */
 function formatByline(author) {
     const name = sanitizeInlineText(author, 40).replace(/^@/, '').replace(/^\u200b+/, '');
     return name ? ` by @\u200b${name}` : '';
 }
 
+/** The "After merge of #PR by @author · commit" line, falling back to the head commit, then to the branch. */
 function formatMasterAttribution({compositeIdentity, mergedPr, headCommit, shortSha}) {
     const branch = (compositeIdentity?.branch || 'master').replace(/^refs\/(heads|tags)\//, '');
     const commitPart = shortSha ? `commit \`${shortSha}\`` : `branch \`${branch}\``;
@@ -365,6 +372,7 @@ function formatMasterAttribution({compositeIdentity, mergedPr, headCommit, short
     return `On \`${branch}\` · ${commitPart}`;
 }
 
+/** A run's legs, totals, and whether it failed or is missing results. */
 function summarizeOutcome({detail, perJobCounts, upstreamJobsSucceeded = true, hasFailures = false, baseUrl, perJobCountsAvailable = true}) {
     const reports = detail?.reports || [];
     const legs = buildLegSummaries(perJobCounts, reports, baseUrl);
@@ -387,11 +395,13 @@ function summarizeOutcome({detail, perJobCounts, upstreamJobsSucceeded = true, h
     return {legs, passed, failed, skipped, overallFailed, missingLegs, perJobCountsAvailable, noLegsReported};
 }
 
-// Master health is failure-only, like a CI health-check bot: green runs stay
-// silent instead of posting a per-leg table after every merge. When AI triage
-// cleared every failure (flaky / failed in master / Infra failure), the run
-// stays silent too — red is posted only when triage leaves blocking failures,
-// and an unsettled verdict posts as needs-investigation, never as silent.
+/**
+ * Master health is failure-only, like a CI health-check bot: green runs stay
+ * silent instead of posting a per-leg table after every merge. When AI triage
+ * cleared every failure (flaky / failed in master / Infra failure), the run
+ * stays silent too — red is posted only when triage leaves blocking failures,
+ * and an unsettled verdict posts as needs-investigation, never as silent.
+ */
 function shouldPostToChannel(compositeIdentity, {overallFailed = false, missingLegs = [], legs = [], perJobCountsAvailable = true, noLegsReported} = {}, triageVerdict) {
     if (compositeIdentity?.name !== 'desktop-master') {
         return true;
@@ -403,9 +413,11 @@ function shouldPostToChannel(compositeIdentity, {overallFailed = false, missingL
     return Boolean(overallFailed || missingLegs.length > 0 || noLegs);
 }
 
-// Test groups TSIO definitively shows ran zero tests: their setup died
-// before the first test, so there was nothing for triage to judge. One line
-// per OS / server / suite, counting groups affected.
+/**
+ * Test groups TSIO definitively shows ran zero tests: their setup died
+ * before the first test, so there was nothing for triage to judge. One line
+ * per OS / server / suite, counting groups affected.
+ */
 function formatSetupProblemLines(legs, setupLegs) {
     const groups = new Map();
     for (const leg of setupLegs || []) {
@@ -422,6 +434,7 @@ function formatSetupProblemLines(legs, setupLegs) {
     });
 }
 
+/** The short master-health alert: passed, cleared by triage, inconclusive, setup problem, or failure. */
 function formatMasterChannelMessage({
     compositeIdentity,
     detail,
@@ -596,6 +609,7 @@ function formatMasterChannelMessage({
     return lines.join('\n') + '\n';
 }
 
+/** The channel post's title for a report's composite identity name. */
 function reportTitleForIdentity(compositeIdentity) {
     switch (compositeIdentity?.name) {
     case 'cmt-desktop':
