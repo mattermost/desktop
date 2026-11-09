@@ -344,8 +344,8 @@ describe('per-test CMT message', () => {
         const fold = foldCmtVerdicts({lanes, expectedLanes: matrix, expectTriage: true, stats});
         const text = formatCmtVerdictMessage({fold, compositeIdentity: {...identity, branch: 'v6.3.2-rc.2'}, stats, ...links});
         assert.equal(text, [
-            ':red_circle: **Desktop CMT v6.3.2-rc.2**: no product bugs found · 1 failure needs a look',
-            '🔎 **Needs a look** (1)',
+            ':red_circle: **Desktop CMT v6.3.2-rc.2**: no product bugs found · 1 failure held',
+            '🔎 **Held** (1)',
             '• `MM-T2633` back button returns to login after mock SSO… — the cause is not clear · 6 of 15 runs, on server 12.0.1 and 12.1.0-rc2',
             '🧪 **Problems with the test, not product bugs** (3)',
             '• `MM-T5890` Opening channels in new windows — the test does not handle server 10.11.25 · 3 of 15 runs',
@@ -354,7 +354,7 @@ describe('per-test CMT message', () => {
             '3323 passed · 26 failed · 306 skipped · [Report](https://test-io.test.mattermost.com/reports/desktop/v6.3.2-rc.2/725fbc7/cmt-desktop) · [Run](https://github.com/mattermost/desktop/actions/runs/40651298431)',
             '',
         ].join('\n'));
-        assert.match(fold.statusDescription, /^No product bugs found; 1 failure needs a look · 3323 passed, 26 failed, 306 skipped$/, 'the status counts tests, not runs');
+        assert.match(fold.statusDescription, /^No product bugs found; 1 failure held · 3323 passed, 26 failed, 306 skipped$/, 'the status counts tests, not runs');
     });
 
     it('counts a test that failed on Windows and elsewhere once, whatever the path separator', () => {
@@ -371,7 +371,7 @@ describe('per-test CMT message', () => {
         const red = formatCmtVerdictMessage({fold: redFold, compositeIdentity: identity, stats, ...links});
         assert.match(red, /^:red_circle: \*\*Desktop CMT v6\.2\.5-rc\.1\*\*: 1 product bug found$/m);
         assert.match(red, /^• `MM-T4054` Open\/Close permanent link media preview — the app does not do what the test expects · 15 of 15 runs$/m, 'the most severe label any run gave it');
-        assert.match(red, /^🔎 \*\*Needs a look\*\* \(1\)$/m);
+        assert.match(red, /^🔎 \*\*Held\*\* \(1\)$/m);
         assert.match(redFold.statusDescription, /^1 product bug found · /);
         const cleared = lanes.map((l) => ({...l, verdict: 'SUCCESS', blocking: '0', findings: l.findings.filter((f) => !f.blocking)}));
         const green = formatCmtVerdictMessage({fold: foldCmtVerdicts({lanes: cleared, expectedLanes: matrix, expectTriage: true, stats}), compositeIdentity: identity, stats, ...links});
@@ -392,7 +392,7 @@ describe('per-test CMT message', () => {
         const text = formatCmtVerdictMessage({fold: foldCmtVerdicts({lanes: partial, expectedLanes: matrix, expectTriage: true, stats}), compositeIdentity: identity, stats, ...links});
         assert.match(text, /^• `MM-T2633` back button returns to login after mock SSO… — the cause is not clear · 5 of 15 runs, on server 12\.0\.1 and 12\.1\.0-rc2$/m);
         assert.match(text, /^⚙️ \*\*Failed, test not known:\*\* 🪟 Windows, server 12\.0\.1 — look at the run$/m);
-        assert.match(foldCmtVerdicts({lanes: partial, expectedLanes: matrix, expectTriage: true, stats}).statusDescription, /^No product bugs found; 1 failure needs a look; 1 run failed with no test named · /);
+        assert.match(foldCmtVerdicts({lanes: partial, expectedLanes: matrix, expectTriage: true, stats}).statusDescription, /^No product bugs found; 1 failure held; 1 run failed with no test named · /);
     });
 
     it('names a lane red only for a shard that never reported, which has no blocking test', () => {
@@ -407,7 +407,7 @@ describe('per-test CMT message', () => {
         const text = formatCmtVerdictMessage({fold, compositeIdentity: identity, stats, ...links});
         assert.match(text, /^⚙️ \*\*Failed, test not known:\*\* 🐧 Linux, server 11\.7\.14 — look at the run$/m, 'its two failures are not lost');
         assert.match(text, /^⚙️ \*\*Setup problem:\*\* test results did not fully upload for 1 of 15 runs — re-run to confirm$/m);
-        assert.match(fold.statusDescription, /^No product bugs found; 1 failure needs a look; 1 run failed with no test named; some results did not upload · /);
+        assert.match(fold.statusDescription, /^No product bugs found; 1 failure held; 1 run failed with no test named; some results did not upload · /);
     });
 
     it('says a lane red only for incomplete results needs a re-run, not that it is blocking', () => {
@@ -417,7 +417,7 @@ describe('per-test CMT message', () => {
         const text = formatCmtVerdictMessage({fold, compositeIdentity: identity, stats, ...links});
         assert.match(text, /^⚙️ \*\*Setup problem:\*\* test results did not fully upload for 9 of 15 runs — re-run to confirm$/m);
         assert.ok(!text.includes('no test named'));
-        assert.match(fold.statusDescription, /^No product bugs found; 1 failure needs a look; some results did not upload · /);
+        assert.match(fold.statusDescription, /^No product bugs found; 1 failure held; some results did not upload · /);
 
         // v6.3.2-rc.2: every lane was incomplete, the six that held MM-T2633 too.
         const all = lanes.map((l) => ({...l, description: '(results incomplete: 15 of 15 reports) 99.1% passed'}));

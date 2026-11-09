@@ -28,13 +28,13 @@ jobs:
           wget -qO - https://download.opensuse.org/repositories/Emulators:/Wine:/Debian/xUbuntu_22.04/Release.key | sudo apt-key add -
           wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.20.1/yq_linux_amd64 && chmod a+x /usr/local/bin/yq
           sudo apt-get update || true && sudo apt-get install -y ca-certificates libxtst-dev libpng++-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu jq icnsutils graphicsmagick tzdata
-          npm ci
+          bash ./scripts/ci-retry-network.sh npm ci
       - name: ci/test
         uses: ./.github/actions/test
       - name: ci/build
         run: |
           mkdir -p ./build/linux
-          npm run package:linux-tar
+          bash ./scripts/ci-retry-network.sh npm run package:linux-tar
           bash -x ./scripts/cp_artifacts.sh release ./build/linux
       - name: ci/upload-test-results
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -78,7 +78,7 @@ jobs:
           npm i -g node-gyp
           node-gyp install
           node-gyp install --devdir="C:\Users\runneradmin\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
-          npm ci --openssl_fips=''
+          bash ./scripts/ci-retry-network.sh npm ci --openssl_fips=''
 
   build-win-no-installer:
     runs-on: windows-2022
@@ -115,13 +115,13 @@ jobs:
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
         run: |
-          npm ci --openssl_fips=''
+          bash ./scripts/ci-retry-network.sh npm ci --openssl_fips=''
       - name: ci/test
         uses: ./.github/actions/test
       - name: ci/build
         run: |
           mkdir -p ./build/win
-          npm run package:windows
+          bash ./scripts/ci-retry-network.sh npm run package:windows
           bash -x ./scripts/cp_artifacts.sh release ./build/win
       - name: ci/upload-test-results
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -161,13 +161,13 @@ jobs:
           xcrun --sdk macosx --show-sdk-version
           xcodebuild -version
           ls -l /Applications/Xcode_16.2.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs
-          npm ci
+          bash ./scripts/ci-retry-network.sh npm ci
       - name: ci/test
         uses: ./.github/actions/test
       - name: ci/build
         run: |
           mkdir -p ./build/macos
-          npm run package:mac
+          bash ./scripts/ci-retry-network.sh npm run package:mac
           bash -x ./scripts/cp_artifacts.sh release ./build/macos/
         env:
           SDKROOT: ${{ env.SDKROOT }}

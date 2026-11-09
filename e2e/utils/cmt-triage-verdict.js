@@ -29,31 +29,37 @@ const PLATFORM_LABEL = {
     unknown: 'Other',
 };
 
+/** A lane's identity: its platform and server version. */
 function laneKey(lane) {
     return `${lane?.platform || ''}|${lane?.serverVersion || ''}`;
 }
 
+/** A non-negative integer count from a string or number; 0 for anything else. */
 function toCount(value) {
     const n = Number.parseInt(value, 10);
     return Number.isInteger(n) && n > 0 ? n : 0;
 }
 
+/** A lane verdict as SUCCESS, FAILURE or ACTION_REQUIRED; '' for anything else. */
 function normalizeVerdict(value) {
     const verdict = String(value || '').trim().toUpperCase();
     return ['SUCCESS', 'FAILURE', 'ACTION_REQUIRED'].includes(verdict) ? verdict : '';
 }
 
 // The toolkit's per-test labels, most severe first: a test failing in several lanes takes the most severe one.
-const LABEL_ORDER = ['app bug', 'caused by PR', 'needs investigation', 'out of date', 'fixed on main', 'server compat', 'test bug', 'broken on main', 'flaky'];
+// "needs investigation" and "out of date" are what triage wrote before "machine failure" and "fixed on main".
+const LABEL_ORDER = ['app bug', 'caused by PR', 'broken on branch', 'machine failure', 'needs investigation', 'out of date', 'fixed on main', 'server compat', 'test bug', 'broken on main', 'flaky'];
 
+/** A label's severity index in LABEL_ORDER; an unknown label ranks as a machine failure. */
 function labelRank(label) {
     const i = LABEL_ORDER.indexOf(label);
-    return i === -1 ? LABEL_ORDER.indexOf('needs investigation') : i;
+    return i === -1 ? LABEL_ORDER.indexOf('machine failure') : i;
 }
 
-// Windows reports name a spec with backslashes; one test is one test on every OS.
+/** Windows reports name a spec with backslashes; one test is one test on every OS. */
 const unixPath = (file) => file.replace(/\\/g, '/');
 
+/** A per-test finding from triage with forward-slash paths; null when its title, file or label is missing. */
 function normalizeFinding(row) {
     if (!row || typeof row.title !== 'string' || typeof row.file !== 'string' || typeof row.label !== 'string') {
         return null;
@@ -72,6 +78,7 @@ function normalizeFinding(row) {
 // A lane whose results did not all arrive: it needs a re-run, whatever triage made of what did.
 const INCOMPLETE = /results incomplete|report\(s\) missing|did not run/;
 
+/** A triage lane with defaults filled in, counts parsed and findings normalized. */
 function normalizeLane(lane) {
     return {
         platform: lane?.platform || 'unknown',
@@ -230,7 +237,7 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
             });
             result.blockingCount += record.blocking;
         } else {
-            result.unknownLegs.push({...leg, reason: 'triage needs investigation', incomplete: INCOMPLETE.test(record.description)});
+            result.unknownLegs.push({...leg, reason: 'triage gave no verdict', incomplete: INCOMPLETE.test(record.description)});
         }
     }
     result.tests = groupTests(recorded);
@@ -247,7 +254,7 @@ function foldCmtVerdicts({lanes = [], expectedLanes = [], expectTriage = false, 
         if (productBugs) {
             summary = `${count(productBugs, 'product bug', 'product bugs')} found`;
         } else if (held.length) {
-            summary = `No product bugs found; ${count(held.length, 'failure needs', 'failures need')} a look`;
+            summary = `No product bugs found; ${count(held.length, 'failure', 'failures')} held`;
         } else if (!unnamed && incompleteLegs) {
             // Partial results can hide a failure: nothing is claimed until a re-run.
             summary = 'Test results did not fully upload, re-run';
@@ -406,17 +413,21 @@ function foldMasterTriage({lanes = [], legs = [], missingLegs = [], upstreamJobs
     return {verdict, clearedLegs, blockingLegs, unknownLegs, setupLegs};
 }
 
+/** A leg as "<emoji> <OS>, server <version>". */
 function formatLeg(leg) {
     const emoji = PLATFORM_EMOJI[leg.platform] || PLATFORM_EMOJI.unknown;
     const name = PLATFORM_LABEL[leg.platform] || PLATFORM_LABEL.unknown;
     return `${emoji} ${name}, server ${leg.serverVersion}`;
 }
 
+/** Text cut to max characters, ending in an ellipsis when cut. */
 const cut = (text, max) => (text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text);
 
-// Each test by its id and title when its title starts with an id (MM-T4054 Open/Close…), else its title, cut
-// short; two tests of one file with the same leaf title by their full titles. A name that would read like another
-// test's is spelled out: the full title, then the file too.
+/**
+ * Each test by its id and title when its title starts with an id (MM-T4054 Open/Close…), else its title, cut
+ * short; two tests of one file with the same leaf title by their full titles. A name that would read like another
+ * test's is spelled out: the full title, then the file too.
+ */
 function testNames(tests) {
     const shared = sharedTitles(tests);
     const short = (t) => {
@@ -431,6 +442,7 @@ function testNames(tests) {
     return new Map(tests.map((t, i) => [t, names[i]]));
 }
 
+/** The file and title keys that more than one of the tests share. */
 function sharedTitles(tests) {
     const seen = new Set();
     const shared = new Set();
@@ -444,13 +456,16 @@ function sharedTitles(tests) {
     return shared;
 }
 
-// The first three, then how many more.
+/** The first three, then how many more. */
 function listOf(items, render) {
     const shown = items.slice(0, 3).map(render).join(' · ');
     return items.length > 3 ? `${shown} · and ${items.length - 3} more` : shown;
 }
 
+/** "n thing" or "n things". */
 const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+/** Items joined as "a, b and c". */
 const andList = (items) => (items.length > 1 ? `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}` : items[0] || '');
 
 // Triage's labels, by what they mean for the release: a product bug, a problem with the test, a failure by chance,
@@ -458,7 +473,7 @@ const andList = (items) => (items.length > 1 ? `${items.slice(0, -1).join(', ')}
 const PRODUCT = new Set(['app bug', 'caused by PR']);
 const TEST_PROBLEM = new Set(['test bug', 'server compat', 'out of date', 'fixed on main']);
 
-// Why a test failed, in plain words.
+/** Why a test failed, in plain words. */
 function reasonFor(t) {
     // Master verdicts carry no server version, so the reason names none.
     const servers = t.servers.length ? `server ${andList(t.servers)}` : 'this server version';
@@ -529,7 +544,7 @@ function formatMasterTestLines(lanes) {
             }
         }
     };
-    section('🔎 **Needs a look**', tests.filter((t) => t.blocking));
+    section('🔎 **Held**', tests.filter((t) => t.blocking));
     section('🔁 **Not product bugs**', tests.filter((t) => !t.blocking));
     return lines;
 }
@@ -583,7 +598,7 @@ function formatCmtVerdictMessage({fold, compositeIdentity, stats = {}, reportUrl
         if (productBugs.length) {
             red = `${count(productBugs.length, 'product bug', 'product bugs')} found`;
         } else if (needsLook.length) {
-            red = `no product bugs found · ${count(needsLook.length, 'failure needs', 'failures need')} a look`;
+            red = `no product bugs found · ${count(needsLook.length, 'failure', 'failures')} held`;
         } else if (incomplete.length && !redUnnamed.length) {
             red = 'test results did not fully upload, re-run to see if anything failed';
         }
@@ -604,7 +619,7 @@ function formatCmtVerdictMessage({fold, compositeIdentity, stats = {}, reportUrl
         }
     };
     section('🐞 **Product bugs**', productBugs);
-    section('🔎 **Needs a look**', needsLook, (t) => line(t, t.label === 'needs investigation' || PRODUCT.has(t.label) ? reasonFor(t) : `${reasonFor(t)}, but that may not be the cause`));
+    section('🔎 **Held**', needsLook, (t) => line(t, t.label === 'needs investigation' || t.label === 'machine failure' || PRODUCT.has(t.label) ? reasonFor(t) : `${reasonFor(t)}, but that may not be the cause`));
     section('🧪 **Problems with the test, not product bugs**', testProblems);
     if (flaky.length) {
         lines.push(`🔁 **Flaky, not product bugs** (${flaky.length}): ${listOf(flaky, (t) => names.get(t))} — ${reasonFor(flaky[0])}`);

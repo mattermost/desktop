@@ -486,15 +486,15 @@ describe('cmt-channel-notify', () => {
                 status: 'completed',
                 test_stats: {passed: 752, failed: 1, skipped: 42, total: 795},
                 reports: [
-                    {id: 'rid-linux-1', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1-1-of-3', status: 'complete'},
-                    {id: 'rid-linux-2', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1-2-of-3', status: 'complete'},
+                    {id: 'rid-linux-1', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1-1-of-2', status: 'complete'},
+                    {id: 'rid-linux-2', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1-2-of-2', status: 'complete'},
                 ],
             },
             reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
             baseUrl: 'https://test-io.test.mattermost.com',
             perJobCounts: {
-                'e2e-on-ubuntu-latest-12.1.0-rc1-1-of-3': {passed: 70, failed: 1, skipped: 2, flaky: 0},
-                'e2e-on-ubuntu-latest-12.1.0-rc1-2-of-3': {passed: 71, failed: 0, skipped: 2, flaky: 0},
+                'e2e-on-ubuntu-latest-12.1.0-rc1-1-of-2': {passed: 70, failed: 1, skipped: 2, flaky: 0},
+                'e2e-on-ubuntu-latest-12.1.0-rc1-2-of-2': {passed: 71, failed: 0, skipped: 2, flaky: 0},
             },
             upstreamJobsSucceeded: true,
             mergedPr: {number: 3916, title: 'Fix the thing', url: 'https://github.com/mattermost/desktop/pull/3916', author: 'dev'},
@@ -659,7 +659,70 @@ describe('cmt-channel-notify', () => {
 
             it('renders yellow when a policy status job failed with no policy leg, even if triage cleared the OS leg', () => {
                 const text = masterFailure({triageLanes: lanes('SUCCESS'), statusResults: {linux: 'failure', policy: 'failure'}});
-                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — needs investigation on `master`\*\*/);
+                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — not all green on `master`\*\*/);
+            });
+
+            it('keeps the neutral heading when only a policy status failed and every report is complete with no failed test', () => {
+                const text = masterFailure({
+                    detail: {
+                        status: 'completed',
+                        test_stats: {passed: 141, failed: 0, skipped: 4, total: 145},
+                        reports: [
+                            {id: 'rid-linux-1', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1-1-of-2', status: 'complete'},
+                            {id: 'rid-linux-2', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1-2-of-2', status: 'complete'},
+                        ],
+                    },
+                    perJobCounts: {
+                        'e2e-on-ubuntu-latest-12.1.0-rc1-1-of-2': {passed: 70, failed: 0, skipped: 2, flaky: 0},
+                        'e2e-on-ubuntu-latest-12.1.0-rc1-2-of-2': {passed: 71, failed: 0, skipped: 2, flaky: 0},
+                    },
+                    triageLanes: lanes('SUCCESS', {exonerated: '0'}),
+                    statusResults: {linux: 'success', policy: 'failure'},
+                });
+                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — not all green on `master`\*\*$/m);
+                assert.match(text, /^\*\*0 failed\*\* · 141 passed · 4 skipped$/m);
+                assert.match(text, /^Status not cleared by triage: policy$/m);
+                assert.doesNotMatch(text, /failures held|results incomplete|No results/);
+            });
+
+            it('keeps the neutral heading when triage cleared the failed leg but another report is missing', () => {
+                const text = masterFailure({
+                    detail: {
+                        status: 'completed',
+                        test_stats: {passed: 141, failed: 1, skipped: 4, total: 146},
+                        reports: [
+                            {id: 'rid-linux-1', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1-1-of-3', status: 'complete'},
+                            {id: 'rid-linux-2', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1-2-of-3', status: 'complete'},
+                            {id: 'rid-linux-3', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1-3-of-3', status: 'complete'},
+                        ],
+                    },
+                    triageLanes: lanes('SUCCESS'),
+                });
+                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — not all green on `master`\*\*$/m);
+                assert.match(text, /^⚙️ \*\*No results:\*\* 🐧 Linux \/ Server `12\.1\.0-rc1` — test results did not upload; re-run to see if anything failed$/m);
+                assert.doesNotMatch(text, /failures held|results incomplete/);
+            });
+
+            it('keeps the neutral heading when triage cleared the failed leg but a shard never uploaded a report', () => {
+                // Only 1-of-3 and 2-of-3 uploaded: the 3-of-3 shard left no report and no counts at all.
+                const text = masterFailure({
+                    detail: {
+                        status: 'completed',
+                        test_stats: {passed: 141, failed: 1, skipped: 4, total: 146},
+                        reports: [
+                            {id: 'rid-linux-1', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1-1-of-3', status: 'complete'},
+                            {id: 'rid-linux-2', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1-2-of-3', status: 'complete'},
+                        ],
+                    },
+                    perJobCounts: {
+                        'e2e-on-ubuntu-latest-12.1.0-rc1-1-of-3': {passed: 70, failed: 1, skipped: 2, flaky: 0},
+                        'e2e-on-ubuntu-latest-12.1.0-rc1-2-of-3': {passed: 71, failed: 0, skipped: 2, flaky: 0},
+                    },
+                    triageLanes: lanes('SUCCESS'),
+                });
+                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — not all green on `master`\*\*$/m);
+                assert.match(text, /^⚙️ \*\*No results:\*\* 🐧 Linux \/ Server `12\.1\.0-rc1` — test results did not upload; re-run to see if anything failed$/m);
+                assert.doesNotMatch(text, /:green_circle:/, 'a missing shard is never the green triage-cleared alert');
             });
 
             it('names the status job triage did not clear: policy, or the OS status whose lane is not SUCCESS', () => {
@@ -701,7 +764,7 @@ describe('cmt-channel-notify', () => {
 
             it('names each failed test triage left blocking, why, and on which OS', () => {
                 const text = masterFailure({triageLanes: lanes('FAILURE', {blocking: '1', findingsRecorded: true, findings: [bookmark, callLogs]})});
-                assert.match(text, /^🔎 \*\*Needs a look\*\* \(1\)$/m);
+                assert.match(text, /^🔎 \*\*Held\*\* \(1\)$/m);
                 assert.match(text, /^• `MM-T5611` Open a bookmark URL\/link — the cause is not clear · 🐧 Linux$/m);
                 assert.match(text, /^🔁 \*\*Not product bugs\*\* \(1\)$/m);
                 assert.match(text, /^• `MM-T5590` \/call logs — failed by chance or because of the test machine; it passes on retry or on other runs · 🐧 Linux$/m);
@@ -709,7 +772,7 @@ describe('cmt-channel-notify', () => {
 
             it('names the tests on an alert that needs investigation too', () => {
                 const text = masterFailure({triageLanes: lanes('ACTION_REQUIRED', {findingsRecorded: true, findings: [bookmark]})});
-                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — needs investigation on `master`\*\*/);
+                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — not all green on `master`\*\*/);
                 assert.match(text, /^• `MM-T5611` Open a bookmark URL\/link — the cause is not clear · 🐧 Linux$/m);
             });
 
@@ -741,7 +804,7 @@ describe('cmt-channel-notify', () => {
 
             it('renders yellow when triage could not settle a leg', () => {
                 const text = masterFailure({triageLanes: lanes('ACTION_REQUIRED')});
-                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — needs investigation on `master`\*\*/);
+                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — not all green on `master`\*\*/);
                 assert.match(text, /AI triage could not settle: 🐧 Linux \/ Server `12\.1\.0-rc1` — not counted as flaky or as a bug/);
                 assert.ok(!(/exonerated|broken on trunk/).test(text), 'uses the existing triage wording, no new jargon');
             });
