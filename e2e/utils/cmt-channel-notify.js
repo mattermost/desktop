@@ -466,8 +466,8 @@ function formatMasterChannelMessage({
     }
 
     if (triage && triage.verdict === 'inconclusive') {
+        // Neutral: an inconclusive run is held failures, a failed status, or missing results; the lines below say which.
         const lines = [
-            // Neutral: an inconclusive run is held failures, a failed status, or missing results; the lines below say which.
             `:yellow_circle: **Desktop Master E2E — not all green on \`${branch}\`**`,
             formatMasterAttribution({compositeIdentity, mergedPr, headCommit, shortSha}),
             `**${failed} failed** · ${passed} passed · ${skipped} skipped`,
