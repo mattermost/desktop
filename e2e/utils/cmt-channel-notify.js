@@ -226,7 +226,10 @@ function buildLegSummaries(perJobCounts, uploadedReports, baseUrl, now = Date.no
             continue;
         }
         const of = Number(sharded[3]);
-        for (let i = 1; i <= of && of <= 50; i++) {
+        if (of > 50) {
+            continue;
+        }
+        for (let i = 1; i <= of; i++) {
             jobNames.add(`${sharded[1]}-${i}-of-${of}`);
         }
     }
