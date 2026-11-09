@@ -486,15 +486,15 @@ describe('cmt-channel-notify', () => {
                 status: 'completed',
                 test_stats: {passed: 752, failed: 1, skipped: 42, total: 795},
                 reports: [
-                    {id: 'rid-linux-1', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1-1-of-3', status: 'complete'},
-                    {id: 'rid-linux-2', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1-2-of-3', status: 'complete'},
+                    {id: 'rid-linux-1', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1-1-of-2', status: 'complete'},
+                    {id: 'rid-linux-2', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1-2-of-2', status: 'complete'},
                 ],
             },
             reportUrl: 'https://test-io.test.mattermost.com/reports/desktop/master/a1b2c3d/desktop-master',
             baseUrl: 'https://test-io.test.mattermost.com',
             perJobCounts: {
-                'e2e-on-ubuntu-latest-12.1.0-rc1-1-of-3': {passed: 70, failed: 1, skipped: 2, flaky: 0},
-                'e2e-on-ubuntu-latest-12.1.0-rc1-2-of-3': {passed: 71, failed: 0, skipped: 2, flaky: 0},
+                'e2e-on-ubuntu-latest-12.1.0-rc1-1-of-2': {passed: 70, failed: 1, skipped: 2, flaky: 0},
+                'e2e-on-ubuntu-latest-12.1.0-rc1-2-of-2': {passed: 71, failed: 0, skipped: 2, flaky: 0},
             },
             upstreamJobsSucceeded: true,
             mergedPr: {number: 3916, title: 'Fix the thing', url: 'https://github.com/mattermost/desktop/pull/3916', author: 'dev'},
@@ -701,6 +701,28 @@ describe('cmt-channel-notify', () => {
                 assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — not all green on `master`\*\*$/m);
                 assert.match(text, /^⚙️ \*\*No results:\*\* 🐧 Linux \/ Server `12\.1\.0-rc1` — test results did not upload; re-run to see if anything failed$/m);
                 assert.doesNotMatch(text, /failures held|results incomplete/);
+            });
+
+            it('keeps the neutral heading when triage cleared the failed leg but a shard never uploaded a report', () => {
+                // Only 1-of-3 and 2-of-3 uploaded: the 3-of-3 shard left no report and no counts at all.
+                const text = masterFailure({
+                    detail: {
+                        status: 'completed',
+                        test_stats: {passed: 141, failed: 1, skipped: 4, total: 146},
+                        reports: [
+                            {id: 'rid-linux-1', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1-1-of-3', status: 'complete'},
+                            {id: 'rid-linux-2', gh_job_name: 'e2e-on-ubuntu-latest-12.1.0-rc1-2-of-3', status: 'complete'},
+                        ],
+                    },
+                    perJobCounts: {
+                        'e2e-on-ubuntu-latest-12.1.0-rc1-1-of-3': {passed: 70, failed: 1, skipped: 2, flaky: 0},
+                        'e2e-on-ubuntu-latest-12.1.0-rc1-2-of-3': {passed: 71, failed: 0, skipped: 2, flaky: 0},
+                    },
+                    triageLanes: lanes('SUCCESS'),
+                });
+                assert.match(text, /^:yellow_circle: \*\*Desktop Master E2E — not all green on `master`\*\*$/m);
+                assert.match(text, /^⚙️ \*\*No results:\*\* 🐧 Linux \/ Server `12\.1\.0-rc1` — test results did not upload; re-run to see if anything failed$/m);
+                assert.doesNotMatch(text, /:green_circle:/, 'a missing shard is never the green triage-cleared alert');
             });
 
             it('names the status job triage did not clear: policy, or the OS status whose lane is not SUCCESS', () => {

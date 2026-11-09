@@ -218,6 +218,19 @@ function buildLegSummaries(perJobCounts, uploadedReports, baseUrl, now = Date.no
         ...(uploadedReports || []).map((r) => r.gh_job_name || r.display_name).filter(Boolean),
     ]);
 
+    // A shard whose report never uploaded has neither counts nor a report, so it would leave no leg, and a run could
+    // read complete with a shard missing. Every `-i-of-n` name names its n siblings: each one absent is a missing leg.
+    for (const jobName of [...jobNames]) {
+        const sharded = (/^(.*)-(\d+)-of-(\d+)$/).exec(jobName);
+        if (!sharded || !parseCmtJobName(jobName)) {
+            continue;
+        }
+        const of = Number(sharded[3]);
+        for (let i = 1; i <= of && of <= 50; i++) {
+            jobNames.add(`${sharded[1]}-${i}-of-${of}`);
+        }
+    }
+
     const rows = [];
     for (const jobName of jobNames) {
         const parsed = parseCmtJobName(jobName);
