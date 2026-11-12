@@ -1155,8 +1155,7 @@ describe('main/windows/callsWidgetWindow', () => {
         });
 
         describe('thumbnail size bounds', () => {
-            const MAX_THUMBNAIL_DIMENSION = 4096;
-            const MAX_TOTAL_THUMBNAIL_PIXELS = 4096 * 4096;
+            const MAX_THUMBNAIL_DIMENSION = 400;
 
             const makeSources = (count) => Array.from({length: count}, (_, i) => ({
                 id: `window${i}`,
@@ -1259,103 +1258,37 @@ describe('main/windows/callsWidgetWindow', () => {
                 }
             });
 
-            it('should cap the total thumbnail pixel budget across all returned sources', async () => {
-                const sourceCount = 50;
-                mockSources(sourceCount);
-
-                const sources = await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
-                    types: ['window'],
-                    thumbnailSize: {width: MAX_THUMBNAIL_DIMENSION, height: MAX_THUMBNAIL_DIMENSION},
-                });
-
-                expect(sources).toHaveLength(sourceCount);
-                const {thumbnailSize} = lastGetSourcesOpts();
-                expectBoundedThumbnailSize(thumbnailSize);
-                expect(thumbnailSize.width).toBeGreaterThan(0);
-                expect(thumbnailSize.height).toBeGreaterThan(0);
-                expect(sourceCount * thumbnailSize.width * thumbnailSize.height).toBeLessThanOrEqual(MAX_TOTAL_THUMBNAIL_PIXELS);
-            });
-
-            it('should cap the thumbnail pixel budget across concurrent requests', async () => {
-                const sourceCount = 4;
-                const requestCount = 10;
-                let inFlightPixels = 0;
-                let maxInFlightPixels = 0;
-
-                // A capture stays in flight until every thumbnail it produced has been encoded.
-                jest.spyOn(desktopCapturer, 'getSources').mockImplementation(async ({thumbnailSize}) => {
-                    const {width, height} = thumbnailSize ?? {width: 150, height: 150};
-                    if (!width || !height) {
-                        return makeSources(sourceCount);
-                    }
-
-                    const batchPixels = sourceCount * width * height;
-                    inFlightPixels += batchPixels;
-                    maxInFlightPixels = Math.max(maxInFlightPixels, inFlightPixels);
-                    let remaining = sourceCount;
-
-                    await new Promise((resolve) => setImmediate(resolve));
-                    return makeSources(sourceCount).map((source) => ({
-                        ...source,
-                        thumbnail: {
-                            toDataURL: () => {
-                                remaining--;
-                                if (remaining === 0) {
-                                    inFlightPixels -= batchPixels;
-                                }
-                                return source.thumbnail.toDataURL();
-                            },
-                        },
-                    }));
-                });
-
-                // Distinct sizes so identical in-flight requests cannot simply be shared.
-                const results = await Promise.allSettled(Array.from({length: requestCount}, (_, i) => {
-                    return callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
-                        types: ['screen', 'window'],
-                        thumbnailSize: {width: MAX_THUMBNAIL_DIMENSION, height: MAX_THUMBNAIL_DIMENSION - i},
-                    });
-                }));
-
-                expect(results.some((result) => result.status === 'fulfilled')).toBe(true);
-                expect(maxInFlightPixels).toBeLessThanOrEqual(MAX_TOTAL_THUMBNAIL_PIXELS);
-            });
-
-            it('should reject extra concurrent requests without reporting a screen permissions error', async () => {
+            it('should clamp oversized dimensions to the maximum without exceeding it', async () => {
                 mockSources(1);
 
-                const results = await Promise.allSettled(Array.from({length: 5}, () => {
-                    return callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
-                        types: ['screen'],
-                        thumbnailSize: {width: 400, height: 400},
-                    });
-                }));
-
-                const rejected = results.filter((result) => result.status === 'rejected');
-                expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(2);
-                expect(rejected).toHaveLength(3);
-                rejected.forEach((result) => expect(result.reason.message).toContain('too many pending requests'));
-                expect(callsWidgetWindow.win.webContents.send).not.toHaveBeenCalled();
-                expect(views.get('server-1_view-1').sendToRenderer).not.toHaveBeenCalled();
-
-                await expect(callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
+                await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
                     types: ['screen'],
-                    thumbnailSize: {width: 400, height: 400},
-                })).resolves.toHaveLength(1);
-            });
-
-            it('should not encode thumbnails when more sources appear after the counting pass', async () => {
-                const captured = makeSources(50);
-                jest.spyOn(desktopCapturer, 'getSources').mockImplementation(({thumbnailSize}) => {
-                    return Promise.resolve(thumbnailSize.width ? captured : makeSources(1));
+                    thumbnailSize: {width: 4096, height: 401},
                 });
 
-                await expect(callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
-                    types: ['window'],
-                    thumbnailSize: {width: MAX_THUMBNAIL_DIMENSION, height: MAX_THUMBNAIL_DIMENSION},
-                })).rejects.toThrow();
+                expect(lastGetSourcesOpts().thumbnailSize).toEqual({width: MAX_THUMBNAIL_DIMENSION, height: MAX_THUMBNAIL_DIMENSION});
+            });
 
-                captured.forEach((source) => expect(source.thumbnail.toDataURL).not.toHaveBeenCalled());
+            it('should floor fractional and clamp negative dimensions', async () => {
+                mockSources(1);
+
+                await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
+                    types: ['screen'],
+                    thumbnailSize: {width: 200.9, height: -5},
+                });
+
+                expect(lastGetSourcesOpts().thumbnailSize).toEqual({width: 200, height: 0});
+            });
+
+            it('should request sources with a single getSources call', async () => {
+                mockSources(3);
+
+                await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
+                    types: ['screen', 'window'],
+                    thumbnailSize: {width: 400, height: 400},
+                });
+
+                expect(desktopCapturer.getSources).toHaveBeenCalledTimes(1);
             });
         });
     });

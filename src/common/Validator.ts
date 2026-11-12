@@ -4,7 +4,6 @@
 import Joi from 'joi';
 
 import {Logger} from 'common/log';
-import {MAX_DESKTOP_SOURCE_THUMBNAIL_DIMENSION} from 'common/utils/constants';
 import {isValidURL} from 'common/utils/url';
 
 import type {AppState} from 'types/appState';
@@ -432,8 +431,8 @@ export const joinCallOptsSchema = Joi.object({
 export const desktopSourcesOptsSchema = Joi.object({
     types: Joi.array().items(Joi.string().valid('screen', 'window')).unique().min(1).max(2).required(),
     thumbnailSize: Joi.object({
-        height: Joi.number().strict().integer().min(0).max(MAX_DESKTOP_SOURCE_THUMBNAIL_DIMENSION).required(),
-        width: Joi.number().strict().integer().min(0).max(MAX_DESKTOP_SOURCE_THUMBNAIL_DIMENSION).required(),
+        height: Joi.number().strict().integer().min(0).max(4096).required(),
+        width: Joi.number().strict().integer().min(0).max(4096).required(),
     }),
     fetchWindowIcons: Joi.boolean(),
 });
