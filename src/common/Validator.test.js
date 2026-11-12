@@ -397,5 +397,43 @@ describe('common/Validator', () => {
             expect(Validator.desktopSourcesOptsSchema.validate(opts({width: 1000000, height: 400})).error).toBeDefined();
             expect(Validator.desktopSourcesOptsSchema.validate(opts({width: 400, height: 1000000})).error).toBeDefined();
         });
+
+        it.each([
+            -1,
+            1.5,
+            401,
+            4096,
+            Number.MAX_SAFE_INTEGER,
+        ])('rejects out-of-range or non-integer thumbnail dimension %p', (dim) => {
+            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: dim, height: 400})).error).toBeDefined();
+            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: 400, height: dim})).error).toBeDefined();
+        });
+
+        it('rejects numeric strings as thumbnail dimensions', () => {
+            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: '400', height: 400})).error).toBeDefined();
+            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: 400, height: '400'})).error).toBeDefined();
+        });
+
+        it('accepts the maximum thumbnail dimension', () => {
+            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: 400, height: 400})).error).toBeUndefined();
+            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: 0, height: 0})).error).toBeUndefined();
+        });
+
+        it.each([
+            [[]],
+            [['screen', 'screen']],
+            [['screen', 'window', 'window']],
+            [['tab']],
+        ])('rejects invalid types %p', (types) => {
+            expect(Validator.desktopSourcesOptsSchema.validate({types, thumbnailSize: {width: 400, height: 400}}).error).toBeDefined();
+        });
+
+        it.each([
+            [['screen']],
+            [['window']],
+            [['window', 'screen']],
+        ])('accepts valid types %p', (types) => {
+            expect(Validator.desktopSourcesOptsSchema.validate({types}).error).toBeUndefined();
+        });
     });
 });
