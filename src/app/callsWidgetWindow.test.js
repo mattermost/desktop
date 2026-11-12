@@ -1245,19 +1245,17 @@ describe('main/windows/callsWidgetWindow', () => {
             ])('should never pass malformed thumbnail dimensions (%s) to getSources', async (_, thumbnailSize) => {
                 mockSources(1);
 
-                let resolved = false;
                 try {
                     await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
                         types: ['screen'],
                         thumbnailSize,
                     });
-                    resolved = true;
                 } catch {
                     // Rejecting the malformed request is an acceptable secure outcome.
                 }
 
-                if (resolved) {
-                    expectBoundedThumbnailSize(lastGetSourcesOpts().thumbnailSize);
+                for (const [opts] of desktopCapturer.getSources.mock.calls) {
+                    expectBoundedThumbnailSize(opts.thumbnailSize);
                 }
             });
 

@@ -489,6 +489,11 @@ describe('common/Validator', () => {
             expect(Validator.desktopSourcesOptsSchema.validate(opts({width: 400, height: dim})).error).toBeDefined();
         });
 
+        it('rejects numeric strings as thumbnail dimensions', () => {
+            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: '400', height: 400})).error).toBeDefined();
+            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: 400, height: '400'})).error).toBeDefined();
+        });
+
         it('accepts the maximum thumbnail dimension', () => {
             expect(Validator.desktopSourcesOptsSchema.validate(opts({width: 4096, height: 4096})).error).toBeUndefined();
         });
