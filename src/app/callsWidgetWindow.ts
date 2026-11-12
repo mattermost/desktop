@@ -35,7 +35,13 @@ import {
 } from 'common/communication';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
-import {CALLS_PLUGIN_ID, MINIMUM_CALLS_WIDGET_HEIGHT, MINIMUM_CALLS_WIDGET_WIDTH} from 'common/utils/constants';
+import {
+    CALLS_PLUGIN_ID,
+    MAX_DESKTOP_SOURCE_THUMBNAIL_DIMENSION,
+    MAX_DESKTOP_SOURCE_THUMBNAIL_TOTAL_PIXELS,
+    MINIMUM_CALLS_WIDGET_HEIGHT,
+    MINIMUM_CALLS_WIDGET_WIDTH,
+} from 'common/utils/constants';
 import {getFormattedPathName, isCallsPopOutURL, parseURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
 import {desktopSourcesOptsSchema, ipcValidate, joinCallOptsSchema} from 'common/Validator';
@@ -59,6 +65,54 @@ import type {
 
 const log = new Logger('CallsWidgetWindow');
 
+// Electron's default when thumbnailSize is omitted.
+const DEFAULT_THUMBNAIL_SIZE = {width: 150, height: 150};
+
+// One capture running plus one waiting, shared by every server's view.
+const MAX_PENDING_DESKTOP_SOURCES_CAPTURES = 2;
+
+const normalizeThumbnailDimension = (value: unknown) => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+        throw new Error('handleGetDesktopSources: invalid thumbnailSize');
+    }
+    return Math.min(Math.max(Math.floor(value), 0), MAX_DESKTOP_SOURCE_THUMBNAIL_DIMENSION);
+};
+
+const normalizeThumbnailSize = (thumbnailSize: unknown): Electron.Size => {
+    if (thumbnailSize === undefined) {
+        return DEFAULT_THUMBNAIL_SIZE;
+    }
+    if (typeof thumbnailSize !== 'object' || thumbnailSize === null) {
+        throw new Error('handleGetDesktopSources: invalid thumbnailSize');
+    }
+    const {width, height} = thumbnailSize as Record<string, unknown>;
+    return {
+        width: normalizeThumbnailDimension(width),
+        height: normalizeThumbnailDimension(height),
+    };
+};
+
+// Thumbnails are upscaled to the requested size for every source, so the total is capped
+// by counting sources first (a 0x0 thumbnailSize skips thumbnail capture) and scaling down.
+const fitThumbnailSizeToBudget = async (opts: Electron.SourcesOptions, thumbnailSize: Electron.Size): Promise<Electron.Size> => {
+    const {width, height} = thumbnailSize;
+    if (!width || !height) {
+        return thumbnailSize;
+    }
+
+    const sources = await desktopCapturer.getSources({...opts, thumbnailSize: {width: 0, height: 0}, fetchWindowIcons: false});
+    const totalPixels = sources.length * width * height;
+    if (totalPixels <= MAX_DESKTOP_SOURCE_THUMBNAIL_TOTAL_PIXELS) {
+        return thumbnailSize;
+    }
+
+    const scale = Math.sqrt(MAX_DESKTOP_SOURCE_THUMBNAIL_TOTAL_PIXELS / totalPixels);
+    return {
+        width: Math.max(1, Math.floor(width * scale)),
+        height: Math.max(1, Math.floor(height * scale)),
+    };
+};
+
 export class CallsWidgetWindow {
     private win?: BrowserWindow;
     private mainView?: MattermostWebContentsView;
@@ -74,6 +128,10 @@ export class CallsWidgetWindow {
         width: 0,
         height: 0,
     };
+
+    // Serializes desktop source captures so the thumbnail pixel budget also holds across concurrent requests.
+    private desktopSourcesCapture: Promise<unknown> = Promise.resolve();
+    private pendingDesktopSourcesCaptures = 0;
 
     constructor() {
         ipcMain.on(CALLS_WIDGET_RESIZE, ipcValidate(
@@ -515,6 +573,8 @@ export class CallsWidgetWindow {
             throw new Error('handleGetDesktopSources: view not found');
         }
 
+        const thumbnailSize = normalizeThumbnailSize(opts?.thumbnailSize);
+
         if (process.platform === 'darwin' && systemPreferences.getMediaAccessStatus('screen') === 'denied') {
             try {
                 // If permissions are missing we reset them so that the system
@@ -540,9 +600,23 @@ export class CallsWidgetWindow {
             throw new Error('permissions denied');
         }
 
+        // Rejected outside the capture error handling below since this is not a screen permissions failure.
+        if (this.pendingDesktopSourcesCaptures >= MAX_PENDING_DESKTOP_SOURCES_CAPTURES) {
+            throw new Error('handleGetDesktopSources: too many pending requests');
+        }
+        this.pendingDesktopSourcesCaptures++;
+
         const screenPermissionsErrArgs = ['screen-permissions', this.callID];
 
-        return desktopCapturer.getSources(opts).then((sources) => {
+        const capture = this.desktopSourcesCapture.then(async () => {
+            const boundedThumbnailSize = await fitThumbnailSizeToBudget(opts, thumbnailSize);
+            const sources = await desktopCapturer.getSources({...opts, thumbnailSize: boundedThumbnailSize});
+
+            // Sources may have appeared since the counting pass.
+            if (sources.length * boundedThumbnailSize.width * boundedThumbnailSize.height > MAX_DESKTOP_SOURCE_THUMBNAIL_TOTAL_PIXELS) {
+                throw new Error('handleGetDesktopSources: thumbnail budget exceeded');
+            }
+
             let hasScreenPermissions = true;
             if (systemPreferences.getMediaAccessStatus) {
                 const screenPermissions = systemPreferences.getMediaAccessStatus('screen');
@@ -566,7 +640,12 @@ export class CallsWidgetWindow {
             });
 
             return message;
-        }).catch((err) => {
+        }).finally(() => {
+            this.pendingDesktopSourcesCaptures--;
+        });
+        this.desktopSourcesCapture = capture.catch(() => {});
+
+        return capture.catch((err) => {
             // Only send calls error if this window has been initialized (i.e. we are in a call).
             // The rest of the logic is shared so that other plugins can request screen sources.
             if (this.callID) {

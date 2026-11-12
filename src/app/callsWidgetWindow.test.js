@@ -1153,6 +1153,213 @@ describe('main/windows/callsWidgetWindow', () => {
                 value: originalPlatform,
             });
         });
+
+        describe('thumbnail size bounds', () => {
+            const MAX_THUMBNAIL_DIMENSION = 4096;
+            const MAX_TOTAL_THUMBNAIL_PIXELS = 4096 * 4096;
+
+            const makeSources = (count) => Array.from({length: count}, (_, i) => ({
+                id: `window${i}`,
+                name: `Window ${i}`,
+                thumbnail: {
+                    toDataURL: jest.fn().mockReturnValue(`data:image/png;base64,${i}`),
+                },
+            }));
+
+            const mockSources = (count) => {
+                jest.spyOn(desktopCapturer, 'getSources').mockImplementation(() => Promise.resolve(makeSources(count)));
+            };
+
+            const lastGetSourcesOpts = () => {
+                expect(desktopCapturer.getSources).toHaveBeenCalled();
+                const calls = desktopCapturer.getSources.mock.calls;
+                return calls[calls.length - 1][0];
+            };
+
+            const expectBoundedThumbnailSize = (thumbnailSize) => {
+                if (thumbnailSize === undefined) {
+                    return;
+                }
+                expect(typeof thumbnailSize).toBe('object');
+                expect(thumbnailSize).not.toBeNull();
+                for (const dim of [thumbnailSize.width, thumbnailSize.height]) {
+                    expect(Number.isInteger(dim)).toBe(true);
+                    expect(dim).toBeGreaterThanOrEqual(0);
+                    expect(dim).toBeLessThanOrEqual(MAX_THUMBNAIL_DIMENSION);
+                }
+            };
+
+            it('should pass the typical first-party request through unchanged', async () => {
+                mockSources(3);
+
+                const sources = await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
+                    types: ['screen', 'window'],
+                    thumbnailSize: {width: 400, height: 400},
+                });
+
+                expect(sources).toHaveLength(3);
+                const opts = lastGetSourcesOpts();
+                expect(opts.types).toEqual(['screen', 'window']);
+                expect(opts.thumbnailSize).toEqual({width: 400, height: 400});
+            });
+
+            it('should still return sources when no thumbnailSize is requested', async () => {
+                mockSources(3);
+
+                const sources = await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
+                    types: ['screen', 'window'],
+                });
+
+                expect(sources).toHaveLength(3);
+                const opts = lastGetSourcesOpts();
+                expect(opts.types).toEqual(['screen', 'window']);
+                expectBoundedThumbnailSize(opts.thumbnailSize);
+            });
+
+            it.each([
+                ['16384x16384', {width: 16384, height: 16384}],
+                ['1e9 width', {width: 1e9, height: 400}],
+                ['1e9 height', {width: 400, height: 1e9}],
+                ['MAX_SAFE_INTEGER', {width: Number.MAX_SAFE_INTEGER, height: Number.MAX_SAFE_INTEGER}],
+            ])('should clamp oversized thumbnail dimensions (%s) before generating thumbnails', async (_, thumbnailSize) => {
+                mockSources(1);
+
+                const sources = await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
+                    types: ['screen'],
+                    thumbnailSize,
+                });
+
+                expect(sources).toHaveLength(1);
+                const opts = lastGetSourcesOpts();
+                expect(opts.thumbnailSize).toBeDefined();
+                expectBoundedThumbnailSize(opts.thumbnailSize);
+            });
+
+            it.each([
+                ['negative', {width: -1, height: -1}],
+                ['fractional', {width: 400.5, height: 1.5}],
+                ['NaN', {width: NaN, height: NaN}],
+                ['Infinity', {width: Infinity, height: Infinity}],
+                ['string', {width: '400', height: '400'}],
+                ['null', {width: null, height: null}],
+            ])('should never pass malformed thumbnail dimensions (%s) to getSources', async (_, thumbnailSize) => {
+                mockSources(1);
+
+                let resolved = false;
+                try {
+                    await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
+                        types: ['screen'],
+                        thumbnailSize,
+                    });
+                    resolved = true;
+                } catch {
+                    // Rejecting the malformed request is an acceptable secure outcome.
+                }
+
+                if (resolved) {
+                    expectBoundedThumbnailSize(lastGetSourcesOpts().thumbnailSize);
+                }
+            });
+
+            it('should cap the total thumbnail pixel budget across all returned sources', async () => {
+                const sourceCount = 50;
+                mockSources(sourceCount);
+
+                const sources = await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
+                    types: ['window'],
+                    thumbnailSize: {width: MAX_THUMBNAIL_DIMENSION, height: MAX_THUMBNAIL_DIMENSION},
+                });
+
+                expect(sources).toHaveLength(sourceCount);
+                const {thumbnailSize} = lastGetSourcesOpts();
+                expectBoundedThumbnailSize(thumbnailSize);
+                expect(thumbnailSize.width).toBeGreaterThan(0);
+                expect(thumbnailSize.height).toBeGreaterThan(0);
+                expect(sourceCount * thumbnailSize.width * thumbnailSize.height).toBeLessThanOrEqual(MAX_TOTAL_THUMBNAIL_PIXELS);
+            });
+
+            it('should cap the thumbnail pixel budget across concurrent requests', async () => {
+                const sourceCount = 4;
+                const requestCount = 10;
+                let inFlightPixels = 0;
+                let maxInFlightPixels = 0;
+
+                // A capture stays in flight until every thumbnail it produced has been encoded.
+                jest.spyOn(desktopCapturer, 'getSources').mockImplementation(async ({thumbnailSize}) => {
+                    const {width, height} = thumbnailSize ?? {width: 150, height: 150};
+                    if (!width || !height) {
+                        return makeSources(sourceCount);
+                    }
+
+                    const batchPixels = sourceCount * width * height;
+                    inFlightPixels += batchPixels;
+                    maxInFlightPixels = Math.max(maxInFlightPixels, inFlightPixels);
+                    let remaining = sourceCount;
+
+                    await new Promise((resolve) => setImmediate(resolve));
+                    return makeSources(sourceCount).map((source) => ({
+                        ...source,
+                        thumbnail: {
+                            toDataURL: () => {
+                                remaining--;
+                                if (remaining === 0) {
+                                    inFlightPixels -= batchPixels;
+                                }
+                                return source.thumbnail.toDataURL();
+                            },
+                        },
+                    }));
+                });
+
+                // Distinct sizes so identical in-flight requests cannot simply be shared.
+                const results = await Promise.allSettled(Array.from({length: requestCount}, (_, i) => {
+                    return callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
+                        types: ['screen', 'window'],
+                        thumbnailSize: {width: MAX_THUMBNAIL_DIMENSION, height: MAX_THUMBNAIL_DIMENSION - i},
+                    });
+                }));
+
+                expect(results.some((result) => result.status === 'fulfilled')).toBe(true);
+                expect(maxInFlightPixels).toBeLessThanOrEqual(MAX_TOTAL_THUMBNAIL_PIXELS);
+            });
+
+            it('should reject extra concurrent requests without reporting a screen permissions error', async () => {
+                mockSources(1);
+
+                const results = await Promise.allSettled(Array.from({length: 5}, () => {
+                    return callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
+                        types: ['screen'],
+                        thumbnailSize: {width: 400, height: 400},
+                    });
+                }));
+
+                const rejected = results.filter((result) => result.status === 'rejected');
+                expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(2);
+                expect(rejected).toHaveLength(3);
+                rejected.forEach((result) => expect(result.reason.message).toContain('too many pending requests'));
+                expect(callsWidgetWindow.win.webContents.send).not.toHaveBeenCalled();
+                expect(views.get('server-1_view-1').sendToRenderer).not.toHaveBeenCalled();
+
+                await expect(callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
+                    types: ['screen'],
+                    thumbnailSize: {width: 400, height: 400},
+                })).resolves.toHaveLength(1);
+            });
+
+            it('should not encode thumbnails when more sources appear after the counting pass', async () => {
+                const captured = makeSources(50);
+                jest.spyOn(desktopCapturer, 'getSources').mockImplementation(({thumbnailSize}) => {
+                    return Promise.resolve(thumbnailSize.width ? captured : makeSources(1));
+                });
+
+                await expect(callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
+                    types: ['window'],
+                    thumbnailSize: {width: MAX_THUMBNAIL_DIMENSION, height: MAX_THUMBNAIL_DIMENSION},
+                })).rejects.toThrow();
+
+                captured.forEach((source) => expect(source.thumbnail.toDataURL).not.toHaveBeenCalled());
+            });
+        });
     });
 
     describe('forwardToMainApp', () => {
