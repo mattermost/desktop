@@ -1202,7 +1202,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 expect(opts.thumbnailSize).toEqual({width: 400, height: 400});
             });
 
-            it('should still return sources when no thumbnailSize is requested', async () => {
+            it('should default to the maximum thumbnail size when no thumbnailSize is requested', async () => {
                 mockSources(3);
 
                 const sources = await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
@@ -1212,7 +1212,7 @@ describe('main/windows/callsWidgetWindow', () => {
                 expect(sources).toHaveLength(3);
                 const opts = lastGetSourcesOpts();
                 expect(opts.types).toEqual(['screen', 'window']);
-                expectBoundedThumbnailSize(opts.thumbnailSize);
+                expect(opts.thumbnailSize).toEqual({width: MAX_THUMBNAIL_DIMENSION, height: MAX_THUMBNAIL_DIMENSION});
             });
 
             it.each([

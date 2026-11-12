@@ -64,9 +64,6 @@ import type {
 
 const log = new Logger('CallsWidgetWindow');
 
-// Electron's default when thumbnailSize is omitted.
-const DEFAULT_THUMBNAIL_SIZE = {width: 150, height: 150};
-
 const normalizeThumbnailDimension = (value: unknown) => {
     if (typeof value !== 'number' || !Number.isFinite(value)) {
         throw new Error('handleGetDesktopSources: invalid thumbnailSize');
@@ -76,7 +73,7 @@ const normalizeThumbnailDimension = (value: unknown) => {
 
 const normalizeThumbnailSize = (thumbnailSize: unknown): Electron.Size => {
     if (thumbnailSize === undefined) {
-        return DEFAULT_THUMBNAIL_SIZE;
+        return {width: MAX_DESKTOP_SOURCE_THUMBNAIL_DIMENSION, height: MAX_DESKTOP_SOURCE_THUMBNAIL_DIMENSION};
     }
     if (typeof thumbnailSize !== 'object' || thumbnailSize === null) {
         throw new Error('handleGetDesktopSources: invalid thumbnailSize');

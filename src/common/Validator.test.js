@@ -482,7 +482,8 @@ describe('common/Validator', () => {
         it.each([
             -1,
             1.5,
-            16384,
+            401,
+            4096,
             Number.MAX_SAFE_INTEGER,
         ])('rejects out-of-range or non-integer thumbnail dimension %p', (dim) => {
             expect(Validator.desktopSourcesOptsSchema.validate(opts({width: dim, height: 400})).error).toBeDefined();
@@ -495,7 +496,8 @@ describe('common/Validator', () => {
         });
 
         it('accepts the maximum thumbnail dimension', () => {
-            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: 4096, height: 4096})).error).toBeUndefined();
+            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: 400, height: 400})).error).toBeUndefined();
+            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: 0, height: 0})).error).toBeUndefined();
         });
 
         it.each([
