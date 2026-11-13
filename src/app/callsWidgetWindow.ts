@@ -34,7 +34,12 @@ import {
 } from 'common/communication';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
-import {CALLS_PLUGIN_ID, MINIMUM_CALLS_WIDGET_HEIGHT, MINIMUM_CALLS_WIDGET_WIDTH} from 'common/utils/constants';
+import {
+    CALLS_PLUGIN_ID,
+    MAX_DESKTOP_SOURCE_THUMBNAIL_DIMENSION,
+    MINIMUM_CALLS_WIDGET_HEIGHT,
+    MINIMUM_CALLS_WIDGET_WIDTH,
+} from 'common/utils/constants';
 import {getFormattedPathName, isCallsPopOutURL, parseURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
 import {desktopSourcesOptsSchema, ipcValidate, joinCallOptsSchema} from 'common/Validator';
@@ -57,6 +62,27 @@ import type {
 } from 'types/calls';
 
 const log = new Logger('CallsWidgetWindow');
+
+const normalizeThumbnailDimension = (value: unknown) => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+        throw new Error('handleGetDesktopSources: invalid thumbnailSize');
+    }
+    return Math.min(Math.max(Math.floor(value), 0), MAX_DESKTOP_SOURCE_THUMBNAIL_DIMENSION);
+};
+
+const normalizeThumbnailSize = (thumbnailSize: unknown): Electron.Size => {
+    if (thumbnailSize === undefined) {
+        return {width: MAX_DESKTOP_SOURCE_THUMBNAIL_DIMENSION, height: MAX_DESKTOP_SOURCE_THUMBNAIL_DIMENSION};
+    }
+    if (typeof thumbnailSize !== 'object' || thumbnailSize === null) {
+        throw new Error('handleGetDesktopSources: invalid thumbnailSize');
+    }
+    const {width, height} = thumbnailSize as Record<string, unknown>;
+    return {
+        width: normalizeThumbnailDimension(width),
+        height: normalizeThumbnailDimension(height),
+    };
+};
 
 export class CallsWidgetWindow {
     private win?: BrowserWindow;
@@ -505,6 +531,8 @@ export class CallsWidgetWindow {
             throw new Error('handleGetDesktopSources: view not found');
         }
 
+        const thumbnailSize = normalizeThumbnailSize(opts?.thumbnailSize);
+
         if (process.platform === 'darwin' && systemPreferences.getMediaAccessStatus('screen') === 'denied') {
             try {
                 // If permissions are missing we reset them so that the system
@@ -532,7 +560,7 @@ export class CallsWidgetWindow {
 
         const screenPermissionsErrArgs = ['screen-permissions', this.callID];
 
-        return desktopCapturer.getSources(opts).then((sources) => {
+        return desktopCapturer.getSources({...opts, thumbnailSize}).then((sources) => {
             let hasScreenPermissions = true;
             if (systemPreferences.getMediaAccessStatus) {
                 const screenPermissions = systemPreferences.getMediaAccessStatus('screen');
