@@ -29,7 +29,6 @@ export const MINIMUM_WINDOW_HEIGHT = 500;
 export const MINIMUM_CALLS_WIDGET_WIDTH = 284;
 export const MINIMUM_CALLS_WIDGET_HEIGHT = 90;
 export const CALLS_PLUGIN_ID = 'com.mattermost.calls';
-export const MAX_DESKTOP_SOURCE_THUMBNAIL_DIMENSION = 400;
 
 export const DOWNLOADS_DROPDOWN_HEIGHT = 360;
 export const DOWNLOADS_DROPDOWN_WIDTH = 280;
