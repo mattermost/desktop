@@ -30,7 +30,26 @@ export const parseURL = (inputURL: string | URL) => {
  * URL form checks
  */
 
-export const isValidURL = (testURL: string) => Boolean(isHttpUri(testURL) || isHttpsUri(testURL)) && Boolean(parseURL(testURL));
+export const isServerHostname = (hostname?: string) => {
+    if (!hostname) {
+        return false;
+    }
+
+    return !hostname.startsWith('.') && !(/[,;*\s]/).test(hostname);
+};
+
+export const isValidURL = (testURL: string) => {
+    if (!(isHttpUri(testURL) || isHttpsUri(testURL))) {
+        return false;
+    }
+
+    const parsedURL = parseURL(testURL);
+    if (!parsedURL) {
+        return false;
+    }
+
+    return isServerHostname(parsedURL.hostname);
+};
 export const isValidURI = (testURL: string) => Boolean(isUri(testURL));
 
 export function isHttpLink(link: string | undefined): link is string {

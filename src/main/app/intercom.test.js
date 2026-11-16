@@ -80,6 +80,35 @@ describe('main/app/intercom', () => {
             handleWelcomeScreenModal();
             expect(ModalManager.addModal).toHaveBeenCalledWith('welcomeScreen', 'mattermost-desktop://renderer/welcomeScreen.html', '/some/preload.js', {prefillURL: undefined}, {}, true);
         });
+
+        // The welcome screen stores a server only when the url has one plain host.
+        // A value with no scheme is checked beside the https form produced when a scheme is added.
+        it.each([
+            {label: 'a comma', url: 'https://a,b.example', outcome: 'omit'},
+            {label: 'a comma and an asterisk', url: 'https://*,*.example', outcome: 'omit'},
+            {label: 'a value without a scheme', url: '*,*.example', outcome: 'omit'},
+            {label: 'another value without a scheme', url: 'a,b.example', outcome: 'omit'},
+            {label: 'only the scheme', url: 'https://', outcome: 'omit'},
+            {label: 'an empty url', url: '', outcome: 'omit'},
+            {label: 'a missing url', url: undefined, outcome: 'omit'},
+            {label: 'only letters and dots', url: 'https://server.example.com', outcome: 'keep'},
+            {label: 'an underscore', url: 'https://internal_host.example', outcome: 'keep'},
+            {label: 'an IPv6 address', url: 'https://[2001:db8::1]/', outcome: 'keep'},
+        ])('should $outcome the server url from the welcome screen for $label', async ({url, outcome}) => {
+            ServerManager.addServer.mockClear();
+            const data = {name: 'server', url};
+            const promise = Promise.resolve(data);
+            ModalManager.addModal.mockReturnValue(promise);
+
+            handleWelcomeScreenModal();
+            await promise;
+
+            if (outcome === 'keep') {
+                expect(ServerManager.addServer).toHaveBeenCalledWith(data, undefined);
+                return;
+            }
+            expect(ServerManager.addServer).not.toHaveBeenCalled();
+        });
     });
 
     describe('handleMainWindowIsShown', () => {

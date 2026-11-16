@@ -13,7 +13,7 @@ import {ModalConstants} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {ping} from 'common/utils/requests';
-import {parseURL} from 'common/utils/url';
+import {isValidURL, parseURL} from 'common/utils/url';
 import NotificationManager from 'main/notifications';
 import {getLocalPreload} from 'main/utils';
 
@@ -103,6 +103,10 @@ export function handleWelcomeScreenModal(prefillURL?: string) {
     const modalPromise = ModalManager.addModal<{prefillURL?: string}, UniqueServer>(ModalConstants.WELCOME_SCREEN_MODAL, html, preload, {prefillURL}, mainWindow, !ServerManager.hasServers());
     if (modalPromise) {
         modalPromise.then(async (data) => {
+            if (!data?.url || !isValidURL(data.url)) {
+                return;
+            }
+
             let initialLoadURL;
             if (prefillURL) {
                 const parsedServerURL = parseURL(data.url);
