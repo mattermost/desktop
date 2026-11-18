@@ -12,6 +12,9 @@ jest.mock('electron', () => {
     mockIpcMain.on = jest.fn();
 
     return {
+        app: {
+            emit: jest.fn(),
+        },
         ipcMain: mockIpcMain,
         WebContentsView: jest.fn().mockImplementation(() => {
             const {EventEmitter} = jest.requireActual('events');
@@ -20,6 +23,7 @@ jest.mock('electron', () => {
             mockWebContents.loadURL = jest.fn();
             mockWebContents.isLoading = jest.fn();
             mockWebContents.isDestroyed = jest.fn(() => false);
+            mockWebContents.close = jest.fn();
 
             return {
                 webContents: mockWebContents,
@@ -30,6 +34,7 @@ jest.mock('electron', () => {
 });
 jest.mock('main/performanceMonitor', () => ({
     registerView: jest.fn(),
+    unregisterView: jest.fn(),
 }));
 jest.mock('main/utils', () => ({
     getLocalPreload: jest.fn(),
@@ -41,6 +46,14 @@ jest.mock('app/mainWindow/mainWindow', () => ({
 }));
 
 describe('main/views/loadingScreen', () => {
+    beforeEach(() => {
+        jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
+    });
+
     describe('show', () => {
         const mainWindow = {
             contentView: {
@@ -144,6 +157,81 @@ describe('main/views/loadingScreen', () => {
 
             // The second fade is only a no-op if the first one advanced out of VISIBLE.
             expect(webContents.send).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('fade fallback', () => {
+        const mainWindow = {
+            contentView: {
+                addChildView: jest.fn(),
+                removeChildView: jest.fn(),
+                on: jest.fn(),
+            },
+            webContents: {
+                id: 123,
+            },
+            isDestroyed: jest.fn(() => false),
+            focus: jest.fn(),
+        };
+        let loadingScreen;
+
+        beforeEach(() => {
+            loadingScreen = new LoadingScreen(mainWindow);
+            loadingScreen.view.webContents.isLoading.mockReturnValue(false);
+            loadingScreen.show();
+        });
+
+        it('should remove the loading screen if the renderer never reports the end of the fade', () => {
+            loadingScreen.fade();
+
+            jest.advanceTimersByTime(4999);
+            expect(mainWindow.contentView.removeChildView).not.toHaveBeenCalled();
+
+            jest.advanceTimersByTime(1);
+            expect(mainWindow.contentView.removeChildView).toHaveBeenCalledWith(loadingScreen.view);
+        });
+
+        it('should not remove the loading screen when it is shown again during the fade', () => {
+            loadingScreen.fade();
+            loadingScreen.show();
+            expect(jest.getTimerCount()).toBe(0);
+
+            jest.advanceTimersByTime(5000);
+
+            expect(mainWindow.contentView.removeChildView).not.toHaveBeenCalled();
+        });
+
+        it('should restart the fallback when a reload fades the loading screen again', () => {
+            loadingScreen.fade();
+            jest.advanceTimersByTime(2000);
+            loadingScreen.show();
+            loadingScreen.fade();
+
+            jest.advanceTimersByTime(4999);
+            expect(mainWindow.contentView.removeChildView).not.toHaveBeenCalled();
+
+            jest.advanceTimersByTime(1);
+            expect(mainWindow.contentView.removeChildView).toHaveBeenCalledTimes(1);
+        });
+
+        it('should cancel the fallback when the renderer reports the end of the fade', () => {
+            loadingScreen.fade();
+            loadingScreen.handleAnimationFinished();
+            expect(jest.getTimerCount()).toBe(0);
+
+            jest.advanceTimersByTime(5000);
+
+            expect(mainWindow.contentView.removeChildView).toHaveBeenCalledTimes(1);
+        });
+
+        it('should not remove the loading screen after it has been destroyed', () => {
+            loadingScreen.fade();
+            loadingScreen.destroy();
+            expect(jest.getTimerCount()).toBe(0);
+
+            jest.advanceTimersByTime(5000);
+
+            expect(mainWindow.contentView.removeChildView).not.toHaveBeenCalled();
         });
     });
 });
