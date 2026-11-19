@@ -88,7 +88,7 @@ reviews:
         narrowed parameter types, changed return types) since older web app versions still
         call them. `api-types/lib/` is build output.
 
-    - path: "src/{common/config,common/Validator.ts,types/config.ts}"
+    - path: "src/{common/config/**,common/Validator.ts,types/config.ts}"
       instructions: |
         - A new config property needs a default in `defaultPreferences.ts` and a Joi rule in
           `src/common/Validator.ts`. Flag if either is missing.
