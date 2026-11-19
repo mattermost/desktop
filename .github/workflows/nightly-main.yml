@@ -137,6 +137,12 @@ jobs:
         uses: ./.github/actions/test
       - name: nightly/package
         run: npm run package:mas
+      - name: nightly/setup-ruby
+        uses: ruby/setup-ruby@f9c4492e86def3e644ab32a0ef185eda5b0c20d0 # v1.342.0
+        with:
+          ruby-version: "3.3.14"
+      - name: nightly/install-fastlane
+        run: gem install fastlane -v 2.241.2 --no-document
       - name: nightly/publish
         run: fastlane publish_test path:"$(find . -name \*.pkg -print -quit)"
 
