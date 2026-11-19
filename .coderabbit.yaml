@@ -1,0 +1,171 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+#
+# CodeRabbit configuration for mattermost/desktop
+
+inheritance: true
+
+reviews:
+  # --- What to review ----------------------------------------------------------
+  path_filters:
+    - "!api-types/lib/**"
+    - "!NOTICE.txt"
+
+  # --- Repository context the reviewer was missing -----------------------------
+  path_instructions:
+    - path: "**/*"
+      instructions: |
+        Review scope rules for this repository:
+        - Only raise issues introduced or made worse by this PR's diff. Code that predates
+          the PR is out of scope; if it is truly severe, mention it once in the summary,
+          not as an inline or outside-diff finding.
+        - Do not re-raise a finding the author has answered with a reason. Accept the
+          reason unless it is factually wrong, and if so say exactly why with a file:line.
+        - On incremental reviews, comment only on lines changed since the last review.
+          Do not introduce new findings on unchanged lines of earlier commits.
+        - Before claiming a behavior (ordering, error propagation, IPC flow, event
+          emission), trace the callee and its listeners.
+        - Prefer consistency with existing patterns in the same module over a "safer"
+          one-off. Do not suggest try/catch, extra validation, or defensive checks that
+          the equivalent existing code paths do not have.
+        - Severity: Major means a user-visible bug, data loss, security issue, or a
+          crash/hang. Edge cases with no realistic trigger are Minor at most.
+        - Post a Minor finding only if it is a defect someone would hit: wrong behavior,
+          a security or privacy gap, data loss, a crash or hang, a realistic race, a flaky
+          or falsely passing test, a docs command or step that fails as written, a wrong
+          fact, or a control unusable by keyboard or screen reader.
+        - Do not post: typos, grammar, or wording; requests to qualify accurate statements;
+          formatting, import order, or type errors (ESLint, `check-types`, and the
+          `i18n-extract` diff on `i18n/en.json` all run in CI); extra test assertions
+          where no gap lets a bug pass; defensive checks for inputs with no realistic
+          trigger; log, error-message, or comment polish; refactors for consistency.
+
+    - path: "src/**/*.{ts,tsx,js}"
+      instructions: |
+        - The app ships on Windows, macOS (DMG and Mac App Store), and Linux. Flag code that
+          only works on one platform when it is not guarded by `process.platform` or the
+          `__IS_MAC_APP_STORE__` compile-time constant. Do not flag the guards themselves.
+        - Compile-time globals (`__IS_MAC_APP_STORE__`, `__IS_NIGHTLY_BUILD__`,
+          `__HASH_VERSION__`, etc.) are injected by webpack `DefinePlugin`; they are not
+          undefined variables.
+        - Most main-process modules are intentional singletons (export the class for tests,
+          default-export one instance). Do not suggest dependency injection or factories.
+        - `src/app/views/webContentsManager.ts` must never import `TabManager` or
+          `PopoutManager` (circular dependency). Flag new imports that break this.
+
+    - path: "src/{main,app}/**/*.ts"
+      instructions: |
+        Security-sensitive areas. Treat regressions here as Critical:
+        - `ipcMain.on`/`ipcMain.handle` registrations whose handler reads arguments that can
+          originate from a renderer or server view must be wrapped in `ipcValidate` from
+          `common/Validator`. Flag new or changed handlers that skip it. Handlers whose
+          arguments are main-process-internal do not need it.
+        - `webPreferences` changes that disable `contextIsolation` or `sandbox`, enable
+          `nodeIntegration`, or turn off `webSecurity`.
+        - Navigation guards (`will-navigate`, `did-start-navigation`,
+          `setWindowOpenHandler`) in `src/app/views/webContentEvents.ts`: flag changes that
+          let a non-configured origin load inside the app instead of the external browser.
+        - Certificate, permission, and pre-auth decisions in `src/main/security/` must stay
+          scoped per origin.
+        - Do not flag premature optimizations unless the code runs per message, per
+          notification, or on a timer across all views.
+
+    - path: "src/app/preload/**"
+      instructions: |
+        `externalAPI.ts` (`window.desktopAPI`) is exposed to remote Mattermost server
+        content and is a trust boundary; `internalAPI.js` (`window.desktop`) is only for
+        internal `mattermost-desktop://` views.
+        - Flag exposing `ipcRenderer`, Node/Electron objects, or generic "send any channel"
+          helpers through `contextBridge`.
+        - Flag internal-only capabilities (config writes, server management, file system
+          access) being added to `externalAPI.ts`.
+        - A new or changed method in `externalAPI.ts` must have a matching change to the
+          `DesktopAPI` interface in `api-types/index.ts`.
+
+    - path: "api-types/**"
+      instructions: |
+        `@mattermost/desktop-api` is published to npm and consumed by the Mattermost web
+        app. Flag breaking changes to existing `DesktopAPI` members (removed methods,
+        narrowed parameter types, changed return types) since older web app versions still
+        call them. `api-types/lib/` is build output.
+
+    - path: "src/{common/config,common/Validator.ts,types/config.ts}"
+      instructions: |
+        - A new config property needs a default in `defaultPreferences.ts` and a Joi rule in
+          `src/common/Validator.ts`. Flag if either is missing.
+        - Changes to persisted config shape must not break existing user `config.json`
+          files; older versions are migrated by `upgradePreferences.ts` and
+          `migrationPreferences.ts`.
+        - Policy-managed keys read in `policyConfigLoader.ts` must match the Windows GPO
+          templates (`resources/windows/gpo/`) and the macOS MDM example
+          (`resources/mac/mdm/`). Flag a key added or renamed in one place but not the others.
+
+    - path: "src/renderer/**/*.{ts,tsx}"
+      instructions: |
+        Internal React UI. It talks to the main process only through `window.desktop`;
+        flag direct imports of main-process modules that rely on Electron or Node APIs.
+        User-facing strings use react-intl with ids extracted to `i18n/en.json` (CI checks
+        this). Do not comment on styling or SCSS.
+
+    - path: "src/**/*.test.{js,ts}"
+      instructions: |
+        Only flag tests that can pass while the code is broken, are flaky (timing, shared
+        module state, ordering), or leak timers/listeners. Singletons are mocked with
+        `jest.mock()` using `__esModule: true` + `default`; that is the expected pattern.
+        Do not suggest extra assertions, table-driven refactors, or naming changes.
+
+    - path: "e2e/**"
+      instructions: |
+        Follow `e2e/AGENTS.md`. Flag:
+        - fixed sleeps (`setTimeout`, `waitForTimeout`) instead of selector waits or
+          `expect(...).toContainText(..., {timeout})` polling
+        - using `app.windows()` to find server views; they are `WebContentsView`s reached
+          through `buildServerMap()` / `global.__e2eTestRefs`
+        - keyboard shortcuts for menu actions instead of main-process invocation
+        - re-implementing launch/login logic the fixtures in `e2e/fixtures/index.ts` provide
+        - `playwright` and `@playwright/test` versions drifting apart
+        - tests that can pass without exercising the feature
+        Platform skips and guards are intentional. Do not comment on formatting.
+
+    - path: "i18n/*.json"
+      instructions: |
+        Only `i18n/en.json` is edited in PRs. Every other locale file is updated by Weblate
+        translation PRs; do not review translation wording. Flag only invalid JSON or ICU
+        placeholders (`{name}`, plural/select syntax) that differ from `en.json`.
+
+    - path: "patches/**"
+      instructions: |
+        `patch-package` patches applied on `postinstall`. Flag a patch whose filename version
+        does not match the dependency version in `package.json`, or a diff that changes more
+        than the stated fix needs. Do not review the upstream library's code style.
+
+    - path: "{package.json,webpack.config.*.js,electron-builder.ts}"
+      instructions: |
+        - A new native Node module must be a webpack external in `webpack.config.main.js` and
+          listed in `electron-builder.ts` (`files` and `asarUnpack`). Flag if either is missing.
+        - A new `DefinePlugin` constant in `webpack.config.base.js` must also be added to the
+          jest `globals` in `package.json`.
+        - Dependency-bump PRs: review only for breaking API changes and known CVEs. Electron
+          and Playwright upgrades are infrastructure changes; flag missing compatibility
+          changes, not upstream design.
+
+    - path: "resources/**"
+      instructions: |
+        - `resources/mac/*.plist` are code-signing entitlements. Flag any added entitlement
+          and ask for the reason; Mac App Store (`*.mas.*`) entitlements must stay sandboxed.
+        - GPO templates (`mattermost.admx` and `en-US/mattermost.adml`) must stay in sync with
+          each other and with `src/common/config/policyConfigLoader.ts`.
+
+    - path: "scripts/**"
+      instructions: |
+        Build and release tooling, not shipped to users, except `afterpack.js`, which flips
+        Electron fuses. Flag any fuse change that re-enables `RunAsNode`, Node CLI inspect
+        arguments, or file protocol privileges. Elsewhere flag only correctness bugs that
+        would produce a wrong build or release; skip robustness polish.
+
+    - path: ".github/**"
+      instructions: |
+        CI and automation code. Flag only issues that would break the workflow, produce a
+        wrong pass/fail result, or expose secrets/tokens (injection via untrusted
+        `github.event` fields, over-broad permissions, signing secrets reachable from
+        `pull_request_target` or fork PRs). Do not review edge-case text handling in helper
+        scripts beyond that.
