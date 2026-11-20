@@ -102,6 +102,14 @@ export const UPDATE_PATHS = 'update-paths';
 export const SET_URL_FOR_URL_VIEW = 'set-url-for-url-view';
 export const UPDATE_URL_VIEW_WIDTH = 'update-url-view-width';
 
+export const FIND_BAR_OPEN = 'find-bar-open';
+export const FIND_BAR_FOCUS = 'find-bar-focus';
+export const FIND_BAR_RESULT = 'find-bar-result';
+export const FIND_IN_PAGE = 'find-in-page';
+export const FIND_IN_PAGE_NEXT = 'find-in-page-next';
+export const FIND_IN_PAGE_PREV = 'find-in-page-prev';
+export const FIND_BAR_CLOSE = 'find-bar-close';
+
 export const OPEN_SERVER_EXTERNALLY = 'open-server-externally';
 export const OPEN_SERVER_UPGRADE_LINK = 'open-server-upgrade-link';
 export const OPEN_CHANGELOG_LINK = 'open-changelog-link';
