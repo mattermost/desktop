@@ -5,6 +5,14 @@
 inheritance: true
 
 reviews:
+  labeling_instructions:
+    - label: "3: Security Review"
+      instructions: |
+        Suggest when the PR changes `src/app/preload/externalAPI.ts`, adds or changes an
+        `ipcMain` handler for a channel sent from it, or changes `webPreferences`, navigation
+        guards in `src/app/views/webContentEvents.ts`, `src/main/security/`, Electron fuses in
+        `scripts/afterpack.js`, or macOS entitlements in `resources/mac/`.
+
   # --- What to review ----------------------------------------------------------
   path_filters:
     - "!api-types/lib/**"
@@ -54,22 +62,31 @@ reviews:
 
     - path: "src/{main,app}/**/*.ts"
       instructions: |
-        Security-sensitive areas. Treat regressions here as Critical:
-        - `ipcMain.on`/`ipcMain.handle` handlers for channels sent from `externalAPI.ts`
-          (server views) that read caller-supplied arguments must be wrapped in
-          `ipcValidate` from `common/Validator`. Flag new or changed ones that skip it.
-          Handlers used only by internal views through `internalAPI.js`, or whose arguments
-          are fixed by the preload or main process, are trusted; do not flag a missing
-          wrapper on them.
+        Most of this code is app plumbing (windows, tabs, menus, downloads, modals); use the
+        normal severity rules. Only these specific changes are Critical:
+        - A handler for a channel sent from `externalAPI.ts` (server views) that reads
+          caller-supplied arguments without being wrapped in `ipcValidate` from
+          `common/Validator`. Handlers used only by internal views through `internalAPI.js`,
+          or whose arguments are fixed by the preload or main process, are trusted; do not
+          flag a missing wrapper on them.
         - `webPreferences` changes that disable `contextIsolation` or `sandbox`, enable
           `nodeIntegration`, or turn off `webSecurity`.
-        - Navigation guards (`will-navigate`, `did-start-navigation`,
-          `setWindowOpenHandler`) in `src/app/views/webContentEvents.ts`: flag changes that
-          let a non-configured origin load inside the app instead of the external browser.
-        - Certificate, permission, and pre-auth decisions in `src/main/security/` must stay
-          scoped per origin.
-        - Do not flag premature optimizations unless the code runs per message, per
-          notification, or on a timer across all views.
+        - In `src/main/app/initialize.ts`, changes to the app-wide security hooks:
+          `certificate-error`, the `mattermost-desktop` protocol handler, pre-auth header
+          injection in `webRequest`, and `setPermissionRequestHandler`.
+        Do not flag premature optimizations unless the code runs per message, per
+        notification, or on a timer across all views.
+
+    - path: "src/{app/views/webContentEvents.ts,app/navigationManager.ts,app/views/pluginsPopUps.ts,main/security/**,main/secureStorage.ts}"
+      instructions: |
+        Navigation and authentication code. Treat security regressions here as Critical:
+        - Navigation guards (`will-navigate`, `did-start-navigation`, `setWindowOpenHandler`)
+          and deep links: flag changes that let a non-configured origin load inside the app
+          instead of the external browser, or open a new window without the existing checks.
+        - Certificate, permission, pre-auth, and basic-auth decisions must stay scoped per
+          server origin; flag any decision that could carry over to another origin.
+        - Secrets in `secureStorage.ts` and pre-auth secrets must stay per server and must
+          never be logged or sent to a renderer that doesn't own them.
 
     - path: "src/app/preload/**"
       instructions: |
@@ -82,6 +99,32 @@ reviews:
           access) being added to `externalAPI.ts`.
         - A new or changed method in `externalAPI.ts` must have a matching change to the
           `DesktopAPI` interface in `api-types/index.ts`.
+
+    - path: "src/app/preload/externalAPI.ts"
+      instructions: |
+        Security-critical. This preload runs in every remote Mattermost server page, and any
+        script on that server (including plugins and injected content) can call every
+        `desktopAPI` member. Review every change here, however small, and treat regressions
+        as Critical. For each new or changed `desktopAPI` method:
+        - Find the `ipcMain` handler for its channel and confirm it wraps the handler in
+          `ipcValidate`, with every argument field the handler reads type-checked.
+        - Trace what the handler does with those arguments: opening URLs or files,
+          navigating, changing config or servers, reading secure storage, creating or
+          focusing windows. Flag any path that lets one server's page affect another server,
+          the app's internal views, or the OS beyond the method's stated purpose.
+        - If the handler should only serve one kind of view (Calls widget, popout parent),
+          confirm it checks `event.sender.id` the way existing handlers do.
+        - Return values and listener payloads must be plain data. Flag returning or
+          forwarding Electron/Node objects, the IPC event, other servers' data, or secrets.
+        - Listeners must use `createListener`, which strips the `IpcRendererEvent` and returns
+          an unsubscribe function.
+        - Code outside `desktopAPI` (window/document listeners, `ipcRenderer.on` blocks) also
+          runs in every server page. Flag new code there that sends page-controlled data to
+          the main process.
+        - Test-only exposure such as `testHelper` must stay behind
+          `process.env.NODE_ENV === 'test'`.
+        When this file changes, end the review summary with: "This PR changes the external
+        Desktop API (`externalAPI.ts`); request a security review before merge."
 
     - path: "api-types/**"
       instructions: |
