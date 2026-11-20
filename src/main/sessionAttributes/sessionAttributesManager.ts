@@ -6,9 +6,11 @@ import {ipcMain} from 'electron';
 
 import WebContentsManager from 'app/views/webContentsManager';
 import {
+    GET_SESSION_ATTRIBUTES,
     SERVER_PRE_AUTH_SECRET_CHANGED,
     SERVER_REMOVED,
     SERVER_URL_CHANGED,
+    SESSION_ATTRIBUTES_FIELD_UPDATED,
     SESSION_ATTRIBUTES_MANIFEST_INVALIDATED,
     SESSION_ATTRIBUTES_RESEND_REQUESTED,
 } from 'common/communication';
@@ -18,11 +20,12 @@ import {Logger} from 'common/log';
 import type {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
+import {ipcValidate, sessionAttributeFieldSchema} from 'common/Validator';
 import {updateServerInfos} from 'main/app/utils';
 
-import type {SAField} from 'types/sessionAttributes';
+import type {SAField, SAPropertyField} from 'types/sessionAttributes';
 
-import SessionAttributeCollector from './collector';
+import getSessionAttributeCollector from './collector';
 
 const log = new Logger('SessionAttributesManager');
 
@@ -36,6 +39,8 @@ export class SessionAttributesManager {
 
         ipcMain.on(SESSION_ATTRIBUTES_MANIFEST_INVALIDATED, this.handleManifestInvalidated);
         ipcMain.on(SESSION_ATTRIBUTES_RESEND_REQUESTED, this.handleResendRequested);
+        ipcMain.on(SESSION_ATTRIBUTES_FIELD_UPDATED, ipcValidate(this.handleFieldUpdated, [sessionAttributeFieldSchema]));
+        ipcMain.handle(GET_SESSION_ATTRIBUTES, this.getCollectedAttributes);
     }
 
     getHeaderForRequest = (
@@ -58,6 +63,10 @@ export class SessionAttributesManager {
 
         const server = ServerManager.lookupServerByURL(requestURL);
         if (!server) {
+            return undefined;
+        }
+
+        if (requestURL.indexOf('/api/v4/') === -1) {
             return undefined;
         }
 
@@ -101,6 +110,21 @@ export class SessionAttributesManager {
         return Buffer.from(JSON.stringify(payload)).toString('base64');
     };
 
+    getCollectedAttributes = () => {
+        return {
+            client_ip_address: this.collectAttribute('client_ip_address'),
+            network_interface_type: this.collectAttribute('network_interface_type'),
+            vpn_active: this.collectAttribute('vpn_active'),
+            ssid: this.collectAttribute('ssid'),
+            hardware_id: this.collectAttribute('hardware_id'),
+            mdm_enrolled: this.collectAttribute('mdm_enrolled'),
+            os_platform: this.collectAttribute('os_platform'),
+            os_version: this.collectAttribute('os_version'),
+            client_version: this.collectAttribute('client_version'),
+            client_fqdn: this.collectAttribute('client_fqdn'),
+        };
+    };
+
     injectHeader = (
         details: OnBeforeSendHeadersListenerDetails,
     ): Record<string, string | string[]> => {
@@ -113,31 +137,32 @@ export class SessionAttributesManager {
         };
     };
 
-    private collectAttribute = (name: string, serverId: string) => {
+    private collectAttribute = (name: string, serverId?: string) => {
         try {
+            const collector = getSessionAttributeCollector();
             switch (name) {
             case 'client_ip_address':
-                return SessionAttributeCollector.getClientIPAddress();
+                return collector.getClientIPAddress();
             case 'network_interface_type':
-                return SessionAttributeCollector.getNetworkInterfaceType();
+                return collector.getNetworkInterfaceType();
             case 'vpn_active':
-                return SessionAttributeCollector.getVPNActive();
+                return collector.getVPNActive();
             case 'ssid':
-                return SessionAttributeCollector.getSSID();
+                return collector.getSSID();
             case 'hardware_id':
-                return SessionAttributeCollector.getHardwareId();
+                return collector.getHardwareId();
             case 'mdm_enrolled':
-                return SessionAttributeCollector.getMDMEnrolled();
+                return collector.getMDMEnrolled();
             case 'os_platform':
-                return SessionAttributeCollector.getOSPlatform();
+                return collector.getOSPlatform();
             case 'os_version':
-                return SessionAttributeCollector.getOSVersion();
+                return collector.getOSVersion();
             case 'client_version':
-                return SessionAttributeCollector.getClientVersion();
+                return collector.getClientVersion();
             case 'server_fqdn':
-                return SessionAttributeCollector.getServerFQDN(serverId);
+                return collector.getServerFQDN(serverId);
             case 'client_fqdn':
-                return SessionAttributeCollector.getClientFQDN();
+                return collector.getClientFQDN();
             default:
                 return '';
             }
@@ -196,6 +221,38 @@ export class SessionAttributesManager {
             return;
         }
         this.lastSentAt.delete(serverId);
+    };
+
+    private handleFieldUpdated = (event: IpcMainEvent, field: SAPropertyField) => {
+        log.debug('handleFieldUpdated', {name: field.name});
+
+        const serverId = WebContentsManager.getViewByWebContentsId(event.sender.id)?.serverId;
+        if (!serverId) {
+            return;
+        }
+
+        const remoteInfo = ServerManager.getRemoteInfo(serverId);
+        if (!remoteInfo || !remoteInfo.sessionAttributesManifest) {
+            return;
+        }
+
+        const manifest = remoteInfo.sessionAttributesManifest.filter((f) => f.name !== field.name);
+
+        // Only track enabled fields that target the desktop; disabled fields are dropped entirely
+        if (field.attrs.enabled && field.attrs.platforms.includes('desktop')) {
+            manifest.push({
+                name: field.name,
+                type: field.type,
+                ttl_seconds: field.attrs.ttl_seconds,
+                grace_period_seconds: field.attrs.grace_period_seconds,
+                platforms: field.attrs.platforms,
+            });
+        }
+
+        ServerManager.updateRemoteInfo(serverId, {...remoteInfo, sessionAttributesManifest: manifest});
+
+        // Force the changed field to be re-sent on the next request
+        this.lastSentAt.get(serverId)?.delete(field.name);
     };
 }
 

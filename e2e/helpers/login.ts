@@ -1,58 +1,167 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {expect} from '@playwright/test';
+
+import {isTransientEvaluateError} from './testRefs';
+import {CHANNEL_HEADER_SELECTORS, POST_TEXTBOX_SELECTOR} from './rendererUtils';
+import {reloadServerView} from './serverContext';
 import type {ServerView} from './serverView';
 
-async function waitForAppShell(win: ServerView, timeout: number) {
-    const results = await Promise.allSettled([
-        win.waitForSelector('#post_textbox', {timeout}),
-        win.waitForSelector('#channelHeaderTitle', {timeout}),
-        win.waitForSelector('input.search-bar.form-control', {timeout}),
-    ]);
+async function isMattermostServerUrl(win: ServerView): Promise<boolean> {
+    const url = await win.url().catch(() => '');
+    return url.startsWith('http://') || url.startsWith('https://');
+}
 
-    return results.some((result) => result.status === 'fulfilled');
+async function runRendererProbe(win: ServerView, body: string): Promise<boolean> {
+    try {
+        return await win.runInRenderer<boolean>(body);
+    } catch (error) {
+        if (isTransientEvaluateError(error)) {
+            return false;
+        }
+        throw error;
+    }
+}
+
+async function hasAppShell(win: ServerView): Promise<boolean> {
+    if (!(await isMattermostServerUrl(win))) {
+        return false;
+    }
+
+    return runRendererProbe(win, `
+        return Boolean(
+            document.querySelector(${JSON.stringify(POST_TEXTBOX_SELECTOR)})
+            || document.querySelector(${JSON.stringify(CHANNEL_HEADER_SELECTORS)})
+            || document.querySelector('input.search-bar.form-control'),
+        );
+    `);
+}
+
+async function hasLoginForm(win: ServerView): Promise<boolean> {
+    if (!(await isMattermostServerUrl(win))) {
+        return false;
+    }
+
+    return runRendererProbe(win, `
+        return Boolean(document.querySelector('#input_loginId'));
+    `);
+}
+
+async function getLoggedInUsername(win: ServerView): Promise<string | null> {
+    if (!(await isMattermostServerUrl(win))) {
+        return null;
+    }
+
+    try {
+        return await win.runInRenderer<string | null>(`
+            try {
+                const response = await fetch('/api/v4/users/me', {credentials: 'same-origin'});
+                if (!response.ok) {
+                    return null;
+                }
+                const me = await response.json();
+                return typeof me?.username === 'string' ? me.username : null;
+            } catch {
+                return null;
+            }
+        `);
+    } catch (error) {
+        if (isTransientEvaluateError(error)) {
+            return null;
+        }
+        throw error;
+    }
+}
+
+/**
+ * Log out the current Mattermost session and wait for the login form.
+ * Safe to call when no session is active — the logout fetch will fail silently.
+ * A loading hex shell still has cookies, so logout must not wait for the app shell.
+ */
+export async function logoutFromMattermost(win: ServerView): Promise<void> {
+    if (!(await isMattermostServerUrl(win))) {
+        return;
+    }
+    if (await hasLoginForm(win).catch(() => false)) {
+        return;
+    }
+
+    // Fire logout and reload. Page navigation interrupts runInRenderer so we
+    // don't await it — we just wait for the login form to appear instead.
+    win.runInRenderer<void>(`
+        fetch('/api/v4/users/logout', {method: 'POST'})
+            .catch(() => {})
+            .then(() => window.location.reload());
+    `).catch(() => {});
+
+    await win.waitForSelector('#input_loginId', {timeout: 20_000});
 }
 
 /**
  * Log in to a Mattermost server in the given window/page.
- * Requires MM_TEST_USER_NAME and MM_TEST_PASSWORD env vars.
- * Requires MM_TEST_SERVER_URL to be set in the app config (use demoMattermostConfig).
+ * Callers must ensure the server WebContentsView is loaded first
+ * (switch server, prepareMattermostServerView, waitForMattermostShell).
+ *
+ * Pass `credentials` to log in as a specific user instead of the default
+ * MM_TEST_USER_NAME / MM_TEST_PASSWORD env vars.
  */
-export async function loginToMattermost(win: ServerView): Promise<void> {
-    const username = process.env.MM_TEST_USER_NAME;
-    const password = process.env.MM_TEST_PASSWORD;
+export async function loginToMattermost(
+    win: ServerView,
+    credentials?: {username: string; password: string},
+): Promise<void> {
+    const username = credentials?.username ?? process.env.MM_TEST_USER_NAME;
+    const password = credentials?.password ?? process.env.MM_TEST_PASSWORD;
 
     if (!username || !password) {
         throw new Error('MM_TEST_USER_NAME and MM_TEST_PASSWORD must be set for tests requiring login');
     }
 
-    const timeout = process.platform === 'win32' ? 60_000 : 30_000;
-
+    const timeout = process.platform === 'win32' ? 60_000 : 45_000;
     const loginSelector = '#input_loginId';
     const passwordSelector = '#input_password-input, input[type="password"]';
-    const submitSelector = 'button[type="submit"]';
+    const submitSelector = '#saveSetting, button[type="submit"]';
+    const pollStart = Date.now();
+    const reloadAt = pollStart + Math.min(timeout / 2, 15_000);
+    let reloaded = false;
 
-    let onLoginPage = false;
-    try {
-        await win.waitForSelector(loginSelector, {timeout});
-        onLoginPage = true;
-    } catch {
-        if (await waitForAppShell(win, 5_000)) {
+    // Cold cloud hosts often paint a blank hex shell; one mid-wait reload unsticks it.
+    await expect.poll(async () => {
+        if (await hasAppShell(win)) {
+            return 'logged-in';
+        }
+        if (await hasLoginForm(win)) {
+            return 'login-form';
+        }
+        if (!reloaded && Date.now() >= reloadAt) {
+            reloaded = true;
+            await reloadServerView(win.app, win.webContentsId).catch(() => undefined);
+        }
+        return 'loading';
+    }, {
+        timeout,
+        intervals: [500, 1000, 2000],
+        message: `Mattermost login form or app shell must appear (URL: ${await win.url()})`,
+    }).not.toBe('loading');
+
+    if (await hasAppShell(win)) {
+        // Default callers keep the existing session. Explicit credentials (Calls
+        // test users) must match /users/me — otherwise the admin shell is reused
+        // and that user's private e2ec channel never appears in the LHS.
+        if (!credentials || (await getLoggedInUsername(win) === username)) {
             return;
         }
-    }
-
-    if (!onLoginPage) {
-        throw new Error(`loginToMattermost: login form was not found and the app shell never appeared. Current URL: ${await win.url()}`);
+        await logoutFromMattermost(win);
     }
 
     await win.fill(loginSelector, username);
     await win.fill(passwordSelector, password);
     await win.click(submitSelector);
 
-    // Wait for login to complete: URL leaves /login
     await win.waitForURL((url) => !url.pathname.startsWith('/login'), {timeout});
-    if (!await waitForAppShell(win, timeout)) {
-        throw new Error(`loginToMattermost: login succeeded but the app shell never became ready. Current URL: ${await win.url()}`);
-    }
+    await expect.poll(async () => hasAppShell(win), {
+        timeout,
+        intervals: [500, 1000, 2000],
+        message: `Mattermost app shell must appear after login (URL: ${await win.url()})`,
+    }).toBe(true);
 }

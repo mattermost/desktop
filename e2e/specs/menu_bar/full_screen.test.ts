@@ -10,10 +10,6 @@ test.describe('menu/view', () => {
     test.use({appConfig: demoMattermostConfig});
 
     test('MM-T816 Toggle Full Screen in the Menu Bar', {tag: ['@P2', '@win32']}, async ({electronApp}) => {
-        if (process.platform !== 'win32') {
-            test.skip(true, 'Windows only');
-            return;
-        }
         if (!process.env.MM_TEST_SERVER_URL) {
             test.skip(true, 'MM_TEST_SERVER_URL required');
             return;

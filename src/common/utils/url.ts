@@ -4,7 +4,7 @@
 import {isHttpsUri, isHttpUri, isUri} from 'valid-url';
 
 import buildConfig from 'common/config/buildConfig';
-import {MAX_URL_LENGTH} from 'common/constants';
+import {MAX_URL_LENGTH, WEBSOCKET_PROTOCOL_EQUIVALENTS} from 'common/constants';
 import {nonTeamUrlPaths, CALLS_PLUGIN_ID} from 'common/utils/constants';
 
 export const getFormattedPathName = (pn: string) => (pn.endsWith('/') ? pn : `${pn}/`);
@@ -30,7 +30,26 @@ export const parseURL = (inputURL: string | URL) => {
  * URL form checks
  */
 
-export const isValidURL = (testURL: string) => Boolean(isHttpUri(testURL) || isHttpsUri(testURL)) && Boolean(parseURL(testURL));
+export const isServerHostname = (hostname?: string) => {
+    if (!hostname) {
+        return false;
+    }
+
+    return !hostname.startsWith('.') && !(/[,;*\s]/).test(hostname);
+};
+
+export const isValidURL = (testURL: string) => {
+    if (!(isHttpUri(testURL) || isHttpsUri(testURL))) {
+        return false;
+    }
+
+    const parsedURL = parseURL(testURL);
+    if (!parsedURL) {
+        return false;
+    }
+
+    return isServerHostname(parsedURL.hostname);
+};
 export const isValidURI = (testURL: string) => Boolean(isUri(testURL));
 
 export function isHttpLink(link: string | undefined): link is string {
@@ -49,8 +68,12 @@ export function isHttpLink(link: string | undefined): link is string {
 
 // isInternalURL determines if the target url is internal to the application.
 // - currentURL is the current url inside the webview
-export const isInternalURL = (targetURL: URL, currentURL: URL, ignoreScheme?: boolean) => {
+export const isInternalURL = (targetURL: URL, currentURL: URL, ignoreScheme = false, allowWebSocketProtocol = false) => {
     if (targetURL.host !== currentURL.host) {
+        return false;
+    }
+
+    if (!ignoreScheme && targetURL.protocol !== currentURL.protocol && (!allowWebSocketProtocol || WEBSOCKET_PROTOCOL_EQUIVALENTS[targetURL.protocol] !== currentURL.protocol)) {
         return false;
     }
 

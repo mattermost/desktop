@@ -6,11 +6,14 @@ import {clipboard, Menu} from 'electron';
 
 import WebContentsManager from 'app/views/webContentsManager';
 import PopoutManager from 'app/windows/popoutManager';
+import {Logger} from 'common/log';
 import {ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import {localizeMessage} from 'main/i18nManager';
 
 import TabManager from './tabs/tabManager';
+
+const log = new Logger('PopoutMenu');
 
 function createTemplate(viewId: string) {
     const view = ViewManager.getView(viewId);
@@ -29,7 +32,9 @@ function createTemplate(viewId: string) {
                     return;
                 }
                 const url = webContentsView.getWebContentsView().webContents.getURL();
-                clipboard.writeText(url);
+                clipboard.writeText(url).catch((err) => {
+                    log.error('Failed to copy the link', {err});
+                });
             },
         },
     ];

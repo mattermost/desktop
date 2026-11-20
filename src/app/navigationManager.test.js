@@ -1,16 +1,16 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {dialog} from 'electron';
-
 import CallsWidgetWindow from 'app/callsWidgetWindow';
 import MainWindow from 'app/mainWindow/mainWindow';
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import ServerHub from 'app/serverHub';
 import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
 import PopoutManager from 'app/windows/popoutManager';
 import {BROWSER_HISTORY_PUSH} from 'common/communication';
+import Config from 'common/config';
 import ServerManager from 'common/servers/serverManager';
 import Utils from 'common/utils/util';
 import {ViewType} from 'common/views/MattermostView';
@@ -20,12 +20,16 @@ import {handleWelcomeScreenModal} from 'main/app/intercom';
 import {NavigationManager} from './navigationManager';
 
 jest.mock('electron', () => ({
-    dialog: {
-        showErrorBox: jest.fn(),
-    },
     ipcMain: {
         handle: jest.fn(),
         on: jest.fn(),
+    },
+}));
+
+jest.mock('app/mainWindow/modals/messageModal', () => ({
+    __esModule: true,
+    default: {
+        showErrorModal: jest.fn(),
     },
 }));
 
@@ -71,6 +75,10 @@ jest.mock('common/servers/serverManager', () => ({
     hasServers: jest.fn(),
     getRemoteInfo: jest.fn(),
     getServer: jest.fn(),
+}));
+
+jest.mock('common/config', () => ({
+    enableServerManagement: true,
 }));
 
 jest.mock('app/mainWindow/mainWindow', () => ({
@@ -187,6 +195,21 @@ describe('app/navigationManager', () => {
             expect(ServerHub.showNewServerModal).toHaveBeenCalledWith('server-2.com/deep/link?thing=yes');
         });
 
+        it('should not open new server modal but show a dialog when server management is disabled by policy', () => {
+            ServerHub.showNewServerModal.mockClear();
+            MessageModal.showErrorModal.mockClear();
+            ServerManager.hasServers.mockReturnValue(true);
+            ServerManager.lookupServerByURL.mockReturnValue(null);
+            Config.enableServerManagement = false;
+
+            navigationManager.openLinkInPrimaryTab('mattermost://server-2.com/deep/link?thing=yes');
+
+            expect(ServerHub.showNewServerModal).not.toHaveBeenCalled();
+            expect(MessageModal.showErrorModal).toHaveBeenCalled();
+
+            Config.enableServerManagement = true;
+        });
+
         it('should handle welcome screen modal when no servers exist', () => {
             ServerManager.hasServers.mockReturnValue(false);
             ServerManager.lookupServerByURL.mockReturnValue(null);
@@ -195,6 +218,23 @@ describe('app/navigationManager', () => {
 
             expect(ModalManager.removeModal).toHaveBeenCalledWith('welcomeScreen');
             expect(handleWelcomeScreenModal).toHaveBeenCalledWith('server-2.com/deep/link?thing=yes');
+        });
+
+        it('should not handle welcome screen modal but show a dialog when server management is disabled by policy', () => {
+            ModalManager.removeModal.mockClear();
+            handleWelcomeScreenModal.mockClear();
+            MessageModal.showErrorModal.mockClear();
+            ServerManager.hasServers.mockReturnValue(false);
+            ServerManager.lookupServerByURL.mockReturnValue(null);
+            Config.enableServerManagement = false;
+
+            navigationManager.openLinkInPrimaryTab('mattermost://server-2.com/deep/link?thing=yes');
+
+            expect(ModalManager.removeModal).not.toHaveBeenCalled();
+            expect(handleWelcomeScreenModal).not.toHaveBeenCalled();
+            expect(MessageModal.showErrorModal).toHaveBeenCalled();
+
+            Config.enableServerManagement = true;
         });
 
         it('should handle null URL gracefully', () => {
@@ -213,7 +253,7 @@ describe('app/navigationManager', () => {
             navigationManager.openLinkInPrimaryTab('not-a-valid-url');
 
             expect(ServerManager.lookupServerByURL).not.toHaveBeenCalled();
-            expect(dialog.showErrorBox).toHaveBeenCalled();
+            expect(MessageModal.showErrorModal).toHaveBeenCalled();
         });
     });
 
@@ -273,6 +313,19 @@ describe('app/navigationManager', () => {
             expect(ServerHub.showNewServerModal).toHaveBeenCalledWith('server-2.com/deep/link?thing=yes');
         });
 
+        it('should not open new server modal but show a dialog when server management is disabled by policy', () => {
+            ServerManager.hasServers.mockReturnValue(true);
+            ServerManager.lookupServerByURL.mockReturnValue(null);
+            Config.enableServerManagement = false;
+
+            navigationManager.openLinkInNewTab('mattermost://server-2.com/deep/link?thing=yes');
+
+            expect(ServerHub.showNewServerModal).not.toHaveBeenCalled();
+            expect(MessageModal.showErrorModal).toHaveBeenCalled();
+
+            Config.enableServerManagement = true;
+        });
+
         it('should handle welcome screen modal when no servers exist', () => {
             ServerManager.hasServers.mockReturnValue(false);
             ServerManager.lookupServerByURL.mockReturnValue(null);
@@ -299,7 +352,7 @@ describe('app/navigationManager', () => {
             navigationManager.openLinkInNewTab('not-a-valid-url');
 
             expect(ServerManager.lookupServerByURL).not.toHaveBeenCalled();
-            expect(dialog.showErrorBox).toHaveBeenCalled();
+            expect(MessageModal.showErrorModal).toHaveBeenCalled();
         });
 
         it('should handle missing view gracefully', () => {
@@ -388,19 +441,6 @@ describe('app/navigationManager', () => {
 
             expect(mockView.sendToRenderer).not.toHaveBeenCalled();
             expect(mockView.updateHistoryButton).not.toHaveBeenCalled();
-        });
-
-        it('should clean pathname when server has subpath', () => {
-            ServerManager.getServer.mockReturnValue({
-                ...mockServer,
-                url: new URL('http://server-1.com/subpath'),
-            });
-            ViewManager.isPrimaryView.mockReturnValue(true);
-
-            navigationManager.handleBrowserHistoryPush({sender: {id: 1}}, '/subpath/team/channel');
-
-            expect(mockView.sendToRenderer).toHaveBeenCalledWith(BROWSER_HISTORY_PUSH, '/team/channel');
-            expect(mockView.updateHistoryButton).toHaveBeenCalled();
         });
 
         it('should use parent view when current view has parentViewId and view type is TAB', () => {

@@ -4,6 +4,7 @@
 import Joi from 'joi';
 
 import {Logger} from 'common/log';
+import {MAX_DESKTOP_SOURCE_THUMBNAIL_DIMENSION} from 'common/utils/constants';
 import {isValidURL} from 'common/utils/url';
 
 import type {AppState} from 'types/appState';
@@ -21,6 +22,19 @@ const defaultWindowWidth = 1000;
 const defaultWindowHeight = 700;
 const minWindowWidth = 400;
 const minWindowHeight = 240;
+
+const originOnlyStringSchema = Joi.string().custom((value, helpers) => {
+    try {
+        const url = new URL(value);
+        if (url.origin !== value) {
+            return helpers.error('string.uri');
+        }
+
+        return value;
+    } catch {
+        return helpers.error('string.uri');
+    }
+});
 
 const argsSchema = Joi.object<Args>({
     hidden: Joi.boolean(),
@@ -43,6 +57,7 @@ const appStateSchema = Joi.object<AppState>({
     lastAppVersion: Joi.string(),
     skippedVersion: Joi.string(),
     updateCheckedDate: Joi.string(),
+    installId: Joi.string(),
 });
 
 const downloadsSchema = Joi.object<DownloadedItems>().pattern(
@@ -190,6 +205,10 @@ const configDataSchemaV4 = Joi.object<ConfigV4>({
     themeSyncing: Joi.boolean().default(true),
     skippedVersions: Joi.array().items(Joi.string()).default([]),
     useNativeTitleBar: Joi.boolean().default(false),
+    trustedEmbeddedMediaOrigins: Joi.array().items(Joi.object({
+        serverOrigin: originOnlyStringSchema.required(),
+        embeddedOrigin: originOnlyStringSchema.required(),
+    })).default([]),
 });
 
 // eg. data['community.mattermost.com'] = { data: 'certificate data', issuerName: 'COMODO RSA Domain Validation Secure Server CA'};
@@ -411,10 +430,21 @@ export const joinCallOptsSchema = Joi.object({
 });
 
 export const desktopSourcesOptsSchema = Joi.object({
-    types: Joi.array().items(Joi.string().valid('screen', 'window')).required(),
+    types: Joi.array().items(Joi.string().valid('screen', 'window')).unique().min(1).max(2).required(),
     thumbnailSize: Joi.object({
-        height: Joi.number().required(),
-        width: Joi.number().required(),
+        height: Joi.number().strict().integer().min(0).max(MAX_DESKTOP_SOURCE_THUMBNAIL_DIMENSION).required(),
+        width: Joi.number().strict().integer().min(0).max(MAX_DESKTOP_SOURCE_THUMBNAIL_DIMENSION).required(),
     }),
     fetchWindowIcons: Joi.boolean(),
 });
+
+export const sessionAttributeFieldSchema = Joi.object({
+    name: Joi.string().required(),
+    type: Joi.string().required(),
+    attrs: Joi.object({
+        enabled: Joi.boolean().required(),
+        ttl_seconds: Joi.number().required(),
+        grace_period_seconds: Joi.number().required(),
+        platforms: Joi.array().items(Joi.string()).required(),
+    }).unknown(true).required(),
+}).unknown(true);

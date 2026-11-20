@@ -131,6 +131,7 @@ jest.mock('app/views/webContentsManager', () => ({
 
 jest.mock('common/servers/serverManager', () => ({
     getServer: jest.fn(),
+    updateCurrentServer: jest.fn(),
 }));
 
 jest.mock('main/security/permissionsManager', () => ({
@@ -138,6 +139,10 @@ jest.mock('main/security/permissionsManager', () => ({
 }));
 
 jest.mock('common/config', () => ({}));
+
+jest.mock('main/utils', () => ({
+    openExternalSafely: jest.fn(),
+}));
 
 describe('main/notifications', () => {
     describe('displayMention', () => {
@@ -222,14 +227,19 @@ describe('main/notifications', () => {
             });
         });
 
-        it('should do nothing when dnd is enabled on mac', async () => {
+        it('should still show notification when dnd is enabled on mac, but not play sound or bounce icon', async () => {
+            Config.notifications = {
+                bounceIcon: true,
+                bounceIconType: 'critical',
+                flashWindow: 0,
+            };
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {
                 value: 'darwin',
             });
 
             getDarwinDoNotDisturb.mockReturnValue(Promise.resolve(true));
-            await NotificationManager.displayMention(
+            const result = await NotificationManager.displayMention(
                 'test',
                 'test body',
                 'channel_id',
@@ -237,9 +247,13 @@ describe('main/notifications', () => {
                 'http://server-1.com/team_id/channel_id',
                 false,
                 {id: 1} as WebContents,
-                '',
+                'test_sound',
             );
-            expect(mentions.length).toBe(0);
+            expect(result).toEqual({status: 'success'});
+            expect(mentions.length).toBe(1);
+            expect(mentions[0].value.show).toHaveBeenCalled();
+            expect(MainWindow.sendToRenderer).not.toHaveBeenCalledWith(PLAY_SOUND, expect.anything());
+            expect(app.dock!.bounce).not.toBeCalled();
 
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
@@ -583,6 +597,40 @@ describe('main/notifications', () => {
             });
         });
 
+        describe('macOS DND check timeout', () => {
+            beforeEach(() => {
+                jest.useFakeTimers({doNotFake: ['setImmediate']});
+            });
+
+            afterEach(() => {
+                jest.useRealTimers();
+            });
+
+            it('NM-12: should still show notification when the dnd check on mac never resolves', async () => {
+                const originalPlatform = process.platform;
+                Object.defineProperty(process, 'platform', {value: 'darwin'});
+
+                // e.g. while the Focus status permission prompt is unanswered
+                getDarwinDoNotDisturb.mockReturnValue(new Promise(() => {}));
+                const promise = NotificationManager.displayMention(
+                    'test', 'test body', 'channel_id', 'team_id',
+                    'http://server-1.com/team_id/channel_id', false,
+                    {id: 1} as WebContents, 'test_sound',
+                );
+
+                // Let the DND check time out, then let the notification's show handler run
+                jest.advanceTimersByTime(1000);
+                await new Promise(setImmediate);
+                jest.runOnlyPendingTimers();
+                const result = await promise;
+                expect(result).toEqual({status: 'success'});
+                expect(mentions.length).toBe(1);
+                expect(MainWindow.sendToRenderer).toHaveBeenCalledWith(PLAY_SOUND, 'test_sound');
+
+                Object.defineProperty(process, 'platform', {value: originalPlatform});
+            });
+        });
+
         it('NM-08: should remove mention from allActiveNotifications when close event fires', async () => {
             await NotificationManager.displayMention(
                 'test', 'test body', 'channel_id', 'team_id',
@@ -666,12 +714,14 @@ describe('main/notifications', () => {
             expect(shell.showItemInFolder).toHaveBeenCalledWith('/path/to/file');
         });
 
-        it('DD-01: should not show notification when DND is active on macOS', async () => {
+        it('DD-01: should still show notification but not bounce icon when DND is active on macOS', async () => {
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {value: 'darwin'});
+            Config.notifications = {flashWindow: 0, bounceIcon: true, bounceIconType: 'critical'};
             getDarwinDoNotDisturb.mockReturnValue(Promise.resolve(true));
             await NotificationManager.displayDownloadCompleted('test.zip', '/path', 'server');
-            expect(mockNotificationConstruct).not.toHaveBeenCalled();
+            expect(mockNotificationConstruct).toHaveBeenCalled();
+            expect(app.dock!.bounce).not.toBeCalled();
             Object.defineProperty(process, 'platform', {value: originalPlatform});
         });
 
@@ -732,12 +782,12 @@ describe('main/notifications', () => {
             expect(mockNotificationConstruct).not.toHaveBeenCalled();
         });
 
-        it('UV-08: should not show notification when DND is active', async () => {
+        it('UV-08: should still show notification when DND is active on macOS', async () => {
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {value: 'darwin'});
             getDarwinDoNotDisturb.mockReturnValue(Promise.resolve(true));
             await NotificationManager.displayUpgrade('1.0.0', jest.fn());
-            expect(mockNotificationConstruct).not.toHaveBeenCalled();
+            expect(mockNotificationConstruct).toHaveBeenCalled();
             Object.defineProperty(process, 'platform', {value: originalPlatform});
         });
 
@@ -753,6 +803,56 @@ describe('main/notifications', () => {
             const firstNotification = mentions[0];
             await NotificationManager.displayUpgrade('1.1.0', jest.fn());
             expect(firstNotification.value.close).toHaveBeenCalled();
+        });
+    });
+
+    describe('displayServerModal', () => {
+        beforeEach(() => {
+            Notification.isSupported.mockImplementation(() => true);
+            getFocusAssist.mockReturnValue({value: 0, name: ''});
+            getDarwinDoNotDisturb.mockReturnValue(Promise.resolve(false));
+            ServerManager.getServer.mockReturnValue({id: 'server-1', name: 'Server 1'} as any);
+        });
+
+        afterEach(() => {
+            jest.resetAllMocks();
+            mentions.length = 0;
+        });
+
+        it('should not show notification when Notification is not supported', async () => {
+            Notification.isSupported.mockImplementation(() => false);
+            await NotificationManager.displayServerModal('server-1');
+            expect(mockNotificationConstruct).not.toHaveBeenCalled();
+        });
+
+        it('should not show notification when DND is active', async () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {value: 'darwin'});
+            getDarwinDoNotDisturb.mockReturnValue(Promise.resolve(true));
+            await NotificationManager.displayServerModal('server-1');
+            expect(mockNotificationConstruct).not.toHaveBeenCalled();
+            Object.defineProperty(process, 'platform', {value: originalPlatform});
+        });
+
+        it('should not show notification when the server does not exist', async () => {
+            ServerManager.getServer.mockReturnValue(undefined);
+            await NotificationManager.displayServerModal('server-1');
+            expect(mockNotificationConstruct).not.toHaveBeenCalled();
+        });
+
+        it('should show the window and switch to the server when clicked', async () => {
+            await NotificationManager.displayServerModal('server-1');
+            mentions[0].value.callbackMap.get('click')?.();
+            expect(MainWindow.show).toHaveBeenCalled();
+            expect(ServerManager.updateCurrentServer).toHaveBeenCalledWith('server-1');
+        });
+
+        it('should not switch to the server when clicked after it was removed', async () => {
+            await NotificationManager.displayServerModal('server-1');
+            ServerManager.getServer.mockReturnValue(undefined);
+            mentions[0].value.callbackMap.get('click')?.();
+            expect(MainWindow.show).toHaveBeenCalled();
+            expect(ServerManager.updateCurrentServer).not.toHaveBeenCalled();
         });
     });
 
@@ -774,12 +874,12 @@ describe('main/notifications', () => {
             expect(mockNotificationConstruct).not.toHaveBeenCalled();
         });
 
-        it('UV-12: should not show notification when DND is active', async () => {
+        it('UV-12: should still show notification when DND is active on macOS', async () => {
             const originalPlatform = process.platform;
             Object.defineProperty(process, 'platform', {value: 'darwin'});
             getDarwinDoNotDisturb.mockReturnValue(Promise.resolve(true));
             await NotificationManager.displayRestartToUpgrade('1.0.0', jest.fn());
-            expect(mockNotificationConstruct).not.toHaveBeenCalled();
+            expect(mockNotificationConstruct).toHaveBeenCalled();
             Object.defineProperty(process, 'platform', {value: originalPlatform});
         });
 

@@ -8,7 +8,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, emptyConfig} from '../../helpers/config';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {closeElectronAppFast} from '../../helpers/electronApp';
 
 async function startSlowDownloadServer(filename: string, chunk = 'slow-download-chunk-') {
     const server = http.createServer((request, response) => {
@@ -55,7 +55,7 @@ async function startSlowDownloadServer(filename: string, chunk = 'slow-download-
 }
 
 test.describe('downloads/downloads_manager', () => {
-    test('MM-22239 should open downloads dropdown when a download starts', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
+    test('MM-T6138 should open downloads dropdown when a download starts', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
         const filename = 'slow-download.txt';
         const {server, url} = await startSlowDownloadServer(filename);
 
@@ -122,10 +122,12 @@ test.describe('downloads/downloads_manager', () => {
                 });
             }, {timeout: 15_000}).toBeGreaterThan(0);
         } finally {
-            await app.close().catch(() => {});
-            await waitForLockFileRelease(userDataDir).catch(() => {});
-            await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
-            fs.rmSync(downloadsDir, {recursive: true, force: true});
+            try {
+                await closeElectronAppFast(app, userDataDir);
+            } finally {
+                await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+                fs.rmSync(downloadsDir, {recursive: true, force: true});
+            }
         }
     });
 });

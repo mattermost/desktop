@@ -1,4 +1,7 @@
 {
+  "app.menus.contextMenu.copyEmailAddress": "Salin Alamat Email",
+  "app.menus.contextMenu.openInNewTab": "Buka di halaman baru",
+  "app.menus.contextMenu.openInNewWindow": "Buka di jendela baru",
   "common.permissions.canBasicAuth": "Autentikasi Web",
   "common.tabs.TAB_FOCALBOARD": "Boards",
   "common.tabs.TAB_MESSAGING": "Channels",

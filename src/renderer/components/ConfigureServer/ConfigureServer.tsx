@@ -3,7 +3,7 @@
 
 import classNames from 'classnames';
 import React, {useState, useCallback, useEffect, useRef} from 'react';
-import {useIntl, FormattedMessage} from 'react-intl';
+import {FormattedMessage, useIntl} from 'react-intl';
 
 import {MODAL_TRANSITION_TIMEOUT, URLValidationStatus} from 'common/utils/constants';
 import Header from 'renderer/components/Header';
@@ -336,18 +336,20 @@ function ConfigureServer({
                                 <ServerImage/>
                             </div>
                             <h1 className='ConfigureServer__message-title'>
-                                {messageTitle || formatMessage({id: 'renderer.components.configureServer.title', defaultMessage: 'Let’s connect to a server'})}
+                                {messageTitle || (
+                                    <FormattedMessage
+                                        id='renderer.components.configureServer.title'
+                                        defaultMessage='Connect to your server'
+                                    />
+                                )}
                             </h1>
                             <p className='ConfigureServer__message-subtitle'>
                                 {messageSubtitle || (
                                     <FormattedMessage
                                         id='renderer.components.configureServer.subtitle'
-                                        defaultMessage='Set up your first server to connect to your<br></br>team’s communication hub'
-                                        values={{
-                                            br: (x: React.ReactNode) => (<><br/>{x}</>),
-                                        }}
-                                    />)
-                                }
+                                        defaultMessage="A server is your team's communication hub accessed using a unique URL"
+                                    />
+                                )}
                             </p>
                         </div>
                         <div className={classNames('ConfigureServer__card', transition, {'with-error': nameError || urlError?.type === STATUS.ERROR})}>

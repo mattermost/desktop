@@ -7,7 +7,7 @@ import * as path from 'path';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoConfig, writeConfigFile} from '../../helpers/config';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {closeElectronAppFast, waitForWindow} from '../../helpers/electronApp';
 
 async function launchWithRemoveServerModal(testInfo: {outputDir: string}) {
     const {mkdirSync} = await import('fs');
@@ -23,28 +23,20 @@ async function launchWithRemoveServerModal(testInfo: {outputDir: string}) {
     });
     await waitForAppReady(app);
 
-    const mainView = app.windows().find((w) => w.url().includes('index'))!;
-    let dropdownView = app.windows().find((w) => w.url().includes('dropdown'));
-    if (!dropdownView) {
-        dropdownView = await app.waitForEvent('window', {
-            predicate: (w) => w.url().includes('dropdown'),
-            timeout: 10000,
-        });
-    }
+    const mainView = await waitForWindow(app, 'index');
+    const dropdownView = await waitForWindow(app, 'dropdown', 10000);
 
     await mainView.click('.ServerDropdownButton');
     await dropdownView.hover('.ServerDropdown .ServerDropdown__button:nth-child(1)');
     await dropdownView.click('.ServerDropdown .ServerDropdown__button:nth-child(1) button.ServerDropdown__button-remove');
 
-    const removeServerView = await app.waitForEvent('window', {
-        predicate: (w) => w.url().includes('removeServer'),
-    });
+    const removeServerView = await waitForWindow(app, 'removeServer');
 
     return {app, removeServerView, userDataDir};
 }
 
 test.describe('RemoveServerModal', () => {
-    test('MM-T4390_1 should remove existing server on click Remove', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
+    test('MM-T1286 MM-T4390 Remove existing server on click Remove', {tag: ['@P2', '@all']}, async ({}, testInfo) => {
         const {app, removeServerView, userDataDir} = await launchWithRemoveServerModal(testInfo);
         try {
             await removeServerView.click('button:has-text("Remove")');
@@ -70,8 +62,7 @@ test.describe('RemoveServerModal', () => {
                 expectedConfig.map((s: {name: string; url: string; order: number}) => expect.objectContaining(s)),
             ));
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 
@@ -87,8 +78,7 @@ test.describe('RemoveServerModal', () => {
                 demoConfig.servers.map((s) => expect.objectContaining(s)),
             ));
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 
@@ -100,8 +90,7 @@ test.describe('RemoveServerModal', () => {
             const existing = Boolean(app.windows().find((w) => w.url().includes('removeServer')));
             expect(existing).toBe(false);
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 
@@ -115,8 +104,7 @@ test.describe('RemoveServerModal', () => {
             const existing = Boolean(app.windows().find((w) => w.url().includes('removeServer')));
             expect(existing).toBe(false);
         } finally {
-            await app.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronAppFast(app, userDataDir);
         }
     });
 });

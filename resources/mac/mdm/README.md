@@ -16,7 +16,7 @@ This folder contains an example plist you can install so the Mattermost desktop 
    sudo chmod 644 "/Library/Managed Preferences/Mattermost.Desktop.plist"
    ```
 
-3. Launch (or relaunch) the Mattermost desktop app. It will read `DefaultServerList`, `EnableServerManagement`, and `EnableAutoUpdater` from this plist via CFPreferences.
+3. Launch (or relaunch) the Mattermost desktop app. It will read `DefaultServerList`, `EnableServerManagement`, `EnableAutoUpdater`, and `TrustedEmbeddedMediaOrigins` from this plist via CFPreferences.
 
 ## Uninstall
 
@@ -31,5 +31,6 @@ Edit `example-managed-preferences.plist` before copying:
 - **DefaultServerList**: Array of dicts with `name` (string) and `url` (string). Add more `<dict>…</dict>` entries for extra servers.
 - **EnableServerManagement**: `true` or `false`.
 - **EnableAutoUpdater**: `true` or `false`.
+- **TrustedEmbeddedMediaOrigins**: Array of dicts with `serverOrigin` (string) and `embeddedOrigin` (string). Add one entry for each embedded media origin that should be allowed to reuse media permissions granted to the matching Mattermost server origin.
 
 The bundle ID (`com.Mattermost.Desktop`) must match the built app; it comes from `electron-builder.json` (mac `appId`).

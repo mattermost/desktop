@@ -4,6 +4,7 @@
 import {app} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import ServerManager from 'common/servers/serverManager';
 import {getLocalPreload} from 'main/utils';
@@ -52,6 +53,9 @@ jest.mock('app/mainWindow/modals/modalManager', () => ({
     addModal: jest.fn(),
     addPriorityModal: jest.fn(),
 }));
+jest.mock('app/mainWindow/modals/messageModal', () => ({
+    isCloseConfirmOpen: jest.fn(),
+}));
 jest.mock('app/mainWindow/mainWindow', () => ({
     get: jest.fn(),
     once: jest.fn(),
@@ -76,38 +80,38 @@ describe('main/app/intercom', () => {
             handleWelcomeScreenModal();
             expect(ModalManager.addModal).toHaveBeenCalledWith('welcomeScreen', 'mattermost-desktop://renderer/welcomeScreen.html', '/some/preload.js', {prefillURL: undefined}, {}, true);
         });
+
+        // The welcome screen stores a server only when the url has one plain host.
+        // A value with no scheme is checked beside the https form produced when a scheme is added.
+        it.each([
+            {label: 'a comma', url: 'https://a,b.example', outcome: 'omit'},
+            {label: 'a comma and an asterisk', url: 'https://*,*.example', outcome: 'omit'},
+            {label: 'a value without a scheme', url: '*,*.example', outcome: 'omit'},
+            {label: 'another value without a scheme', url: 'a,b.example', outcome: 'omit'},
+            {label: 'only the scheme', url: 'https://', outcome: 'omit'},
+            {label: 'an empty url', url: '', outcome: 'omit'},
+            {label: 'a missing url', url: undefined, outcome: 'omit'},
+            {label: 'only letters and dots', url: 'https://server.example.com', outcome: 'keep'},
+            {label: 'an underscore', url: 'https://internal_host.example', outcome: 'keep'},
+            {label: 'an IPv6 address', url: 'https://[2001:db8::1]/', outcome: 'keep'},
+        ])('should $outcome the server url from the welcome screen for $label', async ({url, outcome}) => {
+            ServerManager.addServer.mockClear();
+            const data = {name: 'server', url};
+            const promise = Promise.resolve(data);
+            ModalManager.addModal.mockReturnValue(promise);
+
+            handleWelcomeScreenModal();
+            await promise;
+
+            if (outcome === 'keep') {
+                expect(ServerManager.addServer).toHaveBeenCalledWith(data, undefined);
+                return;
+            }
+            expect(ServerManager.addServer).not.toHaveBeenCalled();
+        });
     });
 
     describe('handleMainWindowIsShown', () => {
-        // Helper: build a BrowserWindow mock whose `once` records listeners so
-        // tests can fire them on demand.
-        const makeWindow = (initialVisible) => {
-            const listeners = {};
-            let visible = initialVisible;
-            return {
-                listeners,
-                setVisible: (v) => {
-                    visible = v;
-                },
-                isVisible: jest.fn(() => visible),
-                once: jest.fn((event, cb) => {
-                    listeners[event] = cb;
-                }),
-                removeListener: jest.fn((event, cb) => {
-                    if (listeners[event] === cb) {
-                        delete listeners[event];
-                    }
-                }),
-                fire: (event) => listeners[event] && listeners[event](),
-            };
-        };
-
-        afterEach(() => {
-            delete global.__e2eAppReady;
-            jest.useRealTimers();
-            jest.clearAllMocks();
-        });
-
         it('MM-48079 should not show onboarding screen or server screen if GPO server is pre-configured', () => {
             getLocalPreload.mockReturnValue('/some/preload.js');
             MainWindow.get.mockReturnValue({
@@ -118,57 +122,6 @@ describe('main/app/intercom', () => {
 
             handleMainWindowIsShown();
             expect(ModalManager.addModal).not.toHaveBeenCalled();
-        });
-
-        it('should mark __e2eAppReady synchronously without attaching listeners when the main window is already visible', () => {
-            ServerManager.hasServers.mockReturnValue(true);
-            const win = makeWindow(true);
-            MainWindow.get.mockReturnValue(win);
-
-            handleMainWindowIsShown();
-
-            expect(global.__e2eAppReady).toBe(true);
-            expect(win.once).not.toHaveBeenCalled();
-            expect(MainWindow.once).not.toHaveBeenCalled();
-        });
-
-        it('should set __e2eAppReady via a `show` listener (not `ready-to-show`) when the window is not yet visible', () => {
-            ServerManager.hasServers.mockReturnValue(true);
-            const win = makeWindow(false);
-            MainWindow.get.mockReturnValue(win);
-
-            handleMainWindowIsShown();
-
-            // We listen to `show` only — never `ready-to-show`, which fires
-            // *before* the window is visible.
-            expect(win.once).toHaveBeenCalledWith('show', expect.any(Function));
-            expect(win.once).not.toHaveBeenCalledWith('ready-to-show', expect.any(Function));
-            expect(global.__e2eAppReady).toBeUndefined();
-
-            // The window becomes visible and the `show` event fires.
-            win.fire('show');
-            expect(global.__e2eAppReady).toBe(true);
-        });
-
-        it('should defer to MAIN_WINDOW_CREATED if no main window exists yet, then mark ready when it appears', () => {
-            ServerManager.hasServers.mockReturnValue(true);
-            MainWindow.get.mockReturnValue(undefined);
-
-            handleMainWindowIsShown();
-
-            // No window yet — should have registered a one-shot listener.
-            expect(MainWindow.once).toHaveBeenCalledWith('main-window-created', expect.any(Function));
-            expect(global.__e2eAppReady).toBeUndefined();
-
-            // Window comes into existence (and happens to already be visible).
-            const win = makeWindow(true);
-            MainWindow.get.mockReturnValue(win);
-
-            // Invoke the captured listener (simulating MainWindow emitting).
-            const createdCb = MainWindow.once.mock.calls[0][1];
-            createdCb();
-
-            expect(global.__e2eAppReady).toBe(true);
         });
     });
 
@@ -185,6 +138,12 @@ describe('main/app/intercom', () => {
 
         it('should not open settings modal if no main window', () => {
             MainWindow.get.mockReturnValue(null);
+            handleShowSettingsModal();
+            expect(ModalManager.addPriorityModal).not.toHaveBeenCalled();
+        });
+
+        it('should not open settings modal while the close app modal is open', () => {
+            MessageModal.isCloseConfirmOpen.mockReturnValue(true);
             handleShowSettingsModal();
             expect(ModalManager.addPriorityModal).not.toHaveBeenCalled();
         });

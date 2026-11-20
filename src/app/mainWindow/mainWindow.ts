@@ -4,7 +4,7 @@
 import fs from 'fs';
 
 import type {BrowserWindowConstructorOptions, Event, Input, BrowserWindow, IpcMainEvent} from 'electron';
-import {app, dialog, ipcMain, screen} from 'electron';
+import {app, ipcMain, screen} from 'electron';
 import {EventEmitter} from 'events';
 
 import BaseWindow from 'app/windows/baseWindow';
@@ -24,6 +24,8 @@ import {
     MAIN_WINDOW_CREATED,
     MAIN_WINDOW_RESIZED,
     MAIN_WINDOW_FOCUSED,
+    MAIN_WINDOW_MINIMIZE_TO_TRAY,
+    MAIN_WINDOW_CLOSE_CONFIRM,
     EMIT_CONFIGURATION,
     EXIT_FULLSCREEN,
     SERVER_LOGGED_IN_CHANGED,
@@ -32,6 +34,7 @@ import {
     VIEW_LIMIT_UPDATED,
     GET_IS_VIEW_LIMIT_REACHED,
     TOGGLE_SECURE_INPUT,
+    UPDATE_SHORTCUT_MENU,
 } from 'common/communication';
 import Config from 'common/config';
 import {Logger} from 'common/log';
@@ -41,7 +44,7 @@ import {DEFAULT_WINDOW_HEIGHT, DEFAULT_WINDOW_WIDTH} from 'common/utils/constant
 import * as Validator from 'common/Validator';
 import ViewManager from 'common/views/viewManager';
 import {boundsInfoPath} from 'main/constants';
-import {localizeMessage} from 'main/i18nManager';
+import {registerMainWindowE2EReadiness} from 'main/e2e/appReady';
 import performanceMonitor from 'main/performanceMonitor';
 import ThemeManager from 'main/themeManager';
 import {isInsideRectangle, isKDE} from 'main/utils';
@@ -90,6 +93,8 @@ export class MainWindow extends EventEmitter {
             throw new Error('unable to create main window');
         }
 
+        registerMainWindowE2EReadiness(this.win.browserWindow);
+
         this.win.browserWindow.webContents.once('did-finish-load', () => {
             if (!this.win || this.win.browserWindow.isDestroyed()) {
                 return;
@@ -108,6 +113,8 @@ export class MainWindow extends EventEmitter {
         this.win.browserWindow.on('blur', this.onBlur);
         this.win.browserWindow.contentView.on('bounds-changed', this.handleBoundsChanged);
         this.win.browserWindow.webContents.on('before-input-event', this.onBeforeInputEvent);
+        this.win.browserWindow.webContents.on('devtools-focused', this.emitShortcutMenuUpdate);
+        this.win.browserWindow.webContents.on('devtools-closed', this.emitShortcutMenuUpdate);
 
         const localURL = 'mattermost-desktop://renderer/index.html';
         performanceMonitor.registerView('MainWindow', this.win.browserWindow.webContents);
@@ -125,7 +132,10 @@ export class MainWindow extends EventEmitter {
     }
 
     get = () => {
-        return this.win?.browserWindow;
+        if (!this.win || this.win.browserWindow.isDestroyed()) {
+            return undefined;
+        }
+        return this.win.browserWindow;
     };
 
     get window() {
@@ -133,20 +143,21 @@ export class MainWindow extends EventEmitter {
     }
 
     show = () => {
-        if (this.win && this.isReady) {
+        const browserWindow = this.get();
+        if (browserWindow && this.isReady) {
             // There's a bug on Windows in Electron where if the window is snapped, it will unsnap when you call show()
             // See here: https://github.com/electron/electron/issues/25359
             // So to make sure we always show the window on macOS/Linux (need for workspace switching)
             // We make an exception here
             if (process.platform === 'win32') {
-                if (this.win.browserWindow.isVisible()) {
-                    this.win.browserWindow.focus();
+                if (browserWindow.isVisible()) {
+                    browserWindow.focus();
                 } else {
-                    this.win.browserWindow.show();
+                    browserWindow.show();
                 }
             } else {
                 log.info('showing main window');
-                this.win.browserWindow.show();
+                browserWindow.show();
             }
         } else {
             this.init();
@@ -158,7 +169,7 @@ export class MainWindow extends EventEmitter {
     };
 
     getBounds = () => {
-        return this.win?.browserWindow.getContentBounds();
+        return this.get()?.getContentBounds();
     };
 
     private shouldStartFullScreen = () => {
@@ -211,6 +222,10 @@ export class MainWindow extends EventEmitter {
     };
 
     private saveWindowState = (file: string, window: BrowserWindow) => {
+        if (window.isDestroyed()) {
+            return;
+        }
+
         const windowState: SavedWindowState = {
             ...window.getBounds(),
             maximized: window.isMaximized(),
@@ -224,6 +239,8 @@ export class MainWindow extends EventEmitter {
             log.error('failed to save window state', {e});
         }
     };
+
+    private emitShortcutMenuUpdate = () => ipcMain.emit(UPDATE_SHORTCUT_MENU);
 
     private onBeforeInputEvent = (event: Event, input: Input) => {
         // Register keyboard shortcuts
@@ -255,11 +272,12 @@ export class MainWindow extends EventEmitter {
     };
 
     private onBlur = () => {
-        if (!this.win) {
+        const browserWindow = this.get();
+        if (!browserWindow) {
             return;
         }
 
-        this.emit(MAIN_WINDOW_RESIZED, this.win?.browserWindow.getContentBounds());
+        this.emit(MAIN_WINDOW_RESIZED, browserWindow.getContentBounds());
         ipcMain.emit(TOGGLE_SECURE_INPUT, null, false);
 
         // App should save bounds when a window is closed.
@@ -267,7 +285,7 @@ export class MainWindow extends EventEmitter {
         // because main process is killed in such situations.
         // 'blur' event was effective in order to avoid this.
         // Ideally, app should detect that OS is shutting down.
-        this.saveWindowState(boundsInfoPath, this.win.browserWindow);
+        this.saveWindowState(boundsInfoPath, browserWindow);
     };
 
     private onClose = (event: Event) => {
@@ -293,37 +311,12 @@ export class MainWindow extends EventEmitter {
                     if (Config.alwaysMinimize) {
                         hideWindow(this.win.browserWindow);
                     } else {
-                        dialog.showMessageBox(this.win.browserWindow, {
-                            title: localizeMessage('main.windows.mainWindow.minimizeToTray.dialog.title', 'Minimize to Tray'),
-                            message: localizeMessage('main.windows.mainWindow.minimizeToTray.dialog.message', '{appName} will continue to run in the system tray. This can be disabled in Settings.', {appName: app.name}),
-                            type: 'info',
-                            checkboxChecked: true,
-                            checkboxLabel: localizeMessage('main.windows.mainWindow.minimizeToTray.dialog.checkboxLabel', 'Don\'t show again'),
-                        }).then((result: {response: number; checkboxChecked: boolean}) => {
-                            Config.set('alwaysMinimize', result.checkboxChecked);
-                            hideWindow(this.win?.browserWindow);
-                        });
+                        this.emit(MAIN_WINDOW_MINIMIZE_TO_TRAY);
                     }
                 } else if (Config.alwaysClose) {
                     app.quit();
                 } else {
-                    dialog.showMessageBox(this.win.browserWindow, {
-                        title: localizeMessage('main.windows.mainWindow.closeApp.dialog.title', 'Close Application'),
-                        message: localizeMessage('main.windows.mainWindow.closeApp.dialog.message', 'Are you sure you want to quit?'),
-                        detail: localizeMessage('main.windows.mainWindow.closeApp.dialog.detail', 'You will no longer receive notifications for messages. If you want to leave {appName} running in the system tray, you can enable this in Settings.', {appName: app.name}),
-                        type: 'question',
-                        buttons: [
-                            localizeMessage('label.yes', 'Yes'),
-                            localizeMessage('label.no', 'No'),
-                        ],
-                        checkboxChecked: true,
-                        checkboxLabel: localizeMessage('main.windows.mainWindow.closeApp.dialog.checkboxLabel', 'Don\'t ask again'),
-                    }).then((result: {response: number; checkboxChecked: boolean}) => {
-                        Config.set('alwaysClose', result.checkboxChecked && result.response === 0);
-                        if (result.response === 0) {
-                            app.quit();
-                        }
-                    });
+                    this.emit(MAIN_WINDOW_CLOSE_CONFIRM);
                 }
                 break;
             case 'darwin':
@@ -391,8 +384,8 @@ export class MainWindow extends EventEmitter {
         this.sendToRenderer(UPDATE_MENTIONS, viewId, newMentions, newUnreads, isExpired);
     };
 
-    private handleUpdateAppStateForServerId = (serverId: string, expired: boolean, newMentions: number, newUnreads: boolean) => {
-        this.sendToRenderer(UPDATE_MENTIONS_FOR_SERVER, serverId, expired, newMentions, newUnreads);
+    private handleUpdateAppStateForServerId = (serverId: string, expired: boolean, newMentions: number, newUnreads: boolean, hasPendingModal: boolean) => {
+        this.sendToRenderer(UPDATE_MENTIONS_FOR_SERVER, serverId, expired, newMentions, newUnreads, hasPendingModal);
     };
 
     private handleEmitConfiguration = () => {

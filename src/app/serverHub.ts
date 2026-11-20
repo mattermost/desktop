@@ -31,7 +31,7 @@ import {Logger} from 'common/log';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {URLValidationStatus} from 'common/utils/constants';
-import {isMagicLinkUrl, isValidURI, isValidURL, parseURL} from 'common/utils/url';
+import {isMagicLinkUrl, isServerHostname, isValidURI, isValidURL, parseURL} from 'common/utils/url';
 import PermissionsManager from 'main/security/permissionsManager';
 import {ServerInfo} from 'main/server/serverInfo';
 import {getLocalPreload} from 'main/utils';
@@ -110,6 +110,10 @@ export class ServerHub {
         );
 
         modalPromise.then(async (data) => {
+            if (!data?.url || !isValidURL(data.url)) {
+                return;
+            }
+
             let initialLoadURL;
             if (prefillURL) {
                 const parsedServerURL = parseURL(data.url);
@@ -141,15 +145,22 @@ export class ServerHub {
             return;
         }
 
-        const modalPromise = ModalManager.addModal<UniqueServerWithPermissions, {server: Server; permissions: Permissions}>(
-            ModalConstants.EDIT_SERVER_MODAL,
+        ServerManager.updateCurrentServer(id);
+        const modalPromise = ModalManager.addPriorityModal<UniqueServerWithPermissions, {server: Server; permissions: Permissions}>(
+            `${ModalConstants.EDIT_SERVER_MODAL}-${id}`,
             'mattermost-desktop://renderer/editServer.html',
             getLocalPreload('internalAPI.js'),
             {server: server.toUniqueServer(), permissions: PermissionsManager.getForServer(server) ?? {}},
-            mainWindow);
+            mainWindow,
+            false,
+            id,
+        );
 
         modalPromise.then(async (data) => {
             if (!server.isPredefined) {
+                if (!data.server?.url || !isValidURL(data.server.url)) {
+                    return;
+                }
                 ServerManager.editServer(id, data.server);
             }
             PermissionsManager.setForServer(server, data.permissions);
@@ -173,12 +184,15 @@ export class ServerHub {
             return;
         }
 
-        const modalPromise = ModalManager.addModal<null, boolean>(
-            ModalConstants.REMOVE_SERVER_MODAL,
+        ServerManager.updateCurrentServer(id);
+        const modalPromise = ModalManager.addPriorityModal<null, boolean>(
+            `${ModalConstants.REMOVE_SERVER_MODAL}-${id}`,
             'mattermost-desktop://renderer/removeServer.html',
             getLocalPreload('internalAPI.js'),
             null,
             mainWindow,
+            false,
+            id,
         );
 
         modalPromise.then(async (remove) => {
@@ -214,6 +228,12 @@ export class ServerHub {
 
         let httpUrl = url;
         if (!isValidURL(url)) {
+            const parsed = parseURL(url);
+            if (parsed?.hostname && !isServerHostname(parsed.hostname)) {
+                log.debug('handleServerURLValidation: URL is invalid');
+                return {status: URLValidationStatus.Invalid};
+            }
+
             // If it already includes the protocol, force it to HTTPS
             if (isValidURI(url) && !url.toLowerCase().startsWith('http')) {
                 log.debug('handleServerURLValidation: URL is valid host but does not start with http');
@@ -392,32 +412,31 @@ export class ServerHub {
         }
 
         // If the URL doesn't match the Site URL, set the URL to the correct one
-        if (remoteInfo.siteURL && remoteURL.toString() !== new URL(remoteInfo.siteURL).toString()) {
+        const parsedSiteURL = remoteInfo.siteURL && isValidURL(remoteInfo.siteURL) ? parseURL(remoteInfo.siteURL) : undefined;
+        if (parsedSiteURL && remoteURL.toString() !== parsedSiteURL.toString()) {
             log.verbose('handleServerURLValidation: Remote URL does not match Site URL, checking Site URL');
-            const parsedSiteURL = parseURL(remoteInfo.siteURL);
-            if (parsedSiteURL) {
-                // Check the Site URL as well to see if it's already pre-configured
-                const existingServer = ServerManager.lookupServerByURL(parsedSiteURL, true);
-                if (existingServer && existingServer.id !== currentId) {
-                    log.info('handleServerURLValidation: Site URL already exists, returning URLExists');
-                    return {
-                        status: URLValidationStatus.URLExists,
-                        existingServerName: existingServer.name,
-                        validatedURL: existingServer.url.toString(),
-                    };
-                }
 
-                // If we can't reach the remote Site URL, there's probably a configuration issue
-                const remoteSiteURLResult = await this.testRemoteServer(parsedSiteURL);
-                if ('error' in remoteSiteURLResult) {
-                    log.debug('handleServerURLValidation: Site URL not reachable, returning URLNotMatched');
-                    return {
-                        status: URLValidationStatus.URLNotMatched,
-                        serverVersion: remoteInfo.serverVersion,
-                        serverName: remoteServerName,
-                        validatedURL: remoteURL.toString(),
-                    };
-                }
+            // Check the Site URL as well to see if it's already pre-configured
+            const existingServer = ServerManager.lookupServerByURL(parsedSiteURL, true);
+            if (existingServer && existingServer.id !== currentId) {
+                log.info('handleServerURLValidation: Site URL already exists, returning URLExists');
+                return {
+                    status: URLValidationStatus.URLExists,
+                    existingServerName: existingServer.name,
+                    validatedURL: existingServer.url.toString(),
+                };
+            }
+
+            // If we can't reach the remote Site URL, there's probably a configuration issue
+            const remoteSiteURLResult = await this.testRemoteServer(parsedSiteURL);
+            if ('error' in remoteSiteURLResult) {
+                log.debug('handleServerURLValidation: Site URL not reachable, returning URLNotMatched');
+                return {
+                    status: URLValidationStatus.URLNotMatched,
+                    serverVersion: remoteInfo.serverVersion,
+                    serverName: remoteServerName,
+                    validatedURL: remoteURL.toString(),
+                };
             }
 
             // Otherwise fix it for them and return
@@ -426,7 +445,7 @@ export class ServerHub {
                 status: URLValidationStatus.URLUpdated,
                 serverVersion: remoteInfo.serverVersion,
                 serverName: remoteServerName,
-                validatedURL: remoteInfo.siteURL,
+                validatedURL: parsedSiteURL.toString(),
             };
         }
 
@@ -455,10 +474,10 @@ export class ServerHub {
         const serverInfo = new ServerInfo(server);
         try {
             // Ping server first for pre-auth - config endpoint might be whitelisted
-            await serverInfo.pingServer();
+            await serverInfo.pingServer(session.fromPartition('server-validation'));
 
             // Only proceed to fetch config if ping is successful
-            const remoteInfo = await serverInfo.fetchConfigData();
+            const remoteInfo = await serverInfo.fetchConfigData(session.fromPartition('server-validation'));
             return {data: remoteInfo};
         } catch (error) {
             return {error: error as Error & { errorReason?: ErrorReason }};
@@ -476,6 +495,10 @@ export class ServerHub {
     private handleAddServer = async (event: IpcMainEvent, server: Server) => {
         log.debug('handleAddServer');
 
+        if (!server?.url || !isValidURL(server.url)) {
+            return;
+        }
+
         ServerManager.addServer(server);
     };
 
@@ -487,6 +510,9 @@ export class ServerHub {
         }
 
         if (!server.isPredefined) {
+            if (!isValidURL(server.url)) {
+                return;
+            }
             ServerManager.editServer(server.id, server);
         }
         if (permissions) {
@@ -516,7 +542,7 @@ export class ServerHub {
     private updateAuthServerAllowlist = () => {
         const hostnames = ServerManager.getAllServers().
             map((server) => server.url.hostname).
-            filter(Boolean);
+            filter((hostname) => isServerHostname(hostname));
         session.defaultSession.allowNTLMCredentialsForDomains(hostnames.join(','));
     };
 

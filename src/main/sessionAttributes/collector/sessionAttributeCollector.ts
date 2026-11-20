@@ -49,7 +49,10 @@ export class SessionAttributeCollector {
         return app.getVersion();
     }
 
-    getServerFQDN(serverId: string) {
+    getServerFQDN(serverId?: string) {
+        if (!serverId) {
+            return '';
+        }
         const server = ServerManager.getServer(serverId);
         return server?.url.hostname ?? '';
     }

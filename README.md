@@ -16,7 +16,7 @@ Originally created as "electron-mattermost" by Yuya Ochiai.
 * Desktop Notifications
 * Badges for unread channels and mentions
 * Deep Linking to open Mattermost links directly in the app
-* Runs in background to reduce number of open windows
+* Runs in the background to reduce the number of open windows
 
 ## Usage
 
@@ -26,7 +26,7 @@ Detailed guides are available at [docs.mattermost.com](https://docs.mattermost.c
 1. Download a file from the [downloads page](https://mattermost.com/download/#mattermostApps) or from the [releases page](https://github.com/mattermost/desktop/releases).
 2. Run the installer or unzip the archive.
 3. Launch Mattermost from your Applications folder, menu, or the unarchived folder.
-3. On the first launch, please enter a name and URL for your Mattermost server. For example, `https://mattermost.example.com`.
+4. On the first launch, please enter a name and URL for your Mattermost server. For example, `https://mattermost.example.com`.
 
 ### Configuration
 You can show the dialog from menu bar.
@@ -41,7 +41,7 @@ A custom data directory location can be specified with:
 
 * `Mattermost.exe --args --data-dir C:\my-mattermost-data` on Windows
 * `open /Applications/Mattermost.app/ --args --data-dir ~/my-mattermost-data/` on macOS 
-* `./mattermost-desktop --args --data-dir ~/my-mattermost-data/` on Linux
+* `./com.Mattermost.Desktop --args --data-dir ~/my-mattermost-data/` on Linux
 
 ## Custom App Deployments
 Our [docs provide a guide](https://docs.mattermost.com/deployment/desktop-app-deployment.html) on how to customize and distribute your own Mattermost Desktop App, including how to distribute the official Windows Desktop App silently to end users, pre-configured with the server URL and other app settings.

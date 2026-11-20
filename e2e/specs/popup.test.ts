@@ -9,7 +9,7 @@ import {test, expect} from '../fixtures/index';
 import {cmdOrCtrl, demoMattermostConfig} from '../helpers/config';
 import {waitForAppReady} from '../helpers/appReadiness';
 import {appDir, electronBinaryPath, writeConfigFile} from '../helpers/config';
-import {waitForWindow, closeElectronApp} from '../helpers/electronApp';
+import {waitForWindow, closeElectronAppFast} from '../helpers/electronApp';
 import {loginToMattermost} from '../helpers/login';
 import {buildServerMap} from '../helpers/serverMap';
 import type {ServerView} from '../helpers/serverView';
@@ -128,7 +128,7 @@ test.describe('popup', () => {
     });
 
     test.afterAll(async () => {
-        await closeElectronApp(electronApp, userDataDir);
+        await closeElectronAppFast(electronApp, userDataDir);
     });
 
     test('MM-T2827_1 should be able to select all in popup windows', {tag: ['@P2', '@all']}, async () => {

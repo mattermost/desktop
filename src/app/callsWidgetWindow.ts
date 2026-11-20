@@ -1,15 +1,17 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import type {IpcMainEvent, Rectangle, Event, IpcMainInvokeEvent} from 'electron';
-import {BrowserWindow, desktopCapturer, dialog, ipcMain, systemPreferences} from 'electron';
+import type {IpcMainEvent, Rectangle, Event, IpcMainInvokeEvent, WebContentsWillRedirectEventParams} from 'electron';
+import {BrowserWindow, desktopCapturer, ipcMain, screen, systemPreferences} from 'electron';
 import Joi from 'joi';
 
 import MainWindow from 'app/mainWindow/mainWindow';
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import NavigationManager from 'app/navigationManager';
 import TabManager from 'app/tabs/tabManager';
 import type {MattermostWebContentsView} from 'app/views/MattermostWebContentsView';
 import webContentsEventManager from 'app/views/webContentEvents';
+import {generateWillFrameNavigate} from 'app/views/webContentEventsCommon';
 import WebContentsManager from 'app/views/webContentsManager';
 import {
     BROWSER_HISTORY_PUSH,
@@ -33,7 +35,12 @@ import {
 } from 'common/communication';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
-import {CALLS_PLUGIN_ID, MINIMUM_CALLS_WIDGET_HEIGHT, MINIMUM_CALLS_WIDGET_WIDTH} from 'common/utils/constants';
+import {
+    CALLS_PLUGIN_ID,
+    MAX_DESKTOP_SOURCE_THUMBNAIL_DIMENSION,
+    MINIMUM_CALLS_WIDGET_HEIGHT,
+    MINIMUM_CALLS_WIDGET_WIDTH,
+} from 'common/utils/constants';
 import {getFormattedPathName, isCallsPopOutURL, parseURL} from 'common/utils/url';
 import Utils from 'common/utils/util';
 import {desktopSourcesOptsSchema, ipcValidate, joinCallOptsSchema} from 'common/Validator';
@@ -41,6 +48,7 @@ import ViewManager from 'common/views/viewManager';
 import ContextMenu from 'main/contextMenu';
 import {localizeMessage} from 'main/i18nManager';
 import performanceMonitor from 'main/performanceMonitor';
+import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
 import PermissionsManager from 'main/security/permissionsManager';
 import {
     composeUserAgent,
@@ -56,12 +64,34 @@ import type {
 
 const log = new Logger('CallsWidgetWindow');
 
+const normalizeThumbnailDimension = (value: unknown) => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+        throw new Error('handleGetDesktopSources: invalid thumbnailSize');
+    }
+    return Math.min(Math.max(Math.floor(value), 0), MAX_DESKTOP_SOURCE_THUMBNAIL_DIMENSION);
+};
+
+const normalizeThumbnailSize = (thumbnailSize: unknown): Electron.Size => {
+    if (thumbnailSize === undefined) {
+        return {width: MAX_DESKTOP_SOURCE_THUMBNAIL_DIMENSION, height: MAX_DESKTOP_SOURCE_THUMBNAIL_DIMENSION};
+    }
+    if (typeof thumbnailSize !== 'object' || thumbnailSize === null) {
+        throw new Error('handleGetDesktopSources: invalid thumbnailSize');
+    }
+    const {width, height} = thumbnailSize as Record<string, unknown>;
+    return {
+        width: normalizeThumbnailDimension(width),
+        height: normalizeThumbnailDimension(height),
+    };
+};
+
 export class CallsWidgetWindow {
     private win?: BrowserWindow;
     private mainView?: MattermostWebContentsView;
     private options?: CallsWidgetWindowConfig;
     private missingScreensharePermissions?: boolean;
     private seenErrorMessage?: boolean;
+    private webContentsId?: number;
 
     private popOut?: BrowserWindow;
     private boundsErr: Rectangle = {
@@ -74,7 +104,7 @@ export class CallsWidgetWindow {
     constructor() {
         ipcMain.on(CALLS_WIDGET_RESIZE, ipcValidate(
             this.handleResize,
-            [Joi.number().required(), Joi.number().required()],
+            [Joi.number().integer().min(0).required(), Joi.number().integer().min(0).required()],
         ));
         ipcMain.on(CALLS_WIDGET_SHARE_SCREEN, ipcValidate(
             this.handleShareScreen,
@@ -210,12 +240,18 @@ export class CallsWidgetWindow {
         // Calls widget window is not supposed to navigate anywhere else.
         this.win.webContents.on('will-navigate', this.onNavigate);
         this.win.webContents.on('did-start-navigation', this.onNavigate);
+        this.win.webContents.on('devtools-focused', this.emitShortcutMenuUpdate);
+        this.win.webContents.on('devtools-closed', this.emitShortcutMenuUpdate);
+        this.win.webContents.on('will-redirect', this.onRedirect);
+        this.win.webContents.on('will-frame-navigate', this.onFrameNavigate);
 
         const widgetURL = this.getWidgetURL();
         if (!widgetURL) {
             return;
         }
         performanceMonitor.registerView('CallsWidgetWindow', this.win.webContents);
+        this.webContentsId = this.win.webContents.id;
+        LocalNetworkAccessManager.registerWebContents(this.win.webContents);
         this.win?.loadURL(widgetURL, {
             userAgent: composeUserAgent(),
         }).catch((reason) => {
@@ -255,6 +291,11 @@ export class CallsWidgetWindow {
         bounds.height += this.boundsErr.height;
         bounds.width += this.boundsErr.width;
 
+        // Electron crashes natively on sizes far beyond the display, so keep them on-screen.
+        const {workArea} = screen.getDisplayMatching(this.win.getBounds());
+        bounds.width = Math.min(Math.max(bounds.width, 1), workArea.width);
+        bounds.height = Math.min(Math.max(bounds.height, 1), workArea.height);
+
         this.win.setBounds(bounds);
         this.boundsErr = Utils.boundsDiff(bounds, this.win.getBounds());
     }
@@ -263,8 +304,14 @@ export class CallsWidgetWindow {
      * BrowserWindow/WebContents handlers
      */
 
+    private emitShortcutMenuUpdate = () => ipcMain.emit(UPDATE_SHORTCUT_MENU);
+
     private onClosed = () => {
         ipcMain.emit(UPDATE_SHORTCUT_MENU);
+        if (this.webContentsId) {
+            LocalNetworkAccessManager.unregisterWebContents(this.webContentsId);
+            delete this.webContentsId;
+        }
         delete this.win;
         delete this.mainView;
         delete this.options;
@@ -276,6 +323,18 @@ export class CallsWidgetWindow {
         }
         log.warn('prevented widget window from navigating');
         ev.preventDefault();
+    };
+
+    private onFrameNavigate = generateWillFrameNavigate(log);
+
+    private onRedirect = (ev: Event<WebContentsWillRedirectEventParams>, url: string) => {
+        // Unlike will-navigate, will-redirect fires for subframes as well, so each frame
+        // type needs to be evaluated against its own policy.
+        if (ev.isMainFrame) {
+            this.onNavigate(ev, url);
+        } else {
+            this.onFrameNavigate(ev);
+        }
     };
 
     private setWidgetWindowStacking = ({onTop}: {onTop: boolean}) => {
@@ -359,6 +418,7 @@ export class CallsWidgetWindow {
 
         // Let the webContentsEventManager handle links that try to open a new window.
         webContentsEventManager.addWebContentsEventListeners(this.popOut.webContents);
+        LocalNetworkAccessManager.registerWebContents(this.popOut.webContents);
 
         // Need to capture and handle redirects for security.
         this.popOut.webContents.on('will-redirect', (event: Event) => {
@@ -372,9 +432,13 @@ export class CallsWidgetWindow {
 
         // Update menu to show the developer tools option for this window.
         ipcMain.emit(UPDATE_SHORTCUT_MENU);
+        this.popOut.webContents.on('devtools-focused', this.emitShortcutMenuUpdate);
+        this.popOut.webContents.on('devtools-closed', this.emitShortcutMenuUpdate);
 
+        const popOutWebContentsId = win.webContents.id;
         this.popOut.on('closed', () => {
             ipcMain.emit(UPDATE_SHORTCUT_MENU);
+            LocalNetworkAccessManager.unregisterWebContents(popOutWebContentsId);
             delete this.popOut;
             contextMenu.dispose();
             this.setWidgetWindowStacking({onTop: true});
@@ -477,6 +541,8 @@ export class CallsWidgetWindow {
             throw new Error('handleGetDesktopSources: view not found');
         }
 
+        const thumbnailSize = normalizeThumbnailSize(opts?.thumbnailSize);
+
         if (process.platform === 'darwin' && systemPreferences.getMediaAccessStatus('screen') === 'denied') {
             try {
                 // If permissions are missing we reset them so that the system
@@ -498,13 +564,13 @@ export class CallsWidgetWindow {
         if (!serverURL) {
             throw new Error('handleGetDesktopSources: serverURL not found');
         }
-        if (!await PermissionsManager.doPermissionRequest(view.webContentsId, 'screenShare', {requestingUrl: serverURL.toString(), isMainFrame: false})) {
+        if (!await PermissionsManager.doPermissionRequest(view.webContentsId, 'display-capture', {requestingUrl: serverURL.toString(), isMainFrame: false})) {
             throw new Error('permissions denied');
         }
 
         const screenPermissionsErrArgs = ['screen-permissions', this.callID];
 
-        return desktopCapturer.getSources(opts).then((sources) => {
+        return desktopCapturer.getSources({...opts, thumbnailSize}).then((sources) => {
             let hasScreenPermissions = true;
             if (systemPreferences.getMediaAccessStatus) {
                 const screenPermissions = systemPreferences.getMediaAccessStatus('screen');
@@ -548,7 +614,7 @@ export class CallsWidgetWindow {
 
             // We only want to show the error message once to avoid spamming the user with dialog boxes
             if (!this.seenErrorMessage) {
-                dialog.showErrorBox(
+                MessageModal.showErrorModal(
                     localizeMessage('callsWidgetWindow.cannotStartCall.title', 'Cannot Start Call'),
                     localizeMessage('callsWidgetWindow.cannotStartCall.message', 'There is an in-progress call on another server that must be ended before joining a new call.'),
                 );
@@ -615,8 +681,13 @@ export class CallsWidgetWindow {
         return promise;
     };
 
-    private handleCallsLeave = () => {
+    private handleCallsLeave = (event: IpcMainEvent) => {
         log.debug('handleCallsLeave');
+
+        if (!this.isCallsWidget(event.sender.id) && this.mainView?.webContentsId !== event.sender.id) {
+            log.debug('handleCallsLeave', 'blocked on wrong webContentsId');
+            return;
+        }
 
         this.close();
     };

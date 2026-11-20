@@ -8,7 +8,7 @@ import ContextMenu from './contextMenu';
 
 jest.mock('electron', () => ({
     clipboard: {
-        writeText: jest.fn(),
+        writeText: jest.fn(() => Promise.resolve()),
     },
 }));
 

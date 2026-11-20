@@ -28,3 +28,10 @@ runs:
         ELECTRON_DISABLE_SANDBOX: "1"
       run: |
         npm run test:unit
+    # jest only matches **/src/** and explicitly ignores e2e/, so the CI reporting
+    # utils under e2e/utils (plain node:test, no Playwright/Electron) had no
+    # automated coverage — which is how the job-name parser regression shipped.
+    - name: ci/run-ci-utils-tests
+      shell: ${{ inputs.shell }}
+      run: |
+        npm run test:ci-utils

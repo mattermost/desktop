@@ -5,15 +5,15 @@ import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 import {app, BrowserWindow, Menu} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import ServerViewState from 'app/serverHub';
-import {APP_MENU_WILL_CLOSE, MAIN_WINDOW_CREATED} from 'common/communication';
+import {APP_MENU_WILL_CLOSE} from 'common/communication';
 import {ModalConstants} from 'common/constants';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
 import {ping} from 'common/utils/requests';
-import {parseURL} from 'common/utils/url';
-import {setTestField} from 'common/utils/util';
+import {isValidURL, parseURL} from 'common/utils/url';
 import NotificationManager from 'main/notifications';
 import {getLocalPreload} from 'main/utils';
 
@@ -87,40 +87,6 @@ export function handleMainWindowIsShown() {
             handleShowOnboardingScreens(showWelcomeScreen(), showNewServerModal(), false);
         });
     }
-
-    signalE2EAppReadyWhenShown();
-}
-
-// E2E only: signals `__e2eAppReady` once the main window is visible so Playwright/Detox can wait
-// on app readiness. Gated on NODE_ENV==='test' (the same gate setTestField uses), so it adds no
-// listeners and is completely inert in normal app usage. Listener-based (no polling); also covers
-// the case where the main window has not been constructed yet.
-function signalE2EAppReadyWhenShown() {
-    if (process.env.NODE_ENV !== 'test') {
-        return;
-    }
-
-    const markReady = () => setTestField('__e2eAppReady', true);
-    const whenVisible = (win: BrowserWindow) => {
-        if (win.isVisible()) {
-            markReady();
-        } else {
-            win.once('show', markReady);
-        }
-    };
-
-    const win = MainWindow.get();
-    if (win) {
-        whenVisible(win);
-        return;
-    }
-
-    MainWindow.once(MAIN_WINDOW_CREATED, () => {
-        const created = MainWindow.get();
-        if (created) {
-            whenVisible(created);
-        }
-    });
 }
 
 export function handleWelcomeScreenModal(prefillURL?: string) {
@@ -137,6 +103,10 @@ export function handleWelcomeScreenModal(prefillURL?: string) {
     const modalPromise = ModalManager.addModal<{prefillURL?: string}, UniqueServer>(ModalConstants.WELCOME_SCREEN_MODAL, html, preload, {prefillURL}, mainWindow, !ServerManager.hasServers());
     if (modalPromise) {
         modalPromise.then(async (data) => {
+            if (!data?.url || !isValidURL(data.url)) {
+                return;
+            }
+
             let initialLoadURL;
             if (prefillURL) {
                 const parsedServerURL = parseURL(data.url);
@@ -163,7 +133,7 @@ export function handleMentionNotification(event: IpcMainInvokeEvent, title: stri
     return NotificationManager.displayMention(title, body, channelId, teamId, url, silent, event.sender, soundName);
 }
 
-export function handleOpenAppMenu(event: IpcMainEvent) {
+export function handleOpenAppMenu(event: IpcMainEvent, buttonX: number) {
     log.debug('handleOpenAppMenu');
 
     const windowMenu = Menu.getApplicationMenu();
@@ -182,7 +152,7 @@ export function handleOpenAppMenu(event: IpcMainEvent) {
     });
     windowMenu.popup({
         window,
-        x: 18,
+        x: buttonX + 14,
         y: 18,
     });
 }
@@ -218,7 +188,7 @@ export function handleToggleSecureInput(event: IpcMainEvent, secureInput: boolea
 
 export function handleShowSettingsModal() {
     const mainWindow = MainWindow.get();
-    if (!mainWindow) {
+    if (!mainWindow || MessageModal.isCloseConfirmOpen()) {
         return;
     }
 

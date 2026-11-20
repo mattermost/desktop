@@ -1,0 +1,96 @@
+# Re-runs an E2E run's failed jobs when a lane's triage asked for it: the lane was red only on
+# infrastructure (a dead job, missing reports), never on a test. Triage decides and leaves a marker
+# artifact in the run (rerun-attempts on the tsio-triage job in e2e-functional.yml); the toolkit's
+# e2e-test-rerun action reads it and re-runs the failed jobs once, so the new attempt is triaged again.
+# It checks out and runs no code from the run it re-runs.
+name: E2E re-run on infrastructure failure
+on:
+  workflow_run:
+    workflows: ["Electron Playwright Tests"]
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  rerun:
+    # A job past its timeout (a setup step that hung) ends the run "cancelled", not "failure".
+    if: contains(fromJSON('["failure", "cancelled"]'), github.event.workflow_run.conclusion)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      actions: write
+      pull-requests: read
+    steps:
+      # A lane can leave its marker before a newer push cancels the run. Re-running that stale run would cancel the
+      # newer one through e2e-functional.yml's concurrency group: `pr_number`, else the SHA, cancelling in progress only
+      # for a PR run. Matterwick dispatches a PR run on the PR's head branch with `pr_number`; a manual dispatch on that
+      # branch may leave it out, so it is keyed by SHA and neither cancels nor is cancelled by the PR's runs. The run
+      # object carries no inputs: each run's `pr_number` is read from its prepare-matrix job, whose step env prints
+      # `PR_NUMBER`. Only a newer run with the same PR (or one whose PR cannot be read) supersedes a PR run. A run whose
+      # branch heads no open PR (master, a release branch) is keyed by SHA and never cancelled for a newer push.
+      - name: e2e/check-superseded
+        id: superseded
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            const {owner, repo} = context.repo;
+            const branch = run.head_branch || '';
+            const {data: prs} = branch ? await github.rest.pulls.list({owner, repo, state: 'open', head: `${owner}:${branch}`, per_page: 1}) : {data: []};
+            if (!prs.length) {
+              core.setOutput('superseded', 'false');
+              return;
+            }
+            // A run's pr_number input: '' for a run dispatched without one, null when it cannot be read.
+            const prOf = async (runId) => {
+              try {
+                const {data: {jobs}} = await github.rest.actions.listJobsForWorkflowRun({owner, repo, run_id: runId, per_page: 100});
+                const job = jobs.find((j) => j.name.startsWith('prepare-matrix'));
+                if (!job) {
+                  return null;
+                }
+                const {data: log} = await github.rest.actions.downloadJobLogsForWorkflowRun({owner, repo, job_id: job.id});
+                const found = (/^\S+\s+PR_NUMBER:[ \t]*(\d*)[ \t]*$/m).exec(typeof log === 'string' ? log : String(log));
+                return found ? found[1] : null;
+              } catch (e) {
+                core.info(`Could not read run ${runId}'s pr_number: ${e.message}`);
+                return null;
+              }
+            };
+            const own = await prOf(run.id);
+            if (own === '') {
+              core.info(`${run.html_url} was dispatched without pr_number: keyed by SHA, no newer run cancels it.`);
+              core.setOutput('superseded', 'false');
+              return;
+            }
+            const {data: {workflow_runs: runs}} = await github.rest.actions.listWorkflowRuns({
+              owner, repo, workflow_id: run.workflow_id, branch, per_page: 20,
+            });
+            // Unknown on either side counts as the same PR: re-running could cancel that run.
+            let newer = null;
+            for (const r of runs.filter((r) => r.run_number > run.run_number)) {
+              const pr = await prOf(r.id);
+              if ((pr === null || own === null) ? pr !== '' : pr === own) {
+                newer = r;
+                break;
+              }
+            }
+            const prHead = prs[0].head.sha;
+            let reason = '';
+            if (newer) {
+              reason = `a newer run of this workflow for the same PR on ${branch} exists: ${newer.html_url}`;
+            } else if (prHead && prHead !== run.head_sha) {
+              reason = `PR #${prs[0].number} is now at ${prHead.slice(0, 7)}; this run tested ${run.head_sha.slice(0, 7)}`;
+            }
+            if (reason) {
+              core.notice(`Not re-running ${run.html_url}: ${reason}.`);
+            }
+            core.setOutput('superseded', reason ? 'true' : 'false');
+
+      - name: e2e/rerun
+        if: steps.superseded.outputs.superseded == 'false'
+        uses: mattermost/mattermost-test-automation-toolkit/actions/e2e-test-rerun@main # actions/e2e-test-rerun
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ github.event.workflow_run.id }}
+          run-attempt: ${{ github.event.workflow_run.run_attempt }}

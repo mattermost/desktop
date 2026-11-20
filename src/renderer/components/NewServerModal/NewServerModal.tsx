@@ -535,8 +535,8 @@ class NewServerModal extends React.PureComponent<Props, State> {
                                 />
                             </Toggle>
                             <Toggle
-                                isChecked={this.state.permissions.screenShare?.allowed}
-                                onChange={this.handleChangePermission('screenShare')}
+                                isChecked={this.state.permissions['display-capture']?.allowed}
+                                onChange={this.handleChangePermission('display-capture')}
                             >
                                 <i className='icon icon-monitor-share'/>
                                 <FormattedMessage

@@ -6,6 +6,7 @@
     flex: 1;
     flex-flow: column;
     justify-content: flex-end;
+    padding: 24px;
 
     .WelcomeScreenSlide__image {
         align-self: center;
@@ -17,7 +18,7 @@
         font-size: 64px;
         font-weight: 600;
         letter-spacing: -1.6px;
-        line-height: 88px;
+        line-height: 68px;
         text-align: center;
         margin: 16px 0;
     }

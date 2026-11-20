@@ -1,21 +1,35 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {shell} from 'electron';
-
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import NavigationManager from 'app/navigationManager';
 import WebContentsManager from 'app/views/webContentsManager';
 import ServerManager from 'common/servers/serverManager';
 import {parseURL} from 'common/utils/url';
 
+import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
+import {openExternalSafely} from 'main/utils';
+
 import PluginsPopUpsManager from './pluginsPopUps';
+import {showInvalidLinkModal} from './webContentEventsCommon';
 
 import allowProtocolDialog from '../../main/security/allowProtocolDialog';
 
-jest.mock('electron', () => ({
-    shell: {
-        openExternal: jest.fn(),
+jest.mock('electron', () => ({}));
+
+jest.mock('app/mainWindow/modals/messageModal', () => ({
+    __esModule: true,
+    default: {
+        showErrorModal: jest.fn(),
     },
+}));
+
+jest.mock('main/i18nManager', () => ({
+    localizeMessage: jest.fn(),
+}));
+
+jest.mock('main/utils', () => ({
+    openExternalSafely: jest.fn(),
 }));
 
 jest.mock('common/servers/serverManager', () => ({
@@ -54,6 +68,14 @@ jest.mock('main/security/allowProtocolDialog', () => ({
     handleDialogEvent: jest.fn(),
 }));
 
+jest.mock('main/security/localNetworkAccess', () => ({
+    __esModule: true,
+    default: {
+        registerWebContents: jest.fn(),
+        unregisterWebContents: jest.fn(),
+    },
+}));
+
 describe('PluginsPopUpsManager', () => {
     afterEach(() => {
         jest.resetAllMocks();
@@ -86,11 +108,13 @@ describe('PluginsPopUpsManager', () => {
 
         expect(win.webContents.on).toHaveBeenNthCalledWith(1, 'will-redirect', handlers['will-redirect']);
         expect(win.webContents.on).toHaveBeenNthCalledWith(2, 'will-navigate', handlers['will-navigate']);
-        expect(win.webContents.on).toHaveBeenNthCalledWith(3, 'did-start-navigation', handlers['did-start-navigation']);
+        expect(win.webContents.on).toHaveBeenNthCalledWith(3, 'will-frame-navigate', handlers['will-frame-navigate']);
+        expect(win.webContents.on).toHaveBeenNthCalledWith(4, 'did-start-navigation', handlers['did-start-navigation']);
         expect(win.webContents.once).toHaveBeenCalledWith('render-process-gone', handlers['render-process-gone']);
         expect(win.webContents.setWindowOpenHandler).toHaveBeenCalledWith(handlers['window-open']);
 
         expect(win.once).toHaveBeenCalledWith('closed', handlers.closed);
+        expect(jest.mocked(LocalNetworkAccessManager.registerWebContents)).toHaveBeenCalledWith(win.webContents);
 
         expect(mockContextMenuReload).toHaveBeenCalledTimes(1);
 
@@ -115,6 +139,18 @@ describe('PluginsPopUpsManager', () => {
         handlers['will-navigate'](navigateEv);
         expect(navigateEv.preventDefault).toHaveBeenCalled();
 
+        // Verify subframes can only navigate to web protocols
+        const frameEv = {
+            preventDefault: jest.fn(),
+            isMainFrame: false,
+            url: 'https://example.com/embed',
+        };
+        handlers['will-frame-navigate'](frameEv);
+        expect(frameEv.preventDefault).not.toHaveBeenCalled();
+        frameEv.url = 'custom://payload';
+        handlers['will-frame-navigate'](frameEv);
+        expect(frameEv.preventDefault).toHaveBeenCalled();
+
         navigateEv.preventDefault = jest.fn();
         navigateEv.url = 'about:blank';
         handlers['did-start-navigation'](navigateEv);
@@ -125,23 +161,29 @@ describe('PluginsPopUpsManager', () => {
 
         // Verify opening new windows is not allowed
         expect(handlers['window-open']({url: ''})).toEqual({action: 'deny'});
-        expect(shell.openExternal).not.toHaveBeenCalled();
+        expect(openExternalSafely).not.toHaveBeenCalled();
 
         // Verify internal link is routed in main view
         WebContentsManager.getViewByWebContentsId.mockReturnValue({name: 'parent', webContentsId: 1, serverId: 'server-1'});
         ServerManager.getServer.mockReturnValue({id: 'server-1', url: parseURL('http://localhost:8065')});
         expect(handlers['window-open']({url: 'http://localhost:8065/team/channel'})).toEqual({action: 'deny'});
-        expect(shell.openExternal).not.toHaveBeenCalled();
+        expect(openExternalSafely).not.toHaveBeenCalled();
         expect(NavigationManager.openLinkInNewTab).toHaveBeenCalledWith(parseURL('http://localhost:8065/team/channel'));
 
         // Verify opening custom protocols is handled through allowProtocolDialog
         expect(handlers['window-open']({url: 'custom:somelink'})).toEqual({action: 'deny'});
-        expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith('custom:somelink');
-        expect(shell.openExternal).not.toHaveBeenCalledWith('custom:somelink');
+        expect(allowProtocolDialog.handleDialogEvent).toBeCalledWith('custom:somelink', 'server-1');
+        expect(openExternalSafely).not.toHaveBeenCalled();
 
         // Verify opening external links is allowed through browser
         expect(handlers['window-open']({url: 'https://www.example.com'})).toEqual({action: 'deny'});
-        expect(shell.openExternal).toHaveBeenCalledWith('https://www.example.com/');
+        expect(openExternalSafely).toHaveBeenCalledWith('https://www.example.com/', showInvalidLinkModal);
+
+        // Verify failing to open an external link shows the invalid link dialog
+        openExternalSafely.mockImplementationOnce((url, onError) => onError(new Error('Invalid URL')));
+        expect(handlers['window-open']({url: 'https://example.com}'})).toEqual({action: 'deny'});
+        expect(openExternalSafely).toHaveBeenCalledWith('https://example.com}/', showInvalidLinkModal);
+        expect(MessageModal.showErrorModal).toHaveBeenCalled();
 
         // Simulate render process gone
         handlers['render-process-gone'](null, {reason: 'oom'});
@@ -156,6 +198,7 @@ describe('PluginsPopUpsManager', () => {
 
         // Close
         handlers.closed();
+        expect(jest.mocked(LocalNetworkAccessManager.unregisterWebContents)).toHaveBeenCalledWith(45);
         expect(mockContextMenuDispose).toHaveBeenCalledTimes(1);
 
         // Verify the popout reference has been deleted

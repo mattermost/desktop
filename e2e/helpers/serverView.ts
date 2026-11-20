@@ -3,6 +3,8 @@
 
 import type {ElectronApplication} from 'playwright';
 
+import {isTransientEvaluateError} from './testRefs';
+
 type WaitForSelectorOptions = {
     timeout?: number;
     state?: 'attached' | 'detached' | 'visible' | 'hidden';
@@ -145,10 +147,12 @@ function keyCodeFor(key: string): string {
     return key;
 }
 
-function parseKeyPress(shortcut: string) {
+type KeyboardModifier = 'meta' | 'control' | 'alt' | 'shift';
+
+function parseKeyPress(shortcut: string): {key: string; keyCode: string; modifiers: KeyboardModifier[]} {
     const parts = shortcut.split('+');
     const key = parts.pop() ?? shortcut;
-    const modifiers = parts.map((part) => {
+    const modifiers = parts.map((part): KeyboardModifier => {
         if (part === 'Meta' || part === 'Command' || part === 'Cmd') {
             return 'meta';
         }
@@ -161,7 +165,7 @@ function parseKeyPress(shortcut: string) {
         if (part === 'Shift') {
             return 'shift';
         }
-        return part.toLowerCase();
+        throw new Error(`Unsupported keyboard modifier: ${part}`);
     });
 
     return {
@@ -235,9 +239,24 @@ export class ServerLocator {
             `
             ${DOM_UTILS}
             const descriptor = ${JSON.stringify(this.descriptor)};
-            const element = __mmResolveOne(descriptor);
+            let element = __mmResolveOne(descriptor);
             if (!element) {
                 throw new Error('Element not found for click');
+            }
+
+            const isDisabledControl = (el) => (
+                (el instanceof HTMLButtonElement || el instanceof HTMLInputElement) && el.disabled
+            ) || el.getAttribute('aria-disabled') === 'true';
+
+            if (isDisabledControl(element)) {
+                const deadline = Date.now() + 5000;
+                while (Date.now() < deadline && element && isDisabledControl(element)) {
+                    await new Promise((resolve) => setTimeout(resolve, 50));
+                    element = __mmResolveOne(descriptor);
+                }
+                if (!element) {
+                    throw new Error('Element detached before becoming enabled for click');
+                }
             }
 
             element.scrollIntoView({block: 'center', inline: 'center'});
@@ -249,8 +268,8 @@ export class ServerLocator {
         );
     }
 
-    async count() {
-        return this.view.runInRenderer(
+    async count(): Promise<number> {
+        return this.view.runInRenderer<number>(
             `
             ${DOM_UTILS}
             const descriptor = ${JSON.stringify(this.descriptor)};
@@ -502,31 +521,47 @@ export class ServerView {
         await this.keyboard.press(shortcut);
     }
 
-    runInRenderer<T>(body: string, userGesture = false) {
-        return this.app.evaluate(async ({webContents}, payload) => {
-            const wc = webContents.fromId(payload.id);
-            if (!wc || wc.isDestroyed()) {
-                throw new Error(`webContents ${payload.id} is not available`);
-            }
-            const result = await wc.executeJavaScript(`
-                (() => {
-                    try {
-                        return {__e2eResult: (() => {${payload.body}})()};
-                    } catch (error) {
-                        return {
-                            __e2eError: error instanceof Error ? error.message : String(error),
-                            __e2eStack: error instanceof Error ? error.stack : '',
-                        };
+    async runInRenderer<T>(body: string, userGesture = false): Promise<T> {
+        const maxAttempts = 15;
+
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            try {
+                return await this.app.evaluate(async ({webContents}, payload) => {
+                    const wc = webContents.fromId(payload.id);
+                    if (!wc || wc.isDestroyed()) {
+                        throw new Error(`webContents ${payload.id} is not available`);
                     }
-                })()
-            `, payload.userGesture);
 
-            if (result && typeof result === 'object' && '__e2eError' in result) {
-                throw new Error(`${result.__e2eError}${result.__e2eStack ? `\n${result.__e2eStack}` : ''}`);
+                    // Await inside the renderer. Electron cannot structured-clone a
+                    // Promise nested in {__e2eResult}; a later .then() in Node is too late.
+                    const result = await wc.executeJavaScript(`
+                        (async () => {
+                            try {
+                                return {__e2eResult: await (async () => {${payload.body}})()};
+                            } catch (error) {
+                                return {
+                                    __e2eError: error instanceof Error ? error.message : String(error),
+                                    __e2eStack: error instanceof Error ? error.stack : '',
+                                };
+                            }
+                        })()
+                    `, payload.userGesture);
+
+                    if (result && typeof result === 'object' && '__e2eError' in result) {
+                        throw new Error(`${result.__e2eError}${result.__e2eStack ? `\n${result.__e2eStack}` : ''}`);
+                    }
+
+                    return result?.__e2eResult;
+                }, {id: this.webContentsId, body, userGesture}) as Promise<T>;
+            } catch (error) {
+                if (!isTransientEvaluateError(error) || attempt === maxAttempts - 1) {
+                    throw error;
+                }
+                await sleep(100);
             }
+        }
 
-            return result?.__e2eResult;
-        }, {id: this.webContentsId, body, userGesture}) as Promise<T>;
+        throw new Error('Timed out waiting for server renderer evaluate');
     }
 
     async type(selector: string, text: string) {
@@ -535,10 +570,21 @@ export class ServerView {
     }
 
     async url() {
-        return this.app.evaluate(({webContents}, id) => {
-            const wc = webContents.fromId(id);
-            return wc?.getURL() ?? '';
-        }, this.webContentsId);
+        try {
+            return await this.app.evaluate(({webContents}, id) => {
+                const wc = webContents.fromId(id);
+                return wc?.getURL() ?? '';
+            }, this.webContentsId);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            if (
+                message.includes('Execution context was destroyed') ||
+                message.includes('Target page, context or browser has been closed')
+            ) {
+                return '';
+            }
+            throw error;
+        }
     }
 
     async waitForFunction<T>(

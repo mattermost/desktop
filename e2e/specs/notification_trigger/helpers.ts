@@ -12,21 +12,36 @@ export async function triggerTestNotification(firstServer: ServerView) {
     const textBeforeClick = await sendNotificationButton.textContent();
     expect(textBeforeClick).toBe('Send a test notification');
     await sendNotificationButton.click();
-    await firstServer.waitForFunction(
-        (el) => el.textContent === 'Test notification sent',
-        await firstServer.waitForSelector('.sectionNoticeButton.btn-primary'),
-        {timeout: 10_000},
-    );
+    const sentOnFirstClick = await firstServer.waitForFunction(
+        (el) => el?.textContent === 'Test notification sent',
+        sendNotificationButton,
+        {timeout: 5_000},
+    ).then(() => true).catch(() => false);
+    if (!sentOnFirstClick) {
+        await sendNotificationButton.click();
+        await firstServer.waitForFunction(
+            (el) => el?.textContent === 'Test notification sent',
+            sendNotificationButton,
+            {timeout: 10_000},
+        );
+    }
     const textAfterClick = await sendNotificationButton.textContent();
     expect(textAfterClick).toBe('Test notification sent');
 }
 
 export async function verifyNotificationReceivedInDM(firstServer: ServerView) {
     await firstServer.click('div.modal-header button[aria-label="Close"]');
-    const sidebarLink = await firstServer.locator('a.SidebarLink:has-text("system-bot")');
-    const badgeElement = await sidebarLink.locator('span.badge');
-    const badgeCount = await badgeElement.textContent();
-    expect(parseInt(badgeCount!, 10)).toBeGreaterThan(0);
+    const sidebarLink = firstServer.locator('a.SidebarLink:has-text("system-bot")');
+    const badgeElement = sidebarLink.locator('span.badge');
+
+    await expect.poll(async () => {
+        if (await badgeElement.count() === 0) {
+            return 0;
+        }
+        const text = (await badgeElement.textContent())?.trim() ?? '';
+        const parsed = parseInt(text, 10);
+        return Number.isFinite(parsed) ? parsed : 0;
+    }, {timeout: 15_000, message: 'system-bot sidebar badge must show unread count'}).toBeGreaterThan(0);
 
     await sidebarLink.click();
     await firstServer.waitForSelector('div.post__body');

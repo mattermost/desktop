@@ -28,9 +28,26 @@ export async function buildServerMap(app: ElectronApplication): Promise<ServerMa
                 const servers = refs.ServerManager.getAllServers();
                 return servers.flatMap((server: {id: string; name: string}) => {
                     const views = refs.ViewManager.getViewsByServerId(server.id);
-                    return views.map((view: {id: string}) => {
+                    const orderedTabs: Array<{id: string}> = refs.TabManager?.getOrderedTabsForServer?.(server.id) ?? [];
+                    const orderedTabIds = orderedTabs.map((tab) => tab.id);
+                    const sortedViews = [...views].sort((a: {id: string}, b: {id: string}) => {
+                        const ai = orderedTabIds.indexOf(a.id);
+                        const bi = orderedTabIds.indexOf(b.id);
+                        return (ai === -1 ? Number.MAX_SAFE_INTEGER : ai) - (bi === -1 ? Number.MAX_SAFE_INTEGER : bi);
+                    });
+                    return sortedViews.map((view: {id: string}) => {
                         const webContentsView = refs.WebContentsManager.getView(view.id);
                         if (!webContentsView) {
+                            return null;
+                        }
+
+                        // Require both indexes to agree so we never hand activateServerView
+                        // a webContentsId that was already removed (e.g. after logout tears
+                        // down non-primary tabs via TabManager.handleServerLoggedInChanged).
+                        const byWebContentsId = refs.WebContentsManager.getViewByWebContentsId(
+                            webContentsView.webContentsId,
+                        );
+                        if (!byWebContentsId || byWebContentsId.id !== webContentsView.id) {
                             return null;
                         }
 
@@ -64,10 +81,6 @@ export async function buildServerMap(app: ElectronApplication): Promise<ServerMa
                 webContentsId: entry.webContentsId,
             });
         }
-
-        Object.values(map).forEach((serverEntries) => {
-            serverEntries.sort((left, right) => left.webContentsId - right.webContentsId);
-        });
 
         if (Object.keys(map).length > 0) {
             return map;

@@ -4,6 +4,7 @@
 import {Menu} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import ServerManager from 'common/servers/serverManager';
 import {localizeMessage} from 'main/i18nManager';
@@ -35,6 +36,9 @@ jest.mock('app/mainWindow/mainWindow', () => ({
 }));
 jest.mock('app/mainWindow/modals/modalManager', () => ({
     addModal: jest.fn(),
+}));
+jest.mock('app/mainWindow/modals/messageModal', () => ({
+    isCloseConfirmOpen: jest.fn(),
 }));
 jest.mock('main/utils', () => ({
     getLocalPreload: jest.fn((file) => file),
@@ -116,5 +120,19 @@ describe('main/menus/tray', () => {
 
         expect(mockWindow.show).toHaveBeenCalled();
         expect(ModalManager.addModal).toHaveBeenCalled();
+    });
+
+    it('should not open settings while the close app modal is open', () => {
+        ServerManager.getOrderedServers.mockReturnValue([]);
+        localizeMessage.mockReturnValue('Settings');
+        MainWindow.get.mockReturnValue({show: jest.fn()});
+        MessageModal.isCloseConfirmOpen.mockReturnValue(true);
+        ModalManager.addModal.mockClear();
+        Menu.buildFromTemplate.mockImplementation((template) => template);
+
+        const template = createTrayMenu();
+        template.find((item) => item.label === 'Settings').click();
+
+        expect(ModalManager.addModal).not.toHaveBeenCalled();
     });
 });

@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
-import {ipcMain, nativeTheme, session, shell} from 'electron';
+import {ipcMain, nativeTheme, session} from 'electron';
 import isDev from 'electron-is-dev';
 import Joi from 'joi';
 
@@ -38,6 +38,7 @@ import ViewManager from 'common/views/viewManager';
 import {flushCookiesStore} from 'main/app/utils';
 import PermissionsManager from 'main/security/permissionsManager';
 import ThemeManager from 'main/themeManager';
+import {openExternalSafely} from 'main/utils';
 
 import {MattermostWebContentsView} from './MattermostWebContentsView';
 
@@ -177,11 +178,21 @@ export class WebContentsManager {
     };
 
     private handleTabLoginChanged = (event: IpcMainEvent, loggedIn: boolean) => {
-        log.debug('handleTabLoggedIn', {webContentsId: event.sender.id});
+        log.debug('handleTabLoggedIn', {webContentsId: event.sender.id, loggedIn});
         const view = this.getViewByWebContentsId(event.sender.id);
         if (!view) {
             return;
         }
+
+        // Secondary tabs share the server session. A loading secondary tab can emit
+        // onLogout(false) before cookies/session are visible; treating that as a
+        // server-wide logout destroys sibling tabs (TabManager.handleServerLoggedInChanged).
+        // Only the primary view may mark the server logged out. Login from any tab is fine.
+        if (!loggedIn && !ViewManager.isPrimaryView(view.id)) {
+            log.debug('handleTabLoginChanged: ignoring logout from non-primary view', {viewId: view.id});
+            return;
+        }
+
         this.setLoggedIn(view, loggedIn);
     };
 
@@ -220,17 +231,17 @@ export class WebContentsManager {
         if (!serverURL) {
             return;
         }
-        shell.openExternal(serverURL);
+        openExternalSafely(serverURL);
     };
 
     private handleOpenServerUpgradeLink = () => {
         if (Config.upgradeLink) {
-            shell.openExternal(Config.upgradeLink);
+            openExternalSafely(Config.upgradeLink);
         }
     };
 
     private handleOpenChangelogLink = () => {
-        shell.openExternal(DEFAULT_CHANGELOG_LINK);
+        openExternalSafely(DEFAULT_CHANGELOG_LINK);
     };
 
     private handleUnreadsAndMentionsChanged = (e: IpcMainEvent, isUnread: boolean, mentionCount: number) => {
@@ -254,6 +265,13 @@ export class WebContentsManager {
             return;
         }
         ViewManager.getViewLog(view.id).debug('handleSessionExpired', isExpired);
+
+        // Same as handleTabLoginChanged: a non-primary view must not drive server-wide
+        // logout/teardown (TabManager.handleServerLoggedInChanged removes sibling tabs).
+        if (isExpired && !ViewManager.isPrimaryView(view.id)) {
+            log.debug('handleSessionExpired: ignoring expiry from non-primary view', {viewId: view.id});
+            return;
+        }
 
         if (isExpired) {
             this.setLoggedIn(view, false);

@@ -27,11 +27,11 @@ jobs:
       CSC_LINK: ${{ secrets.MM_DESKTOP_MAC_APP_STORE_CSC_LINK }}
     steps:
       - name: release/checkout-repo
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: release/setup-node
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version-file: "package.json"
+          node-version-file: ".nvmrc"
           cache: "npm"
           cache-dependency-path: package-lock.json
       - name: release/install-dependencies
@@ -45,5 +45,11 @@ jobs:
         uses: ./.github/actions/test
       - name: release/package
         run: npm run package:mas
+      - name: release/setup-ruby
+        uses: ruby/setup-ruby@f9c4492e86def3e644ab32a0ef185eda5b0c20d0 # v1.342.0
+        with:
+          ruby-version: "3.3.14"
+      - name: release/install-fastlane
+        run: gem install fastlane -v 2.241.2 --no-document
       - name: release/publish
         run: fastlane publish_test path:"$(find . -name \*.pkg -print -quit)"

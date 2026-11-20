@@ -66,6 +66,14 @@ export function createFileMenu() {
     };
 }
 
+// Electron's getFocusedWindow() returns the owner BrowserWindow when that
+// window's DevTools is focused, so also exclude the DevTools-focused case.
+function isMainWindowContentFocused() {
+    const mainWindow = MainWindow.get();
+    const focusedWindow = BrowserWindow.getFocusedWindow();
+    return focusedWindow === mainWindow && !focusedWindow?.webContents?.isDevToolsFocused();
+}
+
 function getBaseFileMenu(): MenuItemConstructorOptions[] {
     const baseFileMenu: MenuItemConstructorOptions[] = [];
     const currentServerId = ServerManager.getCurrentServerId();
@@ -96,14 +104,15 @@ function getBaseFileMenu(): MenuItemConstructorOptions[] {
         }, {type: 'separator'});
     }
 
+    const mainWindowContentFocused = isMainWindowContentFocused();
     baseFileMenu.push({
         role: 'close',
         label: localizeMessage('main.menus.app.window.closeWindow', 'Close Window'),
-        accelerator: (BrowserWindow.getFocusedWindow() === MainWindow.get()) ? 'CmdOrCtrl+Shift+W' : 'CmdOrCtrl+W',
+        accelerator: mainWindowContentFocused ? 'CmdOrCtrl+Shift+W' : 'CmdOrCtrl+W',
     });
 
     const tabs = currentServerId ? TabManager.getOrderedTabsForServer(currentServerId) : [];
-    if (BrowserWindow.getFocusedWindow() === MainWindow.get()) {
+    if (mainWindowContentFocused) {
         if (tabs.length > 1) {
             baseFileMenu.push({
                 label: localizeMessage('main.menus.app.window.closeTab', 'Close Tab'),

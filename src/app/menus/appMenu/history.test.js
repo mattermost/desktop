@@ -2,6 +2,7 @@
 // See LICENSE.txt for license information.
 
 import WebContentsManager from 'app/views/webContentsManager';
+import TabManager from 'app/tabs/tabManager';
 import {localizeMessage} from 'main/i18nManager';
 
 import createHistoryMenu from './history';
@@ -14,6 +15,10 @@ jest.mock('app/views/webContentsManager', () => ({
     getFocusedView: jest.fn(),
 }));
 
+jest.mock('app/tabs/tabManager', () => ({
+    getCurrentActiveTabView: jest.fn(),
+}));
+
 describe('app/menus/appMenu/history', () => {
     const mockView = {
         goToOffset: jest.fn(),
@@ -21,6 +26,7 @@ describe('app/menus/appMenu/history', () => {
 
     beforeEach(() => {
         WebContentsManager.getFocusedView.mockReturnValue(mockView);
+        TabManager.getCurrentActiveTabView.mockReturnValue(undefined);
         localizeMessage.mockImplementation((id) => {
             const translations = {
                 'main.menus.app.history': '&History',
@@ -119,19 +125,39 @@ describe('app/menus/appMenu/history', () => {
 
         it('should handle back click when no focused view is available', () => {
             WebContentsManager.getFocusedView.mockReturnValue(null);
+            TabManager.getCurrentActiveTabView.mockReturnValue(mockView);
             const menu = createHistoryMenu();
             const backItem = menu.submenu.find((item) => item.label === 'Back');
 
-            // Should not throw an error when no view is available
             expect(() => backItem.click()).not.toThrow();
+            expect(mockView.goToOffset).toHaveBeenCalledWith(-1);
         });
 
         it('should handle forward click when no focused view is available', () => {
             WebContentsManager.getFocusedView.mockReturnValue(null);
+            TabManager.getCurrentActiveTabView.mockReturnValue(mockView);
             const menu = createHistoryMenu();
             const forwardItem = menu.submenu.find((item) => item.label === 'Forward');
 
-            // Should not throw an error when no view is available
+            expect(() => forwardItem.click()).not.toThrow();
+            expect(mockView.goToOffset).toHaveBeenCalledWith(1);
+        });
+
+        it('should handle back click when no view is available', () => {
+            WebContentsManager.getFocusedView.mockReturnValue(null);
+            TabManager.getCurrentActiveTabView.mockReturnValue(null);
+            const menu = createHistoryMenu();
+            const backItem = menu.submenu.find((item) => item.label === 'Back');
+
+            expect(() => backItem.click()).not.toThrow();
+        });
+
+        it('should handle forward click when no view is available', () => {
+            WebContentsManager.getFocusedView.mockReturnValue(null);
+            TabManager.getCurrentActiveTabView.mockReturnValue(null);
+            const menu = createHistoryMenu();
+            const forwardItem = menu.submenu.find((item) => item.label === 'Forward');
+
             expect(() => forwardItem.click()).not.toThrow();
         });
 

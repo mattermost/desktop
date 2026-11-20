@@ -7,11 +7,10 @@ import type {
     WebContentsWillRedirectEventParams,
     WebContentsDidStartNavigationEventParams,
 } from 'electron';
-import {shell} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import NavigationManager from 'app/navigationManager';
-import {generateHandleConsoleMessage, isCustomProtocol} from 'app/views/webContentEventsCommon';
+import {generateHandleConsoleMessage, generateWillFrameNavigate, isCustomProtocol, showInvalidLinkModal} from 'app/views/webContentEventsCommon';
 import WebContentsManager from 'app/views/webContentsManager';
 import {Logger} from 'common/log';
 import ServerManager from 'common/servers/serverManager';
@@ -20,8 +19,9 @@ import {
     parseURL,
 } from 'common/utils/url';
 import ContextMenu from 'main/contextMenu';
-
-import allowProtocolDialog from '../../main/security/allowProtocolDialog';
+import allowProtocolDialog from 'main/security/allowProtocolDialog';
+import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
+import {openExternalSafely} from 'main/utils';
 
 const log = new Logger('PluginsPopUpsManager');
 
@@ -45,6 +45,7 @@ export class PluginsPopUpsManager {
             parentId,
             win,
         };
+        LocalNetworkAccessManager.registerWebContents(win.webContents);
 
         // We take a conservative approach for the time being and disallow most events coming from popups:
         // - Redirects
@@ -62,6 +63,7 @@ export class PluginsPopUpsManager {
             log.warn('prevented popup window from navigating');
             ev.preventDefault();
         });
+        win.webContents.on('will-frame-navigate', generateWillFrameNavigate(log));
         win.webContents.on('did-start-navigation', (ev: Event<WebContentsDidStartNavigationEventParams>) => {
             if (ev.url === details.url) {
                 return;
@@ -79,7 +81,7 @@ export class PluginsPopUpsManager {
 
             // Check for custom protocol
             if (isCustomProtocol(parsedURL)) {
-                allowProtocolDialog.handleDialogEvent(url);
+                allowProtocolDialog.handleDialogEvent(url, WebContentsManager.getViewByWebContentsId(parentId)?.serverId);
                 return {action: 'deny'};
             }
 
@@ -93,7 +95,7 @@ export class PluginsPopUpsManager {
                 NavigationManager.openLinkInNewTab(parsedURL);
             } else {
                 // We allow to open external links through browser.
-                shell.openExternal(parsedURL.toString());
+                openExternalSafely(parsedURL.toString(), showInvalidLinkModal);
             }
 
             log.warn('prevented popup window from opening window');
@@ -109,6 +111,7 @@ export class PluginsPopUpsManager {
         win.once('closed', () => {
             log.debug('removing popup window', details.url, webContentsId);
             Reflect.deleteProperty(this.popups, webContentsId);
+            LocalNetworkAccessManager.unregisterWebContents(webContentsId);
             contextMenu.dispose();
         });
 

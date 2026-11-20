@@ -15,7 +15,7 @@ import TabManager from './tabs/tabManager';
 
 jest.mock('electron', () => ({
     clipboard: {
-        writeText: jest.fn(),
+        writeText: jest.fn(() => Promise.resolve()),
     },
     Menu: {
         buildFromTemplate: jest.fn(),

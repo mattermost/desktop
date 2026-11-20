@@ -1,0 +1,38 @@
+.SessionAttributesSetting {
+    .SessionAttributesSetting__table {
+        margin: 12px 0 0 26px;
+        border: var(--border-light);
+        border-radius: var(--radius-s);
+        border-collapse: collapse;
+        overflow: hidden;
+        font-size: 12px;
+        line-height: 16px;
+        table-layout: fixed;
+        width: calc(100% - 26px);
+
+        th,
+        td {
+            padding: 6px 12px;
+            text-align: left;
+            overflow-wrap: break-word;
+        }
+
+        th:first-child {
+            width: 40%;
+        }
+
+        th {
+            font-weight: 600;
+            background-color: rgba(var(--center-channel-color-rgb), 0.04);
+            color: rgba(var(--center-channel-color-rgb), 0.76);
+        }
+
+        tbody tr {
+            border-top: var(--border-light);
+        }
+
+        .SessionAttributesSetting__unavailable {
+            color: rgba(var(--center-channel-color-rgb), 0.56);
+        }
+    }
+}

@@ -9,12 +9,25 @@ import {promisify} from 'util';
 const exec = promisify(execOriginal);
 
 import type {BrowserWindow} from 'electron';
-import {app} from 'electron';
+import {app, shell} from 'electron';
 
 import {MAILTO_PREFIX} from 'common/constants';
+import {Logger} from 'common/log';
 import {TAB_BAR_HEIGHT} from 'common/utils/constants';
 
-import type {Args} from 'types/args';
+const log = new Logger('Utils');
+
+export async function openExternalSafely(url: string, onError?: (error: unknown) => void) {
+    try {
+        await shell.openExternal(url);
+    } catch (error) {
+        if (onError) {
+            onError(error);
+            return;
+        }
+        log.warn('Could not open external URL', {error});
+    }
+}
 
 export function getEmailAddressFromMailtoLink(link: string): string | undefined {
     if (!link.toLowerCase().startsWith(MAILTO_PREFIX)) {
@@ -42,18 +55,6 @@ export function isInsideRectangle(container: Electron.Rectangle, rect: Electron.
     }
 
     return true;
-}
-
-export function shouldBeHiddenOnStartup(parsedArgv: Args) {
-    if (parsedArgv.hidden) {
-        return true;
-    }
-    if (process.platform === 'darwin') {
-        if (app.getLoginItemSettings().wasOpenedAsHidden) {
-            return true;
-        }
-    }
-    return false;
 }
 
 export function getWindowBoundaries(win: BrowserWindow) {
@@ -163,4 +164,17 @@ export function isLightColor(color: string) {
     // Using the HSP value, determine whether the color is light or dark
     // > 127.5 is 'light', <= 127.5 is 'dark'
     return hsp > 127.5;
+}
+
+export function isRoutableAddress(family: string, address: string): boolean {
+    return !isLinkLocalAddress(family, address) && address !== '0.0.0.0';
+}
+
+function isLinkLocalAddress(family: string, address: string): boolean {
+    if (family === 'IPv4') {
+        return address.startsWith('169.254.');
+    }
+    const ip = address.split('%')[0].toLowerCase();
+    const firstHextet = parseInt(ip.split(':')[0], 16);
+    return firstHextet >= 0xfe80 && firstHextet <= 0xfebf;
 }

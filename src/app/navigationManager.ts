@@ -2,15 +2,17 @@
 // See LICENSE.txt for license information.
 
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
-import {dialog, ipcMain} from 'electron';
+import {ipcMain} from 'electron';
 import Joi from 'joi';
 
 import MainWindow from 'app/mainWindow/mainWindow';
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import ServerHub from 'app/serverHub';
 import TabManager from 'app/tabs/tabManager';
 import WebContentsManager from 'app/views/webContentsManager';
 import {BROWSER_HISTORY_PUSH, HISTORY, LOAD_FAILED, LOAD_SUCCESS, REQUEST_BROWSER_HISTORY_STATUS} from 'common/communication';
+import Config from 'common/config';
 import {Logger} from 'common/log';
 import type {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
@@ -48,7 +50,7 @@ export class NavigationManager {
         const parsedURL = parseURL(url);
         if (!parsedURL) {
             log.warn(`Ignoring invalid URL: ${url}`);
-            dialog.showErrorBox(
+            MessageModal.showErrorModal(
                 localizeMessage('app.navigationManager.invalidLinkTitle', 'Invalid Link'),
                 localizeMessage('app.navigationManager.invalidLinkDescription', 'The link you clicked appears to be malformed and cannot be opened. Please check the URL for errors before trying again.'),
             );
@@ -88,6 +90,11 @@ export class NavigationManager {
                 webContentsView.once(LOAD_FAILED, this.deeplinkFailed);
                 webContentsView.load(urlWithSchema);
             }
+        } else if (!Config.enableServerManagement) {
+            MessageModal.showErrorModal(
+                localizeMessage('app.navigationManager.serverManagementDisabledTitle', 'Unable to add server'),
+                localizeMessage('app.navigationManager.serverManagementDisabledDescription', 'Your organization\'s settings don\'t allow adding new servers, so this link couldn\'t be opened. Contact your system administrator for more information.'),
+            );
         } else if (ServerManager.hasServers()) {
             ServerHub.showNewServerModal(`${parsedURL.host}${parsedURL.pathname}${parsedURL.search}`);
         } else {
@@ -146,7 +153,7 @@ export class NavigationManager {
     };
 
     private showViewLimitReachedError = () => {
-        dialog.showErrorBox(
+        MessageModal.showErrorModal(
             localizeMessage('app.navigationManager.viewLimitReached', 'View limit reached'),
             localizeMessage('app.navigationManager.viewLimitReached.description', 'You have reached the maximum number of open windows and tabs for this server. Please close an existing window or tab, or adjust the view limit in the Settings modal.'),
         );
@@ -171,11 +178,6 @@ export class NavigationManager {
             return;
         }
 
-        let cleanedPathName = pathName;
-        if (server.url.pathname !== '/' && pathName.startsWith(server.url.pathname)) {
-            cleanedPathName = pathName.replace(server.url.pathname, '');
-        }
-
         const shouldNavigateToParent = sourceView.parentViewId || callsViewId;
         const navigationView = shouldNavigateToParent && sourceView.parentViewId ? WebContentsManager.getView(sourceView.parentViewId) : sourceView;
         if (!navigationView) {
@@ -197,7 +199,7 @@ export class NavigationManager {
             }
         }
 
-        navigationView.sendToRenderer(BROWSER_HISTORY_PUSH, cleanedPathName);
+        navigationView.sendToRenderer(BROWSER_HISTORY_PUSH, pathName);
         navigationView.updateHistoryButton();
     };
 

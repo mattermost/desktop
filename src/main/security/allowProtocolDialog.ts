@@ -4,13 +4,13 @@
 
 import fs from 'fs';
 
-import {dialog, shell} from 'electron';
-
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import buildConfig from 'common/config/buildConfig';
 import {Logger} from 'common/log';
 import {parseURL} from 'common/utils/url';
 import * as Validator from 'common/Validator';
 import {localizeMessage} from 'main/i18nManager';
+import {openExternalSafely} from 'main/utils';
 
 import MainWindow from '../../app/mainWindow/mainWindow';
 import {allowedProtocolFile} from '../constants';
@@ -33,9 +33,11 @@ const BLOCKED_PROTOCOLS = new Set([
 
 export class AllowProtocolDialog {
     allowedProtocols: string[];
+    private inflightPrompts: Set<string>;
 
     constructor() {
         this.allowedProtocols = [];
+        this.inflightPrompts = new Set();
     }
 
     init = () => {
@@ -61,7 +63,7 @@ export class AllowProtocolDialog {
         }
     };
 
-    handleDialogEvent = async (url: string) => {
+    handleDialogEvent = async (url: string, serverId?: string) => {
         const parsedURL = parseURL(url);
         if (!parsedURL) {
             return;
@@ -75,27 +77,35 @@ export class AllowProtocolDialog {
 
         try {
             if (this.allowedProtocols.indexOf(protocol) !== -1) {
-                await shell.openExternal(url);
+                await openExternalSafely(url);
                 return;
             }
             const mainWindow = MainWindow.get();
             if (!mainWindow) {
                 return;
             }
-            const {response} = await dialog.showMessageBox(mainWindow, {
-                title: localizeMessage('main.allowProtocolDialog.title', 'Non http(s) protocol'),
+
+            const promptKey = `${serverId}:${protocol}`;
+            if (this.inflightPrompts.has(promptKey)) {
+                log.debug('Ignoring protocol dialog while one is already pending', {protocol});
+                return;
+            }
+            this.inflightPrompts.add(promptKey);
+
+            const {response} = await MessageModal.showMessageModal({
+                title: localizeMessage('main.allowProtocolDialog.title', 'Open external app?'),
                 message: localizeMessage('main.allowProtocolDialog.message', '{protocol} link requires an external application.', {protocol}),
                 detail: localizeMessage('main.allowProtocolDialog.detail', 'The requested link is {URL}. Do you want to continue?', {URL: url}),
                 defaultId: 2,
                 type: 'warning',
                 buttons: [
                     localizeMessage('label.yes', 'Yes'),
-                    localizeMessage('main.allowProtocolDialog.button.saveProtocolAsAllowed', 'Yes (Save {protocol} as allowed)', {protocol}),
+                    localizeMessage('main.allowProtocolDialog.button.saveProtocolAsAllowed', 'Yes, always allow {protocol}', {protocol}),
                     localizeMessage('label.no', 'No'),
                 ],
                 cancelId: 2,
-                noLink: true,
-            });
+            }, {serverId});
+            this.inflightPrompts.delete(promptKey);
 
             switch (response) {
             case 1: {
@@ -106,11 +116,11 @@ export class AllowProtocolDialog {
                     }
                 }
                 fs.writeFile(allowedProtocolFile, JSON.stringify(this.allowedProtocols), handleError);
-                await shell.openExternal(url);
+                await openExternalSafely(url);
                 break;
             }
             case 0:
-                await shell.openExternal(url);
+                await openExternalSafely(url);
                 break;
             }
         } catch (error) {

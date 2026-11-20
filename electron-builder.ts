@@ -36,6 +36,8 @@ const config = {
         'node_modules/windows-focus-assist/**/*',
         'node_modules/registry-js/**/*',
         'node_modules/cf-prefs/**/*',
+        'node_modules/@koromix/**/*',
+        'node_modules/koffi/**/*',
         '!**/node_modules/macos-notification-state/bin/**/*',
         '!**/node_modules/macos-notification-state/build/**/*',
         '!**/node_modules/windows-focus-assist/bin/**/*',
@@ -48,6 +50,7 @@ const config = {
         'node_modules/windows-focus-assist/build/Release/**/*.node',
         'node_modules/registry-js/build/Release/**/*.node',
         'node_modules/cf-prefs/build/Release/**/*.node',
+        'node_modules/@koromix/**/*.node',
         {
             from: 'dist',
             to: '.',
@@ -79,6 +82,7 @@ const config = {
         './node_modules/windows-focus-assist/build/Release/**/*.node',
         './node_modules/registry-js/build/Release/**/*.node',
         './node_modules/cf-prefs/build/Release/**/*.node',
+        './node_modules/@koromix/**/*.node',
     ],
     linux: {
         category: 'Network;InstantMessaging',
@@ -90,6 +94,12 @@ const config = {
             'flatpak',
         ],
         appId: 'com.Mattermost.Desktop',
+        executableName: 'com.Mattermost.Desktop',
+        desktop: {
+            entry: {
+                StartupWMClass: pkg.desktopName,
+            },
+        },
         extraFiles: [
             {
                 filter: [
@@ -135,6 +145,7 @@ const config = {
             NSFocusStatusUsageDescription: 'Focus status is used by Mattermost to determine whether to send notifications or not.',
             LSFileQuarantineEnabled: true,
         },
+        x64ArchFiles: '**/node_modules/@koromix/koffi-darwin-*/darwin_*/koffi.node',
         ...getMacVersions(),
     },
     mas: {
@@ -147,6 +158,7 @@ const config = {
             NSUserActivityTypes: ['INSendMessageIntent'],
         },
         singleArchFiles: '*',
+        x64ArchFiles: '**/node_modules/@koromix/koffi-darwin-*/darwin_*/koffi.node',
     },
     masDev: {
         provisioningProfile: './dev.provisionprofile',
@@ -200,6 +212,7 @@ const config = {
         additionalWixArgs: ['-ext', 'WixUtilExtension'],
         upgradeCode: '{8523DAF0-699D-4CC7-9A65-C5E696A9DE6D}',
         perMachine: true,
+        createDesktopShortcut: false,
     },
     rpm: {
         fpm: ['--rpm-rpmbuild-define', '_build_id_links none', '--rpm-digest=sha256'],

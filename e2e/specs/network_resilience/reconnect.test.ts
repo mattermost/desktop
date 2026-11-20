@@ -8,7 +8,7 @@ import {loginToMattermost} from '../../helpers/login';
 test.use({appConfig: demoMattermostConfig});
 
 test(
-    'app does not crash when server becomes unreachable and recovers',
+    'MM-T6152 app does not crash when server becomes unreachable and recovers',
     {tag: ['@P0', '@all']},
     async ({electronApp, serverMap}) => {
         if (!process.env.MM_TEST_SERVER_URL) {

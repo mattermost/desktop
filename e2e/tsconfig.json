@@ -13,6 +13,6 @@
       "src/*": ["../src/*"]
     }
   },
-  "include": ["fixtures/**/*", "helpers/**/*", "specs/**/*.ts"],
+  "include": ["fixtures/**/*", "helpers/**/*", "scripts/**/*", "specs/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

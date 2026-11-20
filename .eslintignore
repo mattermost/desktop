@@ -2,4 +2,6 @@ node_modules
 dist
 api-types/lib
 e2e/mochawesome-report
+e2e/playwright-report
+e2e/test-results
 e2e/dist

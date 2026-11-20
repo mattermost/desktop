@@ -1,0 +1,501 @@
+// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
+// See LICENSE.txt for license information.
+
+// CI util unit tests: run with `node --test e2e/utils/github-actions.test.js`.
+
+const {describe, it} = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const {
+    expandPlatformShards,
+    prepareE2eMatrix,
+    E2E_PLAYWRIGHT_SHARDS,
+} = require('./github-actions');
+
+const repoRoot = path.join(__dirname, '../..');
+const read = (rel) => fs.readFileSync(path.join(repoRoot, rel), 'utf8');
+const workflow = (file) => read(`.github/workflows/${file}`);
+
+// GitHub expressions are `${{ ... }}`; join so eslint does not treat them as template interpolation.
+const gha = (expr) => ['$', '{{ ', expr, ' }}'].join('');
+
+function jobLines(source, jobId) {
+    const lines = source.split(/\r?\n/);
+    const start = lines.indexOf(`  ${jobId}:`);
+    assert.ok(start >= 0, `${jobId} must exist`);
+    const end = lines.findIndex((line, i) => i > start && (/^ {2}\S/).test(line));
+    return lines.slice(start, end === -1 ? lines.length : end);
+}
+
+function jobField(source, jobId, field) {
+    for (const line of jobLines(source, jobId)) {
+        const match = line.match(new RegExp(`^ {4}${field}: (.+)$`));
+        if (match) {
+            return match[1];
+        }
+    }
+    return assert.fail(`${jobId} must have ${field}:`);
+}
+
+const threeOs = [
+    {platform: 'linux', runner: 'ubuntu-latest', url: 'https://linux.example'},
+    {platform: 'macos', runner: 'macos-26', url: 'https://macos.example'},
+    {platform: 'windows', runner: 'windows-2022', url: 'https://windows.example'},
+];
+
+describe('E2E/Override label handlers', () => {
+    // Regression (#4040): removing E2E/Run and adding E2E/Override together fired
+    // both label handlers concurrently and the cancel handler posted `error`
+    // last, overwriting the waiver. All three status writers must consult
+    // current labels before posting.
+    it('consult current labels before posting statuses', () => {
+        const trigger = workflow('e2e-pr-trigger.yml');
+        assert.match(trigger, /no longer has E2E\/Override — skipping waiver/);
+        assert.match(trigger, /has E2E\/Override again — skipping re-arm/);
+        assert.match(trigger, /has E2E\/Override — skipping cancelled status update/);
+    });
+
+    it('serializes label handlers per PR and re-reads labels before final writes', () => {
+        const trigger = workflow('e2e-pr-trigger.yml');
+        assert.match(trigger, /group: e2e-pr-trigger-\$\{\{ github\.event\.pull_request\.number \}\}/);
+        assert.match(trigger, /cancel-in-progress: false/);
+        assert.match(trigger, /lost E2E\/Override before the waiver posted — skipping/);
+        assert.match(trigger, /regained E2E\/Override before re-arm — skipping/);
+    });
+
+    it('paginates every label read', () => {
+        const trigger = workflow('e2e-pr-trigger.yml');
+        const paginated = trigger.split('github.paginate(github.rest.issues.listLabelsOnIssue').length - 1;
+        const raw = trigger.split('await github.rest.issues.listLabelsOnIssue').length - 1;
+        assert.ok(paginated >= 4, `expected >=4 paginated label reads, got ${paginated}`);
+        assert.equal(raw, 0);
+    });
+
+    // The label job checks out the base ref, so a step that require()s a helper
+    // added by the same PR crashes until that PR merges
+    // ("isE2EOverrideActive is not a function", run 40287658710), and a local
+    // composite action is likewise loaded from the base checkout. Current-label
+    // checks must be inlined in the workflow, never require()d or delegated.
+    it('never require()s a branch-only helper from the base-ref checkout', () => {
+        const trigger = workflow('e2e-pr-trigger.yml');
+        assert.doesNotMatch(trigger, /isE2EOverrideActive/);
+        assert.doesNotMatch(trigger, /uses: \.\/\.github\/actions\/cancel-e2e-runs/);
+        assert.equal('isE2EOverrideActive' in require('./github-actions'), false);
+        assert.equal(fs.existsSync(path.join(repoRoot, '.github/actions/cancel-e2e-runs/action.yml')), false);
+    });
+});
+
+describe('expandPlatformShards / prepareE2eMatrix', () => {
+    it('shards linux×3, macos×2, windows×3', () => {
+        assert.deepEqual(E2E_PLAYWRIGHT_SHARDS, {linux: 3, macos: 2, windows: 3});
+    });
+
+    it('expands each OS into i-of-n rows and keeps runner/url', () => {
+        const rows = expandPlatformShards(threeOs);
+        assert.equal(rows.length, 8);
+        assert.deepEqual(rows.filter((r) => r.platform === 'linux').map((r) => [r.shard, r.shardDisplay]), [
+            ['1-of-3', '1/3'],
+            ['2-of-3', '2/3'],
+            ['3-of-3', '3/3'],
+        ]);
+        assert.deepEqual(rows.filter((r) => r.platform === 'macos').map((r) => r.shard), ['1-of-2', '2-of-2']);
+        assert.ok(rows.every((r) => r.runner && r.url));
+    });
+
+    it('canonicalizes runner-only rows', () => {
+        const rows = expandPlatformShards([{runner: 'ubuntu-24.04', url: 'https://x'}]);
+        assert.equal(rows.length, 3);
+        assert.ok(rows.every((r) => r.platform === 'linux'));
+    });
+
+    it('groups shards by OS and counts 8 shards + 2 policy reports', () => {
+        const matrix = prepareE2eMatrix(threeOs);
+        assert.equal(matrix.linuxShardCount, 3);
+        assert.equal(matrix.macosShardCount, 2);
+        assert.equal(matrix.windowsShardCount, 3);
+        assert.equal(matrix.totalReportsExpected, 10);
+        assert.equal(matrix.macosRunner, 'macos-26');
+        assert.equal(matrix.windows[2].shard, '3-of-3');
+    });
+
+    it('leaves missing OS matrices empty', () => {
+        const matrix = prepareE2eMatrix([{platform: 'linux', runner: 'ubuntu-latest'}]);
+        assert.equal(matrix.linux.length, 3);
+        assert.deepEqual(matrix.macos, []);
+        assert.deepEqual(matrix.windows, []);
+        assert.equal(matrix.totalReportsExpected, 5);
+        assert.equal(matrix.linuxRunner, 'ubuntu-latest');
+        assert.equal(matrix.macosRunner, '');
+    });
+});
+
+describe('TSIO gh-job-name equals GHA job runtime name', () => {
+    it('nested template job name equals E2E_GH_JOB_NAME', () => {
+        const yml = workflow('e2e-functional-template.yml');
+        const name = yml.match(/^[ ]{4}name: (e2e-on-.+)$/m);
+        const env = yml.match(/E2E_GH_JOB_NAME: (e2e-on-.+)$/m);
+        assert.ok(name && env);
+        assert.equal(name[1], env[1]);
+    });
+
+    it('policy reusable workflow job name equals gh-job-name', () => {
+        const yml = workflow('e2e-policy.yml');
+        const name = yml.match(/^[ ]{4}name: (policy-tests-\$\{\{ inputs\.platform \}\})$/m);
+        const gh = yml.match(/gh-job-name: (policy-tests-\$\{\{ inputs\.platform \}\})$/m);
+        assert.ok(name && gh);
+        assert.equal(name[1], gh[1]);
+    });
+
+    it('caller job titles stay human-readable (TSIO matches the last / segment)', () => {
+        const yml = workflow('e2e-functional.yml');
+        for (const os of ['Linux', 'macOS', 'Windows']) {
+            assert.match(yml, new RegExp(`name: E2E ${os} \\(\\$\\{\\{ matrix\\.shardDisplay \\}\\}\\)`));
+        }
+    });
+});
+
+describe('e2e-functional.yml status jobs', () => {
+    const yml = workflow('e2e-functional.yml');
+
+    it('Post e2e/* and TSIO summary run on failed shards but skip cancelled runs', () => {
+        for (const os of ['linux', 'macos', 'windows']) {
+            assert.equal(
+                jobField(yml, `e2e-${os}-status`, 'if'),
+                gha(`always() && !cancelled() && needs.prepare-matrix.outputs.${os} != '[]'`),
+            );
+        }
+        assert.equal(jobField(yml, 'e2e-policy-status', 'if'), gha('always() && !cancelled()'));
+        assert.equal(jobField(yml, 'tsio-summary', 'if'), gha('always() && !cancelled()'));
+    });
+
+    it('concurrency keys master by SHA and only cancels in-progress PR runs', () => {
+        assert.ok(yml.includes('group: e2e-functional-' + gha('inputs.pr_number || github.sha')));
+        assert.ok(yml.includes('cancel-in-progress: ' + gha("inputs.pr_number != ''")));
+    });
+
+    it('parses job blocks on CRLF checkouts (Windows CI)', () => {
+        const crlf = yml.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
+        assert.equal(jobField(crlf, 'tsio-summary', 'if'), gha('always() && !cancelled()'));
+        assert.equal(
+            jobField(crlf, 'e2e-linux-status', 'if'),
+            gha("always() && !cancelled() && needs.prepare-matrix.outputs.linux != '[]'"),
+        );
+        assert.doesNotMatch(crlf, /e2e-macos-install/);
+    });
+
+    it('pending-flips e2e/<os> and policy, then posts each from its own job', () => {
+        for (const os of ['linux', 'macos', 'windows']) {
+            assert.match(yml, new RegExp(`name: Post e2e/${os}\\r?\\n`));
+        }
+        assert.match(yml, /includePolicy: true/);
+        assert.equal((yml.match(/perOsCommitStatuses: true/g) || []).length, 1);
+        assert.match(yml, /perOsCommitStatuses: false/);
+        const postOs = workflow('e2e-post-os-status.yml');
+        assert.match(postOs, /perOsCommitStatuses: true/);
+        assert.match(postOs, /readyWhenOs: process\.env\.READY_WHEN_OS/);
+        assert.match(postOs, /notifyChannel: false/);
+        assert.doesNotMatch(workflow('compatibility-matrix-testing.yml'), /e2e-post-os-status/);
+    });
+
+    it('shards and policy legs wait only on their own OS install job', () => {
+        for (const os of ['linux', 'windows']) {
+            const block = jobLines(yml, `e2e-${os}`).join('\n');
+            assert.match(block, new RegExp(`- e2e-${os}-install`));
+        }
+        assert.doesNotMatch(yml, /e2e-macos-install/);
+        assert.doesNotMatch(jobLines(yml, 'e2e-macos').join('\n'), /e2e-.*-install/);
+        assert.doesNotMatch(jobLines(yml, 'e2e-policy-macos').join('\n'), /e2e-.*-install/);
+        assert.match(jobLines(yml, 'e2e-policy-windows').join('\n'), /- e2e-windows-install/);
+    });
+
+    it('posts each OS status as soon as that OS finishes (separate needs, shared workflow)', () => {
+        for (const os of ['linux', 'macos', 'windows']) {
+            const block = jobLines(yml, `e2e-${os}-status`).join('\n');
+            assert.match(block, new RegExp(`- e2e-${os}$`, 'm'));
+            assert.match(block, /uses: \.\/\.github\/workflows\/e2e-post-os-status\.yml/);
+            for (const other of ['linux', 'macos', 'windows'].filter((o) => o !== os)) {
+                assert.doesNotMatch(block, new RegExp(`- e2e-${other}$`, 'm'));
+            }
+        }
+    });
+
+    it('runs triage after every job that writes a status triage can overwrite', () => {
+        const block = jobLines(yml, 'tsio-triage').join('\n');
+        for (const job of ['e2e-linux-status', 'e2e-macos-status', 'e2e-windows-status', 'e2e-policy-status']) {
+            assert.match(block, new RegExp(`- ${job}$`, 'm'));
+        }
+    });
+
+    it('runs triage when any status is red, even if the summary passed', () => {
+        // Master run 41776677247: the summary passed while e2e/macos was red, and triage was skipped.
+        const block = jobLines(yml, 'tsio-triage').join('\n');
+        assert.match(block, /needs\.tsio-summary\.result != 'success'/);
+        for (const job of ['e2e-linux-status', 'e2e-macos-status', 'e2e-windows-status', 'e2e-policy-status']) {
+            assert.match(block, new RegExp(`\\|\\| needs\\.${job}\\.result == 'failure'`));
+        }
+    });
+
+    it('checks out cmt-triage-verdict.js wherever cmt-channel-notify.js is loaded', () => {
+        // cmt-channel-notify.js requires ./cmt-triage-verdict; a sparse
+        // checkout missing it crashes the status job at require time
+        // (PR E2E run 40478469985: every status job failed, tests passed).
+        const sparseBlocks = (source) => {
+            const blocks = [];
+            const lines = source.split(/\r?\n/);
+            for (let i = 0; i < lines.length; i++) {
+                if (!(/sparse-checkout: \|/).test(lines[i])) {
+                    continue;
+                }
+                const block = [];
+                for (let j = i + 1; j < lines.length; j++) {
+                    const match = lines[j].match(/^\s+(\S+)$/);
+                    if (!match) {
+                        break;
+                    }
+                    block.push(match[1]);
+                }
+                blocks.push(block);
+            }
+            return blocks;
+        };
+        for (const file of ['e2e-functional.yml', 'e2e-post-os-status.yml', 'compatibility-matrix-testing.yml']) {
+            for (const block of sparseBlocks(workflow(file))) {
+                if (block.includes('e2e/utils/cmt-channel-notify.js')) {
+                    assert.ok(
+                        block.includes('e2e/utils/cmt-triage-verdict.js'),
+                        `${file} sparse checkout loads cmt-channel-notify.js without cmt-triage-verdict.js: ${block.join(', ')}`,
+                    );
+                }
+            }
+        }
+    });
+
+    it('defers the master channel alert to the post-triage verdict job', () => {
+        // tsio-summary still notifies PRs immediately, but never master.
+        assert.match(jobLines(yml, 'tsio-summary').join('\n'), /notifyChannel: compositeIdentity\.name !== 'desktop-master'/);
+        assert.match(jobLines(yml, 'tsio-summary').join('\n'), /report-url: /);
+
+        // Every triage lane records its verdict for the fold.
+        const triage = jobLines(yml, 'tsio-triage').join('\n');
+        assert.match(triage, /id: triage/);
+        assert.match(triage, /name: e2e-triage-verdict-/);
+
+        // One file name per OS: the verdict job downloads every lane into one folder with
+        // merge-multiple, where files sharing a name overwrite each other.
+        assert.match(triage, /> "e2e-triage-verdict-\$\{PLATFORM\}\.json"/);
+        assert.match(triage, /path: e2e-triage-verdict-\$\{\{ matrix\.platform \}\}\.json/);
+
+        // Each lane records its failed tests, so the master alert names them.
+        assert.match(triage, /findings-file: e2e-triage-findings\.json/);
+        assert.match(triage, /findingsRecorded: \$findingsRecorded/);
+
+        // The verdict job judges every master run: notifyCmtChannel stays
+        // silent on green, and missing/empty legs still alert even when the
+        // summary itself succeeded.
+        const verdict = jobLines(yml, 'master-e2e-verdict').join('\n');
+        assert.match(verdict, /fromJson\(needs\.prepare-matrix\.outputs\.tsio-composite-identity\)\.name == 'desktop-master'/);
+        assert.doesNotMatch(verdict, /needs\.tsio-summary\.result/);
+        assert.match(verdict, /pattern: e2e-triage-verdict-\*/);
+        assert.match(verdict, /notifyCmtChannel/);
+        assert.match(verdict, /triageLanes/);
+
+        // A red OS status triage did not clear counts as a failure even when the summary passed.
+        for (const [os, job] of [['linux', 'e2e-linux-status'], ['macos', 'e2e-macos-status'], ['windows', 'e2e-windows-status'], ['policy', 'e2e-policy-status']]) {
+            assert.match(verdict, new RegExp(`^ {6}- ${job}$`, 'm'), `master-e2e-verdict needs ${job}`);
+            assert.match(verdict, new RegExp(`"${os}": "\\$\\{\\{ needs\\.${job}\\.result \\}\\}"`));
+        }
+        assert.match(verdict, /const hasFailures = redStatusNotCleared\(statusResults, triageLanes\) \|\| /);
+
+        // The status results reach the alert itself, not only hasFailures: the notify call passes them.
+        assert.match(verdict, /triageLanes,\n\s+statusResults,\n\s+\}\);/);
+    });
+});
+
+describe('e2e job timeout-minutes', () => {
+    it('template e2e is 30 for PR/master shards and 60 for unsharded CMT', () => {
+        assert.equal(jobField(workflow('e2e-functional-template.yml'), 'e2e', 'timeout-minutes'), gha('inputs.cmt && 60 || 30'));
+    });
+
+    it('policy 30, install 25, status and summary jobs 10', () => {
+        assert.equal(jobField(workflow('e2e-policy.yml'), 'policy', 'timeout-minutes'), '30');
+        assert.equal(jobField(workflow('e2e-install.yml'), 'install', 'timeout-minutes'), '25');
+        assert.equal(jobField(workflow('e2e-post-os-status.yml'), 'post', 'timeout-minutes'), '10');
+        const yml = workflow('e2e-functional.yml');
+        for (const job of ['e2e-policy-status', 'tsio-summary']) {
+            assert.equal(jobField(yml, job, 'timeout-minutes'), '10', job);
+        }
+        assert.equal(jobField(workflow('compatibility-matrix-testing.yml'), 'update-final-status', 'timeout-minutes'), '10');
+    });
+});
+
+describe('CMT posts only e2e/compatibility-matrix-testing', () => {
+    const cmt = workflow('compatibility-matrix-testing.yml');
+
+    it('never writes e2e/<os> statuses', () => {
+        assert.doesNotMatch(cmt, /updateInitialOsStatuses/);
+        assert.doesNotMatch(cmt, /osStatusContext/);
+        assert.match(cmt, /perOsCommitStatuses: false/);
+        assert.doesNotMatch(cmt, /perOsCommitStatuses: true/);
+    });
+
+    it('uses the CMT aggregate context and defers channel notify to the verdict job', () => {
+        assert.match(cmt, /context: e2e\/compatibility-matrix-testing/);
+        assert.match(cmt, /COMMIT_STATUS_CONTEXT: e2e\/compatibility-matrix-testing/);
+        assert.match(cmt, /MATTERMOST_CMT_WEBHOOK_URL:/);
+
+        // The summary no longer posts the verbose rollup itself; cmt-verdict
+        // posts one short triage-driven message once cmt-triage has folded.
+        assert.match(cmt, /notifyChannel: false/);
+    });
+
+    it('runs unsharded per-OS legs; linux/windows wait on their install job, macos does not', () => {
+        assert.match(cmt, /^\s+cmt: true$/m);
+        assert.doesNotMatch(cmt, /e2e-macos-install/);
+        const linux = jobLines(cmt, 'e2e-linux').join('\n');
+        assert.match(linux, /- e2e-linux-install/);
+        assert.doesNotMatch(linux, /e2e-(macos|windows)-install/);
+        assert.doesNotMatch(jobLines(cmt, 'e2e-macos').join('\n'), /e2e-.*-install/);
+        assert.match(jobLines(cmt, 'e2e-windows').join('\n'), /- e2e-windows-install/);
+    });
+
+    it('gives each triage lane its own verdict file, so the merged download keeps every lane', () => {
+        // With one shared file name, merge-multiple kept only the last lane: the run was judged on 1 of 15.
+        const triage = jobLines(cmt, 'cmt-triage').join('\n');
+        assert.match(triage, /VERDICT_FILE="cmt-triage-verdict-\$\(printf '%s-%s' "\$\{PLATFORM\}" "\$\{SERVER_VERSION\}" \| tr -c 'A-Za-z0-9\._-' '_'\)-\$\(printf '%s\\n%s' "\$\{PLATFORM\}" "\$\{SERVER_VERSION\}" \| sha256sum \| cut -c1-8\)\.json"/);
+        assert.match(triage, /> "\$\{VERDICT_FILE\}"/);
+        assert.match(triage, /path: \$\{\{ steps\.record-verdict\.outputs\.file \}\}/);
+        assert.doesNotMatch(triage, /cmt-triage-verdict\.json/);
+        assert.match(jobLines(cmt, 'cmt-verdict').join('\n'), /merge-multiple: true/);
+    });
+
+    it('records each failed test with its lane verdict, from the triage findings file', () => {
+        const triage = jobLines(cmt, 'cmt-triage').join('\n');
+        assert.match(triage, /findings-file: e2e-triage-findings\.json/);
+        assert.match(triage, /if \.schema == 2 then \[\.findings\[\] \| \{title, full_title, file, label, blocking, explanation: \.ai\.explanation\}\]/);
+        assert.doesNotMatch(triage, /schema == 1/, 'the toolkit only writes schema 2');
+        assert.match(triage, /--argjson findingsRecorded "\$\{RECORDED\}"/);
+        assert.match(triage, /--argjson findings "\$\{FINDINGS\}"/);
+        const action = read('.github/actions/e2e-triage/action.yml');
+        assert.match(action, /findings-file: \$\{\{ inputs\.findings-file \}\}/);
+        assert.match(action, / {2}findings-file:\r?\n(?:.*\r?\n){2} {4}default: ''/, 'off unless a caller asks: PR and master lanes write none');
+    });
+});
+
+describe('e2e node_modules and Electron zip caches', () => {
+    const setupDeps = read('.github/actions/e2e-setup-deps/action.yaml');
+
+    function namedStep(name) {
+        const start = setupDeps.indexOf(`- name: ${name}`);
+        assert.ok(start >= 0, `${name} must exist`);
+        const rest = setupDeps.slice(start);
+        const next = rest.search(/\n {4}- name: /);
+        return next === -1 ? rest : rest.slice(0, next);
+    }
+
+    it('restores v9 (lock+patches+nvmrc+arch) and saves with the restore primary key', () => {
+        assert.match(
+            namedStep('e2e/cache-node-modules'),
+            /build-node-modules-v9-\$\{\{ runner\.arch \}\}-\$\{\{ hashFiles\('\*\*\/package-lock\.json', 'patches\/\*\*', '\.nvmrc'\) \}\}/,
+        );
+        assert.match(namedStep('e2e/cache-electron-zip'), /electron-zip-v1-\$\{\{ runner\.arch \}\}-\$\{\{ hashFiles\('package-lock\.json'\) \}\}/);
+        assert.match(namedStep('e2e/save-node-modules'), /key: \$\{\{ steps\.cache-node-modules\.outputs\.cache-primary-key \}\}/);
+        assert.match(namedStep('e2e/save-electron-zip'), /cache-electron-zip\.outputs\.cache-hit != 'true'/);
+        assert.match(namedStep('e2e/save-electron-zip'), /cache-node-modules\.outputs\.cache-hit != 'true'/);
+        assert.match(namedStep('e2e/save-node-modules'), /continue-on-error: \$\{\{ inputs\.mode == 'restore-or-install' \}\}/);
+        assert.match(namedStep('e2e/save-electron-zip'), /continue-on-error: \$\{\{ inputs\.mode == 'restore-or-install' \}\}/);
+        assert.match(setupDeps, /node-version-file: "\.nvmrc"/);
+    });
+
+    it('Linux/Windows install job writes caches; macOS shards restore-or-install', () => {
+        assert.match(workflow('e2e-install.yml'), /mode: install/);
+        const macOrRestore = /runner\.os == 'macOS' && 'restore-or-install' \|\| 'restore'/;
+        for (const file of ['e2e-functional-template.yml', 'e2e-policy.yml']) {
+            assert.match(workflow(file), macOrRestore);
+            assert.doesNotMatch(workflow(file), /^\s+npm ci$/m);
+        }
+    });
+
+    it('skips Windows OS deps on restore so shards do not hit Chocolatey', () => {
+        const step = namedStep('e2e/install-os-dependencies');
+        assert.match(step, /runner\.os != 'Windows' \|\| inputs\.mode != 'restore'/);
+        assert.match(step, /inputs\.mode != 'install' \|\| steps\.cache-node-modules\.outputs\.cache-hit != 'true'/);
+        const osDeps = read('.github/actions/install-os-dependencies/action.yaml');
+        assert.doesNotMatch(osDeps, /choco install/);
+        assert.doesNotMatch(osDeps, /apt-key add/);
+        assert.doesNotMatch(osDeps, /openjdk-8-jre/);
+        assert.match(osDeps, /gtk_package=libgtk-3-0t64/);
+        assert.match(osDeps, /VERSION_ID}" = "22\.04"/);
+        assert.match(osDeps, /gtk_package=libgtk-3-0/);
+        assert.match(osDeps, /"\$\{gtk_package\}"/);
+        assert.doesNotMatch(workflow('ci.yaml'), /choco install/);
+        assert.doesNotMatch(workflow('build-for-pr.yml'), /choco install/);
+        assert.doesNotMatch(workflow('nightly-main.yml'), /choco install/);
+        assert.doesNotMatch(workflow('nightly-rainforest.yml'), /choco install/);
+        assert.doesNotMatch(workflow('release.yaml'), /choco install/);
+    });
+
+    it('ci.yaml and build-for-pr.yml do not share the e2e v9 key', () => {
+        assert.doesNotMatch(workflow('ci.yaml'), /build-node-modules-v9-/);
+        assert.doesNotMatch(workflow('build-for-pr.yml'), /build-node-modules-v9-/);
+    });
+
+    it('Windows package jobs restore node_modules and do not save the Electron rebuild', () => {
+        for (const [file, buildJob] of [
+            ['ci.yaml', 'build-win-no-installer'],
+            ['build-for-pr.yml', 'build-win-for-pr'],
+        ]) {
+            const source = workflow(file);
+            const install = jobLines(source, 'windows-install-deps').join('\n');
+            const build = jobLines(source, buildJob).join('\n');
+            assert.match(install, /build-node-modules-v2-/);
+            assert.match(install, /uses: actions\/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9/);
+            assert.match(build, /uses: actions\/cache\/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9/);
+            assert.doesNotMatch(build, /uses:\s*actions\/cache(?:\/save)?@/);
+            assert.match(build, /build-node-modules-v2-/);
+        }
+    });
+});
+
+describe('CI Playwright workers and serial files', () => {
+    it('keeps linux CI at 1 worker, macOS at 2, and Windows at 3', () => {
+        const src = read('e2e/playwright.config.ts');
+        assert.match(src, /macos-26 is 3-core \/ 7 GB/);
+        assert.match(src, /case 'linux':\s*return 1;/);
+        assert.match(src, /case 'darwin':[\s\S]*?return 2;/);
+        assert.match(src, /case 'win32':\s*return 3;/);
+    });
+
+    it('MM-T1668 races menu quit with app close', () => {
+        const src = read('e2e/specs/menu_bar/quit_menu.test.ts');
+        assert.match(src, /Promise\.race\(\[clickQuitRole\(electronApp\), closePromise\]\)/);
+        assert.match(src, /waitForAppClose\(electronApp, 20_000\)/);
+    });
+
+    it('closeElectronApp short-circuits when the Electron PID is already gone', () => {
+        const src = read('e2e/helpers/electronApp.ts');
+        assert.match(src, /if \(!pid \|\| !isProcessAlive\(pid\)\) \{/);
+        assert.match(src, /attemptClose\(app, 2_000\)/);
+        assert.match(src, /settleElectronClose\(closePromise, pid, 5_000\)/);
+    });
+
+    it('MM-T821 treats closeDevTools as best-effort after asserting open', () => {
+        const src = read('e2e/specs/menu_bar/devtools_current_server.test.ts');
+        assert.match(src, /DevTools must open for the current server webContents after menu click/);
+        assert.match(src, /isRetryable: \(\) => false/);
+        assert.match(src, /Promise\.race/);
+    });
+
+    it('CPA, Calls, and policy files stay serial', () => {
+        for (const file of [
+            'e2e/specs/user_attributes/user_attributes.test.ts',
+            'e2e/specs/calls/calls_functionality.test.ts',
+            'e2e/specs/calls/slash_commands.test.ts',
+            'e2e/specs/calls/keyboard_shortcuts.test.ts',
+            'e2e/specs/policy/policy.test.ts',
+        ]) {
+            assert.match(read(file), /describe\.configure\(\{mode: 'serial'\}\)/, `${file} must stay serial`);
+        }
+    });
+});

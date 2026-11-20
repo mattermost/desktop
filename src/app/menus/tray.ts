@@ -6,6 +6,7 @@ import type {MenuItemConstructorOptions} from 'electron';
 import {Menu} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
+import MessageModal from 'app/mainWindow/modals/messageModal';
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import {ModalConstants} from 'common/constants';
 import ServerManager from 'common/servers/serverManager';
@@ -29,7 +30,7 @@ export default function createTrayMenu() {
             label: process.platform === 'darwin' ? localizeMessage('main.menus.tray.preferences', 'Preferences...') : localizeMessage('main.menus.tray.settings', 'Settings'),
             click: () => {
                 const mainWindow = MainWindow.get();
-                if (!mainWindow) {
+                if (!mainWindow || MessageModal.isCloseConfirmOpen()) {
                     return;
                 }
 

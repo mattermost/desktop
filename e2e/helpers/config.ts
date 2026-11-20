@@ -2,17 +2,34 @@
 // See LICENSE.txt for license information.
 
 import * as fs from 'fs';
+import {createRequire} from 'module';
 import * as path from 'path';
+
+const require = createRequire(__filename);
 
 export const sourceRootDir = path.join(__dirname, '../..');
 
-// The Electron binary from the npm package
-export const electronBinaryPath = (() => {
+function getElectronBinaryPath(): string {
     if (process.platform === 'darwin') {
         return path.join(sourceRootDir, 'node_modules/electron/dist/Electron.app/Contents/MacOS/Electron');
     }
     const ext = process.platform === 'win32' ? '.exe' : '';
     return path.join(sourceRootDir, `node_modules/electron/dist/electron${ext}`);
+}
+
+// Electron 42+ no longer downloads its binary during npm install. Playwright
+// launches via executablePath, so trigger the lazy download before tests run.
+export function ensureElectronBinary(): void {
+    const binaryPath = getElectronBinaryPath();
+    if (!fs.existsSync(binaryPath)) {
+        require(path.join(sourceRootDir, 'node_modules/electron'));
+    }
+}
+
+// The Electron binary from the npm package
+export const electronBinaryPath = (() => {
+    ensureElectronBinary();
+    return getElectronBinaryPath();
 })();
 
 // Test build app directory — built by `npm run build-test` (NODE_ENV=test)
@@ -22,7 +39,7 @@ export const appDir = path.join(sourceRootDir, 'e2e/dist');
 
 export const mattermostURL = process.env.MM_TEST_SERVER_URL ?? 'http://localhost:8065/';
 
-export const exampleURL = 'http://example.com/';
+export const exampleURL = 'https://example.com/';
 
 export const cmdOrCtrl = process.platform === 'darwin' ? 'command' : 'control';
 
@@ -34,6 +51,7 @@ export type AppConfig = {
     showTrayIcon: boolean;
     trayIconTheme: string;
     minimizeToTray: boolean;
+    alwaysClose?: boolean;
     notifications: {flashWindow: number; bounceIcon: boolean; bounceIconType: string};
     showUnreadBadge: boolean;
     useSpellChecker: boolean;
@@ -48,6 +66,8 @@ export type AppConfig = {
     appLanguage: string;
     logLevel: string;
     viewLimit: number;
+    downloadLocation?: string;
+    useNativeTitleBar?: boolean;
 };
 
 const baseConfig: AppConfig = {
@@ -96,6 +116,16 @@ export const emptyConfig: AppConfig = {
     servers: [],
 };
 
+// Single configured server, used by the local-network policy spec to point at a loopback
+// test server so no live Mattermost is required.
+export function localNetworkConfig(serverUrl: string): AppConfig {
+    return {
+        ...baseConfig,
+        servers: [{name: 'local', url: serverUrl, order: 0}],
+        lastActiveServer: 0,
+    };
+}
+
 // ---- File writer ----
 
 /**
@@ -104,4 +134,37 @@ export const emptyConfig: AppConfig = {
  */
 export function writeConfigFile(userDataDir: string, config: AppConfig): void {
     fs.writeFileSync(path.join(userDataDir, 'config.json'), JSON.stringify(config, null, 2));
+}
+
+/**
+ * Pre-grant `media`/`display-capture` permissions for every configured server so the
+ * Calls widget can open a microphone via getUserMedia during E2E.
+ *
+ * The main process PermissionsManager reads userDataDir/permissions.json keyed by
+ * `server.url.origin` and denies `media` in test mode (NODE_ENV=test) unless it is
+ * already allowed here. Without this, the Calls WebRTC peer never establishes even
+ * with `--use-fake-device-for-media-stream`.
+ *
+ * MUST be synchronous — must complete before electron.launch() is called.
+ */
+export function writePermissionsFile(userDataDir: string, config: AppConfig | object): void {
+    const permissions: Record<string, unknown> = {};
+
+    // launchDirectTestApp takes `AppConfig | object`, so `servers` may be absent or
+    // malformed (a spec deliberately writing a bad config, for instance). Grant nothing
+    // in that case rather than throwing before Electron has even launched.
+    const servers = (config as Partial<AppConfig>).servers;
+    for (const server of Array.isArray(servers) ? servers : []) {
+        let origin: string;
+        try {
+            origin = new URL(server.url).origin;
+        } catch {
+            continue;
+        }
+        permissions[origin] = {
+            media: {allowed: true},
+            'display-capture': {allowed: true},
+        };
+    }
+    fs.writeFileSync(path.join(userDataDir, 'permissions.json'), JSON.stringify(permissions, null, 2));
 }

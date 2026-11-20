@@ -8,6 +8,24 @@ import Joi from 'joi';
 import * as Validator from './Validator';
 
 describe('common/Validator', () => {
+    describe('validateAppState', () => {
+        const installId = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
+
+        it('should preserve installId so it is not regenerated on every launch', () => {
+            expect(Validator.validateAppState({installId})).toStrictEqual({installId});
+        });
+
+        it('should preserve installId alongside the other app state fields', () => {
+            const state = {lastAppVersion: '6.3.0', installId};
+            expect(Validator.validateAppState(state)).toStrictEqual(state);
+        });
+
+        it('should not discard sibling state when installId is not a UUID', () => {
+            const state = {lastAppVersion: '6.3.0', installId: 'not-a-uuid'};
+            expect(Validator.validateAppState(state)).toStrictEqual(state);
+        });
+    });
+
     describe('validateV0ConfigData', () => {
         const config = {url: 'http://server-1.com'};
 
@@ -221,6 +239,12 @@ describe('common/Validator', () => {
             enableSentry: true,
             enableSessionAttributes: true,
             useNativeTitleBar: false,
+            trustedEmbeddedMediaOrigins: [
+                {
+                    serverOrigin: 'https://chat.example.com',
+                    embeddedOrigin: 'https://meet.example.com',
+                },
+            ],
         };
 
         it('should validate v4 config data', () => {
@@ -233,6 +257,100 @@ describe('common/Validator', () => {
                 spellCheckerURL: 'a-bad>url',
             };
             expect(Validator.validateV4ConfigData(modifiedConfig)).not.toHaveProperty('spellCheckerURL');
+        });
+
+        it('should reject trusted embedded media values that are not origins', () => {
+            const modifiedConfig = {
+                ...config,
+                trustedEmbeddedMediaOrigins: [
+                    {
+                        serverOrigin: 'https://chat.example.com/path',
+                        embeddedOrigin: 'https://meet.example.com',
+                    },
+                ],
+            };
+            expect(Validator.validateV4ConfigData(modifiedConfig)).toBeNull();
+        });
+    });
+
+    describe('server urls in config', () => {
+        const plainURL = 'http://server-1.com';
+        const keptURLs = [
+            plainURL,
+            'https://server.example.com',
+            'https://internal_host.example',
+            'https://[2001:db8::1]/',
+            'https://good.example',
+            'https://example.com.',
+        ];
+        const mixedURLs = [
+            plainURL,
+            'https://a,b.example',
+            'https://a;b.example',
+            'https://a*.example',
+            'https://.example.com',
+            'https://a%2A.example',
+            'https://a%2C.example',
+            'https://a%3B.example',
+            'https://%2Eexample.com',
+            'https://*',
+            'https://,',
+            'https://;',
+            'https://.',
+            'https://example.com,',
+            'https://example.com;',
+            'https://example.com*',
+            'https://ex*ample.com',
+            'https://example.com ',
+            'https://*,*.example',
+            '*,*.example',
+            'a,b.example',
+            'https://',
+            '',
+            'https://a\uFF0Ab.example',
+            'https://a\uFF0Cb.example',
+            'https://a\uFF1Bb.example',
+            'https://\u3002example.com',
+            'https://A,B.EXAMPLE',
+            'https://user:pass@a,b.example',
+        ];
+        const validators = {
+            1: Validator.validateV1ConfigData,
+            2: Validator.validateV2ConfigData,
+            3: Validator.validateV3ConfigData,
+            4: Validator.validateV4ConfigData,
+        };
+
+        const configFor = (version, urls) => {
+            const servers = urls.map((url, index) => ({name: `server-${index}`, url}));
+            if (version === 4) {
+                return {version, servers};
+            }
+            if (version === 3) {
+                return {
+                    version,
+                    teams: servers.map((server) => ({
+                        ...server,
+                        tabs: [{name: 'channels', isOpen: true}],
+                    })),
+                };
+            }
+            return {version, teams: servers};
+        };
+
+        const urlsFrom = (result, version) => {
+            const servers = version === 4 ? result.servers : result.teams;
+            return servers.map((server) => server.url);
+        };
+
+        // Checks that each config version keeps a plain https url, an underscore host, and an IPv6 host,
+        // and leaves out a hostname containing a comma, semicolon, asterisk, or a leading dot.
+        it.each([1, 2, 3, 4].flatMap((version) => [
+            {version, kind: 'ordinary server urls', urls: keptURLs, expected: keptURLs},
+            {version, kind: 'only ordinary server urls from a mixed list', urls: mixedURLs, expected: [plainURL]},
+        ]))('should keep $kind when loading config v$version', ({version, urls, expected}) => {
+            const result = validators[version](configFor(version, urls));
+            expect(result && urlsFrom(result, version)).toEqual(expected);
         });
     });
 
@@ -321,6 +439,82 @@ describe('common/Validator', () => {
 
             expect(wrapped(event, 'anything', 1n)).toBe('ok');
             expect(handler).toHaveBeenCalledWith(event, 'anything', 1n);
+        });
+
+        it('accepts empty strings when schema uses .allow("")', () => {
+            const handler = jest.fn().mockReturnValue('ok');
+            const wrapped = Validator.ipcValidate(handler, [Joi.string().allow('').required()]);
+
+            expect(wrapped(event, '')).toBe('ok');
+            expect(handler).toHaveBeenCalledWith(event, '');
+        });
+
+        it('accepts empty strings for all NOTIFY_MENTION-style args', () => {
+            const handler = jest.fn().mockReturnValue('ok');
+            const mentionSchema = [
+                Joi.string().allow('').required(),
+                Joi.string().allow('').required(),
+                Joi.string().allow('').required(),
+                Joi.string().allow('').required(),
+                Joi.string().allow('').required(),
+                Joi.boolean().required(),
+                Joi.string().allow('').required(),
+            ];
+            const wrapped = Validator.ipcValidate(handler, mentionSchema);
+
+            expect(wrapped(event, 'Title', 'Body', '', '', '', false, '')).toBe('ok');
+            expect(handler).toHaveBeenCalledWith(event, 'Title', 'Body', '', '', '', false, '');
+        });
+    });
+
+    describe('desktopSourcesOptsSchema', () => {
+        const opts = (thumbnailSize) => ({types: ['screen', 'window'], thumbnailSize});
+
+        it('accepts a typical thumbnail size', () => {
+            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: 400, height: 400})).error).toBeUndefined();
+        });
+
+        it('rejects oversized thumbnail dimensions', () => {
+            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: 1000000, height: 400})).error).toBeDefined();
+            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: 400, height: 1000000})).error).toBeDefined();
+        });
+
+        it.each([
+            -1,
+            1.5,
+            401,
+            4096,
+            Number.MAX_SAFE_INTEGER,
+        ])('rejects out-of-range or non-integer thumbnail dimension %p', (dim) => {
+            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: dim, height: 400})).error).toBeDefined();
+            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: 400, height: dim})).error).toBeDefined();
+        });
+
+        it('rejects numeric strings as thumbnail dimensions', () => {
+            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: '400', height: 400})).error).toBeDefined();
+            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: 400, height: '400'})).error).toBeDefined();
+        });
+
+        it('accepts the maximum thumbnail dimension', () => {
+            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: 400, height: 400})).error).toBeUndefined();
+            expect(Validator.desktopSourcesOptsSchema.validate(opts({width: 0, height: 0})).error).toBeUndefined();
+        });
+
+        it.each([
+            [[]],
+            [['screen', 'screen']],
+            [['screen', 'window', 'window']],
+            [['tab']],
+        ])('rejects invalid types %p', (types) => {
+            expect(Validator.desktopSourcesOptsSchema.validate({types, thumbnailSize: {width: 400, height: 400}}).error).toBeDefined();
+        });
+
+        it.each([
+            [['screen']],
+            [['window']],
+            [['window', 'screen']],
+        ])('accepts valid types %p', (types) => {
+            expect(Validator.desktopSourcesOptsSchema.validate({types}).error).toBeUndefined();
         });
     });
 });

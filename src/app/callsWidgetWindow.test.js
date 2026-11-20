@@ -1,7 +1,7 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {BrowserWindow, desktopCapturer, systemPreferences, ipcMain} from 'electron';
+import {BrowserWindow, desktopCapturer, screen, systemPreferences, ipcMain} from 'electron';
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import NavigationManager from 'app/navigationManager';
@@ -25,6 +25,7 @@ import {
 import urlUtils from 'common/utils/url';
 import ViewManager from 'common/views/viewManager';
 import PermissionsManager from 'main/security/permissionsManager';
+import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
 import {
     resetScreensharePermissionsMacOS,
     openScreensharePermissionsSettingsMacOS,
@@ -45,6 +46,9 @@ jest.mock('electron', () => ({
     },
     desktopCapturer: {
         getSources: jest.fn(),
+    },
+    screen: {
+        getDisplayMatching: jest.fn(),
     },
     systemPreferences: {
         getUserDefault: jest.fn(),
@@ -81,6 +85,13 @@ jest.mock('main/performanceMonitor', () => ({
     registerView: jest.fn(),
     unregisterView: jest.fn(),
 }));
+jest.mock('main/security/localNetworkAccess', () => ({
+    __esModule: true,
+    default: {
+        registerWebContents: jest.fn(),
+        unregisterWebContents: jest.fn(),
+    },
+}));
 jest.mock('common/views/viewManager', () => ({
     getView: jest.fn(),
     getViewByWebContentsId: jest.fn(),
@@ -108,6 +119,13 @@ jest.mock('app/navigationManager', () => ({
 
 jest.mock('app/mainWindow/modals/modalManager', () => ({
     on: jest.fn(),
+}));
+
+jest.mock('app/mainWindow/modals/messageModal', () => ({
+    __esModule: true,
+    default: {
+        showErrorModal: jest.fn(),
+    },
 }));
 
 jest.mock('app/tabs/tabManager', () => ({
@@ -296,6 +314,39 @@ describe('main/windows/callsWidgetWindow', () => {
         });
     });
 
+    describe('setBounds', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+        let actualBounds;
+        callsWidgetWindow.win = {
+            getBounds: jest.fn(() => actualBounds),
+            setBounds: jest.fn((b) => {
+                actualBounds = {...b};
+            }),
+        };
+
+        beforeEach(() => {
+            actualBounds = {x: 12, y: 618, width: MINIMUM_CALLS_WIDGET_WIDTH, height: MINIMUM_CALLS_WIDGET_HEIGHT};
+            callsWidgetWindow.boundsErr = {x: 0, y: 0, width: 0, height: 0};
+            screen.getDisplayMatching.mockReturnValue({workArea: {x: 0, y: 0, width: 1920, height: 1080}});
+        });
+
+        it('should pass through sizes within the work area', () => {
+            callsWidgetWindow.setBounds({x: 12, y: 600, width: 300, height: 100});
+            expect(callsWidgetWindow.win.setBounds).toHaveBeenCalledWith({x: 12, y: 600, width: 300, height: 100});
+        });
+
+        it('should clamp oversized requests to the work area without accumulating bounds error', () => {
+            callsWidgetWindow.setBounds({x: 12, y: -999000, width: 1000000, height: 1000000});
+            expect(callsWidgetWindow.win.setBounds).toHaveBeenCalledWith({x: 12, y: -999000, width: 1920, height: 1080});
+            expect(callsWidgetWindow.boundsErr).toEqual({x: 0, y: 0, width: 0, height: 0});
+        });
+
+        it('should clamp sizes below 1', () => {
+            callsWidgetWindow.setBounds({x: 12, y: 600, width: 0, height: -5});
+            expect(callsWidgetWindow.win.setBounds).toHaveBeenCalledWith({x: 12, y: 600, width: 1, height: 1});
+        });
+    });
+
     describe('getWidgetURL', () => {
         const callsWidgetWindow = new CallsWidgetWindow();
 
@@ -361,6 +412,38 @@ describe('main/windows/callsWidgetWindow', () => {
             sender: {id: 'goodID'},
         }, 'sourceId', true);
         expect(callsWidgetWindow.win.webContents.send).toHaveBeenCalledWith(CALLS_WIDGET_SHARE_SCREEN, 'sourceId', true);
+    });
+
+    describe('handleCallsLeave', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+
+        beforeEach(() => {
+            callsWidgetWindow.close = jest.fn();
+            callsWidgetWindow.mainView = {webContentsId: 'mainViewID'};
+            callsWidgetWindow.win = {webContents: {id: 'widgetID'}, isDestroyed: () => false};
+            callsWidgetWindow.popOut = undefined;
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+            delete callsWidgetWindow.mainView;
+            delete callsWidgetWindow.win;
+        });
+
+        it('should not close when the sender is a different server', () => {
+            callsWidgetWindow.handleCallsLeave({sender: {id: 'otherServerID'}});
+            expect(callsWidgetWindow.close).not.toHaveBeenCalled();
+        });
+
+        it('should close when the sender is the calls widget', () => {
+            callsWidgetWindow.handleCallsLeave({sender: {id: 'widgetID'}});
+            expect(callsWidgetWindow.close).toHaveBeenCalled();
+        });
+
+        it('should close when the sender is the main view of the call', () => {
+            callsWidgetWindow.handleCallsLeave({sender: {id: 'mainViewID'}});
+            expect(callsWidgetWindow.close).toHaveBeenCalled();
+        });
     });
 
     describe('onPopOutOpen', () => {
@@ -482,11 +565,15 @@ describe('main/windows/callsWidgetWindow', () => {
         let frameFinishedLoadListener;
         const popOut = {
             on: (event, listener) => {
-                closedListener = listener;
+                if (event === 'closed') {
+                    closedListener = listener;
+                }
             },
             webContents: {
                 on: (event, listener) => {
-                    redirectListener = listener;
+                    if (event === 'will-redirect') {
+                        redirectListener = listener;
+                    }
                 },
                 once: (event, listener) => {
                     frameFinishedLoadListener = listener;
@@ -520,6 +607,7 @@ describe('main/windows/callsWidgetWindow', () => {
 
         expect(callsWidgetWindow.popOut).toBe(popOut);
         expect(WebContentsEventManager.addWebContentsEventListeners).toHaveBeenCalledWith(popOut.webContents);
+        expect(jest.mocked(LocalNetworkAccessManager.registerWebContents)).toHaveBeenCalledWith(popOut.webContents);
         expect(redirectListener).toBeDefined();
         expect(frameFinishedLoadListener).toBeDefined();
         expect(mockContextMenuReload).toHaveBeenCalledTimes(1);
@@ -533,12 +621,63 @@ describe('main/windows/callsWidgetWindow', () => {
 
         closedListener();
         expect(callsWidgetWindow.popOut).not.toBeDefined();
+        expect(jest.mocked(LocalNetworkAccessManager.unregisterWebContents)).toHaveBeenCalledWith('webContentsId');
         expect(mockContextMenuDispose).toHaveBeenCalled();
 
         // Verify widget visibility has been toggled
         expect(callsWidgetWindow.win.setVisibleOnAllWorkspaces).toHaveBeenCalledWith(true, {skipTransformProcessType: true, visibleOnFullScreen: true});
         expect(callsWidgetWindow.win.setAlwaysOnTop).toHaveBeenCalledWith(true, 'screen-saver');
         expect(callsWidgetWindow.win.focus).toHaveBeenCalled();
+    });
+
+    describe('onPopOutCreate - devtools listeners', () => {
+        const popOut = {
+            on: jest.fn(),
+            webContents: {
+                on: jest.fn(),
+                once: jest.fn(),
+                id: 'webContentsId',
+                getURL: () => ('http://myurl.com'),
+                removeListener: jest.fn(),
+                isDestroyed: jest.fn(() => false),
+            },
+            off: jest.fn(),
+            loadURL: jest.fn(),
+            isDestroyed: jest.fn(() => false),
+        };
+
+        beforeEach(() => {
+            jest.clearAllMocks();
+            const callsWidgetWindow = new CallsWidgetWindow();
+            callsWidgetWindow.win = {
+                setVisibleOnAllWorkspaces: jest.fn(),
+                setAlwaysOnTop: jest.fn(),
+                focus: jest.fn(),
+            };
+            callsWidgetWindow.onPopOutCreate(popOut);
+        });
+
+        it('should register devtools-focused listener on popout webContents', () => {
+            expect(popOut.webContents.on.mock.calls.some(([e]) => e === 'devtools-focused')).toBe(true);
+        });
+
+        it('should register devtools-closed listener on popout webContents', () => {
+            expect(popOut.webContents.on.mock.calls.some(([e]) => e === 'devtools-closed')).toBe(true);
+        });
+
+        it('should emit UPDATE_SHORTCUT_MENU when devtools-focused fires on popout', () => {
+            const call = popOut.webContents.on.mock.calls.find(([e]) => e === 'devtools-focused');
+            expect(call).toBeDefined();
+            call[1]();
+            expect(ipcMain.emit).toHaveBeenCalledWith(UPDATE_SHORTCUT_MENU);
+        });
+
+        it('should emit UPDATE_SHORTCUT_MENU when devtools-closed fires on popout', () => {
+            const call = popOut.webContents.on.mock.calls.find(([e]) => e === 'devtools-closed');
+            expect(call).toBeDefined();
+            call[1]();
+            expect(ipcMain.emit).toHaveBeenCalledWith(UPDATE_SHORTCUT_MENU);
+        });
     });
 
     it('getViewURL', () => {
@@ -560,6 +699,33 @@ describe('main/windows/callsWidgetWindow', () => {
 
         callsWidgetWindow.onNavigate(ev, 'http://localhost:8065/invalid/url');
         expect(ev.preventDefault).toHaveBeenCalledTimes(1);
+    });
+
+    it('onRedirect', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+        callsWidgetWindow.getWidgetURL = () => 'http://localhost:8065';
+
+        const mainFrameEv = {preventDefault: jest.fn(), isMainFrame: true};
+        callsWidgetWindow.onRedirect(mainFrameEv, 'https://www.google.com/');
+        expect(mainFrameEv.preventDefault).toHaveBeenCalled();
+
+        urlUtils.parseURL.mockReturnValue(new URL('https://example.com/embed'));
+        const subFrameEv = {preventDefault: jest.fn(), isMainFrame: false, url: 'https://example.com/embed'};
+        callsWidgetWindow.onRedirect(subFrameEv, subFrameEv.url);
+        expect(subFrameEv.preventDefault).not.toHaveBeenCalled();
+    });
+
+    it('onFrameNavigate', () => {
+        const callsWidgetWindow = new CallsWidgetWindow();
+
+        const mainFrameEv = {preventDefault: jest.fn(), isMainFrame: true, url: 'custom://payload'};
+        callsWidgetWindow.onFrameNavigate(mainFrameEv);
+        expect(mainFrameEv.preventDefault).not.toHaveBeenCalled();
+
+        urlUtils.parseURL.mockReturnValue(new URL('custom://payload'));
+        const subFrameEv = {preventDefault: jest.fn(), isMainFrame: false, url: 'custom://payload'};
+        callsWidgetWindow.onFrameNavigate(subFrameEv);
+        expect(subFrameEv.preventDefault).toHaveBeenCalled();
     });
 
     describe('handleCreateCallsWidgetWindow', () => {
@@ -701,6 +867,32 @@ describe('main/windows/callsWidgetWindow', () => {
             callsWidgetWindow.options = {callID: 'test'};
             await callsWidgetWindow.handleCreateCallsWidgetWindow({sender: {id: 2}}, {callID: 'test2'});
             expect(callsWidgetWindow.win).toEqual(window);
+        });
+
+        it('should register devtools-focused listener on widget webContents in init', async () => {
+            await callsWidgetWindow.handleCreateCallsWidgetWindow({sender: {id: 2}}, {callID: 'test'});
+            expect(browserWindow.webContents.on.mock.calls.some(([e]) => e === 'devtools-focused')).toBe(true);
+        });
+
+        it('should register devtools-closed listener on widget webContents in init', async () => {
+            await callsWidgetWindow.handleCreateCallsWidgetWindow({sender: {id: 2}}, {callID: 'test'});
+            expect(browserWindow.webContents.on.mock.calls.some(([e]) => e === 'devtools-closed')).toBe(true);
+        });
+
+        it('should emit UPDATE_SHORTCUT_MENU when devtools-focused fires on widget webContents', async () => {
+            await callsWidgetWindow.handleCreateCallsWidgetWindow({sender: {id: 2}}, {callID: 'test'});
+            const call = browserWindow.webContents.on.mock.calls.find(([e]) => e === 'devtools-focused');
+            expect(call).toBeDefined();
+            call[1]();
+            expect(ipcMain.emit).toHaveBeenCalledWith(UPDATE_SHORTCUT_MENU);
+        });
+
+        it('should emit UPDATE_SHORTCUT_MENU when devtools-closed fires on widget webContents', async () => {
+            await callsWidgetWindow.handleCreateCallsWidgetWindow({sender: {id: 2}}, {callID: 'test'});
+            const call = browserWindow.webContents.on.mock.calls.find(([e]) => e === 'devtools-closed');
+            expect(call).toBeDefined();
+            call[1]();
+            expect(ipcMain.emit).toHaveBeenCalledWith(UPDATE_SHORTCUT_MENU);
         });
     });
 
@@ -914,7 +1106,7 @@ describe('main/windows/callsWidgetWindow', () => {
             ]);
             expect(PermissionsManager.doPermissionRequest).toHaveBeenCalledWith(
                 3,
-                'screenShare',
+                'display-capture',
                 {requestingUrl: 'http://server-1.com', isMainFrame: false},
             );
         });
@@ -959,6 +1151,144 @@ describe('main/windows/callsWidgetWindow', () => {
 
             Object.defineProperty(process, 'platform', {
                 value: originalPlatform,
+            });
+        });
+
+        describe('thumbnail size bounds', () => {
+            const MAX_THUMBNAIL_DIMENSION = 400;
+
+            const makeSources = (count) => Array.from({length: count}, (_, i) => ({
+                id: `window${i}`,
+                name: `Window ${i}`,
+                thumbnail: {
+                    toDataURL: jest.fn().mockReturnValue(`data:image/png;base64,${i}`),
+                },
+            }));
+
+            const mockSources = (count) => {
+                jest.spyOn(desktopCapturer, 'getSources').mockImplementation(() => Promise.resolve(makeSources(count)));
+            };
+
+            const lastGetSourcesOpts = () => {
+                expect(desktopCapturer.getSources).toHaveBeenCalled();
+                const calls = desktopCapturer.getSources.mock.calls;
+                return calls[calls.length - 1][0];
+            };
+
+            const expectBoundedThumbnailSize = (thumbnailSize) => {
+                if (thumbnailSize === undefined) {
+                    return;
+                }
+                expect(typeof thumbnailSize).toBe('object');
+                expect(thumbnailSize).not.toBeNull();
+                for (const dim of [thumbnailSize.width, thumbnailSize.height]) {
+                    expect(Number.isInteger(dim)).toBe(true);
+                    expect(dim).toBeGreaterThanOrEqual(0);
+                    expect(dim).toBeLessThanOrEqual(MAX_THUMBNAIL_DIMENSION);
+                }
+            };
+
+            it('should pass the typical first-party request through unchanged', async () => {
+                mockSources(3);
+
+                const sources = await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
+                    types: ['screen', 'window'],
+                    thumbnailSize: {width: 400, height: 400},
+                });
+
+                expect(sources).toHaveLength(3);
+                const opts = lastGetSourcesOpts();
+                expect(opts.types).toEqual(['screen', 'window']);
+                expect(opts.thumbnailSize).toEqual({width: 400, height: 400});
+            });
+
+            it('should default to the maximum thumbnail size when no thumbnailSize is requested', async () => {
+                mockSources(3);
+
+                const sources = await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
+                    types: ['screen', 'window'],
+                });
+
+                expect(sources).toHaveLength(3);
+                const opts = lastGetSourcesOpts();
+                expect(opts.types).toEqual(['screen', 'window']);
+                expect(opts.thumbnailSize).toEqual({width: MAX_THUMBNAIL_DIMENSION, height: MAX_THUMBNAIL_DIMENSION});
+            });
+
+            it.each([
+                ['16384x16384', {width: 16384, height: 16384}],
+                ['1e9 width', {width: 1e9, height: 400}],
+                ['1e9 height', {width: 400, height: 1e9}],
+                ['MAX_SAFE_INTEGER', {width: Number.MAX_SAFE_INTEGER, height: Number.MAX_SAFE_INTEGER}],
+            ])('should clamp oversized thumbnail dimensions (%s) before generating thumbnails', async (_, thumbnailSize) => {
+                mockSources(1);
+
+                const sources = await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
+                    types: ['screen'],
+                    thumbnailSize,
+                });
+
+                expect(sources).toHaveLength(1);
+                const opts = lastGetSourcesOpts();
+                expect(opts.thumbnailSize).toBeDefined();
+                expectBoundedThumbnailSize(opts.thumbnailSize);
+            });
+
+            it.each([
+                ['negative', {width: -1, height: -1}],
+                ['fractional', {width: 400.5, height: 1.5}],
+                ['NaN', {width: NaN, height: NaN}],
+                ['Infinity', {width: Infinity, height: Infinity}],
+                ['string', {width: '400', height: '400'}],
+                ['null', {width: null, height: null}],
+            ])('should never pass malformed thumbnail dimensions (%s) to getSources', async (_, thumbnailSize) => {
+                mockSources(1);
+
+                try {
+                    await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
+                        types: ['screen'],
+                        thumbnailSize,
+                    });
+                } catch {
+                    // Rejecting the malformed request is an acceptable secure outcome.
+                }
+
+                for (const [opts] of desktopCapturer.getSources.mock.calls) {
+                    expectBoundedThumbnailSize(opts.thumbnailSize);
+                }
+            });
+
+            it('should clamp oversized dimensions to the maximum without exceeding it', async () => {
+                mockSources(1);
+
+                await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
+                    types: ['screen'],
+                    thumbnailSize: {width: 4096, height: 401},
+                });
+
+                expect(lastGetSourcesOpts().thumbnailSize).toEqual({width: MAX_THUMBNAIL_DIMENSION, height: MAX_THUMBNAIL_DIMENSION});
+            });
+
+            it('should floor fractional and clamp negative dimensions', async () => {
+                mockSources(1);
+
+                await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
+                    types: ['screen'],
+                    thumbnailSize: {width: 200.9, height: -5},
+                });
+
+                expect(lastGetSourcesOpts().thumbnailSize).toEqual({width: 200, height: 0});
+            });
+
+            it('should request sources with a single getSources call', async () => {
+                mockSources(3);
+
+                await callsWidgetWindow.handleGetDesktopSources({sender: {id: 1}}, {
+                    types: ['screen', 'window'],
+                    thumbnailSize: {width: 400, height: 400},
+                });
+
+                expect(desktopCapturer.getSources).toHaveBeenCalledTimes(1);
             });
         });
     });

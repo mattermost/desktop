@@ -16,6 +16,7 @@ import NumberSetting from './components/NumberSetting';
 import RadioSetting from './components/RadioSetting';
 import SelectSetting from './components/SelectSetting';
 import ServerSetting from './components/ServerSetting';
+import SessionAttributesSetting from './components/SessionAttributesSetting';
 import SpellCheckerSetting from './components/SpellCheckerSetting';
 import UpdatesSetting from './components/UpdatesSetting';
 
@@ -513,7 +514,7 @@ const definition: (intl: IntlShape) => Promise<SettingsDefinition> = async (intl
                 },
                 {
                     id: 'enableSessionAttributes',
-                    component: CheckSetting,
+                    component: SessionAttributesSetting,
                     props: {
                         label: (
                             <FormattedMessage

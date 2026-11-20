@@ -1,6 +1,8 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import {session} from 'electron';
+
 import MainWindow from 'app/mainWindow/mainWindow';
 import ModalManager from 'app/mainWindow/modals/modalManager';
 import {MattermostServer} from 'common/servers/MattermostServer';
@@ -26,10 +28,12 @@ jest.mock('electron', () => ({
             allowNTLMCredentialsForDomains: jest.fn(),
             clearData: jest.fn(),
         },
+        fromPartition: jest.fn(),
     },
 }));
 
 jest.mock('common/servers/serverManager', () => ({
+    updateCurrentServer: jest.fn(),
     setViewIsOpen: jest.fn(),
     getAllServers: jest.fn(),
     hasServers: jest.fn(),
@@ -53,6 +57,7 @@ jest.mock('main/server/serverInfo', () => ({
 }));
 jest.mock('app/mainWindow/modals/modalManager', () => ({
     addModal: jest.fn(),
+    addPriorityModal: jest.fn(),
     removeModal: jest.fn(),
 }));
 jest.mock('main/utils', () => ({
@@ -172,7 +177,16 @@ describe('app/serverViewState', () => {
 
         it('should do nothing when the server cannot be found', () => {
             serverViewState.showEditServerModal(null, 'bad-server');
-            expect(ModalManager.addModal).not.toBeCalled();
+            expect(ModalManager.addPriorityModal).not.toBeCalled();
+        });
+
+        it('should switch to the server and scope the modal to it', () => {
+            ModalManager.addPriorityModal.mockReturnValue(new Promise(() => {}));
+
+            serverViewState.showEditServerModal(null, 'server-1');
+
+            expect(ServerManager.updateCurrentServer).toBeCalledWith('server-1');
+            expect(ModalManager.addPriorityModal).toBeCalledWith('editServer-server-1', expect.any(String), expect.any(String), expect.any(Object), expect.any(Object), false, 'server-1');
         });
 
         it('should edit the existing server', async () => {
@@ -180,7 +194,7 @@ describe('app/serverViewState', () => {
                 name: 'updated-server',
                 url: 'http://updated-server.com',
             }});
-            ModalManager.addModal.mockReturnValue(promise);
+            ModalManager.addPriorityModal.mockReturnValue(promise);
 
             serverViewState.showEditServerModal(null, 'server-1');
             await promise;
@@ -207,7 +221,7 @@ describe('app/serverViewState', () => {
                     alwaysDeny: true,
                 },
             }});
-            ModalManager.addModal.mockReturnValue(promise);
+            ModalManager.addPriorityModal.mockReturnValue(promise);
 
             serverViewState.showEditServerModal(null, 'server-1');
             await promise;
@@ -245,9 +259,18 @@ describe('app/serverViewState', () => {
             ServerManager.getOrderedServers.mockReturnValue(serversCopy);
         });
 
+        it('should switch to the server and scope the modal to it', () => {
+            ModalManager.addPriorityModal.mockReturnValue(new Promise(() => {}));
+
+            serverViewState.showRemoveServerModal(null, 'server-1');
+
+            expect(ServerManager.updateCurrentServer).toBeCalledWith('server-1');
+            expect(ModalManager.addPriorityModal).toBeCalledWith('removeServer-server-1', expect.any(String), expect.any(String), null, expect.any(Object), false, 'server-1');
+        });
+
         it('should remove the existing server', async () => {
             const promise = Promise.resolve(true);
-            ModalManager.addModal.mockReturnValue(promise);
+            ModalManager.addPriorityModal.mockReturnValue(promise);
 
             serverViewState.showRemoveServerModal(null, 'server-1');
             await promise;
@@ -261,7 +284,7 @@ describe('app/serverViewState', () => {
 
         it('should not remove the existing server when clicking Cancel', async () => {
             const promise = Promise.resolve(false);
-            ModalManager.addModal.mockReturnValue(promise);
+            ModalManager.addPriorityModal.mockReturnValue(promise);
 
             expect(serversCopy).toContainEqual(expect.objectContaining({
                 id: 'server-1',
@@ -282,8 +305,10 @@ describe('app/serverViewState', () => {
 
     describe('handleServerURLValidation', () => {
         const serverViewState = new ServerHub();
+        const validationSession = {id: 'validation-session'};
 
         beforeEach(() => {
+            session.fromPartition.mockReturnValue(validationSession);
             MattermostServer.mockImplementation(({url}) => ({url}));
             ServerInfo.mockImplementation(({url}) => ({
                 pingServer: jest.fn().mockImplementation(() => ({
@@ -315,6 +340,22 @@ describe('app/serverViewState', () => {
             const result = await serverViewState.handleServerURLValidation({}, 'server.com');
             expect(result.status).toBe(URLValidationStatus.OK);
             expect(result.validatedURL).toBe('https://server.com/');
+        });
+
+        it('should test the server on a separate session', async () => {
+            const pingServer = jest.fn();
+            const fetchConfigData = jest.fn().mockReturnValue({
+                serverVersion: '7.8.0',
+                siteName: 'Mattermost',
+                siteURL: 'https://server.com/',
+            });
+            ServerInfo.mockImplementation(() => ({pingServer, fetchConfigData}));
+
+            await serverViewState.handleServerURLValidation({}, 'https://server.com');
+
+            expect(session.fromPartition).toHaveBeenCalledWith('server-validation');
+            expect(pingServer).toHaveBeenCalledWith(validationSession);
+            expect(fetchConfigData).toHaveBeenCalledWith(validationSession);
         });
 
         it('should correct typos in the protocol', async () => {
@@ -458,6 +499,25 @@ describe('app/serverViewState', () => {
             const result = await serverViewState.handleServerURLValidation({}, 'https://server.com');
             expect(result.status).toBe(URLValidationStatus.URLUpdated);
             expect(result.validatedURL).toBe('https://mainserver.com/');
+        });
+
+        it('should not update the users URL when the Site URL cannot be parsed', async () => {
+            ServerInfo.mockImplementation(() => ({
+                pingServer: jest.fn().mockImplementation(() => ({
+                    status: 'OK',
+                })),
+                fetchConfigData: jest.fn().mockImplementation(() => {
+                    return {
+                        serverVersion: '7.8.0',
+                        siteName: 'Mattermost',
+                        siteURL: 'not-a-url',
+                    };
+                }),
+            }));
+
+            const result = await serverViewState.handleServerURLValidation({}, 'https://server.com');
+            expect(result.status).toBe(URLValidationStatus.OK);
+            expect(result.validatedURL).toBe('https://server.com/');
         });
 
         it('should not update the users URL when the Site URL is blank', async () => {
@@ -605,6 +665,168 @@ describe('app/serverViewState', () => {
             hub.handleServerCleanup({id: 'server-2', url: new URL('https://server-2.com')});
             expect(session.defaultSession.clearData).toHaveBeenCalledWith({origins: ['https://server-2.com']});
             expect(session.defaultSession.allowNTLMCredentialsForDomains).toHaveBeenCalledWith('server-1.com');
+        });
+
+        // Checks the joined host list for a plain host together with one other host.
+        // A host containing a comma, semicolon, asterisk, whitespace, or a leading dot is left out.
+        // That includes a host that is only that mark, a mark at the end, and a fullwidth form that parses to one of those marks.
+        // An underscore host, an IPv6 host, a host of letters and dots, and a trailing dot are listed with the plain host.
+        const plainHost = 'server-1.com';
+        it.each([
+            {label: 'a comma', hostname: 'a,b.example', expected: plainHost},
+            {label: 'a semicolon', hostname: 'a;b.example', expected: plainHost},
+            {label: 'an asterisk', hostname: 'a*.example', expected: plainHost},
+            {label: 'whitespace', hostname: 'foo bar.example', expected: plainHost},
+            {label: 'a leading dot', hostname: '.example.com', expected: plainHost},
+            {label: 'only an asterisk', hostname: '*', expected: plainHost},
+            {label: 'only a comma', hostname: ',', expected: plainHost},
+            {label: 'only a semicolon', hostname: ';', expected: plainHost},
+            {label: 'only a dot', hostname: '.', expected: plainHost},
+            {label: 'a comma at the end', hostname: 'example.com,', expected: plainHost},
+            {label: 'a semicolon at the end', hostname: 'example.com;', expected: plainHost},
+            {label: 'an asterisk at the end', hostname: 'example.com*', expected: plainHost},
+            {label: 'an asterisk in the middle', hostname: 'ex*ample.com', expected: plainHost},
+            {label: 'whitespace at the end', hostname: 'example.com ', expected: plainHost},
+            {label: 'a comma and an asterisk', hostname: '*,*.example', expected: plainHost},
+            {label: 'a fullwidth asterisk', hostname: 'a\uFF0Ab.example', expected: plainHost},
+            {label: 'a fullwidth comma', hostname: 'a\uFF0Cb.example', expected: plainHost},
+            {label: 'a fullwidth semicolon', hostname: 'a\uFF1Bb.example', expected: plainHost},
+            {label: 'a fullwidth dot at the start', hostname: '\u3002example.com', expected: plainHost},
+            {label: 'an empty value', hostname: '', expected: plainHost},
+            {label: 'an underscore', hostname: 'internal_host.example', expected: `${plainHost},internal_host.example`},
+            {label: 'an IPv6 address', hostname: '[2001:db8::1]', expected: `${plainHost},[2001:db8::1]`},
+            {label: 'only letters and dots', hostname: 'good.example', expected: `${plainHost},good.example`},
+            {label: 'a trailing dot', hostname: 'example.com.', expected: `${plainHost},example.com.`},
+        ])('should build the host list from a plain host and a host with $label', ({hostname, expected}) => {
+            const url = (!hostname || (/\s/).test(hostname)) ? {hostname} : new URL(`https://${hostname}/`);
+            ServerManager.getAllServers.mockReturnValue([
+                {url: new URL('https://server-1.com')},
+                {url},
+            ]);
+            const hub = new ServerHub();
+            hub.updateAuthServerAllowlist();
+            expect(session.defaultSession.allowNTLMCredentialsForDomains).toHaveBeenCalledWith(expected);
+        });
+    });
+
+    describe('server url hostnames', () => {
+        const hub = new ServerHub();
+        const typedURL = 'https://server.com';
+        const plainURL = 'https://server.example.com';
+
+        // Whitespace does not parse as a url, so it is only checked on add and edit.
+        // A value with no scheme is checked beside the https form produced when a scheme is added.
+        const modalPaths = ['add', 'edit', 'site url', 'new server modal', 'edit server modal'];
+        const serverURLCases = [
+            ['a comma', 'https://a,b.example', modalPaths],
+            ['a semicolon', 'https://a;b.example', ['add', 'edit', 'site url']],
+            ['an asterisk', 'https://a*.example', ['add', 'edit', 'site url']],
+            ['a leading dot', 'https://.example.com', ['add', 'edit', 'site url']],
+            ['whitespace', 'https://foo bar.example', ['add', 'edit']],
+            ['a percent-encoded asterisk', 'https://a%2A.example', ['add', 'edit', 'site url']],
+            ['a percent-encoded comma', 'https://a%2C.example', ['add', 'edit', 'site url']],
+            ['a percent-encoded semicolon', 'https://a%3B.example', ['add', 'edit', 'site url']],
+            ['a percent-encoded leading dot', 'https://%2Eexample.com', ['add', 'edit', 'site url']],
+            ['only an asterisk', 'https://*', ['add', 'edit', 'site url']],
+            ['only a comma', 'https://,', ['add', 'edit', 'site url']],
+            ['only a semicolon', 'https://;', ['add', 'edit', 'site url']],
+            ['only a dot', 'https://.', ['add', 'edit', 'site url']],
+            ['a comma at the end', 'https://example.com,', ['add', 'edit', 'site url']],
+            ['a semicolon at the end', 'https://example.com;', ['add', 'edit', 'site url']],
+            ['an asterisk at the end', 'https://example.com*', ['add', 'edit', 'site url']],
+            ['an asterisk in the middle', 'https://ex*ample.com', ['add', 'edit', 'site url']],
+            ['whitespace at the end', 'https://example.com ', ['add', 'edit']],
+            ['a comma and an asterisk', 'https://*,*.example', modalPaths],
+            ['a value without a scheme', '*,*.example', modalPaths],
+            ['another value without a scheme', 'a,b.example', modalPaths],
+            ['a fullwidth asterisk', 'https://a\uFF0Ab.example', ['add', 'edit', 'site url']],
+            ['a fullwidth comma', 'https://a\uFF0Cb.example', ['add', 'edit', 'site url']],
+            ['a fullwidth semicolon', 'https://a\uFF1Bb.example', ['add', 'edit', 'site url']],
+            ['a fullwidth dot at the start', 'https://\u3002example.com', ['add', 'edit', 'site url']],
+            ['uppercase letters', 'https://A,B.EXAMPLE', ['add', 'edit', 'site url']],
+            ['a userinfo prefix', 'https://user:pass@a,b.example', ['add', 'edit', 'site url']],
+            ['only the scheme', 'https://', modalPaths],
+            ['an empty url', '', modalPaths],
+            ['a missing url', undefined, ['add', 'edit', 'new server modal', 'edit server modal']],
+        ].flatMap(([label, url, paths]) => paths.map((path) => ({
+            label,
+            url,
+            path,
+            outcome: 'omit',
+        }))).concat([
+            {label: 'only letters and dots', url: plainURL, path: 'add', outcome: 'keep'},
+            {label: 'only letters and dots', url: plainURL, path: 'edit', outcome: 'keep'},
+            {label: 'an underscore', url: 'https://internal_host.example', path: 'add', outcome: 'keep'},
+            {label: 'an underscore', url: 'https://internal_host.example', path: 'edit', outcome: 'keep'},
+            {label: 'an IPv6 address', url: 'https://[2001:db8::1]/', path: 'add', outcome: 'keep'},
+            {label: 'an IPv6 address', url: 'https://[2001:db8::1]/', path: 'edit', outcome: 'keep'},
+        ]);
+
+        beforeEach(() => {
+            ServerManager.addServer.mockReset();
+            ServerManager.editServer.mockReset();
+            ServerManager.lookupServerByURL.mockReset();
+            ServerInfo.mockReset();
+        });
+
+        // Checks add, edit, and a remote site url. The server url is stored only when the hostname is one plain host.
+        it.each(serverURLCases)('should $outcome the server url on $path for $label', async ({url, path, outcome}) => {
+            const keep = outcome === 'keep';
+            if (path === 'add') {
+                const server = {name: 'server', url};
+                await hub.handleAddServer({}, server);
+                expect(ServerManager.addServer.mock.calls).toEqual(keep ? [[server]] : []);
+                return;
+            }
+
+            if (path === 'edit') {
+                const server = {id: 'server-1', name: 'server', url, isPredefined: false};
+                await hub.handleEditServer({}, server);
+                expect(ServerManager.editServer.mock.calls).toEqual(keep ? [['server-1', server]] : []);
+                return;
+            }
+
+            if (path === 'new server modal') {
+                getLocalPreload.mockReturnValue('/some/preload.js');
+                MainWindow.get.mockReturnValue({});
+                const data = {name: 'server', url};
+                const promise = Promise.resolve(data);
+                ModalManager.addModal.mockReturnValue(promise);
+                hub.showNewServerModal();
+                await promise;
+                expect(ServerManager.addServer.mock.calls).toEqual(keep ? [[data, undefined]] : []);
+                return;
+            }
+
+            if (path === 'edit server modal') {
+                getLocalPreload.mockReturnValue('/some/preload.js');
+                MainWindow.get.mockReturnValue({});
+                ServerManager.getServer.mockReturnValue({
+                    id: 'server-1',
+                    isPredefined: false,
+                    toUniqueServer: jest.fn(),
+                });
+                const data = {server: {name: 'server', url}, permissions: {}};
+                const promise = Promise.resolve(data);
+                ModalManager.addPriorityModal.mockReturnValue(promise);
+                hub.showEditServerModal(null, 'server-1');
+                await promise;
+                expect(ServerManager.editServer.mock.calls).toEqual(keep ? [['server-1', data.server]] : []);
+                return;
+            }
+
+            ServerInfo.mockImplementation(() => ({
+                pingServer: jest.fn().mockImplementation(() => ({status: 'OK'})),
+                fetchConfigData: jest.fn().mockImplementation(() => ({
+                    serverVersion: '7.8.0',
+                    siteName: 'Mattermost',
+                    siteURL: url,
+                })),
+            }));
+            const result = await hub.handleServerURLValidation({}, typedURL);
+
+            // Checks that the remote site url is not copied onto the typed server url.
+            expect(result.validatedURL).toBe(`${typedURL}/`);
         });
     });
 });

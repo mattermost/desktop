@@ -17,7 +17,7 @@ type Props = {
     errorUrl?: string;
     errorState?: ErrorState;
     errorMessage?: string;
-    openMenu: () => void;
+    openMenu: (buttonX: number) => void;
     openPopoutMenu?: () => void;
 };
 

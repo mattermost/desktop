@@ -78,6 +78,7 @@ describe('app/menus/appMenu/view', () => {
     };
 
     beforeEach(() => {
+        jest.clearAllMocks();
         ServerManager.getCurrentServerId.mockReturnValue(mockServer.id);
         ServerManager.getServer.mockReturnValue(mockServer);
         WebContentsManager.getFocusedView.mockReturnValue(mockView);
@@ -192,6 +193,22 @@ describe('app/menus/appMenu/view', () => {
             expect(mockWebContents.openDevTools).toHaveBeenCalledWith({mode: 'detach'});
         });
 
+        it('should not call openDevTools when MainWindow.get() returns null', () => {
+            MainWindow.get.mockReturnValue(null);
+
+            localizeMessage.mockImplementation((id) => {
+                if (id === 'main.menus.app.view.devToolsMainWindow') {
+                    return 'Developer Tools for Main Window';
+                }
+                return id;
+            });
+
+            const menu = createViewMenu();
+            const devToolsSubMenu = menu.submenu.find((item) => item.label === 'main.menus.app.view.devToolsSubMenu');
+            const mainWindowDevTools = devToolsSubMenu.submenu.find((item) => item.label === 'Developer Tools for Main Window');
+            expect(() => mainWindowDevTools.click()).not.toThrow();
+        });
+
         it('should call TabManager.getCurrentActiveTabView().openDevTools when current tab dev tools is clicked', () => {
             localizeMessage.mockImplementation((id) => {
                 if (id === 'main.menus.app.view.devToolsCurrentTab') {
@@ -280,6 +297,7 @@ describe('app/menus/appMenu/view', () => {
 
         it('should handle reload when no focused view is available', () => {
             WebContentsManager.getFocusedView.mockReturnValue(null);
+            TabManager.getCurrentActiveTabView.mockReturnValue(null);
 
             localizeMessage.mockImplementation((id) => {
                 if (id === 'main.menus.app.view.reload') {
@@ -294,6 +312,40 @@ describe('app/menus/appMenu/view', () => {
 
             // Should not throw an error when no view is available
             expect(() => reloadMenuItem.click()).not.toThrow();
+        });
+
+        it('should reload active tab when menu open clears focused view', () => {
+            WebContentsManager.getFocusedView.mockReturnValue(null);
+            TabManager.getCurrentActiveTabView.mockReturnValue(mockView);
+
+            localizeMessage.mockImplementation((id) => {
+                if (id === 'main.menus.app.view.reload') {
+                    return 'Reload';
+                }
+                return id;
+            });
+
+            const menu = createViewMenu();
+            const reloadMenuItem = menu.submenu.find((item) => item.label === 'Reload');
+            reloadMenuItem.click();
+            expect(mockView.reload).toHaveBeenCalledWith('https://example.com/current-page');
+        });
+
+        it('should clear cache and reload active tab when menu open clears focused view', () => {
+            WebContentsManager.getFocusedView.mockReturnValue(null);
+            TabManager.getCurrentActiveTabView.mockReturnValue(mockView);
+
+            localizeMessage.mockImplementation((id) => {
+                if (id === 'main.menus.app.view.clearCacheAndReload') {
+                    return 'Clear Cache and Reload';
+                }
+                return id;
+            });
+
+            const menu = createViewMenu();
+            const clearCacheMenuItem = menu.submenu.find((item) => item.label === 'Clear Cache and Reload');
+            clearCacheMenuItem.click();
+            expect(WebContentsManager.clearCacheAndReloadView).toHaveBeenCalledWith(mockView.id);
         });
 
         it('should show developer mode options when developer mode is enabled', () => {

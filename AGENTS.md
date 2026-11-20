@@ -312,3 +312,8 @@ Open Settings (`Ctrl/Cmd+,`) → switch logging to **Debug** → reproduce → *
 3. **Restart** app (and computer if needed).
 4. **Reset data** — **View → Clear All Data**, or delete the config directory.
 5. **Collect debug logs and heap snapshots**.
+
+
+## Cursor Cloud specific instructions
+
+Environment and server setup can be found in .cursor/SETUP.md. GUI testing with the `computerUse` subagent and the E2E suite against a local server are covered in .cursor/AGENTS.md.

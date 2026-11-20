@@ -3,42 +3,32 @@ name: CMT Provisioner
 # Lightweight trigger workflow for Compatibility Matrix Testing (CMT).
 #
 # Matterwick listens for this workflow's workflow_run:requested event, then provisions one
-# Mattermost cloud instance per version in its hardcoded CMT version set (Matterwick's
-# CMTServerVersions config / CMTVersions, e.g. the active ESR plus the current feature
-# release) and dispatches compatibility-matrix-testing.yml with the CMT_MATRIX input.
-# When compatibility-matrix-testing.yml completes, Matterwick destroys the provisioned
-# instances (cleanup is keyed off the completed workflow_run, matched by commit SHA).
+# Mattermost cloud instance per version in its CMT version set (auto-derived from Mattermost
+# releases, with `CMTServerVersions` in matterwick config as a manual override) and dispatches
+# compatibility-matrix-testing.yml with the CMT_MATRIX input. When that test workflow completes,
+# Matterwick destroys the provisioned instances (cleanup is keyed off the completed
+# workflow_run, matched by commit SHA).
 #
-# The server-version set lives in Matterwick config (managed via gitops), so this workflow
-# takes no inputs. Run it manually from the Actions tab, or let it fire automatically on
-# release branches (below).
-#
-# NOTE (intentional duplicate coverage): a release-v* push ALSO triggers Matterwick's normal
-# release E2E flow (whole suite against the single latest server version). CMT additionally
-# runs the whole suite against its multi-version matrix, whose set includes the latest server.
-# So on a release push the latest server version gets the suite run twice (once by the normal
-# release flow, once by the CMT latest-version leg). This is expected and accepted.
+# Triggers: an RC tag cut (e.g. `v6.2.0-rc.1`), or a manual run from the Actions tab. The tag
+# glob filters out GA tags (`v6.2.0`) and non-RC pre-releases at the GitHub layer; matterwick
+# re-validates with a strict regex (`shouldTriggerCMT` / `isRCTag`) as defense-in-depth.
 
 on:
-  # Run CMT when a release branch is cut and on every subsequent push to it. The first push
-  # that creates release-v* is the "cut"; later pushes to it re-run CMT.
+  # RC tag cut. Glob matches the `vX.Y.Z-rc.N` convention; matterwick re-validates strictly.
   push:
-    branches:
-      - "release-v*"
-  # Manual runs from the Actions tab (against any branch).
+    tags:
+      - "v[0-9]*.[0-9]*.[0-9]*-rc.[0-9]*"
+  # Manual runs from the Actions tab (any ref).
   workflow_dispatch: {}
 
-# This workflow does not use GITHUB_TOKEN. Its only purpose is to emit a workflow_run event
-# that Matterwick reacts to; it does not check out the repo or call the GitHub API. Drop all
-# GITHUB_TOKEN scopes so the runner-issued token cannot modify the repo if a step is added later.
 permissions: {}
 
 jobs:
-  signal:
-    runs-on: ubuntu-22.04
+  trigger-matterwick:
+    runs-on: ubuntu-24.04
     steps:
       - name: Signal Matterwick to provision CMT servers
         run: |
-          echo "CMT trigger started."
+          echo "CMT trigger started for ref: ${GITHUB_REF}"
           echo "Matterwick provisions one server per configured version and then"
           echo "dispatches compatibility-matrix-testing.yml automatically."

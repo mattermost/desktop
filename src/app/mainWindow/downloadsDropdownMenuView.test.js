@@ -6,6 +6,7 @@
 import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state';
 
 import MainWindow from 'app/mainWindow/mainWindow';
+import {CLOSE_DOWNLOADS_DROPDOWN_MENU} from 'common/communication';
 import {DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_MENU_FULL_HEIGHT, DOWNLOADS_DROPDOWN_MENU_FULL_WIDTH, TAB_BAR_HEIGHT} from 'common/utils/constants';
 
 import {DownloadsDropdownMenuView} from './downloadsDropdownMenuView';
@@ -53,6 +54,9 @@ jest.mock('macos-notification-state', () => ({
     getDoNotDisturb: jest.fn(),
 }));
 jest.mock('main/downloadsManager', () => ({}));
+jest.mock('app/mainWindow/modals/modalManager', () => ({
+    on: jest.fn(),
+}));
 jest.mock('main/performanceMonitor', () => ({
     registerView: jest.fn(),
 }));
@@ -93,5 +97,26 @@ describe('main/views/DownloadsDropdownMenuView', () => {
         expect(downloadsDropdownMenuView.view.setBounds).toBeCalledWith(downloadsDropdownMenuView.bounds);
         downloadsDropdownMenuView.handleClose();
         expect(downloadsDropdownMenuView.view.setBounds).toBeCalledWith({width: 0, height: 0, x: expect.any(Number), y: expect.any(Number)});
+    });
+
+    describe('handleModalOpen', () => {
+        let downloadsDropdownMenuView;
+
+        beforeEach(() => {
+            downloadsDropdownMenuView = new DownloadsDropdownMenuView();
+            downloadsDropdownMenuView.init();
+            downloadsDropdownMenuView.handleOpen();
+        });
+
+        it('should close the menu when a server modal opens', () => {
+            downloadsDropdownMenuView.handleModalOpen(true);
+            expect(downloadsDropdownMenuView.open).toBe(false);
+            expect(MainWindow.sendToRenderer).toBeCalledWith(CLOSE_DOWNLOADS_DROPDOWN_MENU);
+        });
+
+        it('should keep the menu open for a global modal', () => {
+            downloadsDropdownMenuView.handleModalOpen(false);
+            expect(downloadsDropdownMenuView.open).toBe(true);
+        });
     });
 });

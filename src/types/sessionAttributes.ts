@@ -9,4 +9,15 @@ export type SAField = {
     platforms: string[];
 };
 
+export type SAPropertyField = {
+    name: string;
+    type: string;
+    attrs: {
+        enabled: boolean;
+        ttl_seconds: number;
+        grace_period_seconds: number;
+        platforms: string[];
+    };
+};
+
 export type InterfaceType = 'wifi' | 'ethernet' | 'cellular' | 'vpn' | 'other';

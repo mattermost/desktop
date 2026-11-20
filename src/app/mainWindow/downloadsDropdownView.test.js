@@ -7,6 +7,7 @@ import {getDoNotDisturb as getDarwinDoNotDisturb} from 'macos-notification-state
 
 import MainWindow from 'app/mainWindow/mainWindow';
 import {DOWNLOADS_DROPDOWN_FULL_WIDTH, DOWNLOADS_DROPDOWN_HEIGHT, TAB_BAR_HEIGHT} from 'common/utils/constants';
+import downloadsManager from 'main/downloadsManager';
 
 import {DownloadsDropdownView} from './downloadsDropdownView';
 
@@ -63,8 +64,12 @@ jest.mock('electron', () => {
 });
 jest.mock('main/downloadsManager', () => ({
     getDownloads: jest.fn(),
+    getIsOpen: jest.fn(),
     onOpen: jest.fn(),
     onClose: jest.fn(),
+}));
+jest.mock('app/mainWindow/modals/modalManager', () => ({
+    on: jest.fn(),
 }));
 jest.mock('main/performanceMonitor', () => ({
     registerView: jest.fn(),
@@ -104,5 +109,35 @@ describe('main/views/DownloadsDropdownView', () => {
         expect(downloadsDropdownView.view.setBounds).toBeCalledWith(downloadsDropdownView.bounds);
         downloadsDropdownView.handleClose();
         expect(downloadsDropdownView.view.setBounds).toBeCalledWith({width: 0, height: 0, x: expect.any(Number), y: expect.any(Number)});
+    });
+
+    describe('handleModalOpen', () => {
+        const mainWindow = {contentView: {addChildView: jest.fn()}};
+        let downloadsDropdownView;
+
+        beforeEach(() => {
+            MainWindow.getBounds.mockReturnValue({width: 800, height: 600, x: 0, y: 0});
+            downloadsDropdownView = new DownloadsDropdownView();
+            downloadsDropdownView.init();
+            MainWindow.get.mockReturnValue(mainWindow);
+        });
+
+        it('should move the dropdown back on top when a server modal opens while it is open', () => {
+            downloadsManager.getIsOpen.mockReturnValue(true);
+            downloadsDropdownView.handleModalOpen(true);
+            expect(mainWindow.contentView.addChildView).toBeCalledWith(downloadsDropdownView.view);
+        });
+
+        it('should not move the dropdown when it is closed', () => {
+            downloadsManager.getIsOpen.mockReturnValue(false);
+            downloadsDropdownView.handleModalOpen(true);
+            expect(mainWindow.contentView.addChildView).not.toBeCalled();
+        });
+
+        it('should not move the dropdown for a global modal', () => {
+            downloadsManager.getIsOpen.mockReturnValue(true);
+            downloadsDropdownView.handleModalOpen(false);
+            expect(mainWindow.contentView.addChildView).not.toBeCalled();
+        });
     });
 });

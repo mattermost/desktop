@@ -3,13 +3,16 @@
 
 'use strict';
 
+import {ipcMain} from 'electron';
+
 import AppState from 'common/appState';
-import {BROWSER_HISTORY_PUSH, LOAD_FAILED, UPDATE_TARGET_URL} from 'common/communication';
+import {BROWSER_HISTORY_PUSH, LOAD_FAILED, SERVER_URL_CHANGED, UPDATE_SHORTCUT_MENU, UPDATE_TARGET_URL} from 'common/communication';
 import {MattermostServer} from 'common/servers/MattermostServer';
 import ServerManager from 'common/servers/serverManager';
 import {MattermostView, ViewType} from 'common/views/MattermostView';
 import ViewManager from 'common/views/viewManager';
 import {updateServerInfos} from 'main/app/utils';
+import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
 import {getServerAPI} from 'main/server/serverAPI';
 
 import {MattermostWebContentsView} from './MattermostWebContentsView';
@@ -24,13 +27,18 @@ jest.mock('electron', () => ({
     },
     WebContentsView: jest.fn().mockImplementation(() => ({
         webContents: {
+            id: 42,
             loadURL: jest.fn(),
             on: jest.fn(),
             once: jest.fn(),
+            off: jest.fn(),
             reload: jest.fn(),
             getTitle: () => 'title',
             getURL: () => 'http://server-1.com',
             send: jest.fn(),
+            openDevTools: jest.fn(),
+            closeDevTools: jest.fn(),
+            isDevToolsOpened: jest.fn(),
             navigationHistory: {
                 clear: jest.fn(),
                 canGoBack: jest.fn(),
@@ -43,6 +51,7 @@ jest.mock('electron', () => ({
     })),
     ipcMain: {
         on: jest.fn(),
+        emit: jest.fn(),
     },
 }));
 
@@ -85,6 +94,13 @@ jest.mock('main/performanceMonitor', () => ({
     registerServerView: jest.fn(),
     unregisterView: jest.fn(),
 }));
+jest.mock('main/security/localNetworkAccess', () => ({
+    __esModule: true,
+    default: {
+        registerWebContents: jest.fn(),
+        unregisterWebContents: jest.fn(),
+    },
+}));
 jest.mock('common/servers/serverManager', () => ({
     getRemoteInfo: jest.fn(),
     getServer: jest.fn(),
@@ -95,6 +111,7 @@ jest.mock('common/servers/serverManager', () => ({
         silly: jest.fn(),
     }),
     on: jest.fn(),
+    off: jest.fn(),
 }));
 jest.mock('main/server/serverAPI', () => ({
     getServerAPI: jest.fn(),
@@ -115,7 +132,7 @@ const view = new MattermostView(server, ViewType.TAB);
 
 describe('main/views/MattermostWebContentsView', () => {
     describe('load', () => {
-        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
         const mattermostView = new MattermostWebContentsView(view, {}, window);
 
         beforeEach(() => {
@@ -181,7 +198,7 @@ describe('main/views/MattermostWebContentsView', () => {
     });
 
     describe('retry', () => {
-        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
         const mattermostView = new MattermostWebContentsView(view, {}, window);
         const retryInBackgroundFn = jest.fn();
 
@@ -245,7 +262,7 @@ describe('main/views/MattermostWebContentsView', () => {
     });
 
     describe('retryInBackground', () => {
-        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
         const mattermostView = new MattermostWebContentsView(view, {}, window);
         mattermostView.reload = jest.fn();
 
@@ -263,7 +280,7 @@ describe('main/views/MattermostWebContentsView', () => {
     });
 
     describe('goToOffset', () => {
-        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
         const mattermostView = new MattermostWebContentsView(view, {}, window);
         mattermostView.reload = jest.fn();
 
@@ -293,7 +310,7 @@ describe('main/views/MattermostWebContentsView', () => {
     });
 
     describe('loadSuccess', () => {
-        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
         const mattermostView = new MattermostWebContentsView(view, {}, window);
 
         beforeEach(() => {
@@ -322,7 +339,7 @@ describe('main/views/MattermostWebContentsView', () => {
     });
 
     describe('updateHistoryButton', () => {
-        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
         const mattermostView = new MattermostWebContentsView(view, {}, window);
 
         beforeEach(() => {
@@ -338,7 +355,7 @@ describe('main/views/MattermostWebContentsView', () => {
     });
 
     describe('destroy', () => {
-        const window = {contentView: {removeChildView: jest.fn()}, on: jest.fn()};
+        const window = {contentView: {removeChildView: jest.fn()}, on: jest.fn(), off: jest.fn(), isDestroyed: jest.fn(() => false)};
         const contextMenu = {
             dispose: jest.fn(),
         };
@@ -350,8 +367,10 @@ describe('main/views/MattermostWebContentsView', () => {
 
         it('should remove browser view from window', () => {
             const mattermostView = new MattermostWebContentsView(view, {}, window);
+            expect(jest.mocked(LocalNetworkAccessManager.registerWebContents)).toHaveBeenCalledWith(mattermostView.webContentsView.webContents);
             mattermostView.webContentsView.webContents.close = jest.fn();
             mattermostView.destroy();
+            expect(jest.mocked(LocalNetworkAccessManager.unregisterWebContents)).toHaveBeenCalledWith(mattermostView.webContentsId);
             expect(window.contentView.removeChildView).toBeCalledWith(mattermostView.webContentsView);
         });
 
@@ -378,10 +397,83 @@ describe('main/views/MattermostWebContentsView', () => {
             mattermostView.destroy();
             expect(spy).toHaveBeenCalledTimes(2);
         });
+
+        it('should remove listeners on long-lived emitters', () => {
+            const mattermostView = new MattermostWebContentsView(view, {}, window);
+            mattermostView.webContentsView.webContents.close = jest.fn();
+            mattermostView.destroy();
+            expect(ServerManager.off).toHaveBeenCalledWith(SERVER_URL_CHANGED, expect.any(Function));
+            expect(window.off).toHaveBeenCalledWith('blur', expect.any(Function));
+        });
+
+        it('should not throw when the underlying webContents is already gone', () => {
+            const mattermostView = new MattermostWebContentsView(view, {}, window);
+            mattermostView.webContentsView.webContents = undefined;
+            expect(() => mattermostView.destroy()).not.toThrow();
+        });
+
+        it('should not remove browser view when the parent window is already destroyed', () => {
+            const mattermostView = new MattermostWebContentsView(view, {}, window);
+            mattermostView.webContentsView.webContents.close = jest.fn();
+            window.isDestroyed.mockReturnValueOnce(true);
+            expect(() => mattermostView.destroy()).not.toThrow();
+            expect(window.contentView.removeChildView).not.toBeCalled();
+        });
+    });
+
+    describe('teardown during in-flight load (regression)', () => {
+        const window = {on: jest.fn(), off: jest.fn(), contentView: {removeChildView: jest.fn()}, webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
+        let mattermostView;
+
+        beforeEach(() => {
+            MainWindow.get.mockReturnValue(window);
+            ServerManager.getServer.mockReturnValue(server);
+            mattermostView = new MattermostWebContentsView(view, {}, window);
+            mattermostView.webContentsView.webContents.close = jest.fn();
+            mattermostView.log = {info: jest.fn(), verbose: jest.fn(), error: jest.fn()};
+        });
+
+        it('isDestroyed should return true instead of throwing when the webContents is undefined', () => {
+            mattermostView.webContentsView.webContents = undefined;
+            expect(() => mattermostView.isDestroyed()).not.toThrow();
+            expect(mattermostView.isDestroyed()).toBe(true);
+        });
+
+        it('loadRetry should be a guarded no-op when the webContents is undefined', () => {
+            mattermostView.webContentsView.webContents = undefined;
+            expect(() => mattermostView.loadRetry('http://server-1.com/', new Error('test'))).not.toThrow();
+            expect(window.webContents.send).not.toHaveBeenCalled();
+        });
+
+        it('webContentsId should remain valid after the webContents is gone', () => {
+            const id = mattermostView.webContentsId;
+            expect(id).toBe(42);
+            mattermostView.webContentsView.webContents = undefined;
+            expect(mattermostView.webContentsId).toBe(id);
+        });
+
+        it('should not throw when a load rejects after the view has been destroyed', async () => {
+            const error = new Error('ERR_FAILED');
+            const rejection = Promise.reject(error);
+            mattermostView.webContentsView.webContents.loadURL.mockImplementation(() => rejection);
+
+            // Kick off a load, then tear the view down while it is still in flight.
+            mattermostView.load('http://server-1.com');
+            mattermostView.destroy();
+
+            // Electron nulls out the webContents once it is destroyed; the pending
+            // loadURL().catch() must not blow up when it reaches loadRetry/isDestroyed.
+            mattermostView.webContentsView.webContents = undefined;
+
+            await expect(rejection.catch((e) => e)).resolves.toBe(error);
+            await new Promise((resolve) => setImmediate(resolve));
+
+            expect(window.webContents.send).not.toHaveBeenCalledWith(LOAD_FAILED, expect.anything(), expect.anything(), expect.anything());
+        });
     });
 
     describe('handleUpdateTarget', () => {
-        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
         const mattermostView = new MattermostWebContentsView(view, {}, window);
 
         beforeEach(() => {
@@ -413,7 +505,7 @@ describe('main/views/MattermostWebContentsView', () => {
     });
 
     describe('handlePageTitleUpdated', () => {
-        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
         const mattermostView = new MattermostWebContentsView(view, {}, window);
 
         beforeEach(() => {
@@ -474,7 +566,7 @@ describe('main/views/MattermostWebContentsView', () => {
     });
 
     describe('useLastPath', () => {
-        const window = {on: jest.fn(), webContents: {send: jest.fn()}};
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
         let mattermostView;
 
         beforeEach(() => {
@@ -541,6 +633,106 @@ describe('main/views/MattermostWebContentsView', () => {
             expect(mattermostView.webContentsView.webContents.once).not.toHaveBeenCalled();
             expect(mattermostView.webContentsView.webContents.reload).not.toHaveBeenCalled();
             expect(mattermostView.webContentsView.webContents.send).not.toHaveBeenCalledWith(BROWSER_HISTORY_PUSH, expect.anything());
+        });
+    });
+
+    describe('constructor', () => {
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should register devtools-focused listener permanently', () => {
+            const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
+            const mattermostView = new MattermostWebContentsView(view, {}, window);
+            const onCalls = mattermostView.webContentsView.webContents.on.mock.calls;
+            expect(onCalls.some(([e]) => e === 'devtools-focused')).toBe(true);
+        });
+
+        it('should register devtools-closed listener permanently', () => {
+            const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
+            const mattermostView = new MattermostWebContentsView(view, {}, window);
+            const onCalls = mattermostView.webContentsView.webContents.on.mock.calls;
+            expect(onCalls.some(([e]) => e === 'devtools-closed')).toBe(true);
+        });
+
+        it('should emit UPDATE_SHORTCUT_MENU when devtools-focused fires', () => {
+            const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
+            const mattermostView = new MattermostWebContentsView(view, {}, window);
+            const onCall = mattermostView.webContentsView.webContents.on.mock.calls.find(([e]) => e === 'devtools-focused');
+            expect(onCall).toBeDefined();
+            onCall[1]();
+            expect(ipcMain.emit).toHaveBeenCalledWith(UPDATE_SHORTCUT_MENU);
+        });
+
+        it('should emit UPDATE_SHORTCUT_MENU when devtools-closed fires', () => {
+            const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
+            const mattermostView = new MattermostWebContentsView(view, {}, window);
+            const onCall = mattermostView.webContentsView.webContents.on.mock.calls.find(([e]) => e === 'devtools-closed');
+            expect(onCall).toBeDefined();
+            onCall[1]();
+            expect(ipcMain.emit).toHaveBeenCalledWith(UPDATE_SHORTCUT_MENU);
+        });
+    });
+
+    describe('openDevTools', () => {
+        const window = {on: jest.fn(), webContents: {send: jest.fn()}, isDestroyed: jest.fn(() => false)};
+        let mattermostView;
+
+        beforeEach(() => {
+            mattermostView = new MattermostWebContentsView(view, {}, window);
+            mattermostView.webContentsView.webContents.isDevToolsOpened.mockReturnValue(false);
+        });
+
+        afterEach(() => {
+            jest.useRealTimers();
+        });
+
+        it('should call openDevTools in detach mode', () => {
+            mattermostView.openDevTools();
+
+            expect(mattermostView.webContentsView.webContents.openDevTools).toHaveBeenCalledWith({mode: 'detach'});
+        });
+
+        it('should reset DevTools via mac workaround when DevTools does not open cleanly', () => {
+            jest.useFakeTimers();
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {value: 'darwin', configurable: true});
+
+            try {
+                mattermostView.openDevTools();
+
+                // DevTools opens (isDevToolsOpened returns true) but devtools-opened event never fires,
+                // so the timeout runs and triggers the reset workaround
+                mattermostView.webContentsView.webContents.isDevToolsOpened.mockReturnValue(true);
+                jest.advanceTimersByTime(500);
+
+                expect(mattermostView.webContentsView.webContents.closeDevTools).toHaveBeenCalled();
+                expect(mattermostView.webContentsView.webContents.openDevTools).toHaveBeenCalledTimes(2);
+            } finally {
+                Object.defineProperty(process, 'platform', {value: originalPlatform, configurable: true});
+            }
+        });
+
+        it('should cancel the mac workaround timeout when devtools-opened fires normally', () => {
+            jest.useFakeTimers();
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', {value: 'darwin', configurable: true});
+
+            try {
+                mattermostView.openDevTools();
+
+                // Fire the devtools-opened event to cancel the workaround timeout
+                const devToolsOpenedCall = mattermostView.webContentsView.webContents.on.mock.calls.find(([e]) => e === 'devtools-opened');
+                expect(devToolsOpenedCall).toBeDefined();
+                devToolsOpenedCall[1]();
+
+                mattermostView.webContentsView.webContents.isDevToolsOpened.mockReturnValue(true);
+                jest.advanceTimersByTime(500);
+
+                expect(mattermostView.webContentsView.webContents.closeDevTools).not.toHaveBeenCalled();
+            } finally {
+                Object.defineProperty(process, 'platform', {value: originalPlatform, configurable: true});
+            }
         });
     });
 });

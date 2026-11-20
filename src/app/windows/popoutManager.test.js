@@ -1036,25 +1036,77 @@ describe('PopoutManager', () => {
 
     describe('handleSendToPopout', () => {
         const popoutManager = new PopoutManager();
-        const mockEvent = {};
+        const mockEvent = {
+            sender: {
+                id: 123,
+            },
+        };
+        const mockSenderView = {
+            id: 'parent-view-id',
+            serverId: 'test-server-id',
+        };
+        const mockPopout = {
+            id: 'popout-view-id',
+            serverId: 'test-server-id',
+            type: ViewType.WINDOW,
+            parentViewId: 'parent-view-id',
+        };
         const mockView = {
             id: 'popout-view-id',
             sendToRenderer: jest.fn(),
         };
 
         beforeEach(() => {
-            jest.clearAllMocks();
+            CallsWidgetWindow.isCallsWidget.mockReturnValue(false);
+            CallsWidgetWindow.mainViewId = undefined;
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(mockSenderView);
+            ViewManager.getView.mockReturnValue(mockPopout);
+            WebContentsManager.getView.mockReturnValue(mockView);
         });
 
-        it('should send message to popout view', () => {
-            WebContentsManager.getView.mockReturnValue(mockView);
+        it('should send message to popout view from its parent', () => {
             popoutManager.handleSendToPopout(mockEvent, 'popout-view-id', 'test-channel', 'arg1', 'arg2');
+            expect(WebContentsManager.getViewByWebContentsId).toHaveBeenCalledWith(123);
+            expect(ViewManager.getView).toHaveBeenCalledWith('popout-view-id');
             expect(WebContentsManager.getView).toHaveBeenCalledWith('popout-view-id');
             expect(mockView.sendToRenderer).toHaveBeenCalledWith('message-from-parent', 'test-channel', 'arg1', 'arg2');
         });
 
+        it('should send message when calls widget is the sender for its main view', () => {
+            CallsWidgetWindow.isCallsWidget.mockReturnValue(true);
+            CallsWidgetWindow.mainViewId = 'parent-view-id';
+            WebContentsManager.getView.mockImplementation((id) => (id === 'parent-view-id' ? mockSenderView : mockView));
+            popoutManager.handleSendToPopout(mockEvent, 'popout-view-id', 'test-channel', 'arg1');
+            expect(WebContentsManager.getViewByWebContentsId).not.toHaveBeenCalled();
+            expect(mockView.sendToRenderer).toHaveBeenCalledWith('message-from-parent', 'test-channel', 'arg1');
+        });
+
+        it('should not send message when sender is unknown', () => {
+            WebContentsManager.getViewByWebContentsId.mockReturnValue(undefined);
+            popoutManager.handleSendToPopout(mockEvent, 'popout-view-id', 'test-channel', 'arg1');
+            expect(mockView.sendToRenderer).not.toHaveBeenCalled();
+        });
+
+        it('should not send message when sender is not the parent', () => {
+            WebContentsManager.getViewByWebContentsId.mockReturnValue({id: 'other-view-id', serverId: 'test-server-id'});
+            popoutManager.handleSendToPopout(mockEvent, 'popout-view-id', 'test-channel', 'arg1');
+            expect(mockView.sendToRenderer).not.toHaveBeenCalled();
+        });
+
+        it('should not send message when popout belongs to another server', () => {
+            ViewManager.getView.mockReturnValue({...mockPopout, serverId: 'other-server-id'});
+            popoutManager.handleSendToPopout(mockEvent, 'popout-view-id', 'test-channel', 'arg1');
+            expect(mockView.sendToRenderer).not.toHaveBeenCalled();
+        });
+
+        it('should not send message when target is not a popout', () => {
+            ViewManager.getView.mockReturnValue({...mockPopout, type: ViewType.TAB});
+            popoutManager.handleSendToPopout(mockEvent, 'popout-view-id', 'test-channel', 'arg1');
+            expect(mockView.sendToRenderer).not.toHaveBeenCalled();
+        });
+
         it('should not send message when view not found', () => {
-            WebContentsManager.getView.mockReturnValue(null);
+            ViewManager.getView.mockReturnValue(undefined);
             popoutManager.handleSendToPopout(mockEvent, 'non-existent-id', 'test-channel', 'arg1');
             expect(mockView.sendToRenderer).not.toHaveBeenCalled();
         });

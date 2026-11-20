@@ -6,9 +6,9 @@ import * as os from 'os';
 import * as path from 'path';
 
 import {test, expect} from '../../fixtures/index';
-import {waitForAppReady} from '../../helpers/appReadiness';
-import {appDir, demoMattermostConfig, electronBinaryPath, writeConfigFile} from '../../helpers/config';
-import {waitForWindow, closeElectronApp} from '../../helpers/electronApp';
+import {demoMattermostConfig} from '../../helpers/config';
+import {launchDirectTestApp} from '../../helpers/directLaunch';
+import {waitForWindow, closeElectronAppFast} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 import type {ServerView} from '../../helpers/serverView';
@@ -16,7 +16,7 @@ import type {ServerView} from '../../helpers/serverView';
 type ElectronApplication = Awaited<ReturnType<typeof import('playwright')['_electron']['launch']>>;
 type ElectronPage = import('playwright').Page;
 
-let electronApp: ElectronApplication;
+let electronApp: ElectronApplication | undefined;
 let mainWindow: ElectronPage;
 let firstServer: ServerView;
 let firstServerId: number;
@@ -86,39 +86,8 @@ test.describe('edit_menu', () => {
 
     test.beforeAll(async () => {
         userDataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'mm-edit-menu-e2e-'));
-        writeConfigFile(userDataDir, demoMattermostConfig);
+        electronApp = await launchDirectTestApp(userDataDir, demoMattermostConfig);
 
-        const {_electron: electron} = await import('playwright');
-        electronApp = await electron.launch({
-            executablePath: electronBinaryPath,
-            args: [
-                appDir,
-                `--user-data-dir=${userDataDir}`,
-                '--no-sandbox',
-                '--disable-gpu',
-                '--disable-gpu-sandbox',
-                '--disable-dev-shm-usage',
-                '--no-zygote',
-                '--disable-software-rasterizer',
-                '--disable-breakpad',
-                '--disable-features=SpareRendererForSitePerProcess',
-                '--disable-features=CrossOriginOpenerPolicy',
-                '--disable-renderer-backgrounding',
-                '--force-color-profile=srgb',
-                '--mute-audio',
-            ],
-            env: {
-                ...process.env,
-                NODE_ENV: 'test',
-                RESOURCES_PATH: appDir,
-                ELECTRON_DISABLE_SECURITY_WARNINGS: 'true',
-                ELECTRON_NO_ATTACH_CONSOLE: 'true',
-                NODE_OPTIONS: '--no-warnings',
-            },
-            timeout: 90_000,
-        });
-
-        await waitForAppReady(electronApp);
         mainWindow = await waitForWindow(electronApp, 'index');
         const serverMap = await buildServerMap(electronApp);
         firstServer = serverMap[demoMattermostConfig.servers[0].name][0].win;
@@ -134,7 +103,11 @@ test.describe('edit_menu', () => {
     });
 
     test.afterAll(async () => {
-        await closeElectronApp(electronApp, userDataDir);
+        if (electronApp && userDataDir) {
+            await closeElectronAppFast(electronApp, userDataDir);
+        } else if (electronApp) {
+            await electronApp.close().catch(() => {});
+        }
     });
 
     test('MM-T807 Undo in the post textbox', {tag: ['@P2', '@all']}, async () => {

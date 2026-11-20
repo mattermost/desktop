@@ -8,12 +8,12 @@ import {_electron as electron} from 'playwright';
 import {test, expect} from '../../fixtures/index';
 import {waitForAppReady} from '../../helpers/appReadiness';
 import {electronBinaryPath, appDir, demoMattermostConfig, writeConfigFile} from '../../helpers/config';
-import {waitForLockFileRelease} from '../../helpers/cleanup';
+import {closeElectronApp, closeElectronAppFast} from '../../helpers/electronApp';
 import {loginToMattermost} from '../../helpers/login';
 import {buildServerMap} from '../../helpers/serverMap';
 
 test(
-    'session is preserved across app restart — no re-login required',
+    'MM-T6193 session is preserved across app restart — no re-login required',
     {tag: ['@P0', '@all']},
     async ({}, testInfo) => {
         if (!process.env.MM_TEST_SERVER_URL) {
@@ -46,8 +46,7 @@ test(
             // Verify we reached the app (not login page)
             await serverWin1!.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
         } finally {
-            await app1.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronApp(app1, userDataDir);
         }
 
         // --- Second launch: should NOT show login page ---
@@ -71,8 +70,7 @@ test(
             // App channel should be visible
             await serverWin2!.waitForSelector('#sidebarItem_town-square', {timeout: 30_000});
         } finally {
-            await app2.close();
-            await waitForLockFileRelease(userDataDir);
+            await closeElectronAppFast(app2, userDataDir);
         }
     },
 );
