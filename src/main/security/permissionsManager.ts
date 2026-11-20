@@ -119,6 +119,7 @@ export class PermissionsManager extends JsonFileManager<PermissionsByOrigin> {
             // For windows, the user needs to enable these manually
             if (process.platform === 'win32') {
                 log.warn(`${mediaType} access disabled in Windows settings`);
+                return;
             }
 
             systemPreferences.askForMediaAccess(mediaType);

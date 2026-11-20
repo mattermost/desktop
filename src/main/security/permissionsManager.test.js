@@ -128,47 +128,58 @@ describe('main/PermissionsManager', () => {
     });
 
     describe('setForServer', () => {
+        const server = {url: new URL('http://anyurl.com')};
+        const originalPlatform = process.platform;
+        const setPlatform = (platform) => Object.defineProperty(process, 'platform', {value: platform, configurable: true});
+
         beforeEach(() => {
-            systemPreferences.getMediaAccessStatus.mockClear();
+            systemPreferences.getMediaAccessStatus.mockReset();
             systemPreferences.askForMediaAccess.mockClear();
+            log.warn.mockClear();
         });
 
-        if (process.platform !== 'linux') {
-            it('should ask for media permission when is not granted but the user explicitly granted it', () => {
-                systemPreferences.getMediaAccessStatus.mockReturnValue('denied');
-                const permissionsManager = new PermissionsManager('anyfile.json');
-                permissionsManager.setForServer({url: new URL('http://anyurl.com')}, {media: {allowed: true}});
-                expect(systemPreferences.askForMediaAccess).toHaveBeenNthCalledWith(1, 'microphone');
-                expect(systemPreferences.askForMediaAccess).toHaveBeenNthCalledWith(2, 'camera');
-            });
-        }
+        afterEach(() => {
+            setPlatform(originalPlatform);
+        });
 
-        if (process.platform !== 'linux') {
-            it('PM-U06: should not call askForMediaAccess when OS has already granted access', () => {
-                systemPreferences.getMediaAccessStatus.mockReturnValue('granted');
-                const permissionsManager = new PermissionsManager('anyfile.json');
-                permissionsManager.setForServer(
-                    {url: new URL('http://anyurl.com')},
-                    {media: {allowed: true}},
-                );
-                expect(systemPreferences.askForMediaAccess).not.toHaveBeenCalled();
-            });
-        }
+        it('should ask for media permission on macOS when it is not granted but the user explicitly granted it', () => {
+            setPlatform('darwin');
+            systemPreferences.getMediaAccessStatus.mockReturnValue('denied');
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            permissionsManager.setForServer(server, {media: {allowed: true}});
+            expect(systemPreferences.askForMediaAccess).toHaveBeenNthCalledWith(1, 'microphone');
+            expect(systemPreferences.askForMediaAccess).toHaveBeenNthCalledWith(2, 'camera');
+            expect(permissionsManager.getForServer(server)).toEqual({media: {allowed: true}});
+        });
+
+        it('should save the media permission on Windows without asking for media access when Windows settings block it', () => {
+            setPlatform('win32');
+            systemPreferences.getMediaAccessStatus.mockReturnValue('denied');
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            permissionsManager.setForServer(server, {media: {allowed: true}});
+            expect(systemPreferences.getMediaAccessStatus).toHaveBeenCalledWith('microphone');
+            expect(systemPreferences.getMediaAccessStatus).toHaveBeenCalledWith('camera');
+            expect(systemPreferences.askForMediaAccess).not.toHaveBeenCalled();
+            expect(log.warn).toHaveBeenCalledWith('microphone access disabled in Windows settings');
+            expect(log.warn).toHaveBeenCalledWith('camera access disabled in Windows settings');
+            expect(permissionsManager.getForServer(server)).toEqual({media: {allowed: true}});
+        });
+
+        it.each(['darwin', 'win32'])('PM-U06: should not call askForMediaAccess on %s when OS has already granted access', (platform) => {
+            setPlatform(platform);
+            systemPreferences.getMediaAccessStatus.mockReturnValue('granted');
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            permissionsManager.setForServer(server, {media: {allowed: true}});
+            expect(systemPreferences.askForMediaAccess).not.toHaveBeenCalled();
+            expect(permissionsManager.getForServer(server)).toEqual({media: {allowed: true}});
+        });
 
         it('PM-U07: should skip all media access checks on Linux', () => {
-            const originalPlatform = process.platform;
-            Object.defineProperty(process, 'platform', {value: 'linux', configurable: true});
-            try {
-                const permissionsManager = new PermissionsManager('anyfile.json');
-                permissionsManager.setForServer(
-                    {url: new URL('http://anyurl.com')},
-                    {media: {allowed: true}},
-                );
-                expect(systemPreferences.getMediaAccessStatus).not.toHaveBeenCalled();
-                expect(systemPreferences.askForMediaAccess).not.toHaveBeenCalled();
-            } finally {
-                Object.defineProperty(process, 'platform', {value: originalPlatform, configurable: true});
-            }
+            setPlatform('linux');
+            const permissionsManager = new PermissionsManager('anyfile.json');
+            permissionsManager.setForServer(server, {media: {allowed: true}});
+            expect(systemPreferences.getMediaAccessStatus).not.toHaveBeenCalled();
+            expect(systemPreferences.askForMediaAccess).not.toHaveBeenCalled();
         });
     });
 
