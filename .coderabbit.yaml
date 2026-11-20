@@ -55,10 +55,12 @@ reviews:
     - path: "src/{main,app}/**/*.ts"
       instructions: |
         Security-sensitive areas. Treat regressions here as Critical:
-        - `ipcMain.on`/`ipcMain.handle` registrations whose handler reads arguments that can
-          originate from a renderer or server view must be wrapped in `ipcValidate` from
-          `common/Validator`. Flag new or changed handlers that skip it. Handlers whose
-          arguments are main-process-internal do not need it.
+        - `ipcMain.on`/`ipcMain.handle` handlers for channels sent from `externalAPI.ts`
+          (server views) that read caller-supplied arguments must be wrapped in
+          `ipcValidate` from `common/Validator`. Flag new or changed ones that skip it.
+          Handlers used only by internal views through `internalAPI.js`, or whose arguments
+          are fixed by the preload or main process, are trusted; do not flag a missing
+          wrapper on them.
         - `webPreferences` changes that disable `contextIsolation` or `sandbox`, enable
           `nodeIntegration`, or turn off `webSecurity`.
         - Navigation guards (`will-navigate`, `did-start-navigation`,
@@ -90,8 +92,10 @@ reviews:
 
     - path: "src/{common/config/**,common/Validator.ts,types/config.ts}"
       instructions: |
-        - A new config property needs a default in `defaultPreferences.ts` and a Joi rule in
-          `src/common/Validator.ts`. Flag if either is missing.
+        - A new config property needs a Joi rule in `src/common/Validator.ts`. A required
+          property also needs a default in `defaultPreferences.ts`; an optional (`?:`)
+          property may be left unset if every reader handles `undefined`. Flag only a
+          missing Joi rule, or a missing default where a reader would misbehave.
         - Changes to persisted config shape must not break existing user `config.json`
           files; older versions are migrated by `upgradePreferences.ts` and
           `migrationPreferences.ts`.
