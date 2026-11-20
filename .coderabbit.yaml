@@ -205,9 +205,10 @@ reviews:
     - path: "scripts/**"
       instructions: |
         Build and release tooling, not shipped to users, except `afterpack.js`, which flips
-        Electron fuses. Flag any fuse change that re-enables `RunAsNode`, Node CLI inspect
-        arguments, or file protocol privileges. Elsewhere flag only correctness bugs that
-        would produce a wrong build or release; skip robustness polish.
+        Electron fuses. Every fuse value there is a deliberate security setting: flag any
+        change to it (adding, removing, or flipping a fuse, or changing which platforms it
+        applies to) as Critical and ask for the reason. Elsewhere flag only correctness bugs
+        that would produce a wrong build or release; skip robustness polish.
 
     - path: ".github/**"
       instructions: |
