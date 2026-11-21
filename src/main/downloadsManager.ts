@@ -132,6 +132,12 @@ export class DownloadsManager extends JsonFileManager<DownloadedItems> {
                 this.willDownloadURLs.set(url, {filePath: savePath});
             }
 
+            if (!webContents || webContents.isDestroyed()) {
+                log.warn('handleNewDownload: webContents missing or destroyed, skipping downloadURL', {url});
+                this.willDownloadURLs.delete(url);
+                return;
+            }
+
             webContents.downloadURL(url);
         }
     };

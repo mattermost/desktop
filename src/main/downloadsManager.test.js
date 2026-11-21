@@ -358,5 +358,44 @@ describe('main/downloadsManager', () => {
         dl.init();
         expect(dl.hasUpdate()).toBe(false);
     });
+
+    it('should not call downloadURL when webContents is null', async () => {
+        const dl = new DownloadsManager({});
+        path.parse.mockImplementation(() => ({base: 'file.txt', name: 'file', ext: '.txt'}));
+        const preventDefault = jest.fn();
+
+        await expect(dl.handleNewDownload({preventDefault}, item, null)).resolves.toBeUndefined();
+
+        expect(preventDefault).toHaveBeenCalled();
+        expect(dl.willDownloadURLs.size).toBe(0);
+    });
+
+    it('should not call downloadURL when webContents is destroyed', async () => {
+        const dl = new DownloadsManager({});
+        path.parse.mockImplementation(() => ({base: 'file.txt', name: 'file', ext: '.txt'}));
+        const preventDefault = jest.fn();
+        const downloadURL = jest.fn();
+        const webContents = {id: 0, downloadURL, isDestroyed: () => true};
+
+        await expect(dl.handleNewDownload({preventDefault}, item, webContents)).resolves.toBeUndefined();
+
+        expect(preventDefault).toHaveBeenCalled();
+        expect(downloadURL).not.toHaveBeenCalled();
+        expect(dl.willDownloadURLs.size).toBe(0);
+    });
+
+    it('should call downloadURL when webContents is valid', async () => {
+        const dl = new DownloadsManager({});
+        path.parse.mockImplementation(() => ({base: 'file.txt', name: 'file', ext: '.txt'}));
+        const preventDefault = jest.fn();
+        const downloadURL = jest.fn();
+        const webContents = {id: 0, downloadURL, isDestroyed: () => false};
+
+        await dl.handleNewDownload({preventDefault}, item, webContents);
+
+        expect(preventDefault).toHaveBeenCalled();
+        expect(downloadURL).toHaveBeenCalledWith('http://some-url.com/some-text.txt');
+        expect(dl.willDownloadURLs.has('http://some-url.com/some-text.txt')).toBe(true);
+    });
 });
 
