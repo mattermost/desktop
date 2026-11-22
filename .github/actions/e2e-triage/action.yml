@@ -30,6 +30,18 @@ inputs:
     description: 'Full report-name prefix override; empty keeps e2e-on-<runner> (one report per OS). CMT passes e2e-on-<runner>-<serverVersion> so a lane triages exactly its own server-version report.'
     required: false
     default: ''
+  history-report:
+    description: 'Report-name prefix for TSIO history reads when report-name is narrower (e.g. CMT passes e2e-on-<runner> to read trunk history across server versions).'
+    required: false
+    default: ''
+  history-lane:
+    description: 'Lane whose trunk history this run is judged against (e.g. desktop-master for CMT).'
+    required: false
+    default: ''
+  lane-job-filter:
+    description: 'Comma-separated substrings scoping lane job reads in flat-job workflows so one OS never blames another OS.'
+    required: false
+    default: ''
   status-context:
     description: 'Commit-status context triage writes its line on; empty keeps e2e/<platform>. CMT passes e2e/compatibility-matrix-testing — it must never write the e2e/<os> PR/master contexts.'
     required: false
@@ -67,6 +79,9 @@ outputs:
   effective-mode:
     description: 'enforce or report-only, after applying the PR report-only label'
     value: ${{ steps.triage.outputs.effective_mode }}
+  rerun:
+    description: 'true when triage asked e2e-test-rerun to retry this lane'
+    value: ${{ steps.triage.outputs.rerun }}
 
 runs:
   using: composite
@@ -96,6 +111,9 @@ runs:
         # every release, so match on the stable prefix. CMT overrides this with
         # the full e2e-on-<runner>-<version> so each lane triages one report.
         report-name: ${{ inputs.report-name || format('e2e-on-{0}', inputs.runner) }}
+        history-report: ${{ inputs.history-report }}
+        history-lane: ${{ inputs.history-lane }}
+        lane-job-filter: ${{ inputs.lane-job-filter }}
         status-context: ${{ inputs.status-context || format('e2e/{0}', inputs.platform) }}
         # One triage check for the whole PR, summarising every OS and the
         # policy lanes (which triage does not judge, but which still gate).

@@ -473,8 +473,12 @@ const andList = (items) => (items.length > 1 ? `${items.slice(0, -1).join(', ')}
 const PRODUCT = new Set(['app bug', 'caused by PR']);
 const TEST_PROBLEM = new Set(['test bug', 'server compat', 'out of date', 'fixed on main']);
 
-/** Why a test failed, in plain words. */
-function reasonFor(t) {
+/** Why a test failed, in plain words: AI explanation first when present, else a clear label summary. */
+function reasonFor(t, {master = false} = {}) {
+    if (t.explanation) {
+        return cut(t.explanation, 160);
+    }
+
     // Master verdicts carry no server version, so the reason names none.
     const servers = t.servers.length ? `server ${andList(t.servers)}` : 'this server version';
     const reasons = {
@@ -485,7 +489,7 @@ function reasonFor(t) {
         'out of date': 'master changed this test after this release was cut',
         'fixed on main': 'master has since fixed this test',
         flaky: 'failed by chance or because of the test machine; it passes on retry or on other runs',
-        'broken on main': 'it fails on master too',
+        'broken on main': master ? 'failing on consecutive master runs' : 'it fails on master too',
     };
     return reasons[t.label] || 'the cause is not clear';
 }
@@ -513,6 +517,9 @@ function groupMasterTests(lanes) {
             seen.blocking = seen.blocking || f.blocking;
             if (labelRank(f.label) < labelRank(seen.label)) {
                 seen.label = f.label;
+                seen.explanation = f.explanation;
+            } else if (!seen.explanation && f.label === seen.label) {
+                seen.explanation = f.explanation;
             }
         }
     }
@@ -538,7 +545,7 @@ function formatMasterTestLines(lanes) {
     // Each section: its first three tests with why and on which OS, then how many more.
     const section = (title, list) => {
         if (list.length) {
-            lines.push(`${title} (${list.length})`, ...list.slice(0, 3).map((t) => `• ${names.get(t)} — ${reasonFor(t)} · ${where(t)}`));
+            lines.push(`${title} (${list.length})`, ...list.slice(0, 3).map((t) => `• ${names.get(t)} — ${reasonFor(t, {master: true})} · ${where(t)}`));
             if (list.length > 3) {
                 lines.push(`…and ${list.length - 3} more in the run`);
             }

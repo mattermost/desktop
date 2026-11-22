@@ -287,10 +287,9 @@ jobs:
       - e2e-macos
       - e2e-windows
     steps:
-      # tsio-report-status.js is repo code, not fetched by github-script itself.
+      # Reporting scripts always come from the workflow dispatch ref (master), never old release tags.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.DESKTOP_VERSION }}
           persist-credentials: false
           sparse-checkout: |
             e2e/utils/tsio-report-status.js
@@ -395,6 +394,9 @@ jobs:
           platform: ${{ matrix.platform }}
           runner: ${{ matrix.runner }}
           report-name: e2e-on-${{ matrix.runner }}-${{ matrix.server }}
+          history-report: e2e-on-${{ matrix.runner }}
+          history-lane: desktop-master
+          lane-job-filter: ${{ matrix.platform }},${{ matrix.runner }}
           status-context: e2e/compatibility-matrix-testing
           triage-status-context: 'off'
           triage-lanes: ''
@@ -475,9 +477,9 @@ jobs:
       contents: read
       statuses: write
     steps:
+      # Verdict formatter always comes from the workflow dispatch ref (master), never old release tags.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.DESKTOP_VERSION }}
           persist-credentials: false
           sparse-checkout: |
             e2e/utils/cmt-triage-verdict.js

@@ -604,6 +604,7 @@ jobs:
         with:
           platform: ${{ matrix.platform }}
           runner: ${{ matrix.runner }}
+          lane-job-filter: ${{ matrix.platform }},${{ matrix.runner }}
           composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -627,6 +628,7 @@ jobs:
           EXONERATED: ${{ steps.triage.outputs.exonerated }}
           # Tells a status red only for tests that passed on a retry (cleared) from one red outside the tests (not judged).
           DESCRIPTION: ${{ steps.triage.outputs.description }}
+          RERUN: ${{ steps.triage.outputs.rerun }}
         run: |
           # Each failed test with triage's label, so the alert can name it (the same record CMT keeps).
           FINDINGS='[]'
@@ -643,9 +645,10 @@ jobs:
             --arg blocking "${BLOCKING}" \
             --arg exonerated "${EXONERATED}" \
             --arg description "${DESCRIPTION}" \
+            --argjson rerun "$([ "${RERUN}" = "true" ] && echo true || echo false)" \
             --argjson findings "${FINDINGS}" \
             --argjson findingsRecorded "${RECORDED}" \
-            '{platform: $platform, verdict: $verdict, blocking: $blocking, exonerated: $exonerated, description: $description, findings: $findings, findingsRecorded: $findingsRecorded}' \
+            '{platform: $platform, verdict: $verdict, blocking: $blocking, exonerated: $exonerated, description: $description, rerun: $rerun, findings: $findings, findingsRecorded: $findingsRecorded}' \
             > "e2e-triage-verdict-${PLATFORM}.json"
 
       # The file name is per OS too: the verdict job downloads every lane into one folder with
@@ -692,11 +695,9 @@ jobs:
       # Master alerts name the merged PR for the head commit (best-effort lookup).
       pull-requests: read
     steps:
-      # Same checkout posture as tsio-summary: helper scripts come from the
-      # ref under test (inputs.version_name).
+      # Master verdict formatter always comes from the workflow dispatch ref (master).
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.version_name }}
           persist-credentials: false
           sparse-checkout: |
             e2e/utils/tsio-report-status.js
@@ -752,6 +753,10 @@ jobs:
               core.info(`No triage verdict artifacts: ${error.message}`);
             }
 
+            if (triageLanes.some((lane) => lane.rerun === true)) {
+              core.info('Automatic re-run requested by triage; deferring master channel alert until the re-run finishes.');
+              return;
+            }
             const mergeContext = await resolveMasterMergeContext({github, context, compositeIdentity, core});
             let statusResults = {};
             try {

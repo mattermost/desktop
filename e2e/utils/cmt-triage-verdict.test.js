@@ -293,10 +293,16 @@ describe('CMT triage wiring', () => {
         assert.match(workflow, /^ {2}cmt-triage:$/m);
         assert.match(workflow, /^ {2}cmt-verdict:$/m);
         assert.match(workflow, /report-name: e2e-on-/);
+        assert.match(workflow, /history-report: e2e-on-\$\{\{ matrix\.runner \}\}/);
+        assert.match(workflow, /history-lane: desktop-master/);
+        assert.match(workflow, /lane-job-filter: \$\{\{ matrix\.platform \}\},\$\{\{ matrix\.runner \}\}/);
         assert.match(workflow, /status-context: e2e\/compatibility-matrix-testing/);
         assert.match(workflow, /triage-status-context: 'off'/);
         assert.match(workflow, /mode: report-only/);
         assert.match(workflow, /cmt-triage-verdict-/);
+        // Reporting & verdict jobs must check out the dispatch ref (master), never old release tags.
+        const cmtVerdictBlock = workflow.slice(workflow.indexOf('  cmt-verdict:'));
+        assert.ok(!cmtVerdictBlock.includes('ref: ${{ inputs.DESKTOP_VERSION }}'), 'cmt-verdict must use dispatch ref');
     });
 
     it('suppresses the old verbose notification; only the verdict job posts', () => {
@@ -340,7 +346,7 @@ describe('per-test CMT message', () => {
         ]);
     });
 
-    it('says in four lines which tests to check and which are not bugs, never "likely bug"', () => {
+    it('says in four lines which tests to check and which are not bugs, with AI explanations when present', () => {
         const fold = foldCmtVerdicts({lanes, expectedLanes: matrix, expectTriage: true, stats});
         const text = formatCmtVerdictMessage({fold, compositeIdentity: {...identity, branch: 'v6.3.2-rc.2'}, stats, ...links});
         assert.equal(text, [
@@ -348,9 +354,9 @@ describe('per-test CMT message', () => {
             '🔎 **Held** (1)',
             '• `MM-T2633` back button returns to login after mock SSO… — the cause is not clear · 6 of 15 runs, on server 12.0.1 and 12.1.0-rc2',
             '🧪 **Problems with the test, not product bugs** (3)',
-            '• `MM-T5890` Opening channels in new windows — the test does not handle server 10.11.25 · 3 of 15 runs',
-            '• `MM-T5611` Open a bookmark URL/link (External and Inter… — the test does not handle server 10.11.25 · 2 of 15 runs',
-            '• `MM-T4054` Open/Close permanent link media preview — the test itself is wrong, not the app · 15 of 15 runs',
+            "• `MM-T5890` Opening channels in new windows — 10.11 has no 'Open in new window' item. · 3 of 15 runs",
+            '• `MM-T5611` Open a bookmark URL/link (External and Inter… — 10.11 has no Bookmarks Bar. · 2 of 15 runs',
+            "• `MM-T4054` Open/Close permanent link media preview — The old test's PNG fixture is invalid; master replaced it. · 15 of 15 runs",
             '3323 passed · 26 failed · 306 skipped · [Report](https://test-io.test.mattermost.com/reports/desktop/v6.3.2-rc.2/725fbc7/cmt-desktop) · [Run](https://github.com/mattermost/desktop/actions/runs/40651298431)',
             '',
         ].join('\n'));
@@ -370,7 +376,7 @@ describe('per-test CMT message', () => {
         const redFold = foldCmtVerdicts({lanes: appBug, expectedLanes: matrix, expectTriage: true, stats});
         const red = formatCmtVerdictMessage({fold: redFold, compositeIdentity: identity, stats, ...links});
         assert.match(red, /^:red_circle: \*\*Desktop CMT v6\.2\.5-rc\.1\*\*: 1 product bug found$/m);
-        assert.match(red, /^• `MM-T4054` Open\/Close permanent link media preview — the app does not do what the test expects · 15 of 15 runs$/m, 'the most severe label any run gave it');
+        assert.match(red, /^• `MM-T4054` Open\/Close permanent link media preview — The preview modal never opens\. · 15 of 15 runs$/m, 'the most severe label and its explanation');
         assert.match(red, /^🔎 \*\*Held\*\* \(1\)$/m);
         assert.match(redFold.statusDescription, /^1 product bug found · /);
         const cleared = lanes.map((l) => ({...l, verdict: 'SUCCESS', blocking: '0', findings: l.findings.filter((f) => !f.blocking)}));
@@ -483,5 +489,21 @@ describe('per-test CMT message', () => {
         assert.notEqual(fold.state, 'green');
         assert.deepEqual(fold.tests, []);
         assert.ok(!(/test bug|app bug|likely bug/).test(text));
+    });
+
+    it('uses master wording and AI explanation in formatMasterTestLines', () => {
+        const {formatMasterTestLines} = require('./cmt-triage-verdict');
+        const masterLanes = [{
+            platform: 'linux',
+            verdict: 'FAILURE',
+            findings: [
+                {title: 'MM-T1001 broken streak', file: 'e2e/specs/a.test.ts', label: 'broken on main', blocking: true, explanation: null},
+                {title: 'MM-T1002 explained bug', file: 'e2e/specs/b.test.ts', label: 'app bug', blocking: true, explanation: 'Window menu did not open.'},
+            ],
+        }];
+        const lines = formatMasterTestLines(masterLanes).join('\n');
+        assert.match(lines, /failing on consecutive master runs/);
+        assert.ok(!lines.includes('it fails on master too'), 'master alerts must not say "fails on master too"');
+        assert.match(lines, /Window menu did not open\./);
     });
 });
