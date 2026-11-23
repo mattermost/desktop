@@ -657,7 +657,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: e2e-triage-verdict-${{ matrix.platform }}
+          name: e2e-triage-verdict-${{ matrix.platform }}-a${{ github.run_attempt }}
           path: e2e-triage-verdict-${{ matrix.platform }}.json
           retention-days: 1
 
@@ -710,7 +710,7 @@ jobs:
         continue-on-error: true
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          pattern: e2e-triage-verdict-*
+          pattern: e2e-triage-verdict-*-a${{ github.run_attempt }}
           merge-multiple: true
           path: e2e-triage-verdicts
 

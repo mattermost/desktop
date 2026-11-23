@@ -295,7 +295,7 @@ describe('CMT triage wiring', () => {
         assert.match(workflow, /report-name: e2e-on-/);
         assert.match(workflow, /history-report: e2e-on-\$\{\{ matrix\.runner \}\}/);
         assert.match(workflow, /history-lane: desktop-master/);
-        assert.match(workflow, /lane-job-filter: \$\{\{ matrix\.platform \}\},\$\{\{ matrix\.runner \}\}/);
+        assert.match(workflow, /lane-job-filter: \$\{\{ matrix\.server \}\},\$\{\{ matrix\.platform \}\} install,/);
         assert.match(workflow, /status-context: e2e\/compatibility-matrix-testing/);
         assert.match(workflow, /triage-status-context: 'off'/);
         assert.match(workflow, /mode: report-only/);

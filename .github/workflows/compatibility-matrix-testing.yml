@@ -396,7 +396,7 @@ jobs:
           report-name: e2e-on-${{ matrix.runner }}-${{ matrix.server }}
           history-report: e2e-on-${{ matrix.runner }}
           history-lane: desktop-master
-          lane-job-filter: ${{ matrix.platform }},${{ matrix.runner }}
+          lane-job-filter: ${{ matrix.server }},${{ matrix.platform }} install,${{ matrix.platform == 'linux' && '!macos,!windows' || (matrix.platform == 'macos' && '!linux,!windows' || '!linux,!macos') }}
           status-context: e2e/compatibility-matrix-testing
           triage-status-context: 'off'
           triage-lanes: ''
