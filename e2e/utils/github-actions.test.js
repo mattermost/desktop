@@ -277,10 +277,10 @@ describe('e2e-functional.yml status jobs', () => {
         assert.match(jobLines(yml, 'tsio-summary').join('\n'), /notifyChannel: compositeIdentity\.name !== 'desktop-master'/);
         assert.match(jobLines(yml, 'tsio-summary').join('\n'), /report-url: /);
 
-        // Every triage lane records its verdict for the fold.
+        // Every triage lane records its verdict for the fold, scoped by attempt so re-runs never read attempt 1's rerun=true.
         const triage = jobLines(yml, 'tsio-triage').join('\n');
         assert.match(triage, /id: triage/);
-        assert.match(triage, /name: e2e-triage-verdict-/);
+        assert.match(triage, /name: e2e-triage-verdict-\$\{\{ matrix\.platform \}\}-a\$\{\{ github\.run_attempt \}\}/);
 
         // One file name per OS: the verdict job downloads every lane into one folder with
         // merge-multiple, where files sharing a name overwrite each other.
@@ -297,7 +297,9 @@ describe('e2e-functional.yml status jobs', () => {
         const verdict = jobLines(yml, 'master-e2e-verdict').join('\n');
         assert.match(verdict, /fromJson\(needs\.prepare-matrix\.outputs\.tsio-composite-identity\)\.name == 'desktop-master'/);
         assert.doesNotMatch(verdict, /needs\.tsio-summary\.result/);
-        assert.match(verdict, /pattern: e2e-triage-verdict-\*/);
+        assert.match(verdict, /pattern: e2e-triage-verdict-\*-a\$\{\{ github\.run_attempt \}\}/);
+        assert.match(verdict, /pattern: e2e-triage-rerun-attempt-\$\{\{ github\.run_attempt \}\}-of-\*/);
+        assert.match(verdict, /hasRerunMarker && triageLanes\.some\(\(lane\) => lane\.rerun === true\)/);
         assert.match(verdict, /notifyCmtChannel/);
         assert.match(verdict, /triageLanes/);
 
@@ -373,10 +375,13 @@ describe('CMT posts only e2e/compatibility-matrix-testing', () => {
     it('records each failed test with its lane verdict, from the triage findings file', () => {
         const triage = jobLines(cmt, 'cmt-triage').join('\n');
         assert.match(triage, /findings-file: e2e-triage-findings\.json/);
-        assert.match(triage, /if \.schema == 2 then \[\.findings\[\] \| \{title, full_title, file, label, blocking, explanation: \.ai\.explanation\}\]/);
+        assert.match(triage, /if \.schema == 2 then \[\.findings\[\] \| \{title, full_title, file, label, blocking, explanation: \.ai\.explanation, error: \.error_first_line, ai_cause: \.ai\.cause, ai_confidence: \.ai\.confidence\}\]/);
         assert.doesNotMatch(triage, /schema == 1/, 'the toolkit only writes schema 2');
         assert.match(triage, /--argjson findingsRecorded "\$\{RECORDED\}"/);
         assert.match(triage, /--argjson findings "\$\{FINDINGS\}"/);
+        const verdict = jobLines(cmt, 'cmt-verdict').join('\n');
+        assert.match(verdict, /cmt-agent-handoff\.json/);
+        assert.match(verdict, /CURSOR_DESKTOP_CMT_AUTOFIX_WEBHOOK_URL/);
         const action = read('.github/actions/e2e-triage/action.yml');
         assert.match(action, /findings-file: \$\{\{ inputs\.findings-file \}\}/);
         assert.match(action, / {2}findings-file:\r?\n(?:.*\r?\n){2} {4}default: ''/, 'off unless a caller asks: PR and master lanes write none');

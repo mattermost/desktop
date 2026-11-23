@@ -604,6 +604,7 @@ jobs:
         with:
           platform: ${{ matrix.platform }}
           runner: ${{ matrix.runner }}
+          lane-job-filter: ${{ matrix.platform }},${{ matrix.runner }}
           composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -627,6 +628,7 @@ jobs:
           EXONERATED: ${{ steps.triage.outputs.exonerated }}
           # Tells a status red only for tests that passed on a retry (cleared) from one red outside the tests (not judged).
           DESCRIPTION: ${{ steps.triage.outputs.description }}
+          RERUN: ${{ steps.triage.outputs.rerun }}
         run: |
           # Each failed test with triage's label, so the alert can name it (the same record CMT keeps).
           FINDINGS='[]'
@@ -643,9 +645,10 @@ jobs:
             --arg blocking "${BLOCKING}" \
             --arg exonerated "${EXONERATED}" \
             --arg description "${DESCRIPTION}" \
+            --argjson rerun "$([ "${RERUN}" = "true" ] && echo true || echo false)" \
             --argjson findings "${FINDINGS}" \
             --argjson findingsRecorded "${RECORDED}" \
-            '{platform: $platform, verdict: $verdict, blocking: $blocking, exonerated: $exonerated, description: $description, findings: $findings, findingsRecorded: $findingsRecorded}' \
+            '{platform: $platform, verdict: $verdict, blocking: $blocking, exonerated: $exonerated, description: $description, rerun: $rerun, findings: $findings, findingsRecorded: $findingsRecorded}' \
             > "e2e-triage-verdict-${PLATFORM}.json"
 
       # The file name is per OS too: the verdict job downloads every lane into one folder with
@@ -654,7 +657,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: e2e-triage-verdict-${{ matrix.platform }}
+          name: e2e-triage-verdict-${{ matrix.platform }}-a${{ github.run_attempt }}
           path: e2e-triage-verdict-${{ matrix.platform }}.json
           retention-days: 1
 
@@ -692,11 +695,9 @@ jobs:
       # Master alerts name the merged PR for the head commit (best-effort lookup).
       pull-requests: read
     steps:
-      # Same checkout posture as tsio-summary: helper scripts come from the
-      # ref under test (inputs.version_name).
+      # Master verdict formatter always comes from the workflow dispatch ref (master).
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.version_name }}
           persist-credentials: false
           sparse-checkout: |
             e2e/utils/tsio-report-status.js
@@ -709,9 +710,16 @@ jobs:
         continue-on-error: true
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          pattern: e2e-triage-verdict-*
+          pattern: e2e-triage-verdict-*-a${{ github.run_attempt }}
           merge-multiple: true
           path: e2e-triage-verdicts
+
+      - name: e2e/download-rerun-markers
+        continue-on-error: true
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: e2e-triage-rerun-attempt-${{ github.run_attempt }}-of-*
+          path: e2e-rerun-markers
 
       - name: e2e/post-master-verdict
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
@@ -752,6 +760,16 @@ jobs:
               core.info(`No triage verdict artifacts: ${error.message}`);
             }
 
+            let hasRerunMarker = false;
+            try {
+              hasRerunMarker = fs.readdirSync('e2e-rerun-markers', {recursive: true}).some((file) => String(file).endsWith('.json'));
+            } catch {
+              hasRerunMarker = false;
+            }
+            if (hasRerunMarker && triageLanes.some((lane) => lane.rerun === true)) {
+              core.info('Automatic re-run request published by triage; deferring master channel alert until the re-run finishes.');
+              return;
+            }
             const mergeContext = await resolveMasterMergeContext({github, context, compositeIdentity, core});
             let statusResults = {};
             try {

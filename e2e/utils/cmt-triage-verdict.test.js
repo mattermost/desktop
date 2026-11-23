@@ -8,7 +8,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const {foldCmtVerdicts, foldMasterTriage, formatCmtVerdictMessage, redStatusNotCleared, unclearedStatuses} = require('./cmt-triage-verdict');
+const {foldCmtVerdicts, foldMasterTriage, formatCmtVerdictMessage, buildAgentHandoff, formatAgentFixBrief, redStatusNotCleared, unclearedStatuses} = require('./cmt-triage-verdict');
 
 const repoRoot = path.join(__dirname, '../..');
 const read = (rel) => fs.readFileSync(path.join(repoRoot, rel), 'utf8');
@@ -293,10 +293,17 @@ describe('CMT triage wiring', () => {
         assert.match(workflow, /^ {2}cmt-triage:$/m);
         assert.match(workflow, /^ {2}cmt-verdict:$/m);
         assert.match(workflow, /report-name: e2e-on-/);
+        assert.match(workflow, /history-report: e2e-on-\$\{\{ matrix\.runner \}\}/);
+        assert.match(workflow, /history-lane: desktop-master/);
+        assert.match(workflow, /lane-job-filter: \$\{\{ matrix\.server \}\},\$\{\{ matrix\.platform \}\} install,/);
         assert.match(workflow, /status-context: e2e\/compatibility-matrix-testing/);
         assert.match(workflow, /triage-status-context: 'off'/);
         assert.match(workflow, /mode: report-only/);
         assert.match(workflow, /cmt-triage-verdict-/);
+
+        // Reporting & verdict jobs must check out the dispatch ref (master), never old release tags.
+        const cmtVerdictBlock = workflow.slice(workflow.indexOf('  cmt-verdict:'));
+        assert.doesNotMatch(cmtVerdictBlock, /ref: \$\{\{ inputs\.DESKTOP_VERSION \}\}/, 'cmt-verdict must use dispatch ref');
     });
 
     it('suppresses the old verbose notification; only the verdict job posts', () => {
@@ -340,18 +347,18 @@ describe('per-test CMT message', () => {
         ]);
     });
 
-    it('says in four lines which tests to check and which are not bugs, never "likely bug"', () => {
+    it('says in concise 3-bucket lines which tests to check and which are test bugs, with OS badges and AI explanations', () => {
         const fold = foldCmtVerdicts({lanes, expectedLanes: matrix, expectTriage: true, stats});
         const text = formatCmtVerdictMessage({fold, compositeIdentity: {...identity, branch: 'v6.3.2-rc.2'}, stats, ...links});
         assert.equal(text, [
-            ':red_circle: **Desktop CMT v6.3.2-rc.2**: no product bugs found · 1 failure held',
-            '🔎 **Held** (1)',
-            '• `MM-T2633` back button returns to login after mock SSO… — the cause is not clear · 6 of 15 runs, on server 12.0.1 and 12.1.0-rc2',
-            '🧪 **Problems with the test, not product bugs** (3)',
-            '• `MM-T5890` Opening channels in new windows — the test does not handle server 10.11.25 · 3 of 15 runs',
-            '• `MM-T5611` Open a bookmark URL/link (External and Inter… — the test does not handle server 10.11.25 · 2 of 15 runs',
-            '• `MM-T4054` Open/Close permanent link media preview — the test itself is wrong, not the app · 15 of 15 runs',
-            '3323 passed · 26 failed · 306 skipped · [Report](https://test-io.test.mattermost.com/reports/desktop/v6.3.2-rc.2/725fbc7/cmt-desktop) · [Run](https://github.com/mattermost/desktop/actions/runs/40651298431)',
+            ':red_circle: **Desktop CMT v6.3.2-rc.2**: no product bugs found · 1 failure held · 3 test bugs',
+            '🔎 **Needs a look** (1)',
+            '• `MM-T2633` back button returns to login after mock SSO… — the cause is not clear · 🐧🍎🪟 6 of 15 runs, on server 12.0.1 and 12.1.0-rc2',
+            '🧪 **Test bugs** (3)',
+            "• `MM-T5890` Opening channels in new windows — 10.11 has no 'Open in new window' item. · 🐧🍎🪟 3 of 15 runs, on server 10.11.25",
+            '• `MM-T5611` Open a bookmark URL/link (External and Inter… — 10.11 has no Bookmarks Bar. · 🍎🪟 2 of 15 runs, on server 10.11.25',
+            "• `MM-T4054` Open/Close permanent link media preview — The old test's PNG fixture is invalid; master replaced it. · 🐧🍎🪟 15 of 15 runs",
+            '3323 passed · 26 failed · 306 skipped · [Report](https://test-io.test.mattermost.com/reports/desktop/v6.3.2-rc.2/725fbc7/cmt-desktop) · [Run & Fix Brief](https://github.com/mattermost/desktop/actions/runs/40651298431)',
             '',
         ].join('\n'));
         assert.match(fold.statusDescription, /^No product bugs found; 1 failure held · 3323 passed, 26 failed, 306 skipped$/, 'the status counts tests, not runs');
@@ -369,14 +376,14 @@ describe('per-test CMT message', () => {
         const appBug = lanes.map((l) => (l.platform === 'linux' && l.serverVersion === '11.11.3' ? appBugLane(l) : l));
         const redFold = foldCmtVerdicts({lanes: appBug, expectedLanes: matrix, expectTriage: true, stats});
         const red = formatCmtVerdictMessage({fold: redFold, compositeIdentity: identity, stats, ...links});
-        assert.match(red, /^:red_circle: \*\*Desktop CMT v6\.2\.5-rc\.1\*\*: 1 product bug found$/m);
-        assert.match(red, /^• `MM-T4054` Open\/Close permanent link media preview — the app does not do what the test expects · 15 of 15 runs$/m, 'the most severe label any run gave it');
-        assert.match(red, /^🔎 \*\*Held\*\* \(1\)$/m);
+        assert.match(red, /^:red_circle: \*\*Desktop CMT v6\.2\.5-rc\.1\*\*: 1 product bug found · 2 test bugs$/m);
+        assert.match(red, /^• `MM-T4054` Open\/Close permanent link media preview — The preview modal never opens\. · 🐧🍎🪟 15 of 15 runs$/m, 'the most severe label and its explanation');
+        assert.match(red, /^🔎 \*\*Needs a look\*\* \(1\)$/m);
         assert.match(redFold.statusDescription, /^1 product bug found · /);
         const cleared = lanes.map((l) => ({...l, verdict: 'SUCCESS', blocking: '0', findings: l.findings.filter((f) => !f.blocking)}));
         const green = formatCmtVerdictMessage({fold: foldCmtVerdicts({lanes: cleared, expectedLanes: matrix, expectTriage: true, stats}), compositeIdentity: identity, stats, ...links});
-        assert.match(green, /^:green_circle: \*\*Desktop CMT v6\.2\.5-rc\.1\*\*: no product bugs found$/m);
-        assert.match(green, /^🧪 \*\*Problems with the test, not product bugs\*\* \(3\)$/m);
+        assert.match(green, /^:green_circle: \*\*Desktop CMT v6\.2\.5-rc\.1\*\*: no product bugs found · 3 test bugs$/m);
+        assert.match(green, /^🧪 \*\*Test bugs\*\* \(3\)$/m);
         assert.ok(!(/compat|lane|out of date|needs investigation/).test(green), 'no triage jargon');
     });
 
@@ -390,7 +397,7 @@ describe('per-test CMT message', () => {
     it('names a blocking lane whose tests could not be read, beside the tests of the others', () => {
         const partial = lanes.map((l) => (l.platform === 'windows' && l.serverVersion === '12.0.1' ? {...l, findings: [], findingsRecorded: false} : l));
         const text = formatCmtVerdictMessage({fold: foldCmtVerdicts({lanes: partial, expectedLanes: matrix, expectTriage: true, stats}), compositeIdentity: identity, stats, ...links});
-        assert.match(text, /^• `MM-T2633` back button returns to login after mock SSO… — the cause is not clear · 5 of 15 runs, on server 12\.0\.1 and 12\.1\.0-rc2$/m);
+        assert.match(text, /^• `MM-T2633` back button returns to login after mock SSO… — the cause is not clear · 🐧🍎🪟 5 of 15 runs, on server 12\.0\.1 and 12\.1\.0-rc2$/m);
         assert.match(text, /^⚙️ \*\*Failed, test not known:\*\* 🪟 Windows, server 12\.0\.1 — look at the run$/m);
         assert.match(foldCmtVerdicts({lanes: partial, expectedLanes: matrix, expectTriage: true, stats}).statusDescription, /^No product bugs found; 1 failure held; 1 run failed with no test named · /);
     });
@@ -422,7 +429,7 @@ describe('per-test CMT message', () => {
         // v6.3.2-rc.2: every lane was incomplete, the six that held MM-T2633 too.
         const all = lanes.map((l) => ({...l, description: '(results incomplete: 15 of 15 reports) 99.1% passed'}));
         const allText = formatCmtVerdictMessage({fold: foldCmtVerdicts({lanes: all, expectedLanes: matrix, expectTriage: true, stats}), compositeIdentity: identity, stats, ...links});
-        assert.match(allText, /^• `MM-T2633` back button returns to login after mock SSO… — the cause is not clear · 6 of 15 runs, on server 12\.0\.1 and 12\.1\.0-rc2$/m);
+        assert.match(allText, /^• `MM-T2633` back button returns to login after mock SSO… — the cause is not clear · 🐧🍎🪟 6 of 15 runs, on server 12\.0\.1 and 12\.1\.0-rc2$/m);
         assert.match(allText, /^⚙️ \*\*Setup problem:\*\* test results did not fully upload for all 15 runs — re-run to confirm$/m, 'a run that names a held test, or that was cleared, still needs a re-run');
         const noneHeld = lanes.map(incomplete);
         const noneHeldFold = foldCmtVerdicts({lanes: noneHeld, expectedLanes: matrix, expectTriage: true, stats});
@@ -483,5 +490,76 @@ describe('per-test CMT message', () => {
         assert.notEqual(fold.state, 'green');
         assert.deepEqual(fold.tests, []);
         assert.ok(!(/test bug|app bug|likely bug/).test(text));
+    });
+
+    it('uses master wording and AI explanation in formatMasterTestLines', () => {
+        const {formatMasterTestLines} = require('./cmt-triage-verdict');
+        const masterLanes = [{
+            platform: 'linux',
+            verdict: 'FAILURE',
+            findings: [
+                {title: 'MM-T1001 broken streak', file: 'e2e/specs/a.test.ts', label: 'broken on main', blocking: true, explanation: null},
+                {title: 'MM-T1002 explained bug', file: 'e2e/specs/b.test.ts', label: 'app bug', blocking: true, explanation: 'Window menu did not open.'},
+            ],
+        }];
+        const lines = formatMasterTestLines(masterLanes).join('\n');
+        assert.match(lines, /failing on consecutive master runs/);
+        assert.ok(!lines.includes('it fails on master too'), 'master alerts must not say "fails on master too"');
+        assert.match(lines, /Window menu did not open\./);
+    });
+
+    it('builds unified schema-1 agent handoff and Markdown fix brief for product and test bugs (skipping flakes)', () => {
+        const richLanes = [
+            {
+                platform: 'linux',
+                serverVersion: '10.11.25',
+                verdict: 'FAILURE',
+                blocking: '1',
+                exonerated: '2',
+                findingsRecorded: true,
+                findings: [
+                    {...T4054, label: 'app bug', blocking: true, explanation: 'Modal never renders.', error: 'TimeoutError: locator.waitFor', ai_cause: 'app_bug', ai_confidence: 0.94},
+                    {...T5890, error: 'TimeoutError: menu missing', ai_cause: 'server_compat', ai_confidence: 0.91},
+                    {title: 'MM-T9999 flaky', file: 'e2e/specs/flaky.test.ts', label: 'flaky', blocking: false, explanation: 'Transient'},
+                ],
+            },
+            {
+                platform: 'macos',
+                serverVersion: '12.1.0-rc2',
+                verdict: 'SUCCESS',
+                blocking: '0',
+                exonerated: '0',
+                findingsRecorded: true,
+                findings: [],
+            },
+        ];
+        const fold = foldCmtVerdicts({
+            lanes: richLanes,
+            expectedLanes: [
+                {platform: 'linux', server: '10.11.25'},
+                {platform: 'macos', server: '12.1.0-rc2'},
+                {platform: 'windows', server: '11.11.3'},
+            ],
+            expectTriage: true,
+            stats,
+        });
+        const handoff = buildAgentHandoff({fold, compositeIdentity: identity, ...links});
+        assert.equal(handoff.schema, 1);
+        assert.equal(handoff.items.length, 2, 'excludes flaky tests from agent handoff');
+        assert.equal(handoff.items[0].kind, 'product_bug');
+        assert.equal(handoff.items[0].mode, 'draft_investigation');
+        assert.equal(handoff.items[0].triage.ai_confidence, 0.94);
+        assert.deepEqual(handoff.items[0].matrix, {failed: ['linux/10.11.25'], passed_servers: ['12.1.0-rc2']}, 'omits untriaged 11.11.3 server from passed_servers');
+        assert.equal(handoff.items[1].kind, 'server_compat');
+        assert.equal(handoff.items[1].mode, 'fix_pr');
+        assert.equal(handoff.items[1].repro_hint, 'npm --prefix e2e test -- specs/multi_window/multi_window.test.ts');
+
+        const brief = formatAgentFixBrief(handoff);
+        assert.match(brief, /### 🤖 Agent Fix Brief \(2 actionable\)/);
+        assert.match(brief, /🐞 Product bug \(draft PR — do not auto-merge\)/);
+        assert.match(brief, /🧪 Server compat test bug \(safe for fix PR\)/);
+        assert.match(brief, /Passed servers: 12\.1\.0-rc2/);
+        assert.match(brief, /confidence 94%/);
+        assert.equal(formatAgentFixBrief({...handoff, items: []}), '');
     });
 });
