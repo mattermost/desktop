@@ -714,6 +714,13 @@ jobs:
           merge-multiple: true
           path: e2e-triage-verdicts
 
+      - name: e2e/download-rerun-markers
+        continue-on-error: true
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: e2e-triage-rerun-attempt-${{ github.run_attempt }}-of-*
+          path: e2e-rerun-markers
+
       - name: e2e/post-master-verdict
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
@@ -753,8 +760,14 @@ jobs:
               core.info(`No triage verdict artifacts: ${error.message}`);
             }
 
-            if (triageLanes.some((lane) => lane.rerun === true)) {
-              core.info('Automatic re-run requested by triage; deferring master channel alert until the re-run finishes.');
+            let hasRerunMarker = false;
+            try {
+              hasRerunMarker = fs.readdirSync('e2e-rerun-markers', {recursive: true}).some((file) => String(file).endsWith('.json'));
+            } catch {
+              hasRerunMarker = false;
+            }
+            if (hasRerunMarker && triageLanes.some((lane) => lane.rerun === true)) {
+              core.info('Automatic re-run request published by triage; deferring master channel alert until the re-run finishes.');
               return;
             }
             const mergeContext = await resolveMasterMergeContext({github, context, compositeIdentity, core});

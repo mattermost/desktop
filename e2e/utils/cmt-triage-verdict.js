@@ -727,6 +727,10 @@ function buildAgentHandoff({fold, compositeIdentity, reportUrl = '', runUrl = ''
     const branch = (compositeIdentity?.branch || '').replace(/^refs\/(heads|tags)\//, '');
     const commitSha = compositeIdentity?.commit_sha || '';
     const allServers = fold?.servers || [];
+    const settledServers = new Set([
+        ...(fold?.clearedLegs || []).map((l) => l.serverVersion),
+        ...(fold?.blockingLegs || []).filter((l) => !l.incomplete && l.testsNamed).map((l) => l.serverVersion),
+    ].filter(Boolean));
     const tests = (fold?.tests || []).filter((t) => t.blocking || TEST_PROBLEM.has(t.label));
     const items = tests.map((t) => {
         const isProduct = t.blocking && PRODUCT.has(t.label);
@@ -761,9 +765,9 @@ function buildAgentHandoff({fold, compositeIdentity, reportUrl = '', runUrl = ''
             },
             matrix: {
                 failed: t.failedLegs || [],
-                passed_servers: allServers.filter((s) => !(t.servers || []).includes(s)),
+                passed_servers: allServers.filter((s) => settledServers.has(s) && !(t.servers || []).includes(s)),
             },
-            repro_hint: t.file ? `npx playwright test ${t.file}` : '',
+            repro_hint: t.file ? `npm --prefix e2e test -- ${t.file.replace(/^e2e\//, '')}` : '',
             links: {report_url: reportUrl, run_url: runUrl},
         };
     });

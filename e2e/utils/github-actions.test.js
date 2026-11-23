@@ -298,7 +298,8 @@ describe('e2e-functional.yml status jobs', () => {
         assert.match(verdict, /fromJson\(needs\.prepare-matrix\.outputs\.tsio-composite-identity\)\.name == 'desktop-master'/);
         assert.doesNotMatch(verdict, /needs\.tsio-summary\.result/);
         assert.match(verdict, /pattern: e2e-triage-verdict-\*-a\$\{\{ github\.run_attempt \}\}/);
-        assert.match(verdict, /triageLanes\.some\(\(lane\) => lane\.rerun === true\)/);
+        assert.match(verdict, /pattern: e2e-triage-rerun-attempt-\$\{\{ github\.run_attempt \}\}-of-\*/);
+        assert.match(verdict, /hasRerunMarker && triageLanes\.some\(\(lane\) => lane\.rerun === true\)/);
         assert.match(verdict, /notifyCmtChannel/);
         assert.match(verdict, /triageLanes/);
 

@@ -303,7 +303,7 @@ describe('CMT triage wiring', () => {
 
         // Reporting & verdict jobs must check out the dispatch ref (master), never old release tags.
         const cmtVerdictBlock = workflow.slice(workflow.indexOf('  cmt-verdict:'));
-        assert.ok(!cmtVerdictBlock.includes('ref: ${{ inputs.DESKTOP_VERSION }}'), 'cmt-verdict must use dispatch ref');
+        assert.doesNotMatch(cmtVerdictBlock, /ref: \$\{\{ inputs\.DESKTOP_VERSION \}\}/, 'cmt-verdict must use dispatch ref');
     });
 
     it('suppresses the old verbose notification; only the verdict job posts', () => {
@@ -535,7 +535,11 @@ describe('per-test CMT message', () => {
         ];
         const fold = foldCmtVerdicts({
             lanes: richLanes,
-            expectedLanes: [{platform: 'linux', server: '10.11.25'}, {platform: 'macos', server: '12.1.0-rc2'}],
+            expectedLanes: [
+                {platform: 'linux', server: '10.11.25'},
+                {platform: 'macos', server: '12.1.0-rc2'},
+                {platform: 'windows', server: '11.11.3'},
+            ],
             expectTriage: true,
             stats,
         });
@@ -545,10 +549,10 @@ describe('per-test CMT message', () => {
         assert.equal(handoff.items[0].kind, 'product_bug');
         assert.equal(handoff.items[0].mode, 'draft_investigation');
         assert.equal(handoff.items[0].triage.ai_confidence, 0.94);
-        assert.deepEqual(handoff.items[0].matrix, {failed: ['linux/10.11.25'], passed_servers: ['12.1.0-rc2']});
+        assert.deepEqual(handoff.items[0].matrix, {failed: ['linux/10.11.25'], passed_servers: ['12.1.0-rc2']}, 'omits untriaged 11.11.3 server from passed_servers');
         assert.equal(handoff.items[1].kind, 'server_compat');
         assert.equal(handoff.items[1].mode, 'fix_pr');
-        assert.equal(handoff.items[1].repro_hint, 'npx playwright test e2e/specs/multi_window/multi_window.test.ts');
+        assert.equal(handoff.items[1].repro_hint, 'npm --prefix e2e test -- specs/multi_window/multi_window.test.ts');
 
         const brief = formatAgentFixBrief(handoff);
         assert.match(brief, /### 🤖 Agent Fix Brief \(2 actionable\)/);
