@@ -373,10 +373,13 @@ describe('CMT posts only e2e/compatibility-matrix-testing', () => {
     it('records each failed test with its lane verdict, from the triage findings file', () => {
         const triage = jobLines(cmt, 'cmt-triage').join('\n');
         assert.match(triage, /findings-file: e2e-triage-findings\.json/);
-        assert.match(triage, /if \.schema == 2 then \[\.findings\[\] \| \{title, full_title, file, label, blocking, explanation: \.ai\.explanation\}\]/);
+        assert.match(triage, /if \.schema == 2 then \[\.findings\[\] \| \{title, full_title, file, label, blocking, explanation: \.ai\.explanation, error: \.error_first_line, ai_cause: \.ai\.cause, ai_confidence: \.ai\.confidence\}\]/);
         assert.doesNotMatch(triage, /schema == 1/, 'the toolkit only writes schema 2');
         assert.match(triage, /--argjson findingsRecorded "\$\{RECORDED\}"/);
         assert.match(triage, /--argjson findings "\$\{FINDINGS\}"/);
+        const verdict = jobLines(cmt, 'cmt-verdict').join('\n');
+        assert.match(verdict, /cmt-agent-handoff\.json/);
+        assert.match(verdict, /CURSOR_DESKTOP_CMT_AUTOFIX_WEBHOOK_URL/);
         const action = read('.github/actions/e2e-triage/action.yml');
         assert.match(action, /findings-file: \$\{\{ inputs\.findings-file \}\}/);
         assert.match(action, / {2}findings-file:\r?\n(?:.*\r?\n){2} {4}default: ''/, 'off unless a caller asks: PR and master lanes write none');

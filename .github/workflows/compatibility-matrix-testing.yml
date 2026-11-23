@@ -427,7 +427,7 @@ jobs:
           FINDINGS='[]'
           RECORDED=false
           if [ -f e2e-triage-findings.json ] && FROM_FILE=$(jq -c '
-              if .schema == 2 then [.findings[] | {title, full_title, file, label, blocking, explanation: .ai.explanation}]
+              if .schema == 2 then [.findings[] | {title, full_title, file, label, blocking, explanation: .ai.explanation, error: .error_first_line, ai_cause: .ai.cause, ai_confidence: .ai.confidence}]
               else error("unknown findings schema") end' e2e-triage-findings.json 2>/dev/null); then
             FINDINGS="${FROM_FILE}"
             RECORDED=true
@@ -497,6 +497,7 @@ jobs:
           path: cmt-triage-verdicts
 
       - name: cmt/fold-verdict-and-notify
+        id: verdict
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           TSIO_COMPOSITE_IDENTITY: ${{ needs.calculate-commit-hash.outputs.TSIO_COMPOSITE_IDENTITY }}
@@ -510,7 +511,7 @@ jobs:
           script: |
             const fs = require('fs');
             const path = require('path');
-            const {foldCmtVerdicts, formatCmtVerdictMessage} = require('./e2e/utils/cmt-triage-verdict.js');
+            const {foldCmtVerdicts, formatCmtVerdictMessage, buildAgentHandoff, formatAgentFixBrief} = require('./e2e/utils/cmt-triage-verdict.js');
             const {postMattermostWebhook, buildWorkflowRunUrl} = require('./e2e/utils/cmt-channel-notify.js');
 
             const compositeIdentity = JSON.parse(process.env.TSIO_COMPOSITE_IDENTITY);
@@ -547,6 +548,7 @@ jobs:
             core.info(`CMT verdict: ${fold.state}/${fold.kind} — ${fold.statusDescription}`);
 
             const reportUrl = process.env.REPORT_URL || '';
+            const runUrl = buildWorkflowRunUrl(compositeIdentity);
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -554,7 +556,7 @@ jobs:
               state: fold.commitStatusState,
               context: 'e2e/compatibility-matrix-testing',
               description: fold.statusDescription.slice(0, 140),
-              target_url: reportUrl || buildWorkflowRunUrl(compositeIdentity),
+              target_url: reportUrl || runUrl,
             });
 
             const text = formatCmtVerdictMessage({
@@ -562,10 +564,43 @@ jobs:
               compositeIdentity,
               stats,
               reportUrl,
-              runUrl: buildWorkflowRunUrl(compositeIdentity),
+              runUrl,
             });
-            await core.summary.addRaw(`## Desktop CMT verdict\n\n${text}`).write();
+            const handoff = buildAgentHandoff({fold, compositeIdentity, reportUrl, runUrl});
+            const brief = formatAgentFixBrief(handoff);
+            if (handoff.items.length > 0) {
+              fs.writeFileSync('cmt-agent-handoff.json', JSON.stringify(handoff, null, 2));
+              core.setOutput('has-handoff', 'true');
+            }
+            await core.summary.addRaw(`## Desktop CMT verdict\n\n${text}${brief ? `\n${brief}` : ''}`).write();
             await postMattermostWebhook({core, webhookUrl: process.env.MATTERMOST_CMT_WEBHOOK_URL || '', text});
+
+      - name: cmt/upload-agent-handoff
+        if: steps.verdict.outputs.has-handoff == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: cmt-agent-handoff
+          path: cmt-agent-handoff.json
+          retention-days: 7
+
+      - name: cmt/dispatch-agent-fix
+        if: steps.verdict.outputs.has-handoff == 'true'
+        env:
+          WEBHOOK_URL: ${{ secrets.CURSOR_DESKTOP_CMT_AUTOFIX_WEBHOOK_URL }}
+          WEBHOOK_KEY: ${{ secrets.CURSOR_DESKTOP_CMT_AUTOFIX_WEBHOOK_KEY }}
+        run: |
+          if [ -z "$WEBHOOK_URL" ] || [ -z "$WEBHOOK_KEY" ]; then
+            echo "No webhook configured: fix brief is in the job summary and cmt-agent-handoff.json artifact."
+            exit 0
+          fi
+          while IFS= read -r item; do
+            title=$(jq -r '.test.title' <<<"$item")
+            mode=$(jq -r '.mode' <<<"$item")
+            status=$(printf '%s' "$item" | curl -sS -o /dev/null -w '%{http_code}' --max-time 30 \
+              -X POST "$WEBHOOK_URL" -H "Authorization: Bearer $WEBHOOK_KEY" -H 'Content-Type: application/json' \
+              --data-binary @-) || true
+            echo "[$mode] $title: HTTP ${status:-000}"
+          done < <(jq -c '.items[] | select(.mode == "fix_pr" or .mode == "draft_investigation")' cmt-agent-handoff.json)
 
   # Instance cleanup is handled by Matterwick: when this workflow completes, GitHub sends a
   # workflow_run "completed" event and Matterwick destroys the servers it provisioned for this

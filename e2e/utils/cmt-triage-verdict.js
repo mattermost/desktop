@@ -15,6 +15,13 @@
  * never green and never plain red.
  */
 
+const PLATFORM_ORDER = {
+    linux: 0,
+    macos: 1,
+    windows: 2,
+    unknown: 3,
+};
+
 const PLATFORM_EMOJI = {
     linux: '🐧',
     macos: '🍎',
@@ -65,6 +72,9 @@ function normalizeFinding(row) {
         return null;
     }
     const [spec, ...rest] = (typeof row.full_title === 'string' && row.full_title ? row.full_title : row.title).split(' > ');
+    const error = (typeof row.error === 'string' && row.error) || (typeof row.error_first_line === 'string' && row.error_first_line) || null;
+    const aiCause = (typeof row.ai_cause === 'string' && row.ai_cause) || (typeof row.ai?.cause === 'string' && row.ai.cause) || null;
+    const aiConfidence = typeof row.ai_confidence === 'number' ? row.ai_confidence : (typeof row.ai?.confidence === 'number' ? row.ai.confidence : null);
     return {
         title: row.title,
         fullTitle: [unixPath(spec), ...rest].join(' > '),
@@ -72,6 +82,9 @@ function normalizeFinding(row) {
         label: row.label,
         blocking: row.blocking === true,
         explanation: typeof row.explanation === 'string' && row.explanation ? row.explanation : null,
+        error,
+        aiCause,
+        aiConfidence,
     };
 }
 
@@ -101,30 +114,64 @@ function normalizeLane(lane) {
 function groupTests(lanes) {
     const byTest = new Map();
     for (const lane of lanes) {
+        const legId = `${lane.platform}/${lane.serverVersion}`;
         for (const f of lane.findings) {
             // Two suites of one file can share a leaf title: the full title tells their tests apart.
             const key = `${f.file}\n${f.fullTitle}`;
             const seen = byTest.get(key);
             if (!seen) {
-                byTest.set(key, {title: f.title, fullTitle: f.fullTitle, file: f.file, label: f.label, blocking: f.blocking, lanes: 1, servers: [lane.serverVersion], explanation: f.explanation});
+                byTest.set(key, {
+                    title: f.title,
+                    fullTitle: f.fullTitle,
+                    file: f.file,
+                    label: f.label,
+                    blocking: f.blocking,
+                    lanes: 1,
+                    platforms: [lane.platform],
+                    servers: [lane.serverVersion],
+                    failedLegs: [legId],
+                    explanation: f.explanation,
+                    error: f.error,
+                    aiCause: f.aiCause,
+                    aiConfidence: f.aiConfidence,
+                });
                 continue;
             }
             seen.lanes += 1;
+            if (!seen.platforms.includes(lane.platform)) {
+                seen.platforms.push(lane.platform);
+            }
             if (!seen.servers.includes(lane.serverVersion)) {
                 seen.servers.push(lane.serverVersion);
             }
+            if (!seen.failedLegs.includes(legId)) {
+                seen.failedLegs.push(legId);
+            }
             seen.blocking = seen.blocking || f.blocking;
+            if (!seen.error && f.error) {
+                seen.error = f.error;
+            }
 
-            // The explanation stays with the label it was given for.
+            // The explanation and AI metadata stay with the label they were given for.
             if (labelRank(f.label) < labelRank(seen.label)) {
                 seen.label = f.label;
                 seen.explanation = f.explanation;
-            } else if (!seen.explanation && f.label === seen.label) {
-                seen.explanation = f.explanation;
+                seen.aiCause = f.aiCause;
+                seen.aiConfidence = f.aiConfidence;
+            } else if (f.label === seen.label) {
+                seen.explanation = seen.explanation || f.explanation;
+                seen.aiCause = seen.aiCause || f.aiCause;
+                if (seen.aiConfidence === null && f.aiConfidence !== null) {
+                    seen.aiConfidence = f.aiConfidence;
+                }
             }
         }
     }
-    return [...byTest.values()].sort((a, b) => labelRank(a.label) - labelRank(b.label) || b.lanes - a.lanes || a.title.localeCompare(b.title));
+    const ordered = [...byTest.values()];
+    for (const t of ordered) {
+        t.platforms.sort((a, b) => (PLATFORM_ORDER[a] ?? 9) - (PLATFORM_ORDER[b] ?? 9));
+    }
+    return ordered.sort((a, b) => labelRank(a.label) - labelRank(b.label) || b.lanes - a.lanes || a.title.localeCompare(b.title));
 }
 
 /**
@@ -473,7 +520,7 @@ const andList = (items) => (items.length > 1 ? `${items.slice(0, -1).join(', ')}
 const PRODUCT = new Set(['app bug', 'caused by PR']);
 const TEST_PROBLEM = new Set(['test bug', 'server compat', 'out of date', 'fixed on main']);
 
-/** Why a test failed, in plain words: AI explanation first when present, else a clear label summary. */
+/** Why a test failed, in plain words: AI explanation first, then error line for unsettled failures, else label summary. */
 function reasonFor(t, {master = false} = {}) {
     if (t.explanation) {
         return cut(t.explanation, 160);
@@ -491,7 +538,10 @@ function reasonFor(t, {master = false} = {}) {
         flaky: 'failed by chance or because of the test machine; it passes on retry or on other runs',
         'broken on main': master ? 'failing on consecutive master runs' : 'it fails on master too',
     };
-    return reasons[t.label] || 'the cause is not clear';
+    if (reasons[t.label]) {
+        return reasons[t.label];
+    }
+    return t.error ? cut(t.error, 140) : 'the cause is not clear';
 }
 
 /**
@@ -577,9 +627,11 @@ function formatCmtVerdictMessage({fold, compositeIdentity, stats = {}, reportUrl
 
     const tests = fold.tests || [];
     const names = testNames(tests);
+    const badges = (t) => (t.platforms || []).map((p) => PLATFORM_EMOJI[p] || PLATFORM_EMOJI.unknown).join('');
     const where = (t) => {
-        const onSome = t.servers.length < allServers.length && t.label !== 'server compat' ? `, on server ${andList(t.servers)}` : '';
-        return `${t.lanes} of ${runs || t.lanes} runs${onSome}`;
+        const onSome = t.servers.length < allServers.length ? `, on server ${andList(t.servers)}` : '';
+        const os = badges(t);
+        return `${os ? `${os} ` : ''}${t.lanes} of ${runs || t.lanes} runs${onSome}`;
     };
     const line = (t, reason = reasonFor(t)) => `• ${names.get(t)} — ${reason} · ${where(t)}`;
     const productBugs = tests.filter((t) => t.blocking && PRODUCT.has(t.label));
@@ -594,6 +646,7 @@ function formatCmtVerdictMessage({fold, compositeIdentity, stats = {}, reportUrl
     const redUnnamed = redLegs.filter((leg) => !leg.testsNamed && (!leg.incomplete || leg.blocking > 0));
     const unsettled = fold.unknownLegs.filter((leg) => !leg.incomplete);
 
+    const testTag = testProblems.length ? ` · ${count(testProblems.length, 'test bug', 'test bugs')}` : '';
     const unchecked = {
         'untriaged-upstream-failure': 'a CI job failed outside the tests',
         'untriaged-failures': 'tests failed but were not checked',
@@ -603,15 +656,15 @@ function formatCmtVerdictMessage({fold, compositeIdentity, stats = {}, reportUrl
     if (fold.kind === 'blocking') {
         let red = `${count(redUnnamed.length, 'run', 'runs')} failed, but which tests is not known`;
         if (productBugs.length) {
-            red = `${count(productBugs.length, 'product bug', 'product bugs')} found`;
+            red = `${count(productBugs.length, 'product bug', 'product bugs')} found${testTag}`;
         } else if (needsLook.length) {
-            red = `no product bugs found · ${count(needsLook.length, 'failure', 'failures')} held`;
+            red = `no product bugs found · ${count(needsLook.length, 'failure', 'failures')} held${testTag}`;
         } else if (incomplete.length && !redUnnamed.length) {
             red = 'test results did not fully upload, re-run to see if anything failed';
         }
         headline = `:red_circle: ${name}: ${red}`;
     } else if (fold.kind === 'flaky') {
-        headline = `:green_circle: ${name}: no product bugs found`;
+        headline = `:green_circle: ${name}: no product bugs found${testTag}`;
     } else if (fold.kind === 'passed') {
         headline = `:green_circle: ${name}: all tests passed`;
     }
@@ -626,10 +679,10 @@ function formatCmtVerdictMessage({fold, compositeIdentity, stats = {}, reportUrl
         }
     };
     section('🐞 **Product bugs**', productBugs);
-    section('🔎 **Held**', needsLook, (t) => line(t, t.label === 'needs investigation' || t.label === 'machine failure' || PRODUCT.has(t.label) ? reasonFor(t) : `${reasonFor(t)}, but that may not be the cause`));
-    section('🧪 **Problems with the test, not product bugs**', testProblems);
+    section('🔎 **Needs a look**', needsLook, (t) => line(t, t.label === 'needs investigation' || t.label === 'machine failure' || PRODUCT.has(t.label) ? reasonFor(t) : `${reasonFor(t)}, but that may not be the cause`));
+    section('🧪 **Test bugs**', testProblems);
     if (flaky.length) {
-        lines.push(`🔁 **Flaky, not product bugs** (${flaky.length}): ${listOf(flaky, (t) => names.get(t))} — ${reasonFor(flaky[0])}`);
+        lines.push(`🔁 **Flaky / Infra:** ${count(flaky.length, 'flaky test', 'flaky tests')} (${listOf(flaky, (t) => names.get(t))})`);
     }
     if (onMaster.length) {
         lines.push(`↩️ **Also failing on master** (${onMaster.length}): ${listOf(onMaster, (t) => names.get(t))}`);
@@ -650,13 +703,103 @@ function formatCmtVerdictMessage({fold, compositeIdentity, stats = {}, reportUrl
         lines.push(`⚙️ ${fold.note}`);
     }
 
+    const hasBrief = productBugs.length + testProblems.length + needsLook.length > 0;
     const links = [
         reportUrl ? `[Report](${reportUrl})` : '',
-        runUrl ? `[Run](${runUrl})` : '',
+        runUrl ? `[${hasBrief ? 'Run & Fix Brief' : 'Run'}](${runUrl})` : '',
     ].filter(Boolean);
     lines.push([`${passed} passed`, `${failed} failed`, `${skipped} skipped`, ...links].join(' · '));
 
     return lines.join('\n') + '\n';
+}
+
+/**
+ * Structured agent-handoff payload (schema 1) for every actionable CMT bug:
+ * product bugs (draft investigation), test/compat bugs (fix PR), and held failures.
+ */
+function buildAgentHandoff({fold, compositeIdentity, reportUrl = '', runUrl = ''}) {
+    const repository = compositeIdentity?.repository || 'mattermost/desktop';
+    const branch = (compositeIdentity?.branch || '').replace(/^refs\/(heads|tags)\//, '');
+    const commitSha = compositeIdentity?.commit_sha || '';
+    const allServers = fold?.servers || [];
+    const tests = (fold?.tests || []).filter((t) => t.blocking || TEST_PROBLEM.has(t.label));
+    const items = tests.map((t) => {
+        const isProduct = t.blocking && PRODUCT.has(t.label);
+        const isCompat = !t.blocking && t.label === 'server compat';
+        const isTest = !t.blocking && TEST_PROBLEM.has(t.label);
+        let kind = 'needs_investigation';
+        let mode = 'investigate';
+        if (isProduct) {
+            kind = 'product_bug';
+            mode = 'draft_investigation';
+        } else if (isCompat) {
+            kind = 'server_compat';
+            mode = 'fix_pr';
+        } else if (isTest) {
+            kind = 'test_bug';
+            mode = 'fix_pr';
+        }
+        return {
+            schema: 1,
+            kind,
+            mode,
+            repository,
+            branch,
+            commit_sha: commitSha,
+            test: {title: t.title, full_title: t.fullTitle, file: t.file},
+            triage: {
+                label: t.label,
+                ai_cause: t.aiCause ?? null,
+                ai_confidence: t.aiConfidence ?? null,
+                explanation: t.explanation ?? null,
+                error_first_line: t.error ?? null,
+            },
+            matrix: {
+                failed: t.failedLegs || [],
+                passed_servers: allServers.filter((s) => !(t.servers || []).includes(s)),
+            },
+            repro_hint: t.file ? `npx playwright test ${t.file}` : '',
+            links: {report_url: reportUrl, run_url: runUrl},
+        };
+    });
+    return {schema: 1, repository, branch, commit_sha: commitSha, run_url: runUrl, report_url: reportUrl, items};
+}
+
+const BRIEF_TAG = {
+    product_bug: '🐞 Product bug (draft PR — do not auto-merge)',
+    test_bug: '🧪 Test bug (safe for fix PR)',
+    server_compat: '🧪 Server compat test bug (safe for fix PR)',
+    needs_investigation: '🔎 Needs investigation',
+};
+
+/** Copy-pasteable Markdown Agent Fix Brief for GITHUB_STEP_SUMMARY. Empty when no actionable items exist. */
+function formatAgentFixBrief(handoff) {
+    if (!handoff?.items?.length) {
+        return '';
+    }
+    const lines = [`### 🤖 Agent Fix Brief (${handoff.items.length} actionable)`, ''];
+    for (const item of handoff.items) {
+        const conf = typeof item.triage.ai_confidence === 'number' ? ` (confidence ${Math.round(item.triage.ai_confidence * 100)}%)` : '';
+        lines.push(`#### ${BRIEF_TAG[item.kind] || item.kind}: \`${item.test.title}\``);
+        if (item.test.file) {
+            lines.push(`- **Spec:** \`${item.test.file}\``);
+        }
+        if (item.matrix.failed.length) {
+            const passed = item.matrix.passed_servers.length ? ` · Passed servers: ${item.matrix.passed_servers.join(', ')}` : '';
+            lines.push(`- **Matrix:** Failed on ${item.matrix.failed.join(', ')}${passed}`);
+        }
+        if (item.triage.explanation) {
+            lines.push(`- **AI diagnosis:** ${item.triage.explanation}${conf}`);
+        }
+        if (item.triage.error_first_line) {
+            lines.push(`- **Error:** \`${cut(item.triage.error_first_line, 200)}\``);
+        }
+        if (item.repro_hint) {
+            lines.push(`- **Repro:** \`${item.repro_hint}\``);
+        }
+        lines.push('');
+    }
+    return lines.join('\n');
 }
 
 module.exports = {
@@ -667,6 +810,8 @@ module.exports = {
     redStatusNotCleared,
     formatMasterTestLines,
     formatCmtVerdictMessage,
+    buildAgentHandoff,
+    formatAgentFixBrief,
     displayTotals,
     unclearedStatuses,
 };
