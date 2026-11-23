@@ -300,6 +300,7 @@ describe('CMT triage wiring', () => {
         assert.match(workflow, /triage-status-context: 'off'/);
         assert.match(workflow, /mode: report-only/);
         assert.match(workflow, /cmt-triage-verdict-/);
+
         // Reporting & verdict jobs must check out the dispatch ref (master), never old release tags.
         const cmtVerdictBlock = workflow.slice(workflow.indexOf('  cmt-verdict:'));
         assert.ok(!cmtVerdictBlock.includes('ref: ${{ inputs.DESKTOP_VERSION }}'), 'cmt-verdict must use dispatch ref');

@@ -74,7 +74,12 @@ function normalizeFinding(row) {
     const [spec, ...rest] = (typeof row.full_title === 'string' && row.full_title ? row.full_title : row.title).split(' > ');
     const error = (typeof row.error === 'string' && row.error) || (typeof row.error_first_line === 'string' && row.error_first_line) || null;
     const aiCause = (typeof row.ai_cause === 'string' && row.ai_cause) || (typeof row.ai?.cause === 'string' && row.ai.cause) || null;
-    const aiConfidence = typeof row.ai_confidence === 'number' ? row.ai_confidence : (typeof row.ai?.confidence === 'number' ? row.ai.confidence : null);
+    let aiConfidence = null;
+    if (typeof row.ai_confidence === 'number') {
+        aiConfidence = row.ai_confidence;
+    } else if (typeof row.ai?.confidence === 'number') {
+        aiConfidence = row.ai.confidence;
+    }
     return {
         title: row.title,
         fullTitle: [unixPath(spec), ...rest].join(' > '),
