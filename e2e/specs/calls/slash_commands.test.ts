@@ -128,6 +128,8 @@ test.describe('calls/slash_commands', () => {
         'MM-T5588 host ends the call (via Calls REST API) — desktop tears the call down',
         {tag: ['@P1', '@all']},
         async ({electronApp}) => {
+            // Calls E2E is disabled in CI: CI test servers can't carry Calls media (no RTCD).
+            test.skip(Boolean(process.env.CI), 'Calls E2E is disabled in CI: test servers cannot carry Calls media');
             await startCall(electronApp, serverWin);
 
             await apiRequest(testServerUrl, adminToken, `/plugins/com.mattermost.calls/calls/${testChannel.id}/end`, {
@@ -155,6 +157,8 @@ test.describe('calls/slash_commands', () => {
         'MM-T5589 /call stats — returns call statistics',
         {tag: ['@P1', '@all']},
         async ({electronApp}) => {
+            // Calls E2E is disabled in CI: CI test servers can't carry Calls media (no RTCD).
+            test.skip(Boolean(process.env.CI), 'Calls E2E is disabled in CI: test servers cannot carry Calls media');
             const widgetWindow = await startCall(electronApp, serverWin);
 
             await closeCallsWidget(electronApp, widgetWindow, serverWin);
@@ -182,6 +186,9 @@ test.describe('calls/slash_commands', () => {
         'MM-T5590 /call logs — returns call log output',
         {tag: ['@P1', '@all']},
         async () => {
+            // Calls E2E is disabled in CI: CI test servers can't carry Calls media (no RTCD).
+            test.skip(Boolean(process.env.CI), 'Calls E2E is disabled in CI: test servers cannot carry Calls media');
+
             // beforeEach logs out and creates a new user, which wipes in-memory
             // Calls logs. Seed both storages: Calls getPersistentStorage() uses
             // localStorage when window.desktop is set, otherwise sessionStorage.

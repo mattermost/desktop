@@ -101,6 +101,8 @@ test.describe('calls/calls_functionality', () => {
     test('MM-T4841 Calls UI Functionality - Self-managed',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
+            // Calls E2E is disabled in CI: CI test servers can't carry Calls media (no RTCD).
+            test.skip(Boolean(process.env.CI), 'Calls E2E is disabled in CI: test servers cannot carry Calls media');
             const widgetWindow = await startCall(electronApp, serverWin);
 
             expect(widgetWindow.url(), 'Widget URL must point to Calls plugin').toContain(
@@ -125,6 +127,8 @@ test.describe('calls/calls_functionality', () => {
     test('MM-T5587 Calls - Slash Commands',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
+            // Calls E2E is disabled in CI: CI test servers can't carry Calls media (no RTCD).
+            test.skip(Boolean(process.env.CI), 'Calls E2E is disabled in CI: test servers cannot carry Calls media');
             const widgetWindow = await startCall(electronApp, serverWin);
 
             expect(widgetWindow.url(), '/call start must open Calls widget').toContain(
@@ -138,6 +142,8 @@ test.describe('calls/calls_functionality', () => {
     test('MM-T5411 Calls - Keyboard Shortcuts (self-managed)',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
+            // Calls E2E is disabled in CI: CI test servers can't carry Calls media (no RTCD).
+            test.skip(Boolean(process.env.CI), 'Calls E2E is disabled in CI: test servers cannot carry Calls media');
             const widgetWindow = await startCall(electronApp, serverWin);
             await widgetWindow.bringToFront();
             await toggleMuteViaShortcut(electronApp, widgetWindow);
