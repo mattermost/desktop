@@ -572,6 +572,15 @@ jobs:
       pull-requests: read
       # Triage reads the run's failed jobs before it asks for an automatic re-run.
       actions: read
+    # Every lane refreshes the shared e2e/triage summary, and GitHub commit
+    # statuses have no compare-and-swap (toolkit status.ts requires every
+    # caller to hold the same non-cancelling, SHA-scoped job concurrency lock).
+    # max-parallel: 1 serializes the 3 OS matrix legs within a run so GitHub's
+    # single-pending-slot concurrency queue never evicts the 3rd leg;
+    # concurrency serializes overlapping runs targeting the same commit SHA.
+    concurrency:
+      group: e2e-triage-${{ needs.prepare-matrix.outputs.desktop-sha || github.run_id }}
+      cancel-in-progress: false
     # One triage per operating system, over the same matrix the tests ran on.
     # A run uploads one report per OS into a shared group, so a single triage
     # could only ever write one status covering all of them -- which is why this
@@ -580,6 +589,7 @@ jobs:
     # its own verdict and lets it write the status it is answerable for.
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         include: ${{ fromJson(needs.prepare-matrix.outputs.platforms) }}
     steps:
