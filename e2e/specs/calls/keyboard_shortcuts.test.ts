@@ -111,6 +111,8 @@ test.describe('calls/keyboard_shortcuts', () => {
     test('MM Calls - Raise/Lower hand keyboard shortcut (Cmd/Ctrl+Shift+Y)',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
+            // Calls E2E is disabled in CI: CI test servers can't carry Calls media (no RTCD).
+            test.skip(Boolean(process.env.CI), 'Calls E2E is disabled in CI: test servers cannot carry Calls media');
             const widgetWindow = await startCall(electronApp, serverWin);
             await widgetWindow.bringToFront();
 
@@ -148,6 +150,8 @@ test.describe('calls/keyboard_shortcuts', () => {
     test('MM Calls - Participants list keyboard shortcut (Cmd/Ctrl+Shift+P)',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
+            // Calls E2E is disabled in CI: CI test servers can't carry Calls media (no RTCD).
+            test.skip(Boolean(process.env.CI), 'Calls E2E is disabled in CI: test servers cannot carry Calls media');
             const widgetWindow = await startCall(electronApp, serverWin);
             await widgetWindow.bringToFront();
 
@@ -191,6 +195,8 @@ test.describe('calls/keyboard_shortcuts', () => {
     test('MM Calls - Screen share keyboard shortcut triggers Desktop API (Cmd/Ctrl+Shift+E)',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
+            // Calls E2E is disabled in CI: CI test servers can't carry Calls media (no RTCD).
+            test.skip(Boolean(process.env.CI), 'Calls E2E is disabled in CI: test servers cannot carry Calls media');
             const widgetWindow = await startCall(electronApp, serverWin);
             await widgetWindow.bringToFront();
 
@@ -219,6 +225,8 @@ test.describe('calls/keyboard_shortcuts', () => {
     test('MM Calls - Leave call keyboard shortcut (Cmd/Ctrl+Shift+L)',
         {tag: ['@P2', '@all']},
         async ({electronApp}) => {
+            // Calls E2E is disabled in CI: CI test servers can't carry Calls media (no RTCD).
+            test.skip(Boolean(process.env.CI), 'Calls E2E is disabled in CI: test servers cannot carry Calls media');
             const widgetWindow = await startCall(electronApp, serverWin);
             await widgetWindow.bringToFront();
 

@@ -29,6 +29,9 @@ test.describe('calls/plugin_setup', () => {
     test('Calls plugin is installed and enabled on the test server',
         {tag: ['@P1', '@all']},
         async () => {
+            // Calls E2E is disabled in CI: CI test servers can't carry Calls media (no RTCD).
+            test.skip(Boolean(process.env.CI), 'Calls E2E is disabled in CI: test servers cannot carry Calls media');
+
             // Non-null: guaranteed by the suite-level skip above.
             const serverUrl = process.env.MM_TEST_SERVER_URL!;
             const token = await apiLogin(
