@@ -5,9 +5,16 @@ import {expect} from '@playwright/test';
 
 import type {ServerView} from '../../helpers/serverView';
 
+const TROUBLESHOOTING_NOTICE = '.sectionNoticeContainer, [class*="_section-notice_"]:has-text("Troubleshooting notifications")';
+const NOTICE_PRIMARY_BUTTON = '.sectionNoticeButton.btn-primary, button[class*="_button--emphasis-primary_"]';
+
 export async function triggerTestNotification(firstServer: ServerView) {
     await firstServer.click('div#CustomizeYourExperienceTour > button');
-    const sendNotificationButton = await firstServer.waitForSelector('.sectionNoticeButton.btn-primary');
+    const sendNotificationButton = firstServer.locator(TROUBLESHOOTING_NOTICE).locator(NOTICE_PRIMARY_BUTTON);
+    await expect.poll(
+        () => sendNotificationButton.isVisible(),
+        {timeout: 30_000, message: 'Send test notification button must be visible in Settings > Notifications'},
+    ).toBe(true);
     await sendNotificationButton.scrollIntoViewIfNeeded();
     const textBeforeClick = await sendNotificationButton.textContent();
     expect(textBeforeClick).toBe('Send a test notification');
