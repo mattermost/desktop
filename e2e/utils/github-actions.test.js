@@ -244,10 +244,11 @@ describe('e2e-functional.yml status jobs', () => {
 
         const stepStart = triageLines.indexOf('      - name: e2e/triage');
         assert.notEqual(stepStart, -1, 'expected e2e/triage step');
-        const nextStepOffset = triageLines.slice(stepStart + 1).findIndex((l) => /^      - name: /.test(l));
-        const stepLines = triageLines
-            .slice(stepStart, nextStepOffset === -1 ? undefined : stepStart + 1 + nextStepOffset)
-            .filter((l) => !/^\s*#/.test(l));
+        const stepHeader = /^ {6}- name: /;
+        const commentLine = /^\s*#/;
+        const nextStepOffset = triageLines.slice(stepStart + 1).findIndex((l) => stepHeader.test(l));
+        const stepEnd = nextStepOffset === -1 ? triageLines.length : stepStart + 1 + nextStepOffset;
+        const stepLines = triageLines.slice(stepStart, stepEnd).filter((l) => !commentLine.test(l));
         const triageStep = stepLines.join('\n');
         assert.match(triageStep, /^\s+if:\s*steps\.lane-status\.outputs\.needs-triage == 'true'$/m);
         assert.match(triageStep, /^\s+triage-status-context:\s*'off'$/m);
