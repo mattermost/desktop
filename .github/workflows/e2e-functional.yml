@@ -660,7 +660,7 @@ jobs:
           FINDINGS='[]'
           RECORDED=false
           if [ -f e2e-triage-findings.json ] && FROM_FILE=$(jq -c '
-              if .schema == 2 then [.findings[] | {title, full_title, file, label, blocking, explanation: .ai.explanation}]
+              if (.schema == 2 or .schema == 3) then [.findings[] | {title, full_title, file, label, blocking, explanation: .ai.explanation}]
               else error("unknown findings schema") end' e2e-triage-findings.json 2>/dev/null); then
             FINDINGS="${FROM_FILE}"
             RECORDED=true

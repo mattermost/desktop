@@ -239,11 +239,18 @@ describe('e2e-functional.yml status jobs', () => {
 
     it('runs parallel per-OS triage with aggregate off and serializes consolidate-triage per SHA', () => {
         const triageLines = jobLines(yml, 'tsio-triage');
-        const triageText = triageLines.join('\n');
         assert.ok(!triageLines.includes('      max-parallel: 1'));
         assert.ok(!triageLines.includes('    concurrency:'));
-        assert.match(triageText, /triage-status-context: 'off'/);
-        assert.match(triageText, /steps\.lane-status\.outputs\.needs-triage == 'true'/);
+
+        const stepStart = triageLines.indexOf('      - name: e2e/triage');
+        assert.notEqual(stepStart, -1, 'expected e2e/triage step');
+        const nextStepOffset = triageLines.slice(stepStart + 1).findIndex((l) => /^      - name: /.test(l));
+        const stepLines = triageLines
+            .slice(stepStart, nextStepOffset === -1 ? undefined : stepStart + 1 + nextStepOffset)
+            .filter((l) => !/^\s*#/.test(l));
+        const triageStep = stepLines.join('\n');
+        assert.match(triageStep, /^\s+if:\s*steps\.lane-status\.outputs\.needs-triage == 'true'$/m);
+        assert.match(triageStep, /^\s+triage-status-context:\s*'off'$/m);
 
         const consolidateLines = jobLines(yml, 'consolidate-triage');
         assert.ok(consolidateLines.includes('    concurrency:'));
@@ -389,8 +396,8 @@ describe('CMT posts only e2e/compatibility-matrix-testing', () => {
     it('records each failed test with its lane verdict, from the triage findings file', () => {
         const triage = jobLines(cmt, 'cmt-triage').join('\n');
         assert.match(triage, /findings-file: e2e-triage-findings\.json/);
-        assert.match(triage, /if \.schema == 2 then \[\.findings\[\] \| \{title, full_title, file, label, blocking, explanation: \.ai\.explanation, error: \.error_first_line, ai_cause: \.ai\.cause, ai_confidence: \.ai\.confidence\}\]/);
-        assert.doesNotMatch(triage, /schema == 1/, 'the toolkit only writes schema 2');
+        assert.match(triage, /if \(\.schema == 2 or \.schema == 3\) then \[\.findings\[\] \| \{title, full_title, file, label, blocking, explanation: \.ai\.explanation, error: \.error_first_line, ai_cause: \.ai\.cause, ai_confidence: \.ai\.confidence\}\]/);
+        assert.doesNotMatch(triage, /schema == 1/, 'the toolkit only writes schema 2 or 3');
         assert.match(triage, /--argjson findingsRecorded "\$\{RECORDED\}"/);
         assert.match(triage, /--argjson findings "\$\{FINDINGS\}"/);
         const verdict = jobLines(cmt, 'cmt-verdict').join('\n');
