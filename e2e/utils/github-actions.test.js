@@ -237,12 +237,18 @@ describe('e2e-functional.yml status jobs', () => {
         }
     });
 
-    it('serializes tsio-triage per SHA across runs and matrix legs', () => {
-        const lines = jobLines(yml, 'tsio-triage');
-        assert.ok(lines.includes('    concurrency:'));
-        assert.ok(lines.includes('      group: e2e-triage-' + gha('needs.prepare-matrix.outputs.desktop-sha || github.run_id')));
-        assert.ok(lines.includes('      cancel-in-progress: false'));
-        assert.ok(lines.includes('      max-parallel: 1'));
+    it('runs parallel per-OS triage with aggregate off and serializes consolidate-triage per SHA', () => {
+        const triageLines = jobLines(yml, 'tsio-triage');
+        const triageText = triageLines.join('\n');
+        assert.ok(!triageLines.includes('      max-parallel: 1'));
+        assert.ok(!triageLines.includes('    concurrency:'));
+        assert.match(triageText, /triage-status-context: 'off'/);
+        assert.match(triageText, /steps\.lane-status\.outputs\.needs-triage == 'true'/);
+
+        const consolidateLines = jobLines(yml, 'consolidate-triage');
+        assert.ok(consolidateLines.includes('    concurrency:'));
+        assert.ok(consolidateLines.includes('      group: e2e-triage-' + gha('needs.prepare-matrix.outputs.desktop-sha || github.run_id')));
+        assert.ok(consolidateLines.includes('      cancel-in-progress: false'));
     });
 
     it('checks out cmt-triage-verdict.js wherever cmt-channel-notify.js is loaded', () => {

@@ -572,33 +572,39 @@ jobs:
       pull-requests: read
       # Triage reads the run's failed jobs before it asks for an automatic re-run.
       actions: read
-    # Every lane refreshes the shared e2e/triage summary, and GitHub commit
-    # statuses have no compare-and-swap (toolkit status.ts requires every
-    # caller to hold the same non-cancelling, SHA-scoped job concurrency lock).
-    # max-parallel: 1 serializes the 3 OS matrix legs within a run so GitHub's
-    # single-pending-slot concurrency queue never evicts the 3rd leg;
-    # concurrency serializes overlapping runs targeting the same commit SHA.
-    concurrency:
-      group: e2e-triage-${{ needs.prepare-matrix.outputs.desktop-sha || github.run_id }}
-      cancel-in-progress: false
-    # One triage per operating system, over the same matrix the tests ran on.
-    # A run uploads one report per OS into a shared group, so a single triage
-    # could only ever write one status covering all of them -- which is why this
-    # used to write a decorative e2e/triage rather than the e2e/<os> contexts
-    # that actually gate the pull request. Narrowing by report name gives each OS
-    # its own verdict and lets it write the status it is answerable for.
+    # Per-lane triage writes only its own e2e/<platform> context (triage-status-context: 'off'),
+    # so failing OS legs can run in parallel without holding a SHA lock or serializing on
+    # max-parallel: 1. consolidate-triage computes e2e/triage once at the end under the SHA lock.
     strategy:
       fail-fast: false
-      max-parallel: 1
       matrix:
         include: ${{ fromJson(needs.prepare-matrix.outputs.platforms) }}
     steps:
+      # Skip passing OS legs right away (~5s) using live commit statuses (fail-closed on API error
+      # or missing status so a green-but-incomplete summary never slips through).
+      - name: Check lane status
+        id: lane-status
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SHA: ${{ needs.prepare-matrix.outputs.desktop-sha }}
+          CONTEXT: e2e/${{ matrix.platform }}
+        run: |
+          NEEDS_TRIAGE=true
+          if [ -n "$SHA" ] && RAW=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${SHA}/statuses?per_page=100" --paginate 2>/dev/null) && STATUSES=$(jq -s 'add // []' <<<"$RAW" 2>/dev/null); then
+            STATE=$(jq -r --arg ctx "$CONTEXT" '([.[] | select(.context == $ctx)] | first | .state) // "missing"' <<<"$STATUSES" 2>/dev/null || echo "missing")
+            if [ "$STATE" = "success" ]; then
+              NEEDS_TRIAGE=false
+            fi
+          fi
+          echo "needs-triage=${NEEDS_TRIAGE}" >> "$GITHUB_OUTPUT"
+
       # The triage composite is a local action, so it has to be in the workspace before
       # the composite step runs. Only that directory is checked out, from the dispatch
       # ref like this workflow file: the composite that runs is the one shipped with
       # the workflow, not the branch under test (tsio-summary checks out version_name
       # for its helper scripts; this job must not).
       - name: Checkout triage action
+        if: steps.lane-status.outputs.needs-triage == 'true'
         continue-on-error: true
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -609,12 +615,14 @@ jobs:
       # See .github/actions/e2e-triage/action.yml.
       - name: e2e/triage
         id: triage
+        if: steps.lane-status.outputs.needs-triage == 'true'
         continue-on-error: true
         uses: ./.github/actions/e2e-triage
         with:
           platform: ${{ matrix.platform }}
           runner: ${{ matrix.runner }}
           lane-job-filter: ${{ matrix.platform }},${{ matrix.runner }}
+          triage-status-context: 'off'
           composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -626,11 +634,19 @@ jobs:
           # Each failed test with triage's label, so the master alert can name it.
           findings-file: e2e-triage-findings.json
 
+      - name: Upload triage findings
+        if: always() && steps.lane-status.outputs.needs-triage == 'true' && hashFiles('e2e-triage-findings.json') != ''
+        continue-on-error: true
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-triage-findings-${{ matrix.platform }}-a${{ github.run_attempt }}
+          path: e2e-triage-findings.json
+          retention-days: 1
+
       # master-e2e-verdict folds these per-OS verdicts into the post-merge
-      # channel alert. Always record a file — an empty verdict is how the
-      # fold knows this lane was never triaged (unknown, never green).
+      # channel alert. Skipped for passing OSes so they never upload empty "unknown" verdicts.
       - name: e2e/record-triage-verdict
-        if: always()
+        if: always() && steps.lane-status.outputs.needs-triage == 'true'
         env:
           PLATFORM: ${{ matrix.platform }}
           VERDICT: ${{ steps.triage.outputs.verdict }}
@@ -664,12 +680,63 @@ jobs:
       # The file name is per OS too: the verdict job downloads every lane into one folder with
       # merge-multiple, where files that share a name overwrite each other.
       - name: e2e/upload-triage-verdict
-        if: always()
+        if: always() && steps.lane-status.outputs.needs-triage == 'true' && hashFiles(format('e2e-triage-verdict-{0}.json', matrix.platform)) != ''
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: e2e-triage-verdict-${{ matrix.platform }}-a${{ github.run_attempt }}
           path: e2e-triage-verdict-${{ matrix.platform }}.json
           retention-days: 1
+
+  # Consolidates parallel per-OS findings, settles e2e/triage once under the SHA lock,
+  # and emits Human + Agent summaries (including Attempt-2 all-pass cleanup).
+  consolidate-triage:
+    name: Consolidate E2E triage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    needs:
+      - prepare-matrix
+      - tsio-summary
+      - e2e-policy-status
+      - e2e-linux-status
+      - e2e-macos-status
+      - e2e-windows-status
+      - tsio-triage
+    if: >-
+      always() && !cancelled()
+      && needs.prepare-matrix.outputs.tsio-composite-identity != ''
+      && (needs.tsio-triage.result != 'skipped' || github.run_attempt != '1')
+    permissions:
+      contents: read
+      statuses: write
+    concurrency:
+      group: e2e-triage-${{ needs.prepare-matrix.outputs.desktop-sha || github.run_id }}
+      cancel-in-progress: false
+    steps:
+      - name: Download triage findings
+        continue-on-error: true
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: e2e-triage-findings-*-a${{ github.run_attempt }}
+          path: triage-findings
+      - name: Consolidate E2E triage
+        uses: mattermost/mattermost-test-automation-toolkit/actions/e2e-test-triage/consolidate@main
+        with:
+          composite-identity: ${{ needs.prepare-matrix.outputs.tsio-composite-identity }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          triage-status-context: e2e/triage
+          only-if-exists: ${{ needs.tsio-triage.result == 'skipped' }}
+          triage-lanes: e2e/linux,e2e/macos,e2e/windows,e2e/macos-policy,e2e/windows-policy
+          findings-dir: triage-findings
+          summary-file: triage-summary.json
+          write-summary: 'true'
+      - name: Upload consolidated triage summary
+        if: always() && hashFiles('triage-summary.json') != ''
+        continue-on-error: true
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-triage-summary-a${{ github.run_attempt }}
+          path: triage-summary.json
+          retention-days: 7
 
   # Post-merge channel alert, driven by the triage verdicts above instead of
   # raw TSIO conclusions: silent when triage cleared every failure (flaky /

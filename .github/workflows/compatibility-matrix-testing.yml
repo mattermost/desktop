@@ -372,6 +372,7 @@ jobs:
       contents: read
       statuses: write
       pull-requests: read
+      actions: read
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.calculate-commit-hash.outputs.CMT_TRIAGE_MATRIX) }}
