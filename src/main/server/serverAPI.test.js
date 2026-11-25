@@ -5,7 +5,7 @@
 
 import {net, session} from 'electron';
 
-import {getServerAPI} from './serverAPI';
+import {getServerAPI, requestPluginAuthHandoff} from './serverAPI';
 
 const validURL = 'http://server-1.com/api/endpoint';
 const testData = {
@@ -187,5 +187,90 @@ describe('main/server/serverAPI', () => {
             successFn,
         );
         expect(net.request).toBeCalled();
+    });
+
+    describe('requestPluginAuthHandoff', () => {
+        const authCookies = [
+            {domain: 'server-1.com', name: 'MMUSERID', value: 'user-1'},
+            {domain: 'server-1.com', name: 'MMCSRF', value: 'csrf-123'},
+            {domain: 'server-1.com', name: 'MMAUTHTOKEN', value: 'token-abc'},
+        ];
+
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should POST target_path with CSRF header and return handoff URL', async () => {
+            session.defaultSession.cookies.get.mockResolvedValue(authCookies);
+            const setHeader = jest.fn();
+            const write = jest.fn();
+            const end = jest.fn();
+            net.request.mockImplementation(() => ({
+                setHeader,
+                write,
+                end,
+                on: jest.fn((event, cb) => {
+                    if (event === 'response') {
+                        cb({
+                            statusCode: 200,
+                            on: jest.fn((respEvent, respCb) => {
+                                if (respEvent === 'data') {
+                                    respCb(JSON.stringify({token: 'handoff-token-1'}));
+                                }
+                                if (respEvent === 'end') {
+                                    respCb();
+                                }
+                            }),
+                        });
+                    }
+                }),
+            }));
+
+            const result = await requestPluginAuthHandoff(
+                new URL('https://server-1.com/subpath'),
+                '/subpath/plugins/github/oauth/connect?private=true',
+            );
+
+            expect(net.request).toHaveBeenCalledWith({
+                method: 'POST',
+                url: 'https://server-1.com/subpath/api/v4/users/me/plugin_auth_handoff',
+                session: session.defaultSession,
+                useSessionCookies: true,
+            });
+            expect(setHeader).toHaveBeenCalledWith('Content-Type', 'application/json');
+            expect(setHeader).toHaveBeenCalledWith('X-CSRF-Token', 'csrf-123');
+            expect(write).toHaveBeenCalledWith(JSON.stringify({target_path: '/subpath/plugins/github/oauth/connect?private=true'}));
+            expect(end).toHaveBeenCalled();
+            expect(result.toString()).toBe('https://server-1.com/subpath/auth/plugin_handoff?token=handoff-token-1');
+        });
+
+        it('should reject when required cookies are missing', async () => {
+            session.defaultSession.cookies.get.mockResolvedValue([]);
+
+            await expect(requestPluginAuthHandoff(
+                new URL('https://server-1.com'),
+                '/plugins/github/oauth/connect',
+            )).rejects.toThrow('required cookies not found');
+            expect(net.request).not.toHaveBeenCalled();
+        });
+
+        it('should reject on non-200 status code', async () => {
+            session.defaultSession.cookies.get.mockResolvedValue(authCookies);
+            net.request.mockImplementation(() => ({
+                setHeader: jest.fn(),
+                write: jest.fn(),
+                end: jest.fn(),
+                on: jest.fn((event, cb) => {
+                    if (event === 'response') {
+                        cb({statusCode: 404, on: jest.fn()});
+                    }
+                }),
+            }));
+
+            await expect(requestPluginAuthHandoff(
+                new URL('https://server-1.com'),
+                '/plugins/github/oauth/connect',
+            )).rejects.toThrow('Bad status code 404');
+        });
     });
 });

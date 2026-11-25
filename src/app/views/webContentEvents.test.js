@@ -11,6 +11,7 @@ import WebContentsManager from 'app/views/webContentsManager';
 import {getLevel} from 'common/log';
 import ContextMenu from 'main/contextMenu';
 import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
+import {requestPluginAuthHandoff} from 'main/server/serverAPI';
 import {openExternalSafely} from 'main/utils';
 
 import PluginsPopUpsManager from './pluginsPopUps';
@@ -54,8 +55,11 @@ jest.mock('main/security/localNetworkAccess', () => ({
     },
 }));
 
+jest.mock('main/server/serverAPI', () => ({
+    requestPluginAuthHandoff: jest.fn(),
+}));
+
 jest.mock('main/utils', () => ({
-    composeUserAgent: jest.fn(),
     openExternalSafely: jest.fn(),
 }));
 
@@ -455,15 +459,32 @@ describe('main/views/webContentsEvents', () => {
             expect(newWindow({url: 'http://server-1.com/myplugin/login'})).toStrictEqual({action: 'deny'});
         });
 
-        it('should open popup window for plugins', () => {
+        it('should forward plugin URLs to browser via auth handoff instead of opening a popup', async () => {
+            const handoffURL = new URL('http://server-1.com/auth/plugin_handoff?token=abc');
+            requestPluginAuthHandoff.mockResolvedValueOnce(handoffURL);
+
+            expect(newWindow({url: 'http://server-1.com/plugins/myplugin/login?foo=bar'})).toStrictEqual({action: 'deny'});
+            expect(webContentsEventManager.popupWindow).toBeUndefined();
+            expect(requestPluginAuthHandoff).toHaveBeenCalledWith(new URL('http://server-1.com'), '/plugins/myplugin/login?foo=bar');
+
+            await Promise.resolve();
+            expect(openExternalSafely).toHaveBeenCalledWith(handoffURL.toString(), showInvalidLinkModal);
+        });
+
+        it('should fall back to opening plugin URL directly in browser when handoff fails', async () => {
+            requestPluginAuthHandoff.mockRejectedValueOnce(new Error('404'));
+
             expect(newWindow({url: 'http://server-1.com/plugins/myplugin/login'})).toStrictEqual({action: 'deny'});
-            expect(webContentsEventManager.popupWindow).toBeTruthy();
-            expect(jest.mocked(LocalNetworkAccessManager.registerWebContents)).toHaveBeenCalled();
+            expect(webContentsEventManager.popupWindow).toBeUndefined();
+
+            await new Promise((resolve) => setImmediate(resolve));
+            expect(openExternalSafely).toHaveBeenCalledWith('http://server-1.com/plugins/myplugin/login', showInvalidLinkModal);
         });
 
         it('should open popup window for managed resources', () => {
             expect(newWindow({url: 'http://server-1.com/trusted/login'})).toStrictEqual({action: 'deny'});
             expect(webContentsEventManager.popupWindow).toBeTruthy();
+            expect(jest.mocked(LocalNetworkAccessManager.registerWebContents)).toHaveBeenCalled();
         });
 
         it('should open external URIs in browser', () => {
@@ -489,7 +510,7 @@ describe('main/views/webContentsEvents', () => {
             };
             BrowserWindow.mockImplementation(() => mockPopup);
 
-            newWindow({url: 'http://server-1.com/plugins/myplugin/login'});
+            newWindow({url: 'http://server-1.com/trusted/login'});
 
             expect(webContentsEventManager.popupWindow).toBeTruthy();
             expect(webContentsEventManager.popupWindow.contextMenu).toBe(mockContextMenu);

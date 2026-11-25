@@ -35,7 +35,8 @@ import ViewManager from 'common/views/viewManager';
 import ContextMenu from 'main/contextMenu';
 import allowProtocolDialog from 'main/security/allowProtocolDialog';
 import LocalNetworkAccessManager from 'main/security/localNetworkAccess';
-import {composeUserAgent, openExternalSafely} from 'main/utils';
+import {requestPluginAuthHandoff} from 'main/server/serverAPI';
+import {openExternalSafely} from 'main/utils';
 
 import {generateHandleConsoleMessage, generateWillFrameNavigate, isCustomProtocol, isMattermostProtocol, showInvalidLinkModal} from './webContentEventsCommon';
 
@@ -214,8 +215,21 @@ export class WebContentsEventManager {
                 return {action: 'deny'};
             }
 
+            if (isPluginUrl(serverURL, parsedURL)) {
+                const targetPath = `${parsedURL.pathname}${parsedURL.search}`;
+                requestPluginAuthHandoff(serverURL, targetPath).
+                    then((handoffURL) => {
+                        openExternalSafely(handoffURL.toString(), showInvalidLinkModal);
+                    }).
+                    catch((err) => {
+                        this.log(webContentsId).warn('Plugin auth handoff unavailable, opening plugin URL directly in browser', err);
+                        openExternalSafely(serializedURL, showInvalidLinkModal);
+                    });
+                return {action: 'deny'};
+            }
+
             // TODO: move popups to its own and have more than one.
-            if (isPluginUrl(serverURL, parsedURL) || isManagedResource(serverURL, parsedURL)) {
+            if (isManagedResource(serverURL, parsedURL)) {
                 let popup: BrowserWindow;
                 if (this.popupWindow) {
                     this.popupWindow.win.once('ready-to-show', () => {
@@ -245,7 +259,7 @@ export class WebContentsEventManager {
                             return;
                         }
 
-                        if (isInternalURL(serverURL, parsedURL) && !isPluginUrl(serverURL, parsedURL) && !isManagedResource(serverURL, parsedURL)) {
+                        if (isInternalURL(serverURL, parsedURL) && !isManagedResource(serverURL, parsedURL)) {
                             event.preventDefault();
                         }
                     });
@@ -266,16 +280,7 @@ export class WebContentsEventManager {
                 }
 
                 popup.once('ready-to-show', () => popup.show());
-
-                if (isManagedResource(serverURL, parsedURL)) {
-                    popup.loadURL(serializedURL);
-                } else {
-                    // currently changing the userAgent for popup windows to allow plugins to go through google's oAuth
-                    // should be removed once a proper oAuth2 implementation is setup.
-                    popup.loadURL(serializedURL, {
-                        userAgent: composeUserAgent(),
-                    });
-                }
+                popup.loadURL(serializedURL);
 
                 return {action: 'deny'};
             }
