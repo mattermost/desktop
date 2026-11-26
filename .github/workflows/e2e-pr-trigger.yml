@@ -38,8 +38,8 @@ jobs:
       pull-requests: write
       actions: write
       statuses: write
-    # Fork PRs only get a read-only token here (label edits 403) and never run E2E; their
-    # required e2e/* statuses are waived by e2e-fork-policy.yml instead.
+    # Fork PRs only get a read-only token here (label edits 403) and never run E2E, so
+    # their required e2e/* statuses are never posted.
     if: >-
       github.event.pull_request.head.repo.full_name == github.repository
       && (
