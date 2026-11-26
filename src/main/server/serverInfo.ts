@@ -11,6 +11,11 @@ import type {SAField} from 'types/sessionAttributes';
 
 import {getServerAPI} from './serverAPI';
 
+// Session attributes require an Enterprise Advanced tier license on the server
+// (see MinimumEnterpriseAdvancedLicense in server/public/model/license.go).
+// The server answers 501 to the manifest request for any other license.
+const SESSION_ATTRIBUTES_LICENSE_SKUS = new Set(['advanced', 'entry']);
+
 export class ServerInfo {
     private server: MattermostServer;
     private remoteInfo: RemoteInfo;
@@ -102,6 +107,8 @@ export class ServerInfo {
 
     private onGetLicense = (data: {SkuShortName: string}) => {
         this.remoteInfo.licenseSku = data.SkuShortName;
+        this.remoteInfo.sessionAttributesEnabled = Boolean(this.remoteInfo.sessionAttributesEnabled) &&
+            SESSION_ATTRIBUTES_LICENSE_SKUS.has(data.SkuShortName);
     };
 
     private onGetPlugins = (data: Array<{id: string; version: string}>) => {
