@@ -62,6 +62,10 @@ const ALLOWED_SUBFRAME_PROTOCOLS = new Set(['http:', 'https:']);
 // Protocol-less document URLs for programmatic and srcdoc iframes.
 const ALLOWED_SUBFRAME_URLS = new Set(['about:blank', 'about:srcdoc']);
 
+// ID for Chromium's built-in PDF viewer extension, which Electron uses to show inline PDFs.
+// The ID is fixed and will therefore only allow this PDF viewer and not all chrome-extension:// URLs.
+const ALLOWED_PDF_EXTENSION_ID = 'mhjfbmdgcfjbbpaeojofohoefgiehjai';
+
 export function isAllowedSubframeNavigation(rawURL?: string): boolean {
     if (!rawURL || ALLOWED_SUBFRAME_URLS.has(rawURL)) {
         return true;
@@ -70,6 +74,10 @@ export function isAllowedSubframeNavigation(rawURL?: string): boolean {
     const parsedURL = parseURL(rawURL);
     if (!parsedURL) {
         return false;
+    }
+
+    if (parsedURL.protocol === 'chrome-extension:' && parsedURL.host === ALLOWED_PDF_EXTENSION_ID) {
+        return true;
     }
 
     return ALLOWED_SUBFRAME_PROTOCOLS.has(parsedURL.protocol);

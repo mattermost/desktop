@@ -303,6 +303,10 @@ describe('webContentEventsCommon', () => {
             expect(isAllowedSubframeNavigation('')).toBe(true);
         });
 
+        it('allows chrome-extension://mhjfbmdgcfjbbpaeojofohoefgiehjai (PDF viewer)', () => {
+            expect(isAllowedSubframeNavigation('chrome-extension://mhjfbmdgcfjbbpaeojofohoefgiehjai/7e65fd3a-4ec9-4acc-bfcc-3228db9b6210')).toBe(true);
+        });
+
         it('blocks non-web protocols including mailto', () => {
             expect(isAllowedSubframeNavigation('mailto:user@example.com')).toBe(false);
             expect(isAllowedSubframeNavigation('tel:+15551234')).toBe(false);
@@ -316,6 +320,11 @@ describe('webContentEventsCommon', () => {
         it('blocks unparseable URLs', () => {
             mockParseURL.mockReturnValue(undefined);
             expect(isAllowedSubframeNavigation('::::not a url')).toBe(false);
+        });
+
+        it('blocks chrome-extension URLs that are not the PDF viewer', () => {
+            expect(isAllowedSubframeNavigation('chrome-extension://abcdefghijklmnopqrstuvwxyz/7e65fd3a-4ec9-4acc-bfcc-3228db9b6210')).toBe(false);
+            expect(isAllowedSubframeNavigation('chrome-extension://mhjfbmdgcfjbbpaeojofohoefgiehjaiabcdefghijklm/7e65fd3a-4ec9-4acc-bfcc-3228db9b6210')).toBe(false);
         });
     });
 
